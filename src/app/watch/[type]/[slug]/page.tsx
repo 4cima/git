@@ -1,29 +1,23 @@
-import { Metadata } from 'next'
+'use client'
+
 import { WatchPage } from '@/components/pages/WatchPage'
+import { useParams, useSearchParams } from 'next/navigation'
 
-export const runtime = 'edge'
-
-export const metadata: Metadata = {
-  title: 'مشاهدة | فور سيما',
-  description: 'شاهد المحتوى بجودة عالية',
-}
-
-export default async function Watch({ 
-  params,
-  searchParams 
-}: { 
-  params: Promise<{ type: string; slug: string }>
-  searchParams: Promise<{ season?: string; episode?: string }>
-}) {
-  const { type, slug } = await params
-  const search = await searchParams
+export default function Watch() {
+  const params = useParams()
+  const searchParams = useSearchParams()
+  
+  const type = params.type as 'movies' | 'series'
+  const slug = params.slug as string
+  const season = searchParams.get('season') ? Number(searchParams.get('season')) : undefined
+  const episode = searchParams.get('episode') ? Number(searchParams.get('episode')) : undefined
   
   return (
     <WatchPage 
-      type={type as 'movies' | 'series'}
+      type={type}
       slug={slug}
-      season={search.season ? Number(search.season) : undefined}
-      episode={search.episode ? Number(search.episode) : undefined}
+      season={season}
+      episode={episode}
     />
   )
 }
