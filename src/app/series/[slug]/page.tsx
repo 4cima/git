@@ -2,6 +2,8 @@ import { Metadata } from 'next'
 import { SeriesDetailsPage } from '@/components/pages/SeriesDetailsPage'
 import { generateContentMetadata } from '@/lib/seo-helpers'
 
+export const runtime = 'edge'
+
 // دالة جلب بيانات المسلسل (يجب تعديلها حسب API الخاص بك)
 async function getSeriesBySlug(slug: string) {
   // TODO: استبدل هذا بـ API call الفعلي

@@ -2,6 +2,8 @@ import { Metadata } from 'next'
 import { MovieDetailsPage } from '@/components/pages/MovieDetailsPage'
 import { generateContentMetadata } from '@/lib/seo-helpers'
 
+export const runtime = 'edge'
+
 // دالة جلب بيانات الفيلم (يجب تعديلها حسب API الخاص بك)
 async function getMovieBySlug(slug: string) {
   // TODO: استبدل هذا بـ API call الفعلي

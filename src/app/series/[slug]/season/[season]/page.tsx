@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { api } from '@/lib/api'
 
+export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({

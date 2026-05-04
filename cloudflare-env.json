@@ -1,0 +1,8 @@
+{
+  "NEXT_PUBLIC_API_URL": "https://4cima-worker.iaaelsadek.workers.dev",
+  "NEXT_PUBLIC_WORKER_URL": "https://4cima-worker.iaaelsadek.workers.dev",
+  "TURSO_DATABASE_URL": "libsql://4cima-4cima.aws-eu-west-1.turso.io",
+  "TURSO_AUTH_TOKEN": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzcxNjMzODYsImlkIjoiMDE5ZGM3MzAtYmYwMS03ZTk0LTg5M2ItYmUxZTNhODZkOThiIiwicmlkIjoiNzFjM2FmNjItZmMxOC00Y2NkLTg0ODItY2U1Mjk1NzdlNTFlIn0.1pjV1dRnoPewzOv51taKx_5kYkRnY3OdIDrmGyB6QT4lzC3dOni1rGeOqHy04zcd7J7zq--825UeKrIauQblBg",
+  "NEXT_PUBLIC_SUPABASE_URL": "https://placeholder.supabase.co",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY": "placeholder_key_for_build_only"
+}

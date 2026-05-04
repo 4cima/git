@@ -1,0 +1,64 @@
+═══════════════════════════════════════════════════════════
+  متغيرات البيئة لـ Cloudflare Pages - مشروع 4cima
+═══════════════════════════════════════════════════════════
+
+📋 انسخ هذه المتغيرات وأضفها في Cloudflare Pages:
+   Dashboard → Workers & Pages → [اسم المشروع] → Settings → Environment variables
+
+---
+
+1️⃣ NEXT_PUBLIC_API_URL
+   القيمة:
+   https://4cima-worker.iaaelsadek.workers.dev
+
+---
+
+2️⃣ NEXT_PUBLIC_WORKER_URL
+   القيمة:
+   https://4cima-worker.iaaelsadek.workers.dev
+
+---
+
+3️⃣ TURSO_DATABASE_URL
+   القيمة:
+   libsql://4cima-4cima.aws-eu-west-1.turso.io
+
+---
+
+4️⃣ TURSO_AUTH_TOKEN
+   القيمة:
+   eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzcxNjMzODYsImlkIjoiMDE5ZGM3MzAtYmYwMS03ZTk0LTg5M2ItYmUxZTNhODZkOThiIiwicmlkIjoiNzFjM2FmNjItZmMxOC00Y2NkLTg0ODItY2U1Mjk1NzdlNTFlIn0.1pjV1dRnoPewzOv51taKx_5kYkRnY3OdIDrmGyB6QT4lzC3dOni1rGeOqHy04zcd7J7zq--825UeKrIauQblBg
+
+---
+
+5️⃣ NEXT_PUBLIC_SUPABASE_URL
+   القيمة:
+   https://placeholder.supabase.co
+
+---
+
+6️⃣ NEXT_PUBLIC_SUPABASE_ANON_KEY
+   القيمة:
+   placeholder_key_for_build_only
+
+═══════════════════════════════════════════════════════════
+
+⚠️ ملاحظات مهمة:
+
+✅ هذه المتغيرات كافية لتشغيل الموقع
+✅ لا تضيف مفاتيح TMDB أو AI APIs (للسكريبتات المحلية فقط)
+✅ تأكد من إضافة كل متغير في Production و Preview environments
+
+═══════════════════════════════════════════════════════════
+
+📝 خطوات الإضافة:
+
+1. اذهب إلى: https://dash.cloudflare.com/
+2. Workers & Pages → [اسم مشروعك]
+3. Settings → Environment variables
+4. اضغط "Add variable"
+5. انسخ الاسم والقيمة من الأعلى
+6. كرر لكل متغير
+7. احفظ التغييرات
+
+═══════════════════════════════════════════════════════════
