@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next'
 
+export const dynamic = 'force-static'
+
 // دالة جلب جميع الأفلام (يجب تعديلها حسب قاعدة البيانات)
 async function getAllMovies() {
   // TODO: استبدل هذا بـ query من قاعدة البيانات
