@@ -39,3 +39,107 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ===== PROJECT CLEANUP =====
+
+# Database files (local only)
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Scripts (development only)
+/scripts/
+*.js
+!next.config.js
+!postcss.config.js
+!eslint.config.js
+
+# Backup files
+/BACKUP/
+*.backup
+
+# Documentation files (keep only essential)
+BACKEND-ANALYSIS-*.md
+CLOUDFLARE-PAGES-DEPLOYMENT.md
+FINAL-DEPLOYMENT-REPORT.md
+DEPLOYMENT-SUCCESS.md
+IMPLEMENTATION-COMPLETE.md
+COMPREHENSIVE-LIVE-REPORT.md
+CURRENT-ACTUAL-DATA.md
+CURRENT-COMPREHENSIVE-STATUS.md
+DETAILED-INGESTION-FLOW.md
+DIAGNOSIS-AND-FIX-PLAN.md
+ENHANCEMENT-PLAN.md
+EXECUTION-PLAN.md
+EXECUTION-SUMMARY.md
+EXECUTIVE-SUMMARY.md
+FINAL-PROJECT-STRUCTURE.md
+FINAL-SUMMARY.txt
+INDEX.md
+LIVE-ENHANCEMENT-REPORT.md
+MONITOR-STATUS.md
+OPERATIONS-STATUS.md
+PATHS-CHEATSHEET.txt
+QUICK-ACCESS.md
+QUICK-START-WORKER.md
+SCHEMA-MISMATCH-REPORT.md
+SCRIPTS-REGISTRY.md
+SERIES-SYNC-STARTED.md
+SMART-MONITOR-INFO.md
+START-HERE.md
+TASKS-TODO.md
+TEST-RESULTS-*.md
+TODO-PRIORITY-LIST.md
+TURSO-COMPLETENESS-REPORT.md
+WORKER-*.md
+BACKUP-*.md
+BACKUP-*.html
+
+# Monitoring and logs
+/monitoring-reports/
+*.log
+*.jsonl
+
+# Test files
+test-*.js
+*-test.js
+check-*.js
+verify-*.js
+diagnose-*.js
+analyze-*.js
+compare-*.js
+monitor-*.js
+quick-*.js
+deep-*.js
+final-*.js
+correct-*.js
+real-*.js
+simple-*.js
+fast-*.js
+comprehensive-*.js
+detailed-*.js
+
+# Temporary files
+add-*.js
+complete-*.js
+fetch-*.js
+fix-*.js
+generate-*.js
+get-*.js
+mark-*.js
+re-*.js
+restart-*.js
+sync-*.js
+update-*.js
+watch-*.js
+
+# AI and reports
+ai-keys-report.json
+
+# Worker (keep only if needed for deployment)
+/worker/
+!worker/src/
+!worker/package.json
+!worker/wrangler.toml
+!worker/tsconfig.json
