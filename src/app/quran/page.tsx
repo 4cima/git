@@ -1,7 +1,5 @@
 import { Metadata } from 'next'
 
-export const runtime = 'edge'
-
 export const metadata: Metadata = {
   title: 'القرآن الكريم | فور سيما',
   description: 'استمع إلى القرآن الكريم بأصوات نخبة من القراء',
