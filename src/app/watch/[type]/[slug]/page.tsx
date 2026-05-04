@@ -1,8 +1,6 @@
 import { Metadata } from 'next'
 import { WatchPage } from '@/components/pages/WatchPage'
 
-export const runtime = 'edge'
-
 export const metadata: Metadata = {
   title: 'مشاهدة | فور سيما',
   description: 'شاهد المحتوى بجودة عالية',
