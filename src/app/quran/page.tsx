@@ -1,13 +1,8 @@
+'use client'
+
 import { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'القرآن الكريم | فور سيما',
-  description: 'استمع إلى القرآن الكريم بأصوات نخبة من القراء',
-}
-
-export const dynamic = 'force-dynamic'
-
-export default async function QuranPage() {
+export default function QuranPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-950 to-black text-white">
       <div className="page-container py-12">

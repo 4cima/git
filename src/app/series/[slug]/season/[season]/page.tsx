@@ -1,45 +1,40 @@
-import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+'use client'
+
+import { notFound, useParams } from 'next/navigation'
 import { api } from '@/lib/api'
+import { useEffect, useState } from 'react'
 
-export const dynamic = 'force-dynamic'
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string; season: string }>
-}): Promise<Metadata> {
-  const { slug, season } = await params
-  try {
-    const series = await api.getSeriesDetail(slug)
-    
-    return {
-      title: `${series.name || series.title} - الموسم ${season} | 4CIMA`,
-      description: series.overview || series.overview_ar,
-    }
-  } catch {
-    return {
-      title: 'مسلسل غير موجود | 4CIMA',
-    }
-  }
-}
-
-export default async function SeasonPage({
-  params,
-}: {
-  params: Promise<{ slug: string; season: string }>
-}) {
-  const { slug, season } = await params
-  let series, episodesData
+export default function SeasonPage() {
+  const params = useParams()
+  const slug = params.slug as string
+  const season = params.season as string
   
-  try {
-    series = await api.getSeriesDetail(slug)
-    episodesData = await api.getEpisodes(slug, Number(season))
-  } catch {
+  const [series, setSeries] = useState<any>(null)
+  const [episodes, setEpisodes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    Promise.all([
+      api.getSeriesDetail(slug),
+      api.getEpisodes(slug, Number(season))
+    ])
+      .then(([seriesData, episodesData]) => {
+        setSeries(seriesData)
+        setEpisodes(episodesData.episodes)
+        setLoading(false)
+      })
+      .catch(() => {
+        setLoading(false)
+      })
+  }, [slug, season])
+  
+  if (loading) {
+    return <div className="page-container py-8">جاري التحميل...</div>
+  }
+  
+  if (!series) {
     notFound()
   }
-  
-  const { episodes } = episodesData
   
   return (
     <div className="page-container py-8">
