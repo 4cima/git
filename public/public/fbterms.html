@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - online_cinma_bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1877f2; /* Facebook Blue */
+            --text-color: #1c1e21;
+            --text-secondary: #606770;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --success-color: #42b72a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .header {
+            background-color: var(--card-bg);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .main-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+        }
+
+        .last-updated {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            display: block;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 30px 0 15px;
+            color: #1a1a1a;
+            border-bottom: 1px solid #e4e6eb;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 20px 0 10px;
+            color: #444;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: #444;
+        }
+
+        ul, ol {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+            color: #444;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .highlight-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 20px;
+            border-radius: 4px;
+            margin: 25px 0;
+        }
+
+        .highlight-box h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .contact-section {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #e4e6eb;
+            margin-top: 40px;
+        }
+
+        .contact-email {
+            font-weight: 600;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="app-brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5c0-5.523 4.477-10 10-10z"></path><path d="M8.5 8.5a2.121 2.121 0 0 1 3 3"></path><path d="M4.5 12.5a2.121 2.121 0 0 1 3 3"></path><path d="M15 12a3 3 0 1 0-3-3"></path></svg>
+                online_cinma_bot
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="card">
+            <h1>Terms of Service</h1>
+            <span class="last-updated">Last Updated: <span id="current-date"></span></span>
+
+            <div class="highlight-box">
+                <h3>Agreement to Terms</h3>
+                <p>By accessing or using <strong>online_cinma_bot</strong>, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services.</p>
+            </div>
+
+            <h2>1. Introduction</h2>
+            <p>Welcome to <strong>online_cinma_bot</strong> ("we," "our," or "us"). These Terms of Service ("Terms") govern your use of our Facebook Application. Our services are provided to you subject to your acceptance without modification of these Terms.</p>
+
+            <h2>2. Use of Service</h2>
+            <p>You agree to use our application only for lawful purposes and in accordance with these Terms.</p>
+            <ul>
+                <li>You must not use the bot to distribute spam, malware, or any harmful content.</li>
+                <li>You must not attempt to reverse engineer or interfere with the bot's functionality.</li>
+                <li>You agree to comply with all applicable Facebook Platform Policies and Community Standards.</li>
+                <li>You are responsible for maintaining the confidentiality of your account information.</li>
+            </ul>
+
+            <h2>3. Intellectual Property</h2>
+            <p>The content, features, and functionality of <strong>online_cinma_bot</strong> are owned by us and are protected by international copyright, trademark, patent, trade secret, and other intellectual property or proprietary rights laws.</p>
+
+            <h2>4. Termination</h2>
+            <p>We may terminate or suspend your access to our service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+            <p>All provisions of the Terms which by their nature should survive termination shall survive termination, including, without limitation, ownership provisions, warranty disclaimers, indemnity, and limitations of liability.</p>
+
+            <h2>5. Disclaimer of Warranties</h2>
+            <p>The service is provided on an "AS IS" and "AS AVAILABLE" basis. We make no representations or warranties of any kind, express or implied, as to the operation of our services or the information, content, or materials included therein.</p>
+            <p>We do not warrant that the service will be uninterrupted, secure, or error-free.</p>
+
+            <h2>6. Limitation of Liability</h2>
+            <p>In no event shall <strong>online_cinma_bot</strong>, its developers, or affiliates be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from:</p>
+            <ul>
+                <li>Your access to or use of or inability to access or use the service;</li>
+                <li>Any conduct or content of any third party on the service;</li>
+                <li>Any content obtained from the service; and</li>
+                <li>Unauthorized access, use, or alteration of your transmissions or content.</li>
+            </ul>
+
+            <h2>7. Governing Law</h2>
+            <p>These Terms shall be governed and construed in accordance with the laws of the jurisdiction in which we operate, without regard to its conflict of law provisions.</p>
+
+            <h2>8. Changes to Terms</h2>
+            <p>We reserve the right to modify or replace these Terms at any time. We will provide notice of any changes by posting the new Terms on this page. Your continued use of the service after any such changes constitutes your acceptance of the new Terms.</p>
+
+            <div class="contact-section">
+                <h2>9. Contact Us</h2>
+                <p>If you have any questions about these Terms of Service, please contact us at:</p>
+                <p>
+                    <strong>Email:</strong> <a href="mailto:cairo.tv@gmail.com" class="contact-email">cairo.tv@gmail.com</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; <script>document.write(new Date().getFullYear())</script> online_cinma_bot. All rights reserved.</p>
+    </footer>
+
+    <script>
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', dateOptions);
+    </script>
+</body>
+</html>

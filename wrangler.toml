@@ -1,0 +1,30 @@
+name = "4cima-frontend"
+type = "javascript"
+compatibility_date = "2024-01-01"
+
+# Cloudflare Pages configuration
+pages_build_caching = true
+
+[env.production]
+name = "4cima-frontend-prod"
+routes = [
+  { pattern = "4cima.com", zone_name = "4cima.com" },
+  { pattern = "www.4cima.com", zone_name = "4cima.com" }
+]
+
+[build]
+command = "npm run build"
+cwd = "./"
+watch_paths = ["src/**/*.ts", "src/**/*.tsx"]
+
+[build.upload]
+format = "service-worker"
+
+[env.production.build]
+command = "npm run build"
+cwd = "./"
+
+# Environment variables
+[env.production.vars]
+NEXT_PUBLIC_API_URL = "https://4cima-worker.iaaelsadek.workers.dev"
+NEXT_PUBLIC_WORKER_URL = "https://4cima-worker.iaaelsadek.workers.dev"

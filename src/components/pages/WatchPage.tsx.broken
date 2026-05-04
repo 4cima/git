@@ -1,0 +1,567 @@
+'use client'
+
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  Star, Play, Calendar, Clock, 
+  Layers, AlertTriangle, Sparkles, Users, TrendingUp, 
+  Film, Tv, Info, Maximize2, X,
+  ThumbsUp, Languages, Zap
+} from 'lucide-react'
+import { MovieCard } from '../features/media/MovieCard'
+import { Loading } from '../common/Loading'
+import clsx from 'clsx'
+import Link from 'next/link'
+
+interface WatchPageProps {
+  type: 'movies' | 'series'
+  slug: string
+  season?: number
+  episode?: number
+}
+
+export const WatchPage = ({ type, slug, season, episode }: WatchPageProps) => {
+  const router = useRouter()
+  const [content, setContent] = useState<any>(null)
+  const [seasons, setSeasons] = useState<any[]>([])
+  const [episodes, setEpisodes] = useState<any[]>([])
+  const [cast, setCast] = useState<any[]>([])
+  const [similar, setSimilar] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedServer, setSelectedServer] = useState(0)
+  const [currentSeason, setCurrentSeason] = useState(season || 1)
+  const [currentEpisode, setCurrentEpisode] = useState(episode || 1)
+  const [cinemaMode, setCinemaMode] = useState(false)
+
+  const isMovie = type === 'movies'
+  const isSeries = type === 'series'
+
+  // Fetch content
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        setLoading(true)
+        const endpoint = isMovie ? `/api/movies/${slug}` : `/api/tv/${slug}`
+        const response = await fetch(endpoint)
+        if (response.ok) {
+          const data = await response.json()
+          setContent(data)
+          if (isSeries && data.seasons) {
+            setSeasons(data.seasons)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching content:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (slug) fetchContent()
+  }, [slug, isMovie, isSeries])
+
+  // Fetch episodes
+  useEffect(() => {
+    const fetchEpisodes = async () => {
+      if (!isSeries || !currentSeason) return
+      try {
+        const response = await fetch(`/api/tv/${slug}/season/${currentSeason}/episodes`)
+        if (response.ok) {
+          const data = await response.json()
+          setEpisodes(data.episodes || [])
+        }
+      } catch (error) {
+        console.error('Error fetching episodes:', error)
+      }
+    }
+    if (isSeries && currentSeason) fetchEpisodes()
+  }, [slug, currentSeason, isSeries])
+
+  // Fetch seasons
+  useEffect(() => {
+    const fetchSeasons = async () => {
+      if (!isSeries) return
+      try {
+        const response = await fetch(`/api/tv/${slug}/seasons`)
+        if (response.ok) {
+          const data = await response.json()
+          setSeasons(data.data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching seasons:', error)
+      }
+    }
+    if (isSeries && slug) fetchSeasons()
+  }, [slug, isSeries])
+
+  // Fetch cast
+  useEffect(() => {
+    const fetchCast = async () => {
+      try {
+        const endpoint = isMovie 
+          ? `/api/movies/${slug}/cast?limit=12`
+          : `/api/tv/${slug}/cast?limit=12`
+        const response = await fetch(endpoint)
+        if (response.ok) {
+          const data = await response.json()
+          setCast(data.data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching cast:', error)
+      }
+    }
+    if (slug) fetchCast()
+  }, [slug, isMovie])
+
+  // Fetch similar
+  useEffect(() => {
+    const fetchSimilar = async () => {
+      try {
+        const endpoint = isMovie
+          ? `/api/movies/${slug}/similar?limit=18`
+          : `/api/tv/${slug}/similar?limit=18`
+        const response = await fetch(endpoint)
+        if (response.ok) {
+          const data = await response.json()
+          setSimilar(data.data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching similar:', error)
+      }
+    }
+    if (slug) fetchSimilar()
+  }, [slug, isMovie])
+
+  // Extract data
+  const title = content?.title_ar || content?.name_ar || content?.title || content?.name || 'محتوى'
+  const titleEn = content?.title_en || content?.name_en || content?.title || content?.name
+  const titleOriginal = content?.original_title || content?.original_name
+  const overview = content?.overview_ar || content?.overview || 'لا يوجد وصف'
+  const overviewEn = content?.overview_en || content?.overview
+  const year = content?.release_date || content?.first_air_date ? new Date(content.release_date || content.first_air_date).getFullYear() : ''
+  const rating = content?.vote_average ? Math.round(content.vote_average * 10) / 10 : 0
+  const voteCount = content?.vote_count || 0
+  const popularity = content?.popularity ? Math.round(content.popularity) : 0
+  const runtime = content?.runtime || null
+  const originalLanguage = content?.original_language || ''
+  const status = content?.status || ''
+  const tagline = content?.tagline || content?.tagline_ar || ''
+  const genres = content?.genres ? (typeof content.genres === 'string' ? JSON.parse(content.genres) : content.genres) : []
+  const poster = content?.poster_url || (content?.poster_path ? `https://image.tmdb.org/t/p/w500${content.poster_path}` : '')
+  const backdrop = content?.backdrop_url || (content?.backdrop_path ? `https://image.tmdb.org/t/p/original${content.backdrop_path}` : '')
+
+  // Generate embed URL
+  const embedUrl = useMemo(() => {
+    if (!content?.id) return ''
+    const servers = [
+      `https://vidsrc.xyz/embed/${isMovie ? 'movie' : 'tv'}/${content.id}${isSeries ? `/${currentSeason}/${currentEpisode}` : ''}`,
+      `https://www.2embed.cc/embed/${isMovie ? content.id : `${content.id}&s=${currentSeason}&e=${currentEpisode}`}`,
+      `https://embed.su/embed/${isMovie ? 'movie' : 'tv'}/${content.id}${isSeries ? `/${currentSeason}/${currentEpisode}` : ''}`
+    ]
+    return servers[selectedServer] || servers[0]
+  }, [content, selectedServer, isMovie, isSeries, currentSeason, currentEpisode])
+
+  const handleEpisodeChange = useCallback((newEpisode: number) => {
+    setCurrentEpisode(newEpisode)
+    router.push(`/watch/series/${slug}?season=${currentSeason}&episode=${newEpisode}`)
+  }, [slug, currentSeason, router])
+
+  const handleSeasonChange = useCallback((newSeason: number) => {
+    setCurrentSeason(newSeason)
+    setCurrentEpisode(1)
+    router.push(`/watch/series/${slug}?season=${newSeason}&episode=1`)
+  }, [slug, router])
+
+  if (loading) {
+    return <Loading fullScreen text="جاري التحميل..." />
+  }
+
+  if (!content) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+        <p className="text-white text-xl">المحتوى غير موجود</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] relative">
+      {/* Backdrop Background */}
+      {backdrop && (
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <img
+            src={backdrop}
+            alt=""
+            className="w-full h-full object-cover opacity-20 blur-sm"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a] via-[#0a0a0a]/90 to-[#0a0a0a]" />
+        </div>
+      )}
+      {/* Cinema Mode Fullscreen */}
+      <AnimatePresence>
+        {cinemaMode && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+            onClick={() => setCinemaMode(false)}
+          >
+            <div className="w-full h-full flex items-center justify-center p-2">
+              <div className="w-full max-w-7xl aspect-video">
+                {embedUrl && (
+                  <iframe
+                    src={embedUrl}
+                    className="w-full h-full rounded-lg"
+                    allowFullScreen
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    referrerPolicy="no-referrer"`n                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"`n                  />
+                )}
+              </div>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setCinemaMode(false)
+              }}
+              className="absolute top-4 right-4 p-3 rounded-full bg-red-500/90 hover:bg-red-600 transition-colors z-10"
+            >
+              <X size={20} className="text-white" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content */}
+      <div className="relative z-10 max-w-6xl mx-auto px-3 py-4 space-y-3">
+        
+        {/* Hero Section with Poster */}
+        <div className="flex gap-3 items-start">
+          {/* Poster - Small & Compact */}
+          {poster && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex-shrink-0 hidden sm:block"
+            >
+              <div className="relative w-24 md:w-32 rounded-lg overflow-hidden border-2 border-white/10 shadow-xl">
+                <img
+                  src={poster}
+                  alt={title}
+                  className="w-full aspect-[2/3] object-cover"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+              </div>
+            </motion.div>
+          )}
+          
+          {/* Title & Info */}
+          <div className="flex-1 min-w-0">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-1"
+            >
+              <h1 className="text-lg md:text-2xl font-black text-white leading-tight">
+                {title}
+              </h1>
+              {titleEn && titleEn !== title && (
+                <p className="text-xs md:text-sm text-zinc-400 font-semibold">{titleEn}</p>
+              )}
+              {tagline && (
+                <p className="text-xs text-cyan-400 italic mt-1">"{tagline}"</p>
+              )}
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Quick Stats Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {rating > 0 && (
+            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 flex-shrink-0">
+              <Star size={12} className="fill-yellow-400 text-yellow-400" />
+              <span className="text-xs font-black text-yellow-400">{rating}</span>
+            </div>
+          )}
+          {year && (
+            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 flex-shrink-0">
+              <Calendar size={12} className="text-cyan-400" />
+              <span className="text-xs font-bold text-white">{year}</span>
+            </div>
+          )}
+          {runtime && (
+            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 flex-shrink-0">
+              <Clock size={12} className="text-purple-400" />
+              <span className="text-xs font-bold text-white">{Math.floor(runtime / 60)}س {runtime % 60}د</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex-shrink-0">
+            {isMovie ? <Film size={12} className="text-cyan-400" /> : <Tv size={12} className="text-cyan-400" />}
+            <span className="text-xs font-bold text-cyan-400">{isMovie ? 'فيلم' : 'مسلسل'}</span>
+          </div>
+          {popularity > 0 && (
+            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 flex-shrink-0">
+              <TrendingUp size={12} className="text-green-400" />
+              <span className="text-xs font-bold text-white">{popularity.toLocaleString()}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Compact Player - 50% size */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="space-y-2"
+        >
+          <div className="relative w-full max-w-2xl mx-auto">
+            <div className="aspect-video rounded-xl overflow-hidden bg-black border-2 border-white/10 shadow-2xl shadow-cyan-500/20">
+              {embedUrl && (
+                <iframe
+                  src={embedUrl}
+                  className="w-full h-full"
+                  allowFullScreen
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  referrerPolicy="no-referrer"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                />
+              )}
+            </div>
+            
+            {/* Player Controls Overlay */}
+            <div className="absolute bottom-2 right-2 flex gap-1.5">
+              <button
+                onClick={() => setCinemaMode(true)}
+                className="p-2 rounded-lg bg-black/80 backdrop-blur-sm hover:bg-black transition-colors"
+                title="وضع السينما"
+              >
+                <Maximize2 size={14} className="text-white" />
+              </button>
+            </div>
+          </div>
+
+          {/* Server Selector - Compact */}
+          <div className="flex items-center justify-center gap-1.5">
+            <span className="text-[10px] text-zinc-500 font-bold">سيرفر:</span>
+            {['1', '2', '3'].map((num, index) => (
+              <button
+                key={num}
+                onClick={() => setSelectedServer(index)}
+                className={clsx(
+                  'w-8 h-8 rounded-lg text-xs font-black transition-all',
+                  selectedServer === index
+                    ? 'bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/50'
+                    : 'bg-white/10 text-zinc-400 hover:bg-white/20'
+                )}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Genres Pills */}
+        {genres.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {genres.slice(0, 5).map((genre: any, index: number) => (
+              <span
+                key={index}
+                className="px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-[10px] font-bold text-purple-300"
+              >
+                {genre.name || genre}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Series Controls */}
+        {isSeries && (
+          <div className="space-y-2.5">
+            {/* Seasons */}
+            {seasons.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Layers size={12} className="text-cyan-400" />
+                  <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">المواسم</h3>
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                  {seasons
+                    .filter((s: any) => s.season_number >= 0)
+                    .map((s: any) => (
+                      <button
+                        key={s.id}
+                        onClick={() => handleSeasonChange(s.season_number)}
+                        className={clsx(
+                          'px-3 py-1.5 rounded-lg whitespace-nowrap text-xs font-bold transition-all flex-shrink-0',
+                          currentSeason === s.season_number
+                            ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/50'
+                            : 'bg-white/10 text-zinc-400 hover:bg-white/20'
+                        )}
+                      >
+                        م{s.season_number}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Episodes Grid */}
+            {episodes.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Play size={12} className="text-purple-400" />
+                  <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">الحلقات</h3>
+                </div>
+                <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
+                  {episodes.map((ep: any) => (
+                    <button
+                      key={ep.id}
+                      onClick={() => handleEpisodeChange(ep.episode_number)}
+                      className={clsx(
+                        'aspect-square rounded-lg flex items-center justify-center text-xs font-black transition-all',
+                        currentEpisode === ep.episode_number
+                          ? 'bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/50 scale-105'
+                          : 'bg-white/10 text-zinc-400 hover:bg-white/20 hover:scale-105'
+                      )}
+                    >
+                      {ep.episode_number}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Info Grid - Compact Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {popularity > 0 && (
+            <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
+              <div className="flex items-center gap-1 mb-0.5">
+                <TrendingUp size={10} className="text-green-400" />
+                <span className="text-[9px] text-green-400 uppercase font-black">شعبية</span>
+              </div>
+              <p className="text-sm font-black text-white">{popularity.toLocaleString()}</p>
+            </div>
+          )}
+          {voteCount > 0 && (
+            <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+              <div className="flex items-center gap-1 mb-0.5">
+                <ThumbsUp size={10} className="text-blue-400" />
+                <span className="text-[9px] text-blue-400 uppercase font-black">تقييمات</span>
+              </div>
+              <p className="text-sm font-black text-white">{voteCount.toLocaleString()}</p>
+            </div>
+          )}
+          {originalLanguage && (
+            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+              <div className="flex items-center gap-1 mb-0.5">
+                <Languages size={10} className="text-purple-400" />
+                <span className="text-[9px] text-purple-400 uppercase font-black">لغة</span>
+              </div>
+              <p className="text-sm font-black text-white uppercase">{originalLanguage}</p>
+            </div>
+          )}
+          {status && (
+            <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20">
+              <div className="flex items-center gap-1 mb-0.5">
+                <Zap size={10} className="text-yellow-400" />
+                <span className="text-[9px] text-yellow-400 uppercase font-black">حالة</span>
+              </div>
+              <p className="text-sm font-black text-white">{status}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Overview */}
+        <div className="p-3 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Info size={12} className="text-cyan-400" />
+            <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">القصة</h3>
+          </div>
+          <p className="text-sm text-zinc-300 leading-relaxed">{overview}</p>
+        </div>
+
+        {/* Cast - Horizontal Scroll with Better Design */}
+        {cast.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users size={12} className="text-pink-400" />
+                <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">طاقم العمل</h3>
+              </div>
+              <span className="text-[10px] text-zinc-500">{cast.length} ممثل</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {cast.map((person: any) => (
+                <Link 
+                  key={person.id} 
+                  href={`/actor/${person.slug || person.id}`}
+                  className="flex-shrink-0 w-20 text-center group"
+                >
+                  <div className="relative">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full opacity-0 group-hover:opacity-100 blur transition duration-300" />
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 bg-zinc-900 mb-1.5 group-hover:border-pink-500/50 transition-colors">
+                      {person.profile_path || person.profile_url ? (
+                        <img
+                          src={person.profile_url || `https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                          alt={person.name_ar || person.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
+                          <Users size={24} className="text-zinc-600" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-[10px] font-bold text-zinc-300 group-hover:text-pink-400 transition-colors line-clamp-2 leading-tight">
+                    {person.name_ar || person.name}
+                  </p>
+                  {person.character_name && (
+                    <p className="text-[8px] text-zinc-500 line-clamp-1 mt-0.5">
+                      {person.character_name}
+                    </p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Similar Content */}
+        {similar.length > 0 && (
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center gap-2">
+              <Sparkles size={12} className="text-yellow-400" />
+              <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-wider">
+                {isMovie ? 'أفلام مشابهة' : 'مسلسلات مشابهة'}
+              </h3>
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+              {similar.slice(0, 12).map((item: any) => (
+                <MovieCard 
+                  key={item.id} 
+                  movie={{ ...item, media_type: isMovie ? 'movie' : 'tv' }} 
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Disclaimer */}
+        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle size={12} className="text-red-400" />
+            <span className="text-[9px] text-red-400 uppercase font-black">إخلاء مسؤولية</span>
+          </div>
+          <p className="text-[10px] text-zinc-400 leading-relaxed">
+            جميع المحتويات المعروضة يتم جلبها تلقائياً من مصادر خارجية. الموقع غير مسؤول عن أي محتوى معروض.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}

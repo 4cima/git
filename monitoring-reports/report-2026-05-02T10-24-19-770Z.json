@@ -1,0 +1,18 @@
+{
+  "timestamp": "٢‏/٥‏/٢٠٢٦، ١:٢٤:١٩ م",
+  "timeISO": "2026-05-02T10:24:19.770Z",
+  "sqlite": {
+    "movies": 516040,
+    "series": 66933
+  },
+  "turso": {
+    "movies": 497321,
+    "series": 2150
+  },
+  "diff": {
+    "movies": 18719,
+    "moviesPercent": "3.6",
+    "series": 64783,
+    "seriesPercent": "96.8"
+  }
+}

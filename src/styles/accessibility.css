@@ -1,0 +1,188 @@
+/**
+ * Accessibility Styles
+ * Focus indicators, screen reader utilities, and keyboard navigation
+ */
+
+/* ==========================================
+   Focus Indicators
+   ========================================== */
+
+/* Remove default outline and add custom focus-visible styles */
+*:focus {
+  outline: none;
+}
+
+/* Custom focus-visible styles for better accessibility */
+*:focus-visible {
+  outline: 2px solid #c9a962;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Button focus styles */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #c9a962;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(201, 169, 98, 0.2);
+}
+
+/* Input focus styles */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #c9a962;
+  outline-offset: 0;
+  border-color: #c9a962;
+  box-shadow: 0 0 0 3px rgba(201, 169, 98, 0.15);
+}
+
+/* Card/Interactive element focus styles */
+[role="button"]:focus-visible,
+[role="link"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid #c9a962;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(201, 169, 98, 0.2);
+}
+
+/* High contrast focus for dark backgrounds */
+.dark *:focus-visible {
+  outline-color: #e8e4dc;
+  box-shadow: 0 0 0 4px rgba(232, 228, 220, 0.2);
+}
+
+/* ==========================================
+   Screen Reader Only
+   ========================================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sr-only-focusable:focus,
+.sr-only-focusable:active {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ==========================================
+   Skip Links
+   ========================================== */
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #c9a962;
+  color: #08080c;
+  padding: 8px 16px;
+  text-decoration: none;
+  font-weight: 600;
+  z-index: 100;
+  border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ==========================================
+   Keyboard Navigation Helpers
+   ========================================== */
+
+/* Highlight keyboard-navigable elements */
+[tabindex="0"]:hover,
+[role="button"]:hover,
+button:hover {
+  cursor: pointer;
+}
+
+/* Disabled state */
+[disabled],
+[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ==========================================
+   Touch Target Sizes (Mobile Accessibility)
+   ========================================== */
+
+@media (max-width: 768px) {
+  button,
+  a,
+  [role="button"],
+  [role="link"],
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ==========================================
+   Reduced Motion Support
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================
+   High Contrast Mode Support
+   ========================================== */
+
+@media (prefers-contrast: high) {
+  *:focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
+  
+  button,
+  a {
+    border: 2px solid currentColor;
+  }
+}
+
+/* ==========================================
+   ARIA Live Regions
+   ========================================== */
+
+[aria-live="polite"],
+[aria-live="assertive"] {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ==========================================
+   Focus Within (for containers)
+   ========================================== */
+
+.focus-within-ring:focus-within {
+  outline: 2px solid #c9a962;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(201, 169, 98, 0.2);
+}

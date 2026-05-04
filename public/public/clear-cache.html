@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Cache</title>
+</head>
+<body>
+    <h1>Clearing Cache...</h1>
+    <script>
+        // Clear all storage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Clear IndexedDB
+        if (window.indexedDB) {
+            indexedDB.databases().then(dbs => {
+                dbs.forEach(db => {
+                    indexedDB.deleteDatabase(db.name);
+                });
+            });
+        }
+        
+        // Redirect to home after 1 second
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 1000);
+    </script>
+</body>
+</html>

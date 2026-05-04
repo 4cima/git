@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 ملاح النسخ الاحتياطية</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-size: 1.8em;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .card p {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        
+        .path {
+            background: #f0f0f0;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+        
+        .command {
+            background: #2d3436;
+            color: #00ff00;
+            border-left: 4px solid #00ff00;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        
+        .button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin: 5px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+        
+        .button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        .table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin: 5px 5px 5px 0;
+        }
+        
+        .badge.backup {
+            background: #28a745;
+        }
+        
+        .badge.original {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .badge.docs {
+            background: #17a2b8;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .quick-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 ملاح النسخ الاحتياطية</h1>
+            <p>جميع المسارات والملفات المهمة في مكان واحد</p>
+        </div>
+        
+        <div class="content">
+            <!-- البحث -->
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 ابحث عن اسكريبت أو ملف...">
+            
+            <!-- الملفات الأساسية -->
+            <div class="section">
+                <h2>📚 ملفات التوثيق الأساسية</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h3>🌟 QUICK-ACCESS.md</h3>
+                        <p>المسارات السريعة والأوامر الأساسية</p>
+                        <div class="path">QUICK-ACCESS.md</div>
+                        <button class="button" onclick="copyToClipboard('QUICK-ACCESS.md')">نسخ المسار</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>📖 BACKUP/README.md</h3>
+                        <p>دليل سريع وشامل</p>
+                        <div class="path">BACKUP/README.md</div>
+                        <button class="button" onclick="copyToClipboard('BACKUP/README.md')">نسخ المسار</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>📑 BACKUP/INDEX.md</h3>
+                        <p>فهرس شامل لجميع الاسكريبتات</p>
+                        <div class="path">BACKUP/INDEX.md</div>
+                        <button class="button" onclick="copyToClipboard('BACKUP/INDEX.md')">نسخ المسار</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>📋 BACKUP/SCRIPTS-DETAILS.md</h3>
+                        <p>تفاصيل تقنية لكل اسكريبت</p>
+                        <div class="path">BACKUP/SCRIPTS-DETAILS.md</div>
+                        <button class="button" onclick="copyToClipboard('BACKUP/SCRIPTS-DETAILS.md')">نسخ المسار</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>🚨 BACKUP/PROBLEMS-IDENTIFIED.md</h3>
+                        <p>المشاكل المكتشفة والحلول</p>
+                        <div class="path">BACKUP/PROBLEMS-IDENTIFIED.md</div>
+                        <button class="button" onclick="copyToClipboard('BACKUP/PROBLEMS-IDENTIFIED.md')">نسخ المسار</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>🔄 BACKUP/RESTORATION-GUIDE.md</h3>
+                        <p>دليل الاستعادة والمقارنة</p>
+                        <div class="path">BACKUP/RESTORATION-GUIDE.md</div>
+                        <button class="button" onclick="copyToClipboard('BACKUP/RESTORATION-GUIDE.md')">نسخ المسار</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- اسكريبتات السحب -->
+            <div class="section">
+                <h2>🎬 اسكريبتات السحب</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>الاسكريبت</th>
+                            <th>المسار الأصلي</th>
+                            <th>النسخة الاحتياطية</th>
+                            <th>الوظيفة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge original">الأصلي</span></td>
+                            <td><div class="path">scripts/INGEST-MOVIES-LOGIC.js</div></td>
+                            <td><div class="path">BACKUP/scripts/INGEST-MOVIES-LOGIC.js.backup</div></td>
+                            <td>سحب الأفلام من TMDB</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge original">الأصلي</span></td>
+                            <td><div class="path">scripts/INGEST-SERIES-LOGIC.js</div></td>
+                            <td><div class="path">BACKUP/scripts/INGEST-SERIES-LOGIC.js.backup</div></td>
+                            <td>سحب المسلسلات من TMDB</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- اسكريبتات المزامنة -->
+            <div class="section">
+                <h2>🔄 اسكريبتات المزامنة</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>الاسكريبت</th>
+                            <th>المسار الأصلي</th>
+                            <th>النسخة الاحتياطية</th>
+                            <th>الوظيفة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge original">الأصلي</span></td>
+                            <td><div class="path">scripts/sync-to-turso-optimized.js</div></td>
+                            <td><div class="path">BACKUP/scripts/sync-to-turso-optimized.js.backup</div></td>
+                            <td>مزامنة محسّنة إلى Turso</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge original">الأصلي</span></td>
+                            <td><div class="path">scripts/sync-to-turso-ultra-fast.js</div></td>
+                            <td><div class="path">BACKUP/scripts/sync-to-turso-ultra-fast.js.backup</div></td>
+                            <td>مزامنة سريعة جداً</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge original">الأصلي</span></td>
+                            <td><div class="path">sync-remaining-works.js</div></td>
+                            <td><div class="path">BACKUP/sync-remaining-works.js.backup</div></td>
+                            <td>مزامنة الأعمال المتبقية</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- اسكريبتات الفحص والإكمال -->
+            <div class="section">
+                <h2>✅ اسكريبتات الفحص والإكمال</h2>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>الاسكريبت</th>
+                            <th>المسار الأصلي</th>
+                            <th>النسخة الاحتياطية</th>
+                            <th>الوظيفة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="badge original">الأصلي</span></td>
+                            <td><div class="path">scripts/check-turso-data.js</div></td>
+                            <td><div class="path">BACKUP/scripts/check-turso-data.js.backup</div></td>
+                            <td>فحص بيانات Turso</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge original">الأصلي</span></td>
+                            <td><div class="path">complete-missing-data.js</div></td>
+                            <td><div class="path">BACKUP/complete-missing-data.js.backup</div></td>
+                            <td>إكمال البيانات الناقصة</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge original">الأصلي</span></td>
+                            <td><div class="path">complete-all-missing-data.js</div></td>
+                            <td><div class="path">BACKUP/complete-all-missing-data.js.backup</div></td>
+                            <td>إكمال جميع البيانات</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- أوامر الاستعادة -->
+            <div class="section">
+                <h2>💾 أوامر الاستعادة السريعة</h2>
+                <p>انسخ أي أمر وشغله في Terminal:</p>
+                
+                <h3 style="color: #667eea; margin-top: 20px;">استعادة اسكريبت واحد:</h3>
+                <div class="command">cp BACKUP/scripts/INGEST-MOVIES-LOGIC.js.backup scripts/INGEST-MOVIES-LOGIC.js</div>
+                <button class="button" onclick="copyToClipboard('cp BACKUP/scripts/INGEST-MOVIES-LOGIC.js.backup scripts/INGEST-MOVIES-LOGIC.js')">نسخ الأمر</button>
+                
+                <h3 style="color: #667eea; margin-top: 20px;">استعادة جميع الاسكريبتات:</h3>
+                <div class="command">find BACKUP -name "*.backup" -exec sh -c 'cp "$1" "${1%.backup}"' _ {} \;</div>
+                <button class="button" onclick="copyToClipboard('find BACKUP -name \"*.backup\" -exec sh -c \\'cp \"$1\" \"${1%.backup}\"\\'  _ {} \\;')">نسخ الأمر</button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>✅ تم حفظ جميع النسخ الاحتياطية بنجاح</p>
+            <p>آخر تحديث: 2026-05-03</p>
+        </div>
+    </div>
+    
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ تم نسخ المسار بنجاح!');
+            }).catch(() => {
+                alert('❌ فشل النسخ. حاول يدوياً.');
+            });
+        }
+        
+        document.getElementById('searchBox').addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.card');
+            const rows = document.querySelectorAll('.table tbody tr');
+            
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            });
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? 'table-row' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

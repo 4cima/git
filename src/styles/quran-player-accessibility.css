@@ -1,0 +1,249 @@
+/* Quran Player Accessibility Styles */
+
+/* Screen Reader Only Class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Enhanced Focus Indicators */
+.quran-player-button:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  /* Increase border contrast */
+  .quran-player-container {
+    border-width: 2px !important;
+    border-color: currentColor !important;
+  }
+
+  /* Ensure buttons are visible */
+  .quran-player-button {
+    border: 2px solid currentColor !important;
+  }
+
+  /* Increase text contrast */
+  .quran-player-text {
+    color: white !important;
+    text-shadow: 0 0 2px black;
+  }
+
+  /* Progress bar visibility */
+  .quran-player-progress {
+    border: 1px solid currentColor !important;
+  }
+
+  /* Icon visibility */
+  .quran-player-icon {
+    filter: contrast(2);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .quran-player-container,
+  .quran-player-button,
+  .quran-player-progress,
+  .quran-player-vinyl {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Keyboard Navigation Styles */
+.quran-player-button:focus-visible,
+.quran-player-slider:focus-visible,
+.quran-player-progress:focus-visible {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+}
+
+/* Skip to Player Link (for keyboard users) */
+.skip-to-player {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  background: #f59e0b;
+  color: black;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  z-index: 9999;
+}
+
+.skip-to-player:focus {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  width: auto;
+  height: auto;
+  overflow: visible;
+}
+
+/* Touch Target Minimum Size */
+.quran-player-button,
+.quran-player-slider-thumb {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Ensure sufficient color contrast */
+.quran-player-text-primary {
+  color: white;
+  /* 21:1 contrast ratio on black background */
+}
+
+.quran-player-text-secondary {
+  color: rgba(255, 255, 255, 0.7);
+  /* 12:1 contrast ratio on black background */
+}
+
+.quran-player-text-tertiary {
+  color: rgba(255, 255, 255, 0.5);
+  /* 7:1 contrast ratio on black background */
+}
+
+/* Amber accent with sufficient contrast */
+.quran-player-accent {
+  color: #f59e0b;
+  /* 4.5:1 contrast ratio on black background */
+}
+
+/* Error state with sufficient contrast */
+.quran-player-error {
+  color: #ef4444;
+  /* 4.5:1 contrast ratio on black background */
+}
+
+/* Loading state animation (respects reduced motion) */
+@keyframes quran-player-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.quran-player-loading {
+  animation: quran-player-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quran-player-loading {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* Vinyl spinning animation (respects reduced motion) */
+@keyframes quran-player-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.quran-player-vinyl-spinning {
+  animation: quran-player-spin 10s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quran-player-vinyl-spinning {
+    animation: none;
+  }
+}
+
+/* Focus trap for modal dialogs */
+.quran-player-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.quran-player-modal:focus {
+  outline: none;
+}
+
+/* Ensure modal content is keyboard accessible */
+.quran-player-modal-content {
+  background: #1a1a1a;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.quran-player-modal-content:focus {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+/* Scrollbar styling for better visibility */
+.quran-player-scrollable::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.quran-player-scrollable::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.quran-player-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.5);
+  border-radius: 4px;
+}
+
+.quran-player-scrollable::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.7);
+}
+
+/* Firefox scrollbar */
+.quran-player-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 158, 11, 0.5) rgba(255, 255, 255, 0.05);
+}
+
+
+/* Queue and Sleep Timer Panel Width Controls */
+.quran-player-panels {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.quran-player-queue-panel {
+  width: 160px !important;
+  min-width: 160px !important;
+  max-width: 160px !important;
+}
+
+.quran-player-sleep-panel {
+  width: 140px !important;
+  min-width: 140px !important;
+  max-width: 140px !important;
+}

@@ -1,0 +1,3 @@
+# SPA fallback for client-side routing
+/api/* https://api.4cima.com/:splat 200
+/* /index.html 200

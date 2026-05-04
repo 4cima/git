@@ -1,0 +1,95 @@
+.unifiedNavigationTabs {
+  width: 100%;
+  background: var(--surface-primary, #1a1a1a);
+  border-bottom: 1px solid var(--border-primary, #2a2a2a);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tabsContainer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary, #999);
+  background: transparent;
+  border: 1px solid transparent;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tab:hover {
+  color: var(--text-primary, #fff);
+  background: var(--surface-hover, #252525);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--focus-ring, #3b82f6);
+  outline-offset: 2px;
+}
+
+.tabActive {
+  color: var(--text-primary, #fff);
+  background: var(--surface-active, #2a2a2a);
+  border-color: var(--border-active, #3b82f6);
+}
+
+.tabIcon {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.tabLabel {
+  display: inline-block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .tabsContainer {
+    gap: 0.375rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+  }
+}
+
+/* Keyboard navigation indicators */
+.tab:focus {
+  position: relative;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .tab {
+    border-color: currentColor;
+  }
+  .tabActive {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+  }
+}
