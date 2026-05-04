@@ -9,7 +9,8 @@ async function getAllMovies() {
     })
     
     if (!response.ok) return []
-    return response.json()
+    const data = await response.json()
+    return data.results || data || []
   } catch (error) {
     console.error('Error fetching movies for sitemap:', error)
     return []
@@ -25,7 +26,8 @@ async function getAllSeries() {
     })
     
     if (!response.ok) return []
-    return response.json()
+    const data = await response.json()
+    return data.results || data || []
   } catch (error) {
     console.error('Error fetching series for sitemap:', error)
     return []
