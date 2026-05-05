@@ -108,7 +108,8 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
             }
           } else {
             // Fetch from API if not available
-            const apiType = mediaType === 'tv' ? 'tv' : mediaType; const endpoint = `/api/${apiType}/${movie.slug}`
+            const apiType = (mediaType === 'tv' || mediaType === 'series') ? 'tv' : mediaType
+            const endpoint = `/api/${apiType}/${movie.slug}`
             const response = await fetch(endpoint)
             const data = await response.json()
 
