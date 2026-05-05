@@ -138,7 +138,7 @@ export const CategoryHub = ({ type = 'movie', category }: CategoryHubProps) => {
         }
         if (genre) {
           const g = genresList.find(x =>
-            x.name.toLowerCase() === genre.toLowerCase() ||
+            (x.name && genre && x.name.toLowerCase() === genre.toLowerCase()) ||
             x.id.toString() === genre
           )
           if (g) params.genres = g.id
@@ -202,7 +202,7 @@ export const CategoryHub = ({ type = 'movie', category }: CategoryHubProps) => {
     if (category === 'popular') return 'الأكثر رواجاً'
     if (category === 'top_rated') return 'الأعلى تقييماً'
     if (category && genresList.length > 0) {
-      const g = genresList.find(x => x.name.toLowerCase() === category.toLowerCase())
+      const g = genresList.find(x => x.name && category && x.name.toLowerCase() === category.toLowerCase())
       if (g) return g.name
     }
     return category || 'الكل'

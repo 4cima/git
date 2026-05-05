@@ -74,6 +74,7 @@ const appendParam = (url: string, key: string, value: string): string => {
  * Add Arabic subtitle/language parameters
  */
 const withArabic = (url: string, serverId: string, _mediaType: 'movie' | 'tv'): string => {
+  if (!serverId) return url
   const id = serverId.toLowerCase();
 
   if (id === 'autoembed_co') {
