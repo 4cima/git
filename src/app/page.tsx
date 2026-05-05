@@ -20,11 +20,21 @@ export default function Home() {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
+        console.log('🔄 Fetching home data from /api/home...')
         const response = await fetch('/api/home')
-        if (response.ok) {
-          const data = await response.json()
-          
-          const mapItems = (items: any[]) => {
+        
+        console.log('📡 Response status:', response.status)
+        
+        if (!response.ok) {
+          console.error('❌ API response not OK:', response.status, response.statusText)
+          setLoading(false)
+          return
+        }
+        
+        const data = await response.json()
+        console.log('✅ Home data received:', data)
+        
+        const mapItems = (items: any[]) => {
             return (items || [])
               .map((item: any) => ({
                 id: item.id,
@@ -90,9 +100,14 @@ export default function Home() {
           
           // Comedy: From top rated (different slice)
           setComedyMovies(allTopRatedMapped.filter((item: any) => item.media_type === 'movie'))
-        }
+        
+        console.log('✅ All data set successfully')
       } catch (error) {
-        console.error('Error fetching home data:', error)
+        console.error('❌ Error fetching home data:', error)
+        if (error instanceof Error) {
+          console.error('Error message:', error.message)
+          console.error('Error stack:', error.stack)
+        }
       } finally {
         setLoading(false)
       }

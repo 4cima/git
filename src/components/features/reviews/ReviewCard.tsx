@@ -76,7 +76,7 @@ export const ReviewCard = ({
     <div className="p-4 bg-zinc-800/30 rounded-xl border border-zinc-700/50 hover:border-zinc-600/50 transition-all">
       {/* Header: User Info */}
       <div className="flex items-start gap-3 mb-3">
-        <Link href={`/profile/${review.user?.username}`} className="flex-shrink-0">
+        <Link href={`/profile/${review.user?.username}`} prefetch={false} className="flex-shrink-0">
           <img
             src={review.user?.avatar_url || '/default-avatar.png'}
             alt={review.user?.username}

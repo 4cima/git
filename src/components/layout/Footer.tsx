@@ -69,9 +69,9 @@ export const Footer = () => {
             المساعدة
           </h4>
           <nav className="flex flex-col gap-2 text-zinc-400">
-            <Link href="/dmca" className="hover:text-cyan-400 transition-colors w-fit">DMCA</Link>
-            <Link href="/terms" className="hover:text-cyan-400 transition-colors w-fit">الشروط والأحكام</Link>
-            <Link href="/privacy" className="hover:text-cyan-400 transition-colors w-fit">سياسة الخصوصية</Link>
+            <Link href="/dmca" prefetch={false} className="hover:text-cyan-400 transition-colors w-fit">DMCA</Link>
+            <Link href="/terms" prefetch={false} className="hover:text-cyan-400 transition-colors w-fit">الشروط والأحكام</Link>
+            <Link href="/privacy" prefetch={false} className="hover:text-cyan-400 transition-colors w-fit">سياسة الخصوصية</Link>
             <Link href="/contact" className="hover:text-cyan-400 transition-colors w-fit">اتصل بنا</Link>
           </nav>
         </div>

@@ -131,7 +131,7 @@ export const QuantumNavbar = memo(() => {
             </button>
 
             {/* Profile */}
-            <Link href="/profile">
+            <Link href="/profile" prefetch={false}>
               <div className="w-9 h-9 rounded-full p-[1.5px] bg-gradient-to-tr from-purple-500 to-cyan-500">
                 <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
                   <User size={18} className="text-white" />
