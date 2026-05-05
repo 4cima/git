@@ -135,6 +135,11 @@ export default function Home() {
       </div>
       <div className="page-container">
         
+        {/* Marquee Banner */}
+        <section className="relative z-10 w-full mb-4">
+          <MarqueeBanner />
+        </section>
+
         {/* Hero Section */}
         <section className="relative z-10 w-full">
           <QuantumHero items={heroItems} />
