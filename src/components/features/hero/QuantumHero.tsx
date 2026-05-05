@@ -91,7 +91,7 @@ export const QuantumHero = memo(({ items }: { items: any[] }) => {
           modules={[Autoplay]}
           spaceBetween={0}
           slidesPerView={1}
-          loop={heroItems.length >= 5}
+          loop={heroItems.length >= 12}
           speed={1000}
           autoplay={{
             delay: 5000,
@@ -99,10 +99,10 @@ export const QuantumHero = memo(({ items }: { items: any[] }) => {
             pauseOnMouseEnter: true
           }}
           breakpoints={{
-            640: { slidesPerView: 2 },
-            768: { slidesPerView: 3 },
-            1024: { slidesPerView: 4 },
-            1280: { slidesPerView: 6 },
+            640: { slidesPerView: 2, loop: heroItems.length >= 12 },
+            768: { slidesPerView: 3, loop: heroItems.length >= 12 },
+            1024: { slidesPerView: 4, loop: heroItems.length >= 12 },
+            1280: { slidesPerView: 6, loop: heroItems.length >= 12 },
           }}
           pagination={false}
           className="h-full w-full [&_.swiper-pagination]:!hidden"
