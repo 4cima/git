@@ -18,7 +18,7 @@ export interface APIParams {
 export const getEndpointForContentType = (contentType: ContentType): string => {
   const endpoints: Record<ContentType, string> = {
     movie: '/api/movies',
-    tv: '/api/series',
+    tv: '/api/tv',
     anime: '/api/anime',
     play: '/api/plays',
   }

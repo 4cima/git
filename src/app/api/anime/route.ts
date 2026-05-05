@@ -8,20 +8,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const queryString = searchParams.toString()
     
-    console.log('🔄 [API /tv] Fetching from Worker:', `${WORKER_URL}/api/tv?${queryString}`)
-
-    const response = await fetch(`${WORKER_URL}/api/tv?${queryString}`, {
+    const response = await fetch(`${WORKER_URL}/api/anime?${queryString}`, {
       headers: {
         'Accept': 'application/json',
       },
     })
     
-    console.log('📡 [API /tv] Worker response status:', response.status)
-
     if (!response.ok) {
-      console.error('❌ [API /tv] Worker response not OK:', response.status, response.statusText)
-      const errorText = await response.text()
-      console.error('Error body:', errorText)
       return NextResponse.json({
         results: [],
         total: 0,
@@ -31,14 +24,9 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('✅ [API /tv] Data received successfully')
-
     return NextResponse.json(data)
   } catch (error) {
-    console.error('❌ [API /tv] Error:', error)
-    if (error instanceof Error) {
-      console.error('Error details:', error.message, error.stack)
-    }
+    console.error('❌ [API /anime] Error:', error)
     return NextResponse.json({
       results: [],
       total: 0,
