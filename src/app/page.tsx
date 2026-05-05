@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Zap, Tv, Film, TrendingUp, Star, Calendar, Globe, Heart } from 'lucide-react'
 import { QuantumHero } from '@/components/features/hero/QuantumHero'
+import { MarqueeBanner } from '@/components/features/hero/MarqueeBanner'
 import { QuantumTrain } from '@/components/features/media/QuantumTrain'
 import { Loading } from '@/components/common/Loading'
 
