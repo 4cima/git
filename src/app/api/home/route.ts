@@ -22,13 +22,13 @@ export async function GET() {
 
     // Fetch top rated (vote_average >= 7)
     const topRatedResult = await turso.execute({
-      sql: 'SELECT * FROM movies WHERE vote_average >= 7 ORDER BY vote_average DESC, vote_count DESC LIMIT 24',
+      sql: 'SELECT * FROM movies WHERE vote_average >= 7 ORDER BY vote_average DESC LIMIT 24',
       args: []
     })
 
-    // Fetch popular (vote_count >= 100)
+    // Fetch popular (vote_average >= 6)
     const popularResult = await turso.execute({
-      sql: 'SELECT * FROM movies WHERE vote_count >= 100 ORDER BY vote_count DESC LIMIT 24',
+      sql: 'SELECT * FROM movies WHERE vote_average >= 6 ORDER BY vote_average DESC LIMIT 24',
       args: []
     })
 
