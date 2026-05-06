@@ -7,32 +7,30 @@ export const revalidate = 3600 // Cache for 1 hour
 export async function GET() {
   try {
     console.log('🔄 [API /home] Fetching from Turso...')
+    const startTime = Date.now()
 
-    // Fetch latest 24 movies
-    const moviesResult = await turso.execute({
-      sql: 'SELECT * FROM movies ORDER BY created_at DESC LIMIT 24',
-      args: []
-    })
+    // 🚀 Performance Triad: Parallel execution with reduced payload
+    const [moviesResult, seriesResult, topRatedResult, popularResult] = await Promise.all([
+      turso.execute({
+        sql: 'SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, release_year, vote_average FROM movies ORDER BY created_at DESC LIMIT 24',
+        args: []
+      }),
+      turso.execute({
+        sql: 'SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, first_air_date, vote_average FROM tv_series ORDER BY created_at DESC LIMIT 24',
+        args: []
+      }),
+      turso.execute({
+        sql: 'SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, release_year, vote_average FROM movies WHERE vote_average >= 7 ORDER BY vote_average DESC LIMIT 24',
+        args: []
+      }),
+      turso.execute({
+        sql: 'SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, release_year, vote_average FROM movies WHERE vote_average >= 6 ORDER BY vote_average DESC LIMIT 24',
+        args: []
+      })
+    ])
 
-    // Fetch latest 24 series
-    const seriesResult = await turso.execute({
-      sql: 'SELECT * FROM tv_series ORDER BY created_at DESC LIMIT 24',
-      args: []
-    })
-
-    // Fetch top rated (vote_average >= 7)
-    const topRatedResult = await turso.execute({
-      sql: 'SELECT * FROM movies WHERE vote_average >= 7 ORDER BY vote_average DESC LIMIT 24',
-      args: []
-    })
-
-    // Fetch popular (vote_average >= 6)
-    const popularResult = await turso.execute({
-      sql: 'SELECT * FROM movies WHERE vote_average >= 6 ORDER BY vote_average DESC LIMIT 24',
-      args: []
-    })
-
-    console.log('✅ [API /home] Data fetched successfully')
+    const endTime = Date.now()
+    console.log(`✅ [API /home] Data fetched in ${endTime - startTime}ms`)
 
     return NextResponse.json({
       latest: moviesResult.rows || [],
