@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
 
     if (cursor) {
       // Cursor-based pagination (id < cursor)
-      sql = 'SELECT * FROM movies WHERE is_filtered = 0 AND id < ? ORDER BY id DESC LIMIT ?'
+      sql = 'SELECT * FROM movies WHERE id < ? ORDER BY id DESC LIMIT ?'
       args = [parseInt(cursor), limit]
     } else {
       // First page
-      sql = 'SELECT * FROM movies WHERE is_filtered = 0 ORDER BY id DESC LIMIT ?'
+      sql = 'SELECT * FROM movies ORDER BY id DESC LIMIT ?'
       args = [limit]
     }
 

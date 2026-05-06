@@ -17,16 +17,14 @@ export async function GET(request: NextRequest) {
     
     const moviesResult = await turso.execute({
       sql: `SELECT *, 'movie' as media_type FROM movies 
-            WHERE is_filtered = 0 
-            AND (title_ar LIKE ? OR title_en LIKE ? OR title LIKE ?)
+            WHERE (title_ar LIKE ? OR title_en LIKE ? OR title LIKE ?)
             LIMIT 10`,
       args: [searchTerm, searchTerm, searchTerm]
     })
     
     const seriesResult = await turso.execute({
       sql: `SELECT *, 'tv' as media_type FROM series 
-            WHERE is_filtered = 0 
-            AND (name_ar LIKE ? OR name_en LIKE ? OR name LIKE ?)
+            WHERE (name_ar LIKE ? OR name_en LIKE ? OR name LIKE ?)
             LIMIT 10`,
       args: [searchTerm, searchTerm, searchTerm]
     })

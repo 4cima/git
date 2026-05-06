@@ -12,7 +12,7 @@ export const revalidate = 3600
 export default async function MoviesPage() {
   // Fetch first 48 movies
   const result = await turso.execute({
-    sql: 'SELECT * FROM movies WHERE is_filtered = 0 ORDER BY id DESC LIMIT 48',
+    sql: 'SELECT * FROM movies ORDER BY id DESC LIMIT 48',
     args: []
   })
 

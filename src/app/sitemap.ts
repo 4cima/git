@@ -8,7 +8,7 @@ export const revalidate = 86400
 async function getAllMovies() {
   try {
     const result = await turso.execute({
-      sql: 'SELECT slug, updated_at, vote_average FROM movies WHERE is_filtered = 0 LIMIT 10000',
+      sql: 'SELECT slug, updated_at, vote_average FROM movies LIMIT 10000',
       args: []
     })
     return result.rows || []
@@ -22,7 +22,7 @@ async function getAllMovies() {
 async function getAllSeries() {
   try {
     const result = await turso.execute({
-      sql: 'SELECT slug, updated_at, vote_average FROM series WHERE is_filtered = 0 LIMIT 10000',
+      sql: 'SELECT slug, updated_at, vote_average FROM series LIMIT 10000',
       args: []
     })
     return result.rows || []

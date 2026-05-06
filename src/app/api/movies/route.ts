@@ -12,12 +12,12 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
     
     const result = await turso.execute({
-      sql: 'SELECT * FROM movies WHERE is_filtered = 0 ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      sql: 'SELECT * FROM movies ORDER BY created_at DESC LIMIT ? OFFSET ?',
       args: [limit, offset]
     })
     
     const countResult = await turso.execute({
-      sql: 'SELECT COUNT(*) as total FROM movies WHERE is_filtered = 0',
+      sql: 'SELECT COUNT(*) as total FROM movies',
       args: []
     })
     

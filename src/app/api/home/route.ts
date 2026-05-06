@@ -10,25 +10,25 @@ export async function GET() {
 
     // Fetch latest 24 movies
     const moviesResult = await turso.execute({
-      sql: 'SELECT * FROM movies WHERE is_filtered = 0 ORDER BY created_at DESC LIMIT 24',
+      sql: 'SELECT * FROM movies ORDER BY created_at DESC LIMIT 24',
       args: []
     })
 
     // Fetch latest 24 series
     const seriesResult = await turso.execute({
-      sql: 'SELECT * FROM series WHERE is_filtered = 0 ORDER BY created_at DESC LIMIT 24',
+      sql: 'SELECT * FROM series ORDER BY created_at DESC LIMIT 24',
       args: []
     })
 
     // Fetch top rated (vote_average >= 7)
     const topRatedResult = await turso.execute({
-      sql: 'SELECT * FROM movies WHERE is_filtered = 0 AND vote_average >= 7 ORDER BY vote_average DESC, vote_count DESC LIMIT 24',
+      sql: 'SELECT * FROM movies WHERE vote_average >= 7 ORDER BY vote_average DESC, vote_count DESC LIMIT 24',
       args: []
     })
 
     // Fetch popular (vote_count >= 100)
     const popularResult = await turso.execute({
-      sql: 'SELECT * FROM movies WHERE is_filtered = 0 AND vote_count >= 100 ORDER BY vote_count DESC LIMIT 24',
+      sql: 'SELECT * FROM movies WHERE vote_count >= 100 ORDER BY vote_count DESC LIMIT 24',
       args: []
     })
 
