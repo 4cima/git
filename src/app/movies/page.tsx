@@ -16,7 +16,8 @@ export default async function MoviesPage() {
     args: []
   })
 
-  const movies = result.rows || []
+  // Convert to plain objects
+  const movies = JSON.parse(JSON.stringify(result.rows || []))
   const nextCursor = movies.length === 48 ? movies[movies.length - 1].id : null
 
   return (

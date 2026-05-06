@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   
   const result = await turso.execute({
-    sql: 'SELECT name_ar, name_en, overview_ar, overview FROM series WHERE slug = ? LIMIT 1',
+    sql: 'SELECT name_ar, name_en, overview_ar FROM series WHERE slug = ? LIMIT 1',
     args: [slug]
   })
   
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
   
   const title = series.name_ar || series.name_en || 'مسلسل'
-  const description = series.overview_ar || series.overview || 'شاهد المسلسل على فور سيما'
+  const description = series.overview_ar || 'شاهد المسلسل على فور سيما'
   
   return {
     title: `${title} | فور سيما`,
@@ -42,18 +42,22 @@ export default async function SeriesDetails({ params }: PageProps) {
     args: [slug]
   })
   
-  const series = result.rows?.[0]
+  const seriesData = result.rows?.[0]
   
-  if (!series) {
+  if (!seriesData) {
     notFound()
   }
   
   // Fetch seasons
   const seasonsResult = await turso.execute({
     sql: 'SELECT * FROM seasons WHERE series_id = ? ORDER BY season_number ASC',
-    args: [series.id]
+    args: [seriesData.id]
   })
   
-  return <SeriesDetailsClient series={series} seasons={seasonsResult.rows || []} />
+  // Convert to plain objects
+  const series = JSON.parse(JSON.stringify(seriesData))
+  const seasons = JSON.parse(JSON.stringify(seasonsResult.rows || []))
+  
+  return <SeriesDetailsClient series={series} seasons={seasons} />
 }
 

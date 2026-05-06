@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       args: []
     })
     
-    const total = countResult.rows[0]?.total || 0
+    const total = Number(countResult.rows[0]?.total) || 0
     
     return NextResponse.json({
       results: result.rows || [],
