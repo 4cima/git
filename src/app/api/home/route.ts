@@ -1,64 +1,56 @@
 import { NextResponse } from 'next/server'
+import { turso } from '@/lib/turso'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // Cache for 1 hour
 
 export async function GET() {
   try {
-    const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || 'http://localhost:8787'
-    
-    console.log('🔄 [API /home] Fetching from Worker:', WORKER_URL)
+    console.log('🔄 [API /home] Fetching from Turso...')
 
-    // Fetch data from Cloudflare Worker
-    const response = await fetch(`${WORKER_URL}/api/home`, {
-      headers: {
-        'Accept': 'application/json',
-      },
+    // Fetch latest 24 movies
+    const moviesResult = await turso.execute({
+      sql: 'SELECT * FROM movies WHERE is_filtered = 0 ORDER BY created_at DESC LIMIT 24',
+      args: []
     })
-    
-    console.log('📡 [API /home] Worker response status:', response.status)
 
-    if (!response.ok) {
-      console.error('❌ [API /home] Worker response not OK:', response.status, response.statusText)
-      return NextResponse.json({
-        latest: [],
-        latestSeries: [],
-        topRated: [],
-        popular: []
-      }, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
-        }
-      })
-    }
+    // Fetch latest 24 series
+    const seriesResult = await turso.execute({
+      sql: 'SELECT * FROM series WHERE is_filtered = 0 ORDER BY created_at DESC LIMIT 24',
+      args: []
+    })
 
-    const data = await response.json()
-    console.log('✅ [API /home] Data received successfully')
+    // Fetch top rated (vote_average >= 7)
+    const topRatedResult = await turso.execute({
+      sql: 'SELECT * FROM movies WHERE is_filtered = 0 AND vote_average >= 7 ORDER BY vote_average DESC, vote_count DESC LIMIT 24',
+      args: []
+    })
 
-    return NextResponse.json(data, {
+    // Fetch popular (vote_count >= 100)
+    const popularResult = await turso.execute({
+      sql: 'SELECT * FROM movies WHERE is_filtered = 0 AND vote_count >= 100 ORDER BY vote_count DESC LIMIT 24',
+      args: []
+    })
+
+    console.log('✅ [API /home] Data fetched successfully')
+
+    return NextResponse.json({
+      latest: moviesResult.rows || [],
+      latestSeries: seriesResult.rows || [],
+      topRated: topRatedResult.rows || [],
+      popular: popularResult.rows || []
+    }, {
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
       }
     })
   } catch (error) {
     console.error('❌ [API /home] Error fetching home data:', error)
-    if (error instanceof Error) {
-      console.error('Error details:', error.message)
-    }
     return NextResponse.json({
       latest: [],
       latestSeries: [],
       topRated: [],
       popular: []
-    }, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      }
-    })
+    }, { status: 500 })
   }
 }

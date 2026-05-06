@@ -1,8 +1,6 @@
-// API Client for 4CIMA Worker
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787'
-
+// API Client - uses local Next.js API routes
 async function apiFetch(path: string, revalidate = 3600) {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(path, {
     next: { revalidate },
     headers: {
       'Content-Type': 'application/json'

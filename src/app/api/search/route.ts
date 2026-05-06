@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { turso } from '@/lib/turso'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || 'http://localhost:8787'
     const searchParams = request.nextUrl.searchParams
     const q = searchParams.get('q')
     
@@ -12,14 +12,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [] })
     }
     
-    const response = await fetch(`${WORKER_URL}/api/search?q=${encodeURIComponent(q)}`)
+    // Search in both movies and series
+    const searchTerm = `%${q}%`
     
-    if (!response.ok) {
-      return NextResponse.json({ results: [] })
-    }
+    const moviesResult = await turso.execute({
+      sql: `SELECT *, 'movie' as media_type FROM movies 
+            WHERE is_filtered = 0 
+            AND (title_ar LIKE ? OR title_en LIKE ? OR title LIKE ?)
+            LIMIT 10`,
+      args: [searchTerm, searchTerm, searchTerm]
+    })
     
-    const data = await response.json()
-    return NextResponse.json(data)
+    const seriesResult = await turso.execute({
+      sql: `SELECT *, 'tv' as media_type FROM series 
+            WHERE is_filtered = 0 
+            AND (name_ar LIKE ? OR name_en LIKE ? OR name LIKE ?)
+            LIMIT 10`,
+      args: [searchTerm, searchTerm, searchTerm]
+    })
+    
+    const results = [...(moviesResult.rows || []), ...(seriesResult.rows || [])]
+    
+    return NextResponse.json({ results })
   } catch (error) {
     console.error('Error searching:', error)
     return NextResponse.json({ results: [] })

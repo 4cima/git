@@ -7,7 +7,7 @@ export const MarqueeBanner = () => {
   const [lensPosition, setLensPosition] = useState({ x: 50, y: 50 })
   const [scrollX, setScrollX] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number | undefined>(undefined)
 
   // Lens movement - smooth and moderate speed
   useEffect(() => {

@@ -1,35 +1,31 @@
 import { MetadataRoute } from 'next'
+import { turso } from '@/lib/turso'
 
 export const dynamic = 'force-static'
+export const revalidate = 86400
 
-// دالة جلب جميع الأفلام (يجب تعديلها حسب قاعدة البيانات)
+// Fetch all movies from Turso
 async function getAllMovies() {
-  // TODO: استبدل هذا بـ query من قاعدة البيانات
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/movies?limit=10000`, {
-      next: { revalidate: 86400 } // Cache لمدة يوم
+    const result = await turso.execute({
+      sql: 'SELECT slug, updated_at, vote_average FROM movies WHERE is_filtered = 0 LIMIT 10000',
+      args: []
     })
-    
-    if (!response.ok) return []
-    const data = await response.json()
-    return data.results || data || []
+    return result.rows || []
   } catch (error) {
     console.error('Error fetching movies for sitemap:', error)
     return []
   }
 }
 
-// دالة جلب جميع المسلسلات (يجب تعديلها حسب قاعدة البيانات)
+// Fetch all series from Turso
 async function getAllSeries() {
-  // TODO: استبدل هذا بـ query من قاعدة البيانات
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tv?limit=10000`, {
-      next: { revalidate: 86400 } // Cache لمدة يوم
+    const result = await turso.execute({
+      sql: 'SELECT slug, updated_at, vote_average FROM series WHERE is_filtered = 0 LIMIT 10000',
+      args: []
     })
-    
-    if (!response.ok) return []
-    const data = await response.json()
-    return data.results || data || []
+    return result.rows || []
   } catch (error) {
     console.error('Error fetching series for sitemap:', error)
     return []
@@ -39,7 +35,7 @@ async function getAllSeries() {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://4cima.online'
   
-  // الصفحات الثابتة
+  // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -61,23 +57,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // جلب الأفلام والمسلسلات
+  // Fetch movies and series
   const [movies, series] = await Promise.all([
     getAllMovies(),
     getAllSeries(),
   ])
 
-  // صفحات الأفلام
+  // Movie pages
   const moviePages: MetadataRoute.Sitemap = movies.map((movie: any) => ({
-    url: movie.canonical_url || `${baseUrl}/movies/${movie.slug}`,
+    url: `${baseUrl}/movies/${movie.slug}`,
     lastModified: movie.updated_at ? new Date(movie.updated_at) : new Date(),
     changeFrequency: 'weekly' as const,
     priority: movie.vote_average >= 7 ? 0.9 : 0.7,
   }))
 
-  // صفحات المسلسلات
+  // Series pages
   const seriesPages: MetadataRoute.Sitemap = series.map((s: any) => ({
-    url: s.canonical_url || `${baseUrl}/series/${s.slug}`,
+    url: `${baseUrl}/series/${s.slug}`,
     lastModified: s.updated_at ? new Date(s.updated_at) : new Date(),
     changeFrequency: 'weekly' as const,
     priority: s.vote_average >= 7 ? 0.9 : 0.7,

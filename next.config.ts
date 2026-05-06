@@ -1,9 +1,6 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787',
-  },
   // Reduce dev mode noise
   logging: {
     fetches: {
@@ -13,6 +10,26 @@ const nextConfig: NextConfig = {
   // Optimize compilation
   experimental: {
     optimizePackageImports: ['@/components', '@/lib'],
+  },
+  // Redirects from old watch URLs to new detail pages
+  async redirects() {
+    return [
+      {
+        source: '/watch/movie/:slug',
+        destination: '/movies/:slug',
+        permanent: true,
+      },
+      {
+        source: '/watch/series/:slug',
+        destination: '/series/:slug',
+        permanent: true,
+      },
+      {
+        source: '/watch/series/:slug/season/:season/episode/:ep',
+        destination: '/series/:slug',
+        permanent: true,
+      },
+    ]
   },
 }
 

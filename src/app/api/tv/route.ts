@@ -1,49 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { turso } from '@/lib/turso'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export async function GET(request: NextRequest) {
   try {
-    const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || 'http://localhost:8787'
     const { searchParams } = new URL(request.url)
-    const queryString = searchParams.toString()
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = (page - 1) * limit
     
-    console.log('🔄 [API /tv] Fetching from Worker:', `${WORKER_URL}/api/tv?${queryString}`)
+    console.log('🔄 [API /tv] Fetching from Turso...')
 
-    const response = await fetch(`${WORKER_URL}/api/tv?${queryString}`, {
-      headers: {
-        'Accept': 'application/json',
-      },
+    const result = await turso.execute({
+      sql: 'SELECT * FROM series WHERE is_filtered = 0 ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      args: [limit, offset]
     })
     
-    console.log('📡 [API /tv] Worker response status:', response.status)
+    const countResult = await turso.execute({
+      sql: 'SELECT COUNT(*) as total FROM series WHERE is_filtered = 0',
+      args: []
+    })
+    
+    const total = countResult.rows[0]?.total || 0
+    
+    console.log('✅ [API /tv] Data fetched successfully')
 
-    if (!response.ok) {
-      console.error('❌ [API /tv] Worker response not OK:', response.status, response.statusText)
-      const errorText = await response.text()
-      console.error('Error body:', errorText)
-      return NextResponse.json({
-        results: [],
-        total: 0,
-        page: 1,
-        totalPages: 0
-      }, { status: 200 })
-    }
-
-    const data = await response.json()
-    console.log('✅ [API /tv] Data received successfully')
-
-    return NextResponse.json(data)
+    return NextResponse.json({
+      results: result.rows || [],
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    })
   } catch (error) {
     console.error('❌ [API /tv] Error:', error)
-    if (error instanceof Error) {
-      console.error('Error details:', error.message, error.stack)
-    }
     return NextResponse.json({
       results: [],
       total: 0,
       page: 1,
       totalPages: 0
-    }, { status: 200 })
+    }, { status: 500 })
   }
 }
