@@ -3,11 +3,12 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Star, Heart, Play, Calendar, Clock } from 'lucide-react'
+import { Star, Heart, Play, Calendar, Clock, Film, Users, AlertTriangle } from 'lucide-react'
 import { MovieCard } from '../features/media/MovieCard'
 import { SectionHeader } from '../common/SectionHeader'
 import { Loading } from '../common/Loading'
 import ReactPlayer from 'react-player'
+import clsx from 'clsx'
 
 // @ts-ignore - react-player types issue
 const Player = ReactPlayer as any
@@ -19,6 +20,8 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
   const [cast, setCast] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [inWatchlist, setInWatchlist] = useState(false)
+  const [selectedServer, setSelectedServer] = useState(0)
+  const [showPlayer, setShowPlayer] = useState(false)
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -29,9 +32,14 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
           const data = await response.json()
           setMovie(data)
           
-          // Cast comes with movie response
-          if (data.cast) {
-            setCast(data.cast)
+          // Parse cast from JSON
+          if (data.cast_json) {
+            try {
+              const castData = JSON.parse(data.cast_json)
+              setCast(castData.slice(0, 10)) // Show first 10 cast members
+            } catch (error) {
+              console.error('Error parsing cast:', error)
+            }
           }
         }
       } catch (error) {
@@ -46,18 +54,29 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
     }
   }, [slug])
 
-  const title = movie?.title_ar || movie?.title || 'فيلم'
+  const title = movie?.title_ar || movie?.title_en || movie?.title || 'فيلم'
   const titleEn = movie?.title_en || movie?.title
   const overview = movie?.overview_ar || movie?.overview || 'لا يوجد وصف متاح'
-  const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : 'غير محدد'
+  const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : (movie?.release_year || 'غير محدد')
   const rating = movie?.vote_average ? Math.round(movie.vote_average * 10) / 10 : 0
   const poster = movie?.poster_url || (movie?.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : '')
   const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : '')
-  const genres = movie?.genres || []
+  
+  // Parse genres from JSON
+  const genres = useMemo(() => {
+    if (!movie?.genres_json) return []
+    try {
+      return JSON.parse(movie.genres_json)
+    } catch {
+      return []
+    }
+  }, [movie?.genres_json])
+  
   const runtime = movie?.runtime || 0
   const releaseDate = movie?.release_date ? new Date(movie.release_date).toLocaleDateString('ar-EG') : 'غير محدد'
 
   const trailerKey = useMemo(() => {
+    if (movie?.trailer_key) return movie.trailer_key
     if (!movie?.videos) return null
     try {
       const videos = typeof movie.videos === 'string' ? JSON.parse(movie.videos) : movie.videos
@@ -68,12 +87,24 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
     }
   }, [movie])
 
+  // Generate embed URL for player
+  const embedUrl = useMemo(() => {
+    if (!movie?.id && !movie?.tmdb_id) return ''
+    const movieId = movie.tmdb_id || movie.id
+    const servers = [
+      `https://vidsrc.xyz/embed/movie/${movieId}`,
+      `https://www.2embed.cc/embed/${movieId}`,
+      `https://embed.su/embed/movie/${movieId}`
+    ]
+    return servers[selectedServer] || servers[0]
+  }, [movie, selectedServer])
+
   if (loading) {
     return <Loading fullScreen text="جاري التحميل..." />
   }
 
   // STRICT: If no valid data, show error
-  if (!movie || !movie.title || !movie.overview || !movie.release_date) {
+  if (!movie || (!movie.title_ar && !movie.title_en)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -121,11 +152,11 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
             </button>
 
             <button
-              onClick={() => router.push(`/watch/movies/${slug}`)}
+              onClick={() => setShowPlayer(!showPlayer)}
               className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center gap-2 font-bold hover:scale-105 transition-transform"
             >
               <Play className="fill-current" />
-              مشاهدة الآن
+              {showPlayer ? 'إخفاء المشغل' : 'مشاهدة الآن'}
             </button>
           </motion.div>
 
@@ -156,7 +187,7 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
                   </div>
                 )}
                 {genres.length > 0 && (
-                  <span>{genres.map((g: any) => g.name).join(', ')}</span>
+                  <span>{genres.map((g: any) => g.name_ar || g.name_en || g.name).join(', ')}</span>
                 )}
               </div>
             </div>
@@ -164,6 +195,62 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
             <p className="text-lg leading-relaxed text-zinc-300 max-w-3xl">
               {overview}
             </p>
+
+            {/* Video Player Section */}
+            {showPlayer && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-4"
+              >
+                {/* Server Selector */}
+                <div className="flex items-center justify-center gap-3 p-4 rounded-lg bg-white/5 border border-white/10">
+                  <Film className="w-5 h-5 text-cyan-400" />
+                  <span className="text-sm text-zinc-400 font-medium">اختر السيرفر:</span>
+                  {['vidsrc', '2embed', 'embed.su'].map((name, index) => (
+                    <button
+                      key={name}
+                      onClick={() => setSelectedServer(index)}
+                      className={clsx(
+                        'px-4 py-2 rounded-lg font-bold transition-all text-sm',
+                        selectedServer === index
+                          ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
+                          : 'bg-white/10 text-zinc-400 hover:bg-white/20'
+                      )}
+                    >
+                      سيرفر {index + 1}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Player */}
+                <div className="relative w-full rounded-xl overflow-hidden bg-black border border-white/10 shadow-2xl">
+                  <div className="aspect-video">
+                    {embedUrl && (
+                      <iframe
+                        src={embedUrl}
+                        className="w-full h-full"
+                        allowFullScreen
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        title={`مشاهدة ${title}`}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Disclaimer */}
+                <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle size={16} className="text-red-400" />
+                    <span className="text-sm text-red-400 font-bold">إخلاء مسؤولية</span>
+                  </div>
+                  <p className="text-sm text-zinc-400">
+                    جميع المحتويات المعروضة يتم جلبها تلقائياً من مصادر خارجية. الموقع غير مسؤول عن أي محتوى معروض.
+                  </p>
+                </div>
+              </motion.div>
+            )}
 
             {/* Cast */}
             {cast.length > 0 && (
@@ -173,16 +260,16 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
                   {cast.map((person: any) => (
                     <div key={person.id} className="flex-shrink-0 w-24 text-center">
                       <div className="w-24 h-24 rounded-full overflow-hidden bg-zinc-800 mb-2">
-                        {person.profile_url && (
+                        {person.profile_path && (
                           <img
-                            src={person.profile_url}
-                            alt={person.name}
+                            src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                            alt={person.name_ar || person.name_en}
                             className="w-full h-full object-cover"
                             loading="lazy"
                           />
                         )}
                       </div>
-                      <p className="text-xs text-zinc-300 truncate">{person.name}</p>
+                      <p className="text-xs text-zinc-300 truncate">{person.name_ar || person.name_en}</p>
                     </div>
                   ))}
                 </div>
