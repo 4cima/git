@@ -22,7 +22,7 @@ async function getAllMovies() {
 async function getAllSeries() {
   try {
     const result = await turso.execute({
-      sql: 'SELECT slug, updated_at, vote_average FROM series LIMIT 10000',
+      sql: 'SELECT slug, updated_at, vote_average FROM tv_series LIMIT 10000',
       args: []
     })
     return result.rows || []

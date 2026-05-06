@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   
   const result = await turso.execute({
-    sql: 'SELECT name_ar, name_en, overview_ar FROM series WHERE slug = ? LIMIT 1',
+    sql: 'SELECT name_ar, name_en, overview_ar FROM tv_series WHERE slug = ? LIMIT 1',
     args: [slug]
   })
   
@@ -38,7 +38,7 @@ export default async function SeriesDetails({ params }: PageProps) {
   const { slug } = await params
   
   const result = await turso.execute({
-    sql: 'SELECT * FROM series WHERE slug = ? LIMIT 1',
+    sql: 'SELECT * FROM tv_series WHERE slug = ? LIMIT 1',
     args: [slug]
   })
   

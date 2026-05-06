@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     })
     
     const seriesResult = await turso.execute({
-      sql: `SELECT *, 'tv' as media_type FROM series 
+      sql: `SELECT *, 'tv' as media_type FROM tv_series 
             WHERE (name_ar LIKE ? OR name_en LIKE ? OR name LIKE ?)
             LIMIT 10`,
       args: [searchTerm, searchTerm, searchTerm]

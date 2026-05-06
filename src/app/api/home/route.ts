@@ -16,7 +16,7 @@ export async function GET() {
 
     // Fetch latest 24 series
     const seriesResult = await turso.execute({
-      sql: 'SELECT * FROM series ORDER BY created_at DESC LIMIT 24',
+      sql: 'SELECT * FROM tv_series ORDER BY created_at DESC LIMIT 24',
       args: []
     })
 

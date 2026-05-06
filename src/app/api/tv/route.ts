@@ -14,12 +14,12 @@ export async function GET(request: NextRequest) {
     console.log('🔄 [API /tv] Fetching from Turso...')
 
     const result = await turso.execute({
-      sql: 'SELECT * FROM series ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      sql: 'SELECT * FROM tv_series ORDER BY created_at DESC LIMIT ? OFFSET ?',
       args: [limit, offset]
     })
     
     const countResult = await turso.execute({
-      sql: 'SELECT COUNT(*) as total FROM series',
+      sql: 'SELECT COUNT(*) as total FROM tv_series',
       args: []
     })
     
