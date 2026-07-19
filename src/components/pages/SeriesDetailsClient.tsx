@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Heart, Play, Calendar } from 'lucide-react'
+import { Star, Heart, Play, Calendar, AlertTriangle } from 'lucide-react'
 import ReactPlayer from 'react-player'
 import clsx from 'clsx'
+import { EmbedPlayer } from '../features/media/EmbedPlayer'
+import { useServers } from '../../hooks/useServers'
 
 // @ts-ignore
 const Player = ReactPlayer as any
@@ -19,14 +21,24 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const [selectedSeason, setSelectedSeason] = useState<number>(
     seasons.find((s: any) => s.season_number > 0)?.season_number || 1
   )
+  const [selectedEpisode, setSelectedEpisode] = useState<number>(1)
+  const [cinemaMode, setCinemaMode] = useState(false)
 
   const title = series?.name_ar || series?.name || series?.original_name || 'مسلسل'
   const titleEn = series?.name_en || series?.name || series?.original_name
   const overview = series?.overview_ar || series?.overview || 'لا يوجد وصف متاح'
   const year = series?.first_air_date ? new Date(series.first_air_date).getFullYear() : 'غير محدد'
   const rating = series?.vote_average ? Math.round(series.vote_average * 10) / 10 : 0
-  const poster = series?.poster_url || (series?.poster_path ? `https://image.tmdb.org/t/p/w300${series.poster_path}` : '')
-  const backdrop = series?.backdrop_url || (series?.backdrop_path ? `https://image.tmdb.org/t/p/w1280${series.backdrop_path}` : '')
+  const poster = series?.poster_url || (series?.poster_path ? `/tmdb/w300${series.poster_path}` : '')
+  const backdrop = series?.backdrop_url || (series?.backdrop_path ? `/tmdb/w1280${series.backdrop_path}` : '')
+  
+  const effectiveId = series?.tmdb_id || series?.id || 0
+  const { servers, active, setActive, loading: serversLoading, reportBroken, reporting } = useServers(
+    effectiveId,
+    'tv',
+    selectedSeason,
+    selectedEpisode
+  )
   
   // Parse genres from JSON with fallback
   const genres = useMemo(() => {
@@ -50,12 +62,10 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     }
   }, [series])
 
-  // Generate embed URL for first episode
-  const embedUrl = useMemo(() => {
-    if (!series?.id && !series?.tmdb_id) return ''
-    const seriesId = series.tmdb_id || series.id
-    return `https://vidsrc.xyz/embed/tv/${seriesId}/${selectedSeason}/1`
-  }, [series, selectedSeason])
+  // Get episodes for selected season
+  const currentSeason = seasons.find((s: any) => s.season_number === selectedSeason)
+  const episodeCount = currentSeason?.episode_count || 1
+  const episodes = Array.from({ length: episodeCount }, (_, i) => i + 1)
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -82,51 +92,55 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
               )}
             </div>
-
-            <button
-              onClick={() => setInWatchlist(!inWatchlist)}
-              className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 font-medium transition-all ${
-                inWatchlist ? 'bg-red-500/20 text-red-500' : 'bg-white/10 hover:bg-white/20'
-              }`}
-            >
-              <Heart className={inWatchlist ? 'fill-current' : ''} />
-              {inWatchlist ? 'في القائمة' : 'أضف للقائمة'}
-            </button>
           </motion.div>
 
           {/* Right: Info */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-2">{title}</h1>
+          <div className="space-y-8">
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
+              <h1 className="text-4xl md:text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">{title}</h1>
               {titleEn && titleEn !== title && (
-                <h2 className="text-2xl text-zinc-400 mb-2">{titleEn}</h2>
+                <h2 className="text-xl text-zinc-400 mb-6 font-medium tracking-wide">{titleEn}</h2>
               )}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400">
+              
+              <div className="flex flex-wrap items-center gap-3 text-sm font-medium mb-6">
                 {year && (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
+                  <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full text-zinc-200">
+                    <Calendar className="w-4 h-4 text-purple-400" />
                     {year}
                   </span>
                 )}
                 {rating > 0 && (
-                  <div className="flex items-center gap-1 text-yellow-500">
+                  <span className="flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-full text-yellow-500">
                     <Star className="w-4 h-4 fill-current" />
-                    <span>{rating}</span>
-                  </div>
+                    {rating}
+                  </span>
                 )}
-                {genres.length > 0 && (
-                  <span>{genres.map((g: any) => g.name_ar || g.name_en || g.name).join(', ')}</span>
-                )}
+              </div>
+
+              {genres.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {genres.map((g: any) => (
+                    <span key={g.id || g.name} className="text-xs font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-md">
+                      {g.name_ar || g.name_en || g.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="prose prose-invert max-w-none">
+                <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                  <Play className="w-5 h-5 text-purple-400" />
+                  القصة
+                </h3>
+                <p className="text-base leading-relaxed text-zinc-300">
+                  {overview}
+                </p>
               </div>
             </div>
 
-            <p className="text-lg leading-relaxed text-zinc-300 max-w-3xl">
-              {overview}
-            </p>
-
             {/* Season Selector & Player */}
-            {seasons.length > 0 && (
-              <div className="space-y-4">
+            <div className="space-y-4">
+              {seasons.length > 0 && (
                 <div>
                   <h3 className="text-xl font-bold mb-3">المواسم</h3>
                   <div className="flex gap-2 overflow-x-auto pb-2">
@@ -148,23 +162,58 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                       ))}
                   </div>
                 </div>
+              )}
 
-                {/* Embedded Player */}
-                <div className="relative w-full rounded-xl overflow-hidden bg-black border border-white/10 shadow-2xl">
-                  <div className="aspect-video">
-                    {embedUrl && (
-                      <iframe
-                        src={embedUrl}
-                        className="w-full h-full"
-                        allowFullScreen
-                        allow="autoplay; fullscreen; picture-in-picture"
-                        title={`مشاهدة ${title}`}
-                      />
-                    )}
-                  </div>
+              <div>
+                <h3 className="text-xl font-bold mb-3">الحلقات</h3>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {episodes.map((ep) => (
+                    <button
+                      key={ep}
+                      onClick={() => setSelectedEpisode(ep)}
+                      className={clsx(
+                        'px-4 py-2 rounded-lg whitespace-nowrap transition-all',
+                        selectedEpisode === ep
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-white/10 hover:bg-white/20'
+                      )}
+                    >
+                      حلقة {ep}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
+
+              {/* Embedded Player */}
+              <div className="space-y-4">
+                <EmbedPlayer
+                  server={servers[active]}
+                  serverIndex={active}
+                  cinemaMode={cinemaMode}
+                  toggleCinemaMode={() => setCinemaMode(!cinemaMode)}
+                  loading={serversLoading}
+                  onNextServer={() => active < servers.length - 1 ? setActive(active + 1) : setActive(0)}
+                  onReport={reportBroken}
+                  reporting={reporting}
+                  poster={backdrop || poster}
+                  lang="ar"
+                  servers={servers}
+                  activeServerIndex={active}
+                  onServerSelect={setActive}
+                />
+
+                {/* Disclaimer */}
+                <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle size={16} className="text-red-400" />
+                    <span className="text-sm text-red-400 font-bold">إخلاء مسؤولية</span>
+                  </div>
+                  <p className="text-sm text-zinc-400">
+                    جميع المحتويات المعروضة يتم جلبها تلقائياً من مصادر خارجية. الموقع غير مسؤول عن أي محتوى معروض.
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {/* Trailer */}
             {trailerKey && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { useState, memo, useRef, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -36,8 +36,8 @@ interface TmdbImageProps extends React.HTMLAttributes<HTMLDivElement> {
 const getUrl = (path: string, size: TmdbImageSize) => {
   // If it's already a full URL, return as-is
   if (path.startsWith('http://') || path.startsWith('https://')) return path
-  // Otherwise, construct TMDB URL
-  return `https://image.tmdb.org/t/p/${size}${path}`
+  // Otherwise, construct TMDB URL using local proxy rewrite to bypass ISP blocks
+  return `/tmdb/${size}${path}`
 }
 
 export const TmdbImage = memo(({
@@ -54,8 +54,18 @@ export const TmdbImage = memo(({
   ...props
 }: TmdbImageProps) => {
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
+  const imgRef = useRef<HTMLImageElement>(null)
   const dims = SIZE_DIMENSIONS[size]
   const aspectRatio = dims ? `${dims.w} / ${dims.h}` : undefined
+
+  const src = path ? getUrl(path, size) : ''
+
+  // Fix hydration race condition where image loads before React attaches onLoad
+  useEffect(() => {
+    if (imgRef.current?.complete && status === 'loading') {
+      setStatus('loaded')
+    }
+  }, [status, src])
 
   if (!path) {
     return (
@@ -70,7 +80,6 @@ export const TmdbImage = memo(({
     )
   }
 
-  const src = getUrl(path, size)
   // Generate srcset for responsive images if using standard sizes
   const srcSet = !path.startsWith('http') && size !== 'original'
     ? `${getUrl(path, 'w300')} 300w, ${getUrl(path, 'w342')} 342w, ${getUrl(path, 'w500')} 500w`
@@ -91,6 +100,7 @@ export const TmdbImage = memo(({
       </AnimatePresence>
 
       <img
+        ref={imgRef}
         src={src}
         srcSet={srcSet}
         sizes={sizes}

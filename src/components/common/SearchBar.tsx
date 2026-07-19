@@ -1,104 +1,139 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { useDebounce } from '../../hooks/useDebounce'
-import { Input, InputSize } from './Input'
-import { Mic, Loader2, Search } from 'lucide-react'
-import { useLang } from '../../state/useLang'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { Search, X, Film, Tv } from 'lucide-react'
 
-type SearchBarProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> & {
-  placeholder?: string
-  className?: string
-  size?: InputSize
-  onQueryChange?: (value: string) => void
-  onSearch?: () => void
+interface SearchResult {
+  id: number
+  slug: string
+  title_ar: string
+  title_en: string
+  media_type: 'movie' | 'tv'
+  poster_path: string
 }
 
-export const SearchBar = ({ placeholder, className, size = 'md', onQueryChange, onSearch, ...props }: SearchBarProps) => {
-  const [q, setQ] = useState('')
-  const [isListening, setIsListening] = useState(false)
+export const SearchBar = () => {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<SearchResult[]>([])
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
-  const pathname = usePathname()
-  const debounced = useDebounce(q, 400)
-  const { lang } = useLang()
 
+  // Debounced search
   useEffect(() => {
-    // Only trigger parent update, do NOT auto-navigate
-    if (debounced.trim().length > 1) {
-      onQueryChange?.(debounced.trim())
+    if (query.length < 2) {
+      setResults([])
+      return
     }
-  }, [debounced, onQueryChange])
 
-  const handleSearch = () => {
-    if (q.trim().length > 0) {
-      onQueryChange?.(q.trim())
-      onSearch?.()
-      const url = `/search?q=${encodeURIComponent(q.trim())}`
-      router.push(url)
-    }
-  }
+    const timeout = setTimeout(async () => {
+      setIsLoading(true)
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=5`)
+        const data = await res.json()
+        setResults(data.results || [])
+        setIsOpen(true)
+      } catch (e) {
+        console.error('Search error:', e)
+      } finally {
+        setIsLoading(false)
+      }
+    }, 300)
 
-  const startListening = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = lang === 'ar' ? 'ar-SA' : 'en-US';
-      recognition.continuous = false;
-      recognition.interimResults = false;
+    return () => clearTimeout(timeout)
+  }, [query])
 
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
-
-      recognition.onresult = (event: any) => {
-        const text = event.results[0][0].transcript;
-        setQ(text);
-        // User must press search button manually
-      };
-
-      recognition.start();
-    } else {
-      alert('Voice search is not supported in this browser.');
-    }
+  const handleSelect = (item: SearchResult) => {
+    const path = item.media_type === 'tv' ? '/series' : '/movies'
+    router.push(`${path}/${item.slug}`)
+    setQuery('')
+    setIsOpen(false)
   }
 
   return (
-    <div className={`relative w-full ${className || ''}`}>
-      <Input
-        id="searchbar-input"
-        name="q"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-        placeholder={isListening ? (lang === 'ar' ? 'تحدث الآن...' : 'Listening...') : (placeholder || 'ابحث عن فيلم...')}
-        size={size}
-        // Increase padding significantly to push text away from left icons
-        // Increase border opacity and bg opacity to make input more visible
-        className="w-full bg-black/60 border-white/20 hover:border-white/40 focus:border-primary/60 transition-colors pl-28 rtl:pl-28 rtl:pr-4"
-        {...props}
-      />
-
-      {/* Position icons on the far LEFT (in RTL) or RIGHT (in LTR) */}
-      <div className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 ${lang === 'ar' ? 'left-2' : 'right-2'}`}>
-        <button
-          type="button"
-          onClick={startListening}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-white/10 hover:text-primary active:scale-95"
-          aria-label="Voice Search"
-        >
-          {isListening ? <Loader2 className="animate-spin text-primary" size={18} /> : <Mic size={18} />}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSearch}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/30 bg-primary/20 text-zinc-300 transition-all hover:bg-primary/40 hover:text-white active:scale-95"
-          aria-label="Search"
-        >
-          <Search size={16} />
-        </button>
+    <div className="relative">
+      <div className="relative group bg-black/40 backdrop-blur-sm rounded-full hover:bg-black/60 transition-colors">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 group-hover:text-cyan-400" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => query.length >= 2 && setIsOpen(true)}
+          placeholder="بحث..."
+          className="bg-transparent border-none rounded-full py-2 pl-10 pr-10 text-sm text-zinc-300 w-36 lg:w-48 transition-all focus:outline-none focus:w-64 placeholder:text-zinc-500"
+        />
+        {query && (
+          <button
+            onClick={() => { setQuery(''); setResults([]); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
+
+      {/* Search Results Dropdown */}
+      {isOpen && (
+        <div className="absolute top-full mt-2 w-80 right-0 bg-zinc-900/95 backdrop-blur-xl rounded-xl border border-zinc-700/50 shadow-2xl overflow-hidden z-50">
+          {isLoading ? (
+            <div className="p-4 text-center text-zinc-500">
+              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+            </div>
+          ) : results.length > 0 ? (
+            <div className="max-h-80 overflow-y-auto">
+              {results.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleSelect(item)}
+                  className="w-full flex items-center gap-3 p-3 hover:bg-zinc-800/50 transition-colors text-right"
+                >
+                  {item.poster_path ? (
+                    <img 
+                      src={`/tmdb/w92${item.poster_path}`} 
+                      alt={item.title_ar}
+                      className="w-10 h-14 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-10 h-14 bg-zinc-800 rounded flex items-center justify-center">
+                      <Film className="w-5 h-5 text-zinc-600" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-white truncate">{item.title_ar || item.title_en}</p>
+                    <p className="text-xs text-zinc-500 flex items-center gap-1">
+                      {item.media_type === 'tv' ? <Tv className="w-3 h-3" /> : <Film className="w-3 h-3" />}
+                      {item.media_type === 'tv' ? 'مسلسل' : 'فيلم'}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-zinc-500 text-sm">
+              لا توجد نتائج
+            </div>
+          )}
+          
+          {/* Footer - Search All */}
+          {results.length > 0 && (
+            <button
+              onClick={() => {
+                router.push(`/search?q=${encodeURIComponent(query)}`)
+                setIsOpen(false)
+              }}
+              className="w-full p-3 bg-zinc-800/30 text-cyan-400 text-sm hover:bg-zinc-800/50 transition-colors border-t border-zinc-700/50"
+            >
+              بحث متقدم...
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
+
+// Add Loader2 import if not present in imports
+import { Loader2 } from 'lucide-react'

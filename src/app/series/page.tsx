@@ -1,11 +1,13 @@
 import { Metadata } from 'next'
-import { CategoryHub } from '@/components/pages/CategoryHub'
+import { SeriesPageClient } from '@/components/pages/SeriesPageClient'
 
 export const metadata: Metadata = {
   title: 'مسلسلات | فور سيما',
-  description: 'استكشف أفضل المسلسلات على فور سيما - جودة عالية ومترجم',
+  description: 'استكشف آلاف المسلسلات المترجمة بجودة عالية - دراما، أكشن، كوميديا، وأكثر',
 }
 
+export const revalidate = 300
+
 export default function SeriesPage() {
-  return <CategoryHub type="tv" />
+  return <SeriesPageClient />
 }

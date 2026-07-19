@@ -56,8 +56,8 @@ const BentoBox = ({
           const img =
             item.thumbnail ||
             (item.backdrop_path
-              ? `https://image.tmdb.org/t/p/w300${item.backdrop_path}`
-              : `https://image.tmdb.org/t/p/w300${item.poster_path}`)
+              ? `/tmdb/w300${item.backdrop_path}`
+              : `/tmdb/w300${item.poster_path}`)
           const link = isTmdb
             ? generateWatchUrl({ ...item, media_type: item.media_type === 'tv' ? 'tv' : 'movie' })
             : `/watch/yt/${item.id}`
@@ -109,7 +109,7 @@ const AIRecommended = ({ userId }: { userId: string }) => {
         <HolographicCard key={m.id} className="aspect-[2/3]">
           <PrefetchLink href={generateWatchUrl({ ...m, media_type: 'movie' })}>
             <img
-              src={`https://image.tmdb.org/t/p/w300${m.poster_path}`}
+              src={`/tmdb/w300${m.poster_path}`}
               className="w-full h-full object-cover"
               alt={m.title}
               width={300}

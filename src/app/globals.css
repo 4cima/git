@@ -660,10 +660,6 @@ a:focus-visible,
   body {
     font-size: 16px;
   }
-
-  * {
-    animation-duration: 0.3s !important;
-  }
 }
 
 /* -------------------------------------------------------------------------- */

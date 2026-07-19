@@ -7,22 +7,45 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const cursor = searchParams.get('cursor')
+    const genre = searchParams.get('genre')
+    const year = searchParams.get('year')
+    const rating = searchParams.get('rating')
     const limit = 48
 
-    console.log('🔄 [API /movies/explore] Cursor:', cursor)
+    console.log('🔄 [API /movies/explore] Params:', { cursor, genre, year, rating })
 
-    let sql: string
-    let args: any[]
+    let conditions = []
+    let args = []
 
     if (cursor) {
-      // Cursor-based pagination (id < cursor)
-      sql = 'SELECT * FROM movies WHERE id < ? ORDER BY id DESC LIMIT ?'
-      args = [parseInt(cursor), limit]
-    } else {
-      // First page
-      sql = 'SELECT * FROM movies ORDER BY id DESC LIMIT ?'
-      args = [limit]
+      conditions.push('id < ?')
+      args.push(parseInt(cursor))
     }
+
+    if (genre) {
+      conditions.push(`genres_json LIKE ?`)
+      args.push(`%"slug":"${genre}"%`)
+    }
+
+    if (year) {
+      if (year.includes('-')) {
+        const [start, end] = year.split('-')
+        conditions.push('release_year >= ? AND release_year <= ?')
+        args.push(parseInt(start), parseInt(end))
+      } else {
+        conditions.push('release_year = ?')
+        args.push(parseInt(year))
+      }
+    }
+
+    if (rating) {
+      conditions.push('vote_average >= ?')
+      args.push(parseFloat(rating))
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    const sql = `SELECT * FROM movies ${whereClause} ORDER BY id DESC LIMIT ?`
+    args.push(limit)
 
     const result = await turso.execute({ sql, args })
     const movies = result.rows || []
@@ -30,7 +53,7 @@ export async function GET(request: NextRequest) {
     console.log('✅ [API /movies/explore] Fetched', movies.length, 'movies')
 
     return NextResponse.json({
-      movies,
+      results: movies,
       nextCursor: movies.length === limit ? movies[movies.length - 1].id : null
     })
   } catch (error) {

@@ -71,7 +71,7 @@ export const CategoryHub = ({ type = 'movie', category }: CategoryHubProps) => {
 
     const fetchFeatured = async () => {
       try {
-        const endpoint = type === 'movie' ? '/api/movies' : '/api/tv'
+        const endpoint = type === 'movie' ? '/api/movies/explore' : '/api/tv/explore'
         const params: any = {
           sort: 'vote_average',
           ratingFrom: 8,
@@ -102,7 +102,7 @@ export const CategoryHub = ({ type = 'movie', category }: CategoryHubProps) => {
     setLoading(true)
     const fetchContent = async () => {
       try {
-        const endpoint = type === 'movie' ? '/api/movies' : '/api/tv'
+        const endpoint = type === 'movie' ? '/api/movies/explore' : '/api/tv/explore'
         const params: any = {
           page: 1,
           limit: 100

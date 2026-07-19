@@ -3,11 +3,18 @@
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useRef, useMemo, memo } from 'react'
+import { useState, useRef, useMemo, memo, useEffect } from 'react'
 import { Home, Film, Tv, Gamepad2, Zap, User, Search, Menu, X, BookOpen, Mic, Loader2 } from 'lucide-react'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
   
   const navLinks = useMemo(() => [
     { to: '/', label: 'الرئيسية', icon: Home, color: '#00ffcc' },
@@ -54,7 +61,7 @@ export const QuantumNavbar = memo(() => {
   return (
     <>
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-[1000] bg-transparent">
+      <nav className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 ${ scrolled ? 'bg-gray-950/95 backdrop-blur-md border-b border-gray-700/50 shadow-lg shadow-black/50' : 'bg-transparent border-b border-transparent' }`}>
         <div className="container-wrapper container-padding flex items-center justify-between h-16">
 
           {/* Right: Menu + Logo */}
@@ -162,7 +169,7 @@ export const QuantumNavbar = memo(() => {
             </Link>
           </div>
         </div>
-      </nav>
+            </nav>
 
       {/* Sidebar */}
       <AnimatePresence>
@@ -220,3 +227,7 @@ export const QuantumNavbar = memo(() => {
 })
 
 QuantumNavbar.displayName = 'QuantumNavbar'
+
+
+
+

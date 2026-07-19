@@ -26,7 +26,7 @@ export async function GET(
     
     // Fetch seasons for this series
     const seasonsResult = await turso.execute({
-      sql: 'SELECT * FROM seasons WHERE series_id = ? ORDER BY season_number ASC',
+      sql: 'SELECT * FROM tv_seasons WHERE tv_series_id = ? ORDER BY season_number ASC',
       args: [series.id]
     })
     

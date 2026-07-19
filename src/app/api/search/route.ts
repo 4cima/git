@@ -12,21 +12,53 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [] })
     }
     
-    // Search in both movies and series
+    // Search in both movies and series - Enhanced search in titles AND descriptions
     const searchTerm = `%${q}%`
     
     const moviesResult = await turso.execute({
       sql: `SELECT *, 'movie' as media_type FROM movies 
-            WHERE (title_ar LIKE ? OR title_en LIKE ? OR title LIKE ?)
-            LIMIT 10`,
-      args: [searchTerm, searchTerm, searchTerm]
+            WHERE (
+              title_ar LIKE ? OR 
+              title_en LIKE ? OR 
+              overview_ar LIKE ? OR 
+              overview_en LIKE ?
+            )
+            ORDER BY 
+              CASE 
+                WHEN title_ar LIKE ? THEN 1
+                WHEN title_en LIKE ? THEN 2
+                WHEN overview_ar LIKE ? THEN 3
+                ELSE 4
+              END,
+              popularity DESC
+            LIMIT 20`,
+      args: [
+        searchTerm, searchTerm, searchTerm, searchTerm,  // WHERE conditions
+        searchTerm, searchTerm, searchTerm                 // ORDER BY conditions
+      ]
     })
     
     const seriesResult = await turso.execute({
       sql: `SELECT *, 'tv' as media_type FROM tv_series 
-            WHERE (name_ar LIKE ? OR name_en LIKE ? OR name LIKE ?)
-            LIMIT 10`,
-      args: [searchTerm, searchTerm, searchTerm]
+            WHERE (
+              name_ar LIKE ? OR 
+              name_en LIKE ? OR 
+              overview_ar LIKE ? OR 
+              overview_en LIKE ?
+            )
+            ORDER BY 
+              CASE 
+                WHEN name_ar LIKE ? THEN 1
+                WHEN name_en LIKE ? THEN 2
+                WHEN overview_ar LIKE ? THEN 3
+                ELSE 4
+              END,
+              popularity DESC
+            LIMIT 20`,
+      args: [
+        searchTerm, searchTerm, searchTerm, searchTerm,  // WHERE conditions
+        searchTerm, searchTerm, searchTerm                 // ORDER BY conditions
+      ]
     })
     
     const results = [...(moviesResult.rows || []), ...(seriesResult.rows || [])]

@@ -5,6 +5,8 @@ import { motion } from 'framer-motion'
 import { Star, Heart, Play, Calendar, Clock, Film, AlertTriangle } from 'lucide-react'
 import ReactPlayer from 'react-player'
 import clsx from 'clsx'
+import { EmbedPlayer } from '../features/media/EmbedPlayer'
+import { useServers } from '../../hooks/useServers'
 
 // @ts-ignore
 const Player = ReactPlayer as any
@@ -14,17 +16,21 @@ interface MovieDetailsClientProps {
 }
 
 export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
-  const [inWatchlist, setInWatchlist] = useState(false)
-  const [selectedServer, setSelectedServer] = useState(0)
-  const [showPlayer, setShowPlayer] = useState(false)
+  const [cinemaMode, setCinemaMode] = useState(false)
 
   const title = movie?.title_ar || movie?.title_en || movie?.title || 'فيلم'
   const titleEn = movie?.title_en || movie?.title
   const overview = movie?.overview_ar || movie?.overview || 'لا يوجد وصف متاح'
   const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : (movie?.release_year || 'غير محدد')
   const rating = movie?.vote_average ? Math.round(movie.vote_average * 10) / 10 : 0
-  const poster = movie?.poster_url || (movie?.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : '')
-  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : '')
+  const poster = movie?.poster_url || (movie?.poster_path ? `/tmdb/w300${movie.poster_path}` : '')
+  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w1280${movie.backdrop_path}` : '')
+  
+  const effectiveId = movie?.tmdb_id || movie?.id || 0
+  const { servers, active, setActive, loading: serversLoading, reportBroken, reporting } = useServers(
+    effectiveId,
+    'movie'
+  )
   
   // Parse genres from JSON with fallback
   const genres = useMemo(() => {
@@ -59,18 +65,6 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
     }
   }, [movie])
 
-  // Generate embed URL for player
-  const embedUrl = useMemo(() => {
-    if (!movie?.id && !movie?.tmdb_id) return ''
-    const movieId = movie.tmdb_id || movie.id
-    const servers = [
-      `https://vidsrc.xyz/embed/movie/${movieId}`,
-      `https://www.2embed.cc/embed/${movieId}`,
-      `https://embed.su/embed/movie/${movieId}`
-    ]
-    return servers[selectedServer] || servers[0]
-  }, [movie, selectedServer])
-
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       {/* Backdrop */}
@@ -96,117 +90,91 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
               )}
             </div>
-
-            <button
-              onClick={() => setInWatchlist(!inWatchlist)}
-              className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 font-medium transition-all ${
-                inWatchlist ? 'bg-red-500/20 text-red-500' : 'bg-white/10 hover:bg-white/20'
-              }`}
-            >
-              <Heart className={inWatchlist ? 'fill-current' : ''} />
-              {inWatchlist ? 'في القائمة' : 'أضف للقائمة'}
-            </button>
-
-            <button
-              onClick={() => setShowPlayer(!showPlayer)}
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center gap-2 font-bold hover:scale-105 transition-transform"
-            >
-              <Play className="fill-current" />
-              {showPlayer ? 'إخفاء المشغل' : 'مشاهدة الآن'}
-            </button>
           </motion.div>
 
           {/* Right: Info */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-2">{title}</h1>
+          <div className="space-y-8">
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
+              <h1 className="text-4xl md:text-5xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">{title}</h1>
               {titleEn && titleEn !== title && (
-                <h2 className="text-2xl text-zinc-400 mb-2">{titleEn}</h2>
+                <h2 className="text-xl text-zinc-400 mb-6 font-medium tracking-wide">{titleEn}</h2>
               )}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400">
+              
+              <div className="flex flex-wrap items-center gap-3 text-sm font-medium mb-6">
                 {year && (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
+                  <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full text-zinc-200">
+                    <Calendar className="w-4 h-4 text-cyan-400" />
                     {year}
                   </span>
                 )}
                 {movie?.runtime && (
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
+                  <span className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full text-zinc-200">
+                    <Clock className="w-4 h-4 text-purple-400" />
                     {Math.floor(movie.runtime / 60)}س {movie.runtime % 60}د
                   </span>
                 )}
                 {rating > 0 && (
-                  <div className="flex items-center gap-1 text-yellow-500">
+                  <span className="flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5 rounded-full text-yellow-500">
                     <Star className="w-4 h-4 fill-current" />
-                    <span>{rating}</span>
-                  </div>
+                    {rating}
+                  </span>
                 )}
-                {genres.length > 0 && (
-                  <span>{genres.map((g: any) => g.name_ar || g.name_en || g.name).join(', ')}</span>
-                )}
+              </div>
+
+              {genres.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {genres.map((g: any) => (
+                    <span key={g.id || g.name} className="text-xs font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1 rounded-md">
+                      {g.name_ar || g.name_en || g.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="prose prose-invert max-w-none">
+                <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                  <Film className="w-5 h-5 text-cyan-400" />
+                  القصة
+                </h3>
+                <p className="text-base leading-relaxed text-zinc-300">
+                  {overview}
+                </p>
               </div>
             </div>
 
-            <p className="text-lg leading-relaxed text-zinc-300 max-w-3xl">
-              {overview}
-            </p>
-
             {/* Video Player Section */}
-            {showPlayer && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="space-y-4"
-              >
-                {/* Server Selector */}
-                <div className="flex items-center justify-center gap-3 p-4 rounded-lg bg-white/5 border border-white/10">
-                  <Film className="w-5 h-5 text-cyan-400" />
-                  <span className="text-sm text-zinc-400 font-medium">اختر السيرفر:</span>
-                  {['vidsrc', '2embed', 'embed.su'].map((name, index) => (
-                    <button
-                      key={name}
-                      onClick={() => setSelectedServer(index)}
-                      className={clsx(
-                        'px-4 py-2 rounded-lg font-bold transition-all text-sm',
-                        selectedServer === index
-                          ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/50'
-                          : 'bg-white/10 text-zinc-400 hover:bg-white/20'
-                      )}
-                    >
-                      سيرفر {index + 1}
-                    </button>
-                  ))}
-                </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4 pt-6"
+            >
+              <EmbedPlayer
+                server={servers[active]}
+                serverIndex={active}
+                cinemaMode={cinemaMode}
+                toggleCinemaMode={() => setCinemaMode(!cinemaMode)}
+                loading={serversLoading}
+                onNextServer={() => active < servers.length - 1 ? setActive(active + 1) : setActive(0)}
+                onReport={reportBroken}
+                reporting={reporting}
+                poster={backdrop || poster}
+                lang="ar"
+                servers={servers}
+                activeServerIndex={active}
+                onServerSelect={setActive}
+              />
 
-                {/* Player */}
-                <div className="relative w-full rounded-xl overflow-hidden bg-black border border-white/10 shadow-2xl">
-                  <div className="aspect-video">
-                    {embedUrl && (
-                      <iframe
-                        src={embedUrl}
-                        className="w-full h-full"
-                        allowFullScreen
-                        allow="autoplay; fullscreen; picture-in-picture"
-                        title={`مشاهدة ${title}`}
-                      />
-                    )}
-                  </div>
+              {/* Disclaimer */}
+              <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle size={16} className="text-red-400" />
+                  <span className="text-sm text-red-400 font-bold">إخلاء مسؤولية</span>
                 </div>
-
-                {/* Disclaimer */}
-                <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertTriangle size={16} className="text-red-400" />
-                    <span className="text-sm text-red-400 font-bold">إخلاء مسؤولية</span>
-                  </div>
-                  <p className="text-sm text-zinc-400">
-                    جميع المحتويات المعروضة يتم جلبها تلقائياً من مصادر خارجية. الموقع غير مسؤول عن أي محتوى معروض.
-                  </p>
-                </div>
-              </motion.div>
-            )}
+                <p className="text-sm text-zinc-400">
+                  جميع المحتويات المعروضة يتم جلبها تلقائياً من مصادر خارجية. الموقع غير مسؤول عن أي محتوى معروض.
+                </p>
+              </div>
+            </motion.div>
 
             {/* Cast */}
             {cast.length > 0 && (
@@ -218,7 +186,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                       <div className="w-24 h-24 rounded-full overflow-hidden bg-zinc-800 mb-2">
                         {person.profile_path && (
                           <img
-                            src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                            src={`/tmdb/w185${person.profile_path}`}
                             alt={person.name_ar || person.name_en}
                             className="w-full h-full object-cover"
                             loading="lazy"

@@ -355,7 +355,7 @@ export const ActivityItem = ({ activity, currentUserId, currentUserRole }: Activ
                     >
                       {contentDetails.poster_path && (
                         <img
-                          src={`https://image.tmdb.org/t/p/w92${contentDetails.poster_path}`}
+                          src={`/tmdb/w92${contentDetails.poster_path}`}
                           alt={contentDetails.title || contentDetails.name}
                           className="w-8 h-12 rounded object-cover"
                         />
@@ -384,7 +384,7 @@ export const ActivityItem = ({ activity, currentUserId, currentUserRole }: Activ
                     >
                       {contentDetails.poster_path && (
                         <img
-                          src={`https://image.tmdb.org/t/p/w92${contentDetails.poster_path}`}
+                          src={`/tmdb/w92${contentDetails.poster_path}`}
                           alt={contentDetails.title || contentDetails.name}
                           className="w-10 h-14 rounded object-cover"
                         />

@@ -32,7 +32,7 @@ export function generateContentMetadata(content: SEOContent): Metadata {
   const title = seoData.seo_title_ar || content.title_ar || '';
   const description = seoData.seo_description_ar || content.overview_ar || '';
   const posterUrl = content.poster_path 
-    ? `https://image.tmdb.org/t/p/w1280${content.poster_path}`
+    ? `/tmdb/w1280${content.poster_path}`
     : '/public/logo.svg';
 
   return {
@@ -94,7 +94,7 @@ export function generateMovieSchema(content: SEOContent) {
     alternateName: content.title_en,
     description: content.overview_ar || '',
     image: content.poster_path 
-      ? `https://image.tmdb.org/t/p/w1280${content.poster_path}`
+      ? `/tmdb/w1280${content.poster_path}`
       : undefined,
     datePublished: content.release_date,
     keywords: keywords.join(', '),
@@ -126,7 +126,7 @@ export function generateTVSeriesSchema(content: SEOContent) {
     alternateName: content.title_en,
     description: content.overview_ar || '',
     image: content.poster_path 
-      ? `https://image.tmdb.org/t/p/w1280${content.poster_path}`
+      ? `/tmdb/w1280${content.poster_path}`
       : undefined,
     datePublished: content.first_air_date,
     keywords: keywords.join(', '),

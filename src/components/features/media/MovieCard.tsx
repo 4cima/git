@@ -108,7 +108,9 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
             }
           } else {
             // Fetch from API if not available
-            const apiType = (mediaType === 'tv' || mediaType === 'series') ? 'tv' : mediaType
+            const apiType = mediaType === 'movies' ? 'movies' : 
+                           (mediaType === 'series' || mediaType === 'tv') ? 'series' : 
+                           mediaType
             const endpoint = `/api/${apiType}/${movie.slug}`
             const response = await fetch(endpoint)
             const data = await response.json()
@@ -260,6 +262,12 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
                   </span>
                 </>
               )}
+              
+              {/* Quality Badge - Hardcoded for now as it's a common request */}
+              <span className="w-0.5 h-0.5 rounded-full bg-lumen-silver/50" />
+              <span className="bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded text-[8px] font-bold">
+                FHD
+              </span>
             </div>
           </div>
         </div>

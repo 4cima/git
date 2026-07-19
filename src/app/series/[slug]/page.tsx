@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
   
-  const title = series.name_ar || series.name_en || 'مسلسل'
-  const description = series.overview_ar || 'شاهد المسلسل على فور سيما'
+  const title = String(series.name_ar || series.name_en || 'مسلسل')
+  const description = String(series.overview_ar || 'شاهد المسلسل على فور سيما')
   
   return {
     title: `${title} | فور سيما`,
@@ -50,7 +50,7 @@ export default async function SeriesDetails({ params }: PageProps) {
   
   // Fetch seasons
   const seasonsResult = await turso.execute({
-    sql: 'SELECT * FROM seasons WHERE series_id = ? ORDER BY season_number ASC',
+    sql: 'SELECT * FROM tv_seasons WHERE tv_series_id = ? ORDER BY season_number ASC',
     args: [seriesData.id]
   })
   

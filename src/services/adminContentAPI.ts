@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 🔧 Admin Content API - Turso Integration
  * 
  * @description Admin operations for content management using Turso via Worker API
@@ -64,8 +64,8 @@ export async function upsertSeason(row: Record<string, unknown>) {
   const { id, ...data } = row
 
   const query = id
-    ? `UPDATE seasons SET ${Object.keys(data).map((k, i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1`
-    : `INSERT INTO seasons (${Object.keys(row).join(', ')}) VALUES (${Object.keys(row).map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`
+      ? `UPDATE tv_seasons SET ${Object.keys(data).map((k, i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1`
+    : `INSERT INTO tv_seasons (${Object.keys(row).join(', ')}) VALUES (${Object.keys(row).map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`
 
   const params = id ? [id, ...Object.values(data)] : Object.values(row)
 
@@ -81,7 +81,7 @@ export async function deleteSeason(seasonId: number) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      query: 'DELETE FROM seasons WHERE id = $1',
+      query: 'DELETE FROM tv_seasons WHERE id = $1',
       params: [seasonId]
     })
   })

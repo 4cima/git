@@ -141,7 +141,7 @@ export const WatchPage = ({ type, slug, season, episode }: WatchPageProps) => {
   const seriesType = content?.type || ''
   const genres = content?.genres ? (typeof content.genres === 'string' ? JSON.parse(content.genres) : content.genres) : []
   const keywords = content?.keywords ? (typeof content.keywords === 'string' ? JSON.parse(content.keywords) : content.keywords) : []
-  const poster = content?.poster_url || (content?.poster_path ? `https://image.tmdb.org/t/p/w500${content.poster_path}` : '')
+  const poster = content?.poster_url || (content?.poster_path ? `/tmdb/w500${content.poster_path}` : '')
 
   // Generate embed URL
   const embedUrl = useMemo(() => {
@@ -306,7 +306,7 @@ export const WatchPage = ({ type, slug, season, episode }: WatchPageProps) => {
                       <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-pink-500/50 transition-colors mb-2">
                         {person.profile_path || person.profile_url ? (
                           <img
-                            src={person.profile_url || `https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                            src={person.profile_url || `/tmdb/w185${person.profile_path}`}
                             alt={person.name_ar || person.name}
                             className="w-full h-full object-cover"
                             loading="lazy"

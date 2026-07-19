@@ -1,29 +1,17 @@
-/**
- * 🎛️ UnifiedFilters Component - اونلاين سينما
- * Unified Filters for All Content Sections
- * 
- * @description Reusable filter component for movies, series, gaming, software
- * @author Online Cinema Team
- * @version 1.0.0
- */
-
 import React from 'react';
-import type { ContentType } from '../../types/unified-section';
 import styles from './UnifiedFilters.module.css';
 
-// ==========================================
-// Types
-// ==========================================
+export type ContentType = 'movies' | 'series' | 'anime' | 'gaming' | 'software';
 
 export interface UnifiedFiltersProps {
   contentType: ContentType;
   genre?: string | null;
-  year?: number | string | null;  // Support both number and string (for ranges)
+  year?: number | string | null;
   rating?: number | null;
   language?: string | null;
-  platform?: string | null;  // For gaming
-  os?: string | null;  // For software
-  categoryFilter?: string | null;  // For plays
+  platform?: string | null;
+  os?: string | null;
+  categoryFilter?: string | null;
   onApplyFilters: (filters: {
     genre?: string | null;
     year?: string | null;
@@ -35,10 +23,6 @@ export interface UnifiedFiltersProps {
   onClearAll: () => void;
   lang?: 'ar' | 'en';
 }
-
-// ==========================================
-// Genre Options by Content Type
-// ==========================================
 
 const GENRE_OPTIONS: Record<ContentType, { value: string; labelAr: string; labelEn: string }[]> = {
   movies: [
@@ -87,10 +71,6 @@ const GENRE_OPTIONS: Record<ContentType, { value: string; labelAr: string; label
   ]
 };
 
-// ==========================================
-// Language Options
-// ==========================================
-
 const LANGUAGE_OPTIONS = [
   { value: 'ar', labelAr: 'عربي', labelEn: 'Arabic' },
   { value: 'en', labelAr: 'إنجليزي', labelEn: 'English' },
@@ -103,10 +83,6 @@ const LANGUAGE_OPTIONS = [
   { value: 'fr', labelAr: 'فرنسي', labelEn: 'French' }
 ];
 
-// ==========================================
-// Platform Options (for Gaming)
-// ==========================================
-
 const PLATFORM_OPTIONS = [
   { value: 'ps5', labelAr: 'بلايستيشن 5', labelEn: 'PlayStation 5' },
   { value: 'ps4', labelAr: 'بلايستيشن 4', labelEn: 'PlayStation 4' },
@@ -116,10 +92,6 @@ const PLATFORM_OPTIONS = [
   { value: 'mobile', labelAr: 'موبايل', labelEn: 'Mobile' }
 ];
 
-// ==========================================
-// OS Options (for Software)
-// ==========================================
-
 const OS_OPTIONS = [
   { value: 'windows', labelAr: 'ويندوز', labelEn: 'Windows' },
   { value: 'mac', labelAr: 'ماك', labelEn: 'Mac' },
@@ -127,10 +99,6 @@ const OS_OPTIONS = [
   { value: 'android', labelAr: 'أندرويد', labelEn: 'Android' },
   { value: 'ios', labelAr: 'آيفون', labelEn: 'iOS' }
 ];
-
-// ==========================================
-// Rating Options (Individual ratings without +)
-// ==========================================
 
 const RATING_OPTIONS = [
   { value: 10, labelAr: '10 ممتاز', labelEn: '10 Excellent' },
@@ -144,10 +112,6 @@ const RATING_OPTIONS = [
   { value: 2, labelAr: '2 سيء', labelEn: '2 Bad' },
   { value: 1, labelAr: '1 سيء جداً', labelEn: '1 Very Bad' }
 ];
-
-// ==========================================
-// Component
-// ==========================================
 
 export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
   contentType,
@@ -164,7 +128,6 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
 }) => {
   const isArabic = lang === 'ar';
   
-  // Local state for filter values before applying
   const [localGenre, setLocalGenre] = React.useState(genre || '');
   const [localYear, setLocalYear] = React.useState(String(year || ''));
   const [localRating, setLocalRating] = React.useState(rating || '');
@@ -172,7 +135,6 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
   const [localPlatform, setLocalPlatform] = React.useState(platform || '');
   const [localOs, setLocalOs] = React.useState(os || '');
   
-  // Update local state when props change
   React.useEffect(() => {
     setLocalGenre(genre || '');
     setLocalYear(String(year || ''));
@@ -203,32 +165,21 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
     onClearAll();
   };
   
-  // Don't show filters for plays
   if (categoryFilter === 'plays') {
     return null;
   }
   
-  // Get genre options for current content type
   const genreOptions = GENRE_OPTIONS[contentType] || [];
-  
-  // Generate year options with decade grouping
   const currentYear = new Date().getFullYear();
   const yearOptions: Array<{ value: string; label: string }> = [];
   
-  // For gaming and software, start from 2000 (no one plays/uses software from 1950s)
-  // For movies/series/anime, keep the full range
-  const startYear = (contentType === 'gaming' || contentType === 'software') ? 2000 : 1950;
-  
-  // Add individual years from 2021 to current year
   for (let y = currentYear; y >= 2021; y--) {
     yearOptions.push({ value: String(y), label: String(y) });
   }
   
-  // Add decade ranges
   yearOptions.push({ value: '2010-2020', label: isArabic ? '2010-2020' : '2010-2020' });
   yearOptions.push({ value: '2000-2009', label: isArabic ? 'الألفينات (2000-2009)' : '2000s (2000-2009)' });
   
-  // Only add older decades for movies/series/anime
   if (contentType !== 'gaming' && contentType !== 'software') {
     yearOptions.push({ value: '1990-1999', label: isArabic ? 'التسعينات (1990-1999)' : '1990s (1990-1999)' });
     yearOptions.push({ value: '1980-1989', label: isArabic ? 'الثمانينات (1980-1989)' : '1980s (1980-1989)' });
@@ -238,23 +189,18 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
   }
   
   return (
-    <div 
-      className={styles.unifiedFilters}
-      role="region"
-      aria-label={isArabic ? 'فلاتر المحتوى' : 'Content Filters'}
-    >
-      <div className={styles.filtersContainer}>
+    <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-4 mb-8 backdrop-blur-sm">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Genre Filter */}
-        <div className={styles.filterGroup}>
-          <label htmlFor="genre-filter" className={styles.filterLabel}>
+        <div className="space-y-2">
+          <label htmlFor="genre-filter" className="text-sm font-medium text-zinc-400">
             {isArabic ? 'النوع' : 'Genre'}
           </label>
           <select
             id="genre-filter"
-            className={styles.filterSelect}
+            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
             value={localGenre}
             onChange={(e) => setLocalGenre(e.target.value)}
-            aria-label={isArabic ? 'اختر النوع' : 'Select Genre'}
           >
             <option value="">{isArabic ? 'كل الأنواع' : 'All Genres'}</option>
             {genreOptions.map((option) => (
@@ -266,16 +212,15 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
         </div>
         
         {/* Year Filter */}
-        <div className={styles.filterGroup}>
-          <label htmlFor="year-filter" className={styles.filterLabel}>
+        <div className="space-y-2">
+          <label htmlFor="year-filter" className="text-sm font-medium text-zinc-400">
             {isArabic ? 'السنة' : 'Year'}
           </label>
           <select
             id="year-filter"
-            className={styles.filterSelect}
+            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
             value={localYear}
             onChange={(e) => setLocalYear(e.target.value)}
-            aria-label={isArabic ? 'اختر السنة' : 'Select Year'}
           >
             <option value="">{isArabic ? 'كل السنوات' : 'All Years'}</option>
             {yearOptions.map((option) => (
@@ -287,16 +232,15 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
         </div>
         
         {/* Rating Filter */}
-        <div className={styles.filterGroup}>
-          <label htmlFor="rating-filter" className={styles.filterLabel}>
+        <div className="space-y-2">
+          <label htmlFor="rating-filter" className="text-sm font-medium text-zinc-400">
             {isArabic ? 'التقييم' : 'Rating'}
           </label>
           <select
             id="rating-filter"
-            className={styles.filterSelect}
+            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
             value={localRating}
             onChange={(e) => setLocalRating(e.target.value)}
-            aria-label={isArabic ? 'اختر التقييم' : 'Select Rating'}
           >
             <option value="">{isArabic ? 'كل التقييمات' : 'All Ratings'}</option>
             {RATING_OPTIONS.map((option) => (
@@ -307,19 +251,17 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
           </select>
         </div>
         
-        {/* Language/Platform/OS Filter - Content-specific */}
+        {/* Language/Platform/OS Filter */}
         {contentType === 'gaming' ? (
-          // Platform filter for gaming
-          <div className={styles.filterGroup}>
-            <label htmlFor="platform-filter" className={styles.filterLabel}>
+          <div className="space-y-2">
+            <label htmlFor="platform-filter" className="text-sm font-medium text-zinc-400">
               {isArabic ? 'المنصة' : 'Platform'}
             </label>
             <select
               id="platform-filter"
-              className={styles.filterSelect}
+              className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
               value={localPlatform}
               onChange={(e) => setLocalPlatform(e.target.value)}
-              aria-label={isArabic ? 'اختر المنصة' : 'Select Platform'}
             >
               <option value="">{isArabic ? 'كل المنصات' : 'All Platforms'}</option>
               {PLATFORM_OPTIONS.map((option) => (
@@ -330,17 +272,15 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
             </select>
           </div>
         ) : contentType === 'software' ? (
-          // OS filter for software
-          <div className={styles.filterGroup}>
-            <label htmlFor="os-filter" className={styles.filterLabel}>
+          <div className="space-y-2">
+            <label htmlFor="os-filter" className="text-sm font-medium text-zinc-400">
               {isArabic ? 'نظام التشغيل' : 'Operating System'}
             </label>
             <select
               id="os-filter"
-              className={styles.filterSelect}
+              className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
               value={localOs}
               onChange={(e) => setLocalOs(e.target.value)}
-              aria-label={isArabic ? 'اختر نظام التشغيل' : 'Select Operating System'}
             >
               <option value="">{isArabic ? 'كل الأنظمة' : 'All Systems'}</option>
               {OS_OPTIONS.map((option) => (
@@ -351,17 +291,15 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
             </select>
           </div>
         ) : (
-          // Language filter for movies, series, anime
-          <div className={styles.filterGroup}>
-            <label htmlFor="language-filter" className={styles.filterLabel}>
+          <div className="space-y-2">
+            <label htmlFor="language-filter" className="text-sm font-medium text-zinc-400">
               {isArabic ? 'اللغة' : 'Language'}
             </label>
             <select
               id="language-filter"
-              className={styles.filterSelect}
+              className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all"
               value={localLanguage}
               onChange={(e) => setLocalLanguage(e.target.value)}
-              aria-label={isArabic ? 'اختر اللغة' : 'Select Language'}
             >
               <option value="">{isArabic ? 'كل اللغات' : 'All Languages'}</option>
               {LANGUAGE_OPTIONS.map((option) => (
@@ -372,24 +310,22 @@ export const UnifiedFilters: React.FC<UnifiedFiltersProps> = ({
             </select>
           </div>
         )}
-        
-        {/* Action Buttons */}
-        <div className={styles.actionButtons}>
-          <button
-            className={styles.applyFiltersBtn}
-            onClick={handleApply}
-            aria-label={isArabic ? 'تطبيق الفلاتر' : 'Apply Filters'}
-          >
-            {isArabic ? 'تطبيق' : 'Apply'}
-          </button>
-          <button
-            className={styles.clearFiltersBtn}
-            onClick={handleClear}
-            aria-label={isArabic ? 'مسح الفلاتر' : 'Clear Filters'}
-          >
-            {isArabic ? 'مسح' : 'Clear'}
-          </button>
-        </div>
+      </div>
+      
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-white/5">
+        <button
+          className="px-6 py-2.5 rounded-xl text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+          onClick={handleClear}
+        >
+          {isArabic ? 'مسح الفلاتر' : 'Clear Filters'}
+        </button>
+        <button
+          className="px-8 py-2.5 rounded-xl text-sm font-bold bg-cyan-500 text-black hover:bg-cyan-400 hover:scale-105 transition-all shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+          onClick={handleApply}
+        >
+          {isArabic ? 'تطبيق الفلاتر' : 'Apply Filters'}
+        </button>
       </div>
     </div>
   );

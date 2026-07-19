@@ -59,8 +59,8 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
   const overview = movie?.overview_ar || movie?.overview || 'لا يوجد وصف متاح'
   const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : (movie?.release_year || 'غير محدد')
   const rating = movie?.vote_average ? Math.round(movie.vote_average * 10) / 10 : 0
-  const poster = movie?.poster_url || (movie?.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : '')
-  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `https://image.tmdb.org/t/p/w1280${movie.backdrop_path}` : '')
+  const poster = movie?.poster_url || (movie?.poster_path ? `/tmdb/w300${movie.poster_path}` : '')
+  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w1280${movie.backdrop_path}` : '')
   
   // Parse genres from JSON
   const genres = useMemo(() => {
@@ -262,7 +262,7 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
                       <div className="w-24 h-24 rounded-full overflow-hidden bg-zinc-800 mb-2">
                         {person.profile_path && (
                           <img
-                            src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                            src={`/tmdb/w185${person.profile_path}`}
                             alt={person.name_ar || person.name_en}
                             className="w-full h-full object-cover"
                             loading="lazy"

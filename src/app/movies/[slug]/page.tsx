@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
   
-  const title = movie.title_ar || movie.title_en || 'فيلم'
-  const description = movie.overview_ar || 'شاهد الفيلم على فور سيما'
+  const title = String(movie.title_ar || movie.title_en || 'فيلم')
+  const description = String(movie.overview_ar || 'شاهد الفيلم على فور سيما')
   
   return {
     title: `${title} | فور سيما`,

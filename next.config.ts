@@ -31,6 +31,15 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  // Proxy TMDB images to bypass ISP blocks and AdBlockers
+  async rewrites() {
+    return [
+      {
+        source: '/tmdb/:path*',
+        destination: 'https://image.tmdb.org/t/p/:path*',
+      },
+    ]
+  },
 }
 
 export default nextConfig
