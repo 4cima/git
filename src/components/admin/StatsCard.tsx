@@ -37,7 +37,7 @@ export const StatsCard = ({
         <div className="flex items-end justify-between">
             <div>
                 <div className="text-2xl font-bold text-white">
-                    {typeof value === 'number' ? value.toLocaleString() : value}
+                    {typeof value === 'number' ? value.toLocaleString('en-US') : value}
                 </div>
                 {subtitle && (
                     <p className="text-xs text-zinc-500 mt-1">{subtitle}</p>

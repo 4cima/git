@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   const [moviesCount, seriesCount, seasonsCount] = await Promise.all([
     turso.execute('SELECT COUNT(*) as count FROM movies'),
     turso.execute('SELECT COUNT(*) as count FROM tv_series'),
-    turso.execute('SELECT COUNT(*) as count FROM tv_seasons'),
+    turso.execute("SELECT SUM(number_of_seasons) as count FROM tv_series WHERE number_of_seasons > 0"),
   ])
 
   const stats = [
