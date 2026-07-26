@@ -11,41 +11,51 @@ export async function GET() {
 
     const [trendingMoviesRes, trendingSeriesRes, latestRes, topRatedRes, seriesRes] = await Promise.all([
       turso.execute({
-        sql: `SELECT id, slug, title_ar, title_en, poster_path, release_year as year, vote_average, genres_json
+        sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar, release_year as year, vote_average, genres_json
               FROM movies 
-              WHERE poster_path IS NOT NULL AND vote_average > 0
+              WHERE poster_path IS NOT NULL 
+                AND backdrop_path IS NOT NULL 
+                AND vote_average > 0
+                AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
               ORDER BY popularity DESC 
               LIMIT 50`,
         args: []
       }),
       turso.execute({
-        sql: `SELECT id, slug, name_ar as title_ar, name_en as title_en, poster_path, first_air_year as year, vote_average, genres_json
+        sql: `SELECT id, slug, name_ar as title_ar, name_en as title_en, poster_path, backdrop_path, overview_ar, first_air_year as year, vote_average, genres_json
               FROM tv_series 
-              WHERE poster_path IS NOT NULL AND vote_average > 0
+              WHERE poster_path IS NOT NULL 
+                AND backdrop_path IS NOT NULL 
+                AND vote_average > 0
+                AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
               ORDER BY popularity DESC 
               LIMIT 50`,
         args: []
       }),
       turso.execute({
-        sql: `SELECT id, slug, title_ar, title_en, poster_path, release_year as year, vote_average, genres_json
+        sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar, release_year as year, vote_average, genres_json
               FROM movies 
               WHERE poster_path IS NOT NULL
+                AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
               ORDER BY release_year DESC, popularity DESC
               LIMIT 50`,
         args: []
       }),
       turso.execute({
-        sql: `SELECT id, slug, title_ar, title_en, poster_path, release_year as year, vote_average, genres_json
+        sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar, release_year as year, vote_average, genres_json
               FROM movies 
-              WHERE poster_path IS NOT NULL AND vote_average >= 7.5
+              WHERE poster_path IS NOT NULL 
+                AND vote_average >= 7.5
+                AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
               ORDER BY vote_average DESC
               LIMIT 50`,
         args: []
       }),
       turso.execute({
-        sql: `SELECT id, slug, name_ar as title_ar, name_en as title_en, poster_path, first_air_year as year, vote_average, genres_json
+        sql: `SELECT id, slug, name_ar as title_ar, name_en as title_en, poster_path, backdrop_path, overview_ar, first_air_year as year, vote_average, genres_json
               FROM tv_series 
               WHERE poster_path IS NOT NULL
+                AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
               ORDER BY popularity DESC
               LIMIT 50`,
         args: []

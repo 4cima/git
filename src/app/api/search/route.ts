@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
             WHERE (
               title_ar LIKE ? OR 
               title_en LIKE ? OR 
-              overview_ar LIKE ? OR 
-              overview_en LIKE ?
+              overview_ar LIKE ?
             )
+            AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
             ORDER BY 
               CASE 
                 WHEN title_ar LIKE ? THEN 1
@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
               popularity DESC
             LIMIT 20`,
       args: [
-        searchTerm, searchTerm, searchTerm, searchTerm,  // WHERE conditions
-        searchTerm, searchTerm, searchTerm                 // ORDER BY conditions
+        searchTerm, searchTerm, searchTerm,  // WHERE conditions
+        searchTerm, searchTerm, searchTerm   // ORDER BY conditions
       ]
     })
     
@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
             WHERE (
               name_ar LIKE ? OR 
               name_en LIKE ? OR 
-              overview_ar LIKE ? OR 
-              overview_en LIKE ?
+              overview_ar LIKE ?
             )
+            AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
             ORDER BY 
               CASE 
                 WHEN name_ar LIKE ? THEN 1
@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
               popularity DESC
             LIMIT 20`,
       args: [
-        searchTerm, searchTerm, searchTerm, searchTerm,  // WHERE conditions
-        searchTerm, searchTerm, searchTerm                 // ORDER BY conditions
+        searchTerm, searchTerm, searchTerm,  // WHERE conditions
+        searchTerm, searchTerm, searchTerm   // ORDER BY conditions
       ]
     })
     

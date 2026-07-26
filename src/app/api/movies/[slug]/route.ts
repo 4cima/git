@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { turso } from '@/lib/turso'
 
 export const dynamic = 'force-dynamic'
@@ -14,7 +14,10 @@ export async function GET(
     console.log('🔄 [API /movies/:slug] Fetching movie:', slug)
     
     const result = await turso.execute({
-      sql: 'SELECT * FROM movies WHERE slug = ? LIMIT 1',
+      sql: `SELECT * FROM movies 
+            WHERE slug = ? 
+              AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+            LIMIT 1`,
       args: [slug]
     })
     
