@@ -1,128 +1,78 @@
 /**
- * 🔧 Admin Content API - Turso Integration
- * 
- * @description Admin operations for content management using Turso via Worker API
- * @author 4Cima Team
- * 
- * ⚠️ CRITICAL: ALL admin content operations go through Turso via Worker API
- * ⚠️ This file is for ADMIN operations only (create, update, delete)
+ * Admin Content API - Turso Integration
+ *
+ * Operations route directly to /api/admin/movies and /api/admin/series
+ * which call turso.execute() — no phantom /api/db/query endpoint.
+ *
+ * All routes are protected by HTTP Basic Auth middleware.
  */
 
-import { CONFIG } from '../lib/constants'
+// ==========================================
+// Movies
+// ==========================================
 
-const API_BASE = CONFIG.API_BASE || 'https://api.4cima.com'
+export async function updateMovie(tmdb_id: number, fields: Record<string, unknown>) {
+  const res = await fetch('/api/admin/movies', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tmdb_id, fields }),
+  })
+  const data = await res.json()
+  if (!data.ok) throw new Error(data.error || 'Update failed')
+  return data
+}
 
-async function fetchAPI(endpoint: string, options?: RequestInit) {
-  const url = API_BASE ? `${API_BASE}${endpoint}` : endpoint
-  const response = await fetch(url, options)
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }))
-    throw new Error(error.error || response.statusText)
-  }
-
-  return response.json()
+export async function deleteMovie(tmdb_id: number) {
+  const res = await fetch('/api/admin/movies', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tmdb_id }),
+  })
+  const data = await res.json()
+  if (!data.ok) throw new Error(data.error || 'Delete failed')
+  return data
 }
 
 // ==========================================
-// Series Management
+// Series
 // ==========================================
 
-export async function upsertSeries(row: Record<string, unknown>) {
-  // For now, use direct DB query endpoint
-  const { id, ...data } = row
-
-  const query = id
-    ? `UPDATE tv_series SET ${Object.keys(data).map((k, i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1`
-    : `INSERT INTO tv_series (${Object.keys(row).join(', ')}) VALUES (${Object.keys(row).map((_, i) => `$${i + 1}`).join(', ')})`
-
-  const params = id ? [id, ...Object.values(data)] : Object.values(row)
-
-  return fetchAPI('/api/db/query', {
-    method: 'POST',
+export async function updateSeries(tmdb_id: number, fields: Record<string, unknown>) {
+  const res = await fetch('/api/admin/series', {
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, params })
+    body: JSON.stringify({ tmdb_id, fields }),
   })
+  const data = await res.json()
+  if (!data.ok) throw new Error(data.error || 'Update failed')
+  return data
 }
 
-export async function deleteSeries(seriesId: number) {
-  return fetchAPI('/api/db/query', {
-    method: 'POST',
+export async function deleteSeries(tmdb_id: number) {
+  const res = await fetch('/api/admin/series', {
+    method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: 'DELETE FROM tv_series WHERE id = $1',
-      params: [seriesId]
-    })
+    body: JSON.stringify({ tmdb_id }),
   })
+  const data = await res.json()
+  if (!data.ok) throw new Error(data.error || 'Delete failed')
+  return data
 }
 
 // ==========================================
-// Season Management
+// Legacy stubs (season/episode management not yet implemented)
 // ==========================================
-
-export async function upsertSeason(row: Record<string, unknown>) {
-  const { id, ...data } = row
-
-  const query = id
-      ? `UPDATE tv_seasons SET ${Object.keys(data).map((k, i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1`
-    : `INSERT INTO tv_seasons (${Object.keys(row).join(', ')}) VALUES (${Object.keys(row).map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`
-
-  const params = id ? [id, ...Object.values(data)] : Object.values(row)
-
-  return fetchAPI('/api/db/query', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, params })
-  })
+export async function upsertSeason(_row: Record<string, unknown>) {
+  throw new Error('Season management not yet implemented')
+}
+export async function deleteSeason(_seasonId: number) {
+  throw new Error('Season management not yet implemented')
+}
+export async function upsertEpisode(_row: Record<string, unknown>) {
+  throw new Error('Episode management not yet implemented')
+}
+export async function deleteEpisode(_episodeId: number) {
+  throw new Error('Episode management not yet implemented')
 }
 
-export async function deleteSeason(seasonId: number) {
-  return fetchAPI('/api/db/query', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: 'DELETE FROM tv_seasons WHERE id = $1',
-      params: [seasonId]
-    })
-  })
-}
-
-// ==========================================
-// Episode Management
-// ==========================================
-
-export async function upsertEpisode(row: Record<string, unknown>) {
-  const { id, ...data } = row
-
-  const query = id
-    ? `UPDATE episodes SET ${Object.keys(data).map((k, i) => `${k} = $${i + 2}`).join(', ')} WHERE id = $1`
-    : `INSERT INTO episodes (${Object.keys(row).join(', ')}) VALUES (${Object.keys(row).map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`
-
-  const params = id ? [id, ...Object.values(data)] : Object.values(row)
-
-  return fetchAPI('/api/db/query', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, params })
-  })
-}
-
-export async function deleteEpisode(episodeId: number) {
-  return fetchAPI('/api/db/query', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: 'DELETE FROM episodes WHERE id = $1',
-      params: [episodeId]
-    })
-  })
-}
-
-export default {
-  upsertSeries,
-  deleteSeries,
-  upsertSeason,
-  deleteSeason,
-  upsertEpisode,
-  deleteEpisode
-}
+export default { updateMovie, deleteMovie, updateSeries, deleteSeries }
