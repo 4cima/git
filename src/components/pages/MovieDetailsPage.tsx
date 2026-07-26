@@ -60,7 +60,7 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
   const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : (movie?.release_year || 'غير محدد')
   const rating = movie?.vote_average ? Math.round(movie.vote_average * 10) / 10 : 0
   const poster = movie?.poster_url || (movie?.poster_path ? `/tmdb/w300${movie.poster_path}` : '')
-  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w1280${movie.backdrop_path}` : '')
+  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w300${movie.backdrop_path}` : '')
   
   // Parse genres from JSON
   const genres = useMemo(() => {

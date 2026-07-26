@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, BellOff, Check, Trash2, Info, CheckCircle, AlertTriangle, XCircle, Sparkles, Loader2 } from 'lucide-react'
+import { Bell, BellOff, Check, Trash2, Info, CheckCircle, AlertTriangle, XCircle, Star, Loader2 } from 'lucide-react'
 import { useAuth } from '../../../hooks/useAuth'
 import { getUserNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, Notification } from '../../../lib/supabase'
 import { toast } from '../../../lib/toast-manager'
@@ -73,7 +73,7 @@ export const NotificationCenter = () => {
       case 'success': return <CheckCircle size={16} className="text-green-400" />
       case 'warning': return <AlertTriangle size={16} className="text-yellow-400" />
       case 'error': return <XCircle size={16} className="text-red-400" />
-      case 'recommendation': return <Sparkles size={16} className="text-primary" />
+      case 'recommendation': return <Star size={16} className="text-primary" />
       default: return <Info size={16} className="text-blue-400" />
     }
   }

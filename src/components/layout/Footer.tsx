@@ -36,7 +36,7 @@ export const Footer = () => {
           
           <div className="pt-2">
              <a 
-               href="https://www.facebook.com/online.cinma." 
+               href="https://www.facebook.com/4cima2" 
                target="_blank" 
                rel="noopener noreferrer"
                className="inline-flex items-center gap-2 text-zinc-400 hover:text-blue-500 transition-colors"
@@ -70,8 +70,9 @@ export const Footer = () => {
           </h4>
           <nav className="flex flex-col gap-2 text-zinc-400">
             <Link href="/dmca" prefetch={false} className="hover:text-cyan-400 transition-colors w-fit">DMCA</Link>
+            <Link href="/copyright" prefetch={false} className="hover:text-cyan-400 transition-colors w-fit">حقوق النشر</Link>
             <Link href="/terms" prefetch={false} className="hover:text-cyan-400 transition-colors w-fit">الشروط والأحكام</Link>
-            <Link href="/privacy" prefetch={false} className="hover:text-cyan-400 transition-colors w-fit">سياسة الخصوصية</Link>
+            <Link href="/privacy" prefetch={false} className="hover:text-cyan-400 transition-colors w-fit">الخصوصية</Link>
             <Link href="/contact" className="hover:text-cyan-400 transition-colors w-fit">اتصل بنا</Link>
           </nav>
         </div>

@@ -1,6 +1,6 @@
 import type { Config } from 'tailwindcss'
-// @ts-ignore
-import rtl from 'tailwindcss-rtl'
+// Removed rtl plugin due to compatibility issues with Tailwind v4
+// import rtl from 'tailwindcss-rtl'
 import { colorTokens } from './src/styles/tokens/colors'
 import { spacingTokens } from './src/styles/tokens/spacing'
 import { shadowTokens } from './src/styles/tokens/shadows'
@@ -225,5 +225,8 @@ export default {
       },
     },
   },
-  plugins: [rtl],
+  plugins: [
+    // RTL plugin removed - Tailwind v4 handles RTL differently
+    // Use dir="rtl" in HTML and logical properties (inline-start, inline-end)
+  ],
 } satisfies Config

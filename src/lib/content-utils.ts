@@ -1,4 +1,5 @@
 // Content utilities for genre translation and country detection
+import { getMediaTypeColor as getMediaTypeColorScheme } from '@/utils/genreColors'
 
 export const GENRE_TRANSLATIONS: Record<string, string> = {
   'Action': 'أكشن',
@@ -75,9 +76,11 @@ export function getCountryLabel(originalLanguage: string, productionCountries?: 
 }
 
 export function getMediaTypeLabel(mediaType: string): string {
-  return mediaType === 'tv' || mediaType === 'series' ? 'مسلسل' : 'فيلم'
+  const scheme = getMediaTypeColorScheme(mediaType)
+  return scheme.label
 }
 
 export function getMediaTypeColor(mediaType: string): string {
-  return mediaType === 'tv' || mediaType === 'series' ? 'text-purple-400' : 'text-cyan-400'
+  const scheme = getMediaTypeColorScheme(mediaType)
+  return scheme.text
 }

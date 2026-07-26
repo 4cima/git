@@ -90,10 +90,13 @@ export async function GET(request: NextRequest) {
     })
     const total = Number(countResult.rows[0]?.total || 0)
     
-    // Get movies
+    // Get movies with genres
     const moviesResult = await turso.execute({
       sql: `
-        SELECT * FROM movies 
+        SELECT 
+          m.*,
+          m.genres_json
+        FROM movies m
         ${whereClause}
         ORDER BY ${sortColumn} ${sortOrder}
         LIMIT ? OFFSET ?

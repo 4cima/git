@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Film, Tv, Calendar, Star } from 'lucide-react'
 import { SortBar } from '@/components/features/filters/SortBar'
 import { MovieCard } from '@/components/features/media/MovieCard'
+import { getGenreColor } from '@/utils/genreColors'
 
 const SORT_OPTIONS = [
   { value: 'popularity', label: 'الأكثر شهرة' },
@@ -26,6 +27,7 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
   const [order, setOrder] = useState<'asc' | 'desc'>('desc')
 
   const genre = initialData.genre
+  const genreColorScheme = getGenreColor(genre.name_ar || genre.name_en)
 
   useEffect(() => {
     fetchContent()
@@ -63,9 +65,12 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
       <div className="page-container">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl md:text-6xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">
-            {genre.name_ar}
-          </h1>
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`w-4 h-4 rounded-full ${genreColorScheme.bg} ${genreColorScheme.border} border-2 ${genreColorScheme.glow} shadow-xl`} />
+            <h1 className={`text-4xl md:text-6xl font-black ${genreColorScheme.text} drop-shadow-lg`}>
+              {genre.name_ar}
+            </h1>
+          </div>
           <p className="text-lg text-zinc-400">
             {genre.name_en && genre.name_en !== genre.name_ar && (
               <span>{genre.name_en} • </span>
@@ -83,8 +88,8 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
             }}
             className={`px-6 py-3 rounded-xl font-semibold transition-all ${
               contentType === 'all'
-                ? 'bg-cyan-500 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                ? `${genreColorScheme.bg} ${genreColorScheme.text} border-2 ${genreColorScheme.border} ${genreColorScheme.glow} shadow-lg`
+                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-2 border-transparent'
             }`}
           >
             الكل
@@ -96,8 +101,8 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
             }}
             className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
               contentType === 'movie'
-                ? 'bg-cyan-500 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                ? `${genreColorScheme.bg} ${genreColorScheme.text} border-2 ${genreColorScheme.border} ${genreColorScheme.glow} shadow-lg`
+                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-2 border-transparent'
             }`}
           >
             <Film className="w-4 h-4" />
@@ -110,8 +115,8 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
             }}
             className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
               contentType === 'tv'
-                ? 'bg-cyan-500 text-white'
-                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                ? `${genreColorScheme.bg} ${genreColorScheme.text} border-2 ${genreColorScheme.border} ${genreColorScheme.glow} shadow-lg`
+                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-2 border-transparent'
             }`}
           >
             <Tv className="w-4 h-4" />

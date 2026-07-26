@@ -74,9 +74,9 @@ export function FilterSidebar({
   }
 
   return (
-    <div className={`bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-2xl p-4 ${className}`}>
+    <div className={`bg-zinc-900/50 backdrop-blur-md border border-zinc-800 rounded-2xl p-2 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 pb-4 border-b border-zinc-800">
+      <div className="flex items-center justify-between mb-2 pb-2 border-b border-zinc-800">
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-cyan-400" />
           <h3 className="text-lg font-bold text-white">الفلاتر</h3>
@@ -99,7 +99,7 @@ export function FilterSidebar({
       </div>
 
       {/* Sections */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {sections.map((section) => {
           const isExpanded = expandedSections.has(section.id)
           const sectionActive = activeFilters[section.id]
@@ -112,7 +112,7 @@ export function FilterSidebar({
               {/* Section Header */}
               <button
                 onClick={() => toggleSection(section.id)}
-                className="w-full flex items-center justify-between p-3 hover:bg-zinc-800/50 transition-colors"
+                className="w-full flex items-center justify-between p-2 hover:bg-zinc-800/50 transition-colors"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-cyan-400">{section.icon}</span>
@@ -140,7 +140,7 @@ export function FilterSidebar({
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="p-3 pt-0 space-y-2 max-h-64 overflow-y-auto">
+                    <div className="p-2 pt-0 space-y-1.5 max-h-64 overflow-y-auto">
                       {section.options.map((option) => {
                         const isActive = section.multiple
                           ? (activeFilters[section.id] as string[] || []).includes(option.value)

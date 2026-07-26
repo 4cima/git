@@ -1,80 +1,53 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies
+node_modules/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Environment
+.env
+.env.local
+.env.*.local
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# ===== LOCAL DEVELOPMENT ONLY =====
-
-# Kiro IDE files
-/.kiro/
-/.vscode/
-
-# Database files
-/data/
+# Database files (too large for git)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+local.db
 *.db
 *.db-shm
 *.db-wal
 
-# Scripts
-/scripts/
-*.js
-!next.config.js
-!postcss.config.js
-!eslint.config.js
+# Build output
+.next/
+dist/
+build/
+tsconfig.tsbuildinfo
 
-# Backup files
-/BACKUP/
-*.backup
-
-# Documentation
-*.md
-!README.md
-
-# Monitoring and logs
-/monitoring-reports/
+# Logs
 *.log
-*.jsonl
+npm-debug.log*
 
-# Worker (deployed separately)
-/worker/
+# OS
+.DS_Store
+Thumbs.db
 
-# Reports
-ai-keys-report.json
-wrangler.toml
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Large binary/data backups (> 50MB, not useful in git history)
+BACKUP-tv_series-turso.csv
+BACKUP-movies-turso.json
+BACKUP-movies-slugs-*.json
+BACKUP-*.json
+BACKUP-*.csv
+
+# TMDB export dumps (regenerable, 120MB+)
+tmdb-exports/
+
+# Temporary/scratch files
+temp-check.txt
+$null
+
+# Kiro IDE workspace files
+.kiro/

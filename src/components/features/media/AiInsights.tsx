@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Sparkles, Brain, Loader2 } from 'lucide-react'
+import { Star, Brain, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { generateAiInsights } from '../../../lib/groq'
 import { clsx } from 'clsx'
@@ -49,7 +49,7 @@ export const AiInsights = ({ title, type, overview, className }: AiInsightsProps
         <div>
           <h3 className="text-sm font-black text-white flex items-center gap-2">
             تحليل الذكاء الاصطناعي
-            <Sparkles size={14} className="text-primary animate-pulse" />
+            <Star size={14} className="text-primary animate-pulse" />
           </h3>
           <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Insights powered by Groq AI</p>
         </div>

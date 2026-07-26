@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, Plus, Loader2, ListMusic, Trash2, Share2, Globe, Lock } from 'lucide-react'
+import { Star, Plus, Loader2, ListMusic, Trash2, Share2, Globe, Lock } from 'lucide-react'
 import { useAuth } from '../../../hooks/useAuth'
 import { generateAiPlaylist } from '../../../lib/groq'
 import { createPlaylist, addPlaylistItem, getUserPlaylists, Playlist, PlaylistItem } from '../../../lib/supabase'
@@ -97,7 +97,7 @@ export const PlaylistManager = () => {
               placeholder="مثلاً: مغامرات الفضاء، أفلام غامضة..."
               className="w-full md:w-64 h-10 rounded-xl border border-white/10 bg-black/40 px-4 pr-10 text-xs text-white outline-none focus:border-primary transition-all"
             />
-            <Sparkles size={14} className="absolute right-3 top-3 text-primary group-focus-within:animate-pulse" />
+            <Star size={14} className="absolute right-3 top-3 text-primary group-focus-within:animate-pulse" />
           </div>
           <button
             onClick={handleGenerateAiPlaylist}
@@ -129,7 +129,7 @@ export const PlaylistManager = () => {
                 <div className="flex items-center gap-2">
                   {playlist.is_ai_generated ? (
                     <div className="p-1.5 rounded-lg bg-primary/20 text-primary">
-                      <Sparkles size={14} />
+                      <Star size={14} />
                     </div>
                   ) : (
                     <div className="p-1.5 rounded-lg bg-white/10 text-zinc-400">

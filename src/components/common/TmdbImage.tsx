@@ -42,7 +42,7 @@ const getUrl = (path: string, size: TmdbImageSize) => {
 
 export const TmdbImage = memo(({
   path,
-  size = 'w300',
+  size = 'w300', // Default to w300 for better performance
   fallback,
   showLoading = true,
   className = '',
@@ -80,9 +80,9 @@ export const TmdbImage = memo(({
     )
   }
 
-  // Generate srcset for responsive images if using standard sizes
+  // Generate srcset for responsive images - w300 for performance
   const srcSet = !path.startsWith('http') && size !== 'original'
-    ? `${getUrl(path, 'w300')} 300w, ${getUrl(path, 'w342')} 342w, ${getUrl(path, 'w500')} 500w`
+    ? `${getUrl(path, 'w300')} 300w`
     : undefined
 
   return (

@@ -49,6 +49,137 @@ html {
   overflow-x: hidden;
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Hero Animations                                                           */
+/* -------------------------------------------------------------------------- */
+@keyframe fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Throw animations for cards */
+@keyframes cardThrowLeft {
+  0% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) rotate(2deg) scale(1.05);
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.5;
+    filter: brightness(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-180px) translateY(-50px) rotate(-30deg) scale(0.7);
+    filter: brightness(0.5);
+  }
+}
+
+@keyframes cardThrowRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) rotate(2deg) scale(1.05);
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.5;
+    filter: brightness(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(180px) translateY(50px) rotate(30deg) scale(0.7);
+    filter: brightness(0.5);
+  }
+}
+
+/* Enter animations for cards */
+@keyframes cardEnterFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(180px) translateY(50px) rotate(30deg) scale(0.7);
+    filter: brightness(0.5);
+  }
+  50% {
+    opacity: 0.5;
+    filter: brightness(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) rotate(2deg) scale(1.05);
+    filter: brightness(1);
+  }
+}
+
+@keyframes cardEnterFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-180px) translateY(-50px) rotate(-30deg) scale(0.7);
+    filter: brightness(0.5);
+  }
+  50% {
+    opacity: 0.5;
+    filter: brightness(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) rotate(2deg) scale(1.05);
+    filter: brightness(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.6s ease-out forwards;
+}
+
+.animate-cardThrowLeft {
+  animation: cardThrowLeft 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-cardThrowRight {
+  animation: cardThrowRight 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-cardEnterFromRight {
+  animation: cardEnterFromRight 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-cardEnterFromLeft {
+  animation: cardEnterFromLeft 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+
 body {
   background: var(--lumen-void);
   font-family: 'Cairo', 'DM Sans', system-ui, sans-serif;
@@ -595,6 +726,78 @@ a:focus-visible,
   }
 }
 
+@keyframes cinema-filming {
+  0% {
+    transform: rotate(-8deg) translateY(0) translateX(-6px);
+  }
+  25% {
+    transform: rotate(-5deg) translateY(-1px) translateX(-3px);
+  }
+  50% {
+    transform: rotate(8deg) translateY(0) translateX(6px);
+  }
+  75% {
+    transform: rotate(5deg) translateY(-1px) translateX(3px);
+  }
+  100% {
+    transform: rotate(-8deg) translateY(0) translateX(-6px);
+  }
+}
+
+@keyframes infinite-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes infinite-scroll-seamless {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100vw);
+  }
+}
+
+@keyframes infinite-scroll-bg {
+  from {
+    background-position: 0 center;
+  }
+  to {
+    background-position: -100% center;
+  }
+}
+
+@keyframes infinite-scroll-smooth {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes infinite-scroll-seamless-fixed {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes banner-scroll {
+  0% {
+    background-position: 0 center;
+  }
+  100% {
+    background-position: -2000px center;
+  }
+}
+
 .animate-wiggle {
   animation: wiggle 2s ease-in-out infinite;
 }
@@ -815,4 +1018,509 @@ select option {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Meteor Shower Effect - Realistic Falling Meteors with Fire               */
+/* -------------------------------------------------------------------------- */
+
+/* Container for meteor shower */
+.meteor-shower {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Base meteor style */
+.meteor {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, 
+    #fff 0%, 
+    #ffcc00 30%, 
+    #ff6600 60%, 
+    #ff3300 100%);
+  box-shadow: 
+    0 0 10px #ffcc00,
+    0 0 20px #ff6600,
+    0 0 30px #ff3300;
+  filter: brightness(1.5);
+}
+
+/* Meteor tail - fire trail effect */
+.meteor::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(to left, 
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 204, 0, 0.9) 10%,
+    rgba(255, 153, 0, 0.7) 25%,
+    rgba(255, 102, 0, 0.5) 45%,
+    rgba(255, 51, 0, 0.3) 65%,
+    transparent 100%);
+  transform: translateY(-50%);
+  filter: blur(1.5px);
+}
+
+/* Fire glow effect */
+.meteor::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: radial-gradient(circle, 
+    rgba(255, 204, 0, 0.8) 0%,
+    rgba(255, 102, 0, 0.4) 50%, 
+    transparent 100%);
+  transform: translate(-50%, -50%);
+  filter: blur(5px);
+  animation: fire-flicker 0.3s ease-in-out infinite;
+}
+
+/* Fire flicker animation */
+@keyframes fire-flicker {
+  0%, 100% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+}
+
+/* Individual meteor animations with different timing and paths */
+
+/* Meteor 1 - Large, slow, slight right curve */
+.meteor-1 {
+  width: 5px;
+  height: 5px;
+  animation: meteor-fall-1 6s ease-in infinite;
+  animation-delay: 0s;
+}
+
+@keyframes meteor-fall-1 {
+  0% {
+    transform: translate(-20%, -50%) rotate(-35deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(120%, 150%) rotate(-32deg);
+    opacity: 0;
+  }
+}
+
+/* Meteor 2 - Medium, fast, straight */
+.meteor-2 {
+  width: 3px;
+  height: 3px;
+  animation: meteor-fall-2 3.5s ease-in infinite;
+  animation-delay: 1.5s;
+}
+
+@keyframes meteor-fall-2 {
+  0% {
+    transform: translate(30%, -60%) rotate(-40deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(110%, 140%) rotate(-40deg);
+    opacity: 0;
+  }
+}
+
+/* Meteor 3 - Small, very fast */
+.meteor-3 {
+  width: 2px;
+  height: 2px;
+  animation: meteor-fall-3 2.8s ease-in infinite;
+  animation-delay: 3s;
+  opacity: 0.7;
+}
+
+.meteor-3::before {
+  width: 60px;
+}
+
+@keyframes meteor-fall-3 {
+  0% {
+    transform: translate(60%, -40%) rotate(-38deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(130%, 120%) rotate(-38deg);
+    opacity: 0;
+  }
+}
+
+/* Meteor 4 - Large, slow, left curve */
+.meteor-4 {
+  width: 6px;
+  height: 6px;
+  animation: meteor-fall-4 7s ease-in infinite;
+  animation-delay: 2s;
+}
+
+.meteor-4::before {
+  width: 130px;
+}
+
+@keyframes meteor-fall-4 {
+  0% {
+    transform: translate(10%, -70%) rotate(-42deg);
+    opacity: 0;
+  }
+  7% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(100%, 160%) rotate(-45deg);
+    opacity: 0;
+  }
+}
+
+/* Meteor 5 - Medium, medium speed */
+.meteor-5 {
+  width: 4px;
+  height: 4px;
+  animation: meteor-fall-5 4.5s ease-in infinite;
+  animation-delay: 4s;
+}
+
+@keyframes meteor-fall-5 {
+  0% {
+    transform: translate(50%, -55%) rotate(-36deg);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(125%, 145%) rotate(-36deg);
+    opacity: 0;
+  }
+}
+
+/* Meteor 6 - Small, fast, sharp angle */
+.meteor-6 {
+  width: 2.5px;
+  height: 2.5px;
+  animation: meteor-fall-6 3.2s ease-in infinite;
+  animation-delay: 5.5s;
+  opacity: 0.8;
+}
+
+.meteor-6::before {
+  width: 70px;
+}
+
+@keyframes meteor-fall-6 {
+  0% {
+    transform: translate(40%, -45%) rotate(-44deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(115%, 135%) rotate(-44deg);
+    opacity: 0;
+  }
+}
+
+/* Meteor 7 - Tiny, very fast, faint */
+.meteor-7 {
+  width: 1.5px;
+  height: 1.5px;
+  animation: meteor-fall-7 2.2s ease-in infinite;
+  animation-delay: 1s;
+  opacity: 0.5;
+}
+
+.meteor-7::before {
+  width: 45px;
+  height: 1.5px;
+}
+
+@keyframes meteor-fall-7 {
+  0% {
+    transform: translate(70%, -35%) rotate(-39deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(140%, 115%) rotate(-39deg);
+    opacity: 0;
+  }
+}
+
+/* Meteor 8 - Large, slow, prominent */
+.meteor-8 {
+  width: 5.5px;
+  height: 5.5px;
+  animation: meteor-fall-8 8s ease-in infinite;
+  animation-delay: 6s;
+}
+
+.meteor-8::before {
+  width: 150px;
+  height: 3px;
+}
+
+@keyframes meteor-fall-8 {
+  0% {
+    transform: translate(5%, -80%) rotate(-37deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(105%, 170%) rotate(-34deg);
+    opacity: 0;
+  }
+}
+
+
+/* -------------------------------------------------------------------------- */
+/*  Logo Drop Animation - فيزياء واقعية مع جاذبية وارتداد طبيعي                */
+/* -------------------------------------------------------------------------- */
+
+@keyframes logo-rope-drop {
+  0% {
+    transform: translateY(-250px) rotate(0deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  /* السقوط السريع بتسارع (الجاذبية) */
+  30% {
+    transform: translateY(35px) rotate(18deg);
+    animation-timing-function: ease-in;
+  }
+  /* الارتداد الأول - قوي */
+  42% {
+    transform: translateY(-12px) rotate(-14deg);
+    animation-timing-function: ease-out;
+  }
+  /* الهبوط الثاني */
+  52% {
+    transform: translateY(18px) rotate(8deg);
+    animation-timing-function: ease-in;
+  }
+  /* الارتداد الثاني - متوسط */
+  60% {
+    transform: translateY(-6px) rotate(-5deg);
+    animation-timing-function: ease-out;
+  }
+  /* الهبوط الثالث */
+  67% {
+    transform: translateY(8px) rotate(3deg);
+    animation-timing-function: ease-in;
+  }
+  /* الارتداد الثالث - خفيف */
+  73% {
+    transform: translateY(-2px) rotate(-1.5deg);
+    animation-timing-function: ease-out;
+  }
+  /* الهبوط الرابع - نهائي */
+  78% {
+    transform: translateY(3px) rotate(1deg);
+  }
+  /* أرجحة خفيفة جداً */
+  83% {
+    transform: translateY(-0.5px) rotate(-0.5deg);
+  }
+  /* الشد النهائي للأعلى */
+  90% {
+    transform: translateY(-3px) rotate(0deg);
+  }
+  /* الاستقرار التام */
+  100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes rope-stretch {
+  0% {
+    height: calc(4rem - 230px);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  /* التمدد مع السقوط - أقل من حركة اللوجو لأن الحبل مرن */
+  30% {
+    height: calc(4rem + 1.25rem + 30px);
+  }
+  /* الانكماش مع الارتداد الأول */
+  42% {
+    height: calc(4rem + 1.25rem - 10px);
+  }
+  /* التمدد الثاني */
+  52% {
+    height: calc(4rem + 1.25rem + 15px);
+  }
+  /* الانكماش الثاني */
+  60% {
+    height: calc(4rem + 1.25rem - 5px);
+  }
+  /* التمدد الثالث */
+  67% {
+    height: calc(4rem + 1.25rem + 6px);
+  }
+  /* الانكماش الثالث */
+  73% {
+    height: calc(4rem + 1.25rem - 2px);
+  }
+  /* التذبذب الخفيف */
+  78% {
+    height: calc(4rem + 1.25rem + 2px);
+  }
+  83% {
+    height: calc(4rem + 1.25rem - 0.5px);
+  }
+  /* الشد النهائي */
+  90% {
+    height: calc(4rem + 1.25rem - 2px);
+  }
+  /* الطول النهائي */
+  100% {
+    height: calc(4rem + 1.25rem);
+  }
+}
+
+/* أنيميشن اهتزاز خفيف بعد الاستقرار */
+@keyframes logo-settle {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(0.5px) rotate(0.3deg);
+  }
+}
+
+/* ظل ديناميكي يتحرك مع اللوجو */
+@keyframes logo-shadow {
+  0% {
+    filter: drop-shadow(0 0px 0px rgba(0, 0, 0, 0));
+  }
+  30% {
+    filter: drop-shadow(0 45px 25px rgba(0, 0, 0, 0.6)) blur(1px);
+  }
+  42% {
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.4)) blur(0.5px);
+  }
+  52% {
+    filter: drop-shadow(0 25px 18px rgba(0, 0, 0, 0.5)) blur(0.8px);
+  }
+  60% {
+    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.35)) blur(0.3px);
+  }
+  67% {
+    filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.4)) blur(0.4px);
+  }
+  73% {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3)) blur(0.2px);
+  }
+  90% {
+    filter: drop-shadow(0 -3px 6px rgba(0, 0, 0, 0.25)) blur(0px);
+  }
+  100% {
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3)) blur(0px);
+  }
+}
+
+.logo-drop-animation {
+  animation: 
+    logo-rope-drop 3.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
+    logo-shadow 3.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards,
+    swing-subtle 3s ease-in-out 3.5s infinite;
+  transform-origin: top center;
+}
+
+.rope-stretch-animation {
+  animation: 
+    rope-stretch 3.5s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  transform-origin: top center;
+}
+
+/* اهتزاز الحبل بعد الاستقرار */
+@keyframes rope-vibrate {
+  0%, 100% {
+    transform: scaleX(1);
+  }
+  25% {
+    transform: scaleX(1.08);
+  }
+  75% {
+    transform: scaleX(0.95);
+  }
+}
+
+/* سحب اللوجو لأعلى عند الـ scroll */
+@keyframes logo-pull-up {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(-80px) rotate(0deg);
+  }
+}
+
+@keyframes rope-pull-up {
+  0% {
+    height: calc(4rem + 1.25rem);
+  }
+  100% {
+    height: calc(4rem - 3rem);
+  }
+}
+
+.logo-pulled-up {
+  animation: logo-pull-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  transform-origin: top center;
+}
+
+.rope-pulled-up {
+  animation: rope-pull-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  height: calc(4rem + 1.25rem);
 }

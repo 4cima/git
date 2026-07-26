@@ -3,7 +3,6 @@ import { Cairo } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { QuantumNavbar } from '@/components/layout/QuantumNavbar'
-import { Footer } from '@/components/layout/Footer'
 import { Toaster } from 'sonner'
 
 const cairo = Cairo({ 
@@ -91,7 +90,6 @@ export default function RootLayout({
           <main className="min-h-screen">
             {children}
           </main>
-          <Footer />
           <Toaster position="top-center" richColors />
         </Providers>
       </body>

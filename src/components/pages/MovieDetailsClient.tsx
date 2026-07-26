@@ -7,6 +7,8 @@ import ReactPlayer from 'react-player'
 import clsx from 'clsx'
 import { EmbedPlayer } from '../features/media/EmbedPlayer'
 import { useServers } from '../../hooks/useServers'
+import { getGenreColor } from '@/utils/genreColors'
+import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 
 // @ts-ignore
 const Player = ReactPlayer as any
@@ -18,13 +20,13 @@ interface MovieDetailsClientProps {
 export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
   const [cinemaMode, setCinemaMode] = useState(false)
 
-  const title = movie?.title_ar || movie?.title_en || movie?.title || 'فيلم'
-  const titleEn = movie?.title_en || movie?.title
-  const overview = movie?.overview_ar || movie?.overview || 'لا يوجد وصف متاح'
+  const title = sanitizeTitle(movie?.title_ar || movie?.title_en || movie?.title || 'فيلم')
+  const titleEn = sanitizeTitle(movie?.title_en || movie?.title)
+  const overview = sanitizeOverview(movie?.overview_ar || movie?.overview || 'لا يوجد وصف متاح')
   const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : (movie?.release_year || 'غير محدد')
   const rating = movie?.vote_average ? Math.round(movie.vote_average * 10) / 10 : 0
   const poster = movie?.poster_url || (movie?.poster_path ? `/tmdb/w300${movie.poster_path}` : '')
-  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w1280${movie.backdrop_path}` : '')
+  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w300${movie.backdrop_path}` : '')
   
   const effectiveId = movie?.tmdb_id || movie?.id || 0
   const { servers, active, setActive, loading: serversLoading, reportBroken, reporting } = useServers(
@@ -123,11 +125,17 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
               {genres.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {genres.map((g: any) => (
-                    <span key={g.id || g.name} className="text-xs font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1 rounded-md">
-                      {g.name_ar || g.name_en || g.name}
-                    </span>
-                  ))}
+                  {genres.map((g: any) => {
+                    const genreColorScheme = getGenreColor(g.name_ar || g.name_en || g.name)
+                    return (
+                      <span 
+                        key={g.id || g.name} 
+                        className={`text-xs font-bold uppercase tracking-wider ${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-3 py-1.5 rounded-lg ${genreColorScheme.glow} shadow-lg transition-all hover:scale-105`}
+                      >
+                        {g.name_ar || g.name_en || g.name}
+                      </span>
+                    )
+                  })}
                 </div>
               )}
 

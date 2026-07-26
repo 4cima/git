@@ -132,19 +132,23 @@ export function MegaHero({ items }: MegaHeroProps) {
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                 >
                   <div className="mb-3 flex items-center justify-start gap-2">
-                    <span className={`rounded-md px-2.5 py-1 text-xs font-bold ring-1 ${
-                      current.media_type === 'tv' 
-                        ? 'bg-purple-500/20 text-purple-300 ring-purple-400/30' 
-                        : 'bg-cyan-500/20 text-cyan-300 ring-cyan-400/30'
-                    }`}>
+                    <span
+                      className={`rounded-md px-2.5 py-1 text-xs font-bold ring-1 ${
+                        current.media_type === 'tv'
+                          ? 'bg-purple-500/20 text-purple-300 ring-purple-400/30'
+                          : 'bg-cyan-500/20 text-cyan-300 ring-cyan-400/30'
+                      }`}
+                    >
                       {mediaTypeLabel(current)}
                     </span>
                     {current.primary_genre && (
-                      <span className={`rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ${
-                        current.media_type === 'tv' 
-                          ? 'bg-purple-500/20 text-purple-300 ring-purple-400/30' 
-                          : 'bg-cyan-500/20 text-cyan-300 ring-cyan-400/30'
-                      }`}>
+                      <span
+                        className={`rounded-md px-2.5 py-1 text-xs font-semibold ring-1 ${
+                          current.media_type === 'tv'
+                            ? 'bg-purple-500/20 text-purple-300 ring-purple-400/30'
+                            : 'bg-cyan-500/20 text-cyan-300 ring-cyan-400/30'
+                        }`}
+                      >
                         {current.primary_genre}
                       </span>
                     )}
@@ -206,9 +210,7 @@ export function MegaHero({ items }: MegaHeroProps) {
                         className={
                           isActive
                             ? `relative h-20 w-14 shrink-0 overflow-hidden rounded-lg ring-2 transition-all duration-300 ${
-                                slide.media_type === 'tv'
-                                  ? 'ring-purple-400'
-                                  : 'ring-cyan-400'
+                                slide.media_type === 'tv' ? 'ring-purple-400' : 'ring-cyan-400'
                               }`
                             : 'relative h-20 w-14 shrink-0 overflow-hidden rounded-lg ring-1 ring-white/15 opacity-55 transition-all duration-300 hover:opacity-90'
                         }
@@ -222,7 +224,11 @@ export function MegaHero({ items }: MegaHeroProps) {
                           className="h-full w-full object-cover"
                         />
                         {isActive && (
-                          <div className={`absolute inset-0 bg-gradient-to-t ${slide.media_type === 'tv' ? 'from-purple-500/20' : 'from-cyan-500/20'} to-transparent`} />
+                          <div
+                            className={`absolute inset-0 bg-gradient-to-t ${
+                              slide.media_type === 'tv' ? 'from-purple-500/20' : 'from-cyan-500/20'
+                            } to-transparent`}
+                          />
                         )}
                       </button>
                     )

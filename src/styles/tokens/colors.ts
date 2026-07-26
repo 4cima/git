@@ -1,119 +1,163 @@
 /**
- * 🎨 Color Tokens - LUMEN Design System
- * 4Cima - Design Token System
- *
- * @description Semantic color tokens for the LUMEN design system
- * @version 1.0.0
+ * 4CIMA Design System - Color Tokens
+ * Dark Theme First (RTL Arabic Film Platform)
  */
 
-// ==========================================
-// Semantic Colors - الألوان الدلالية
-// ==========================================
-export const semanticColors = {
-  primary: {
-    main: '#C9A962',
-    light: '#E8D5A3',
-    dark: '#A88542',
-    opacity: {
-      10: 'rgba(201, 169, 98, 0.1)',
-      20: 'rgba(201, 169, 98, 0.2)',
-      50: 'rgba(201, 169, 98, 0.5)',
-      100: 'rgba(201, 169, 98, 1)',
-    },
-  },
-  success: {
-    main: '#10B981',
-    light: '#34D399',
-    dark: '#059669',
-    opacity: {
-      10: 'rgba(16, 185, 129, 0.1)',
-      20: 'rgba(16, 185, 129, 0.2)',
-      50: 'rgba(16, 185, 129, 0.5)',
-      100: 'rgba(16, 185, 129, 1)',
-    },
-  },
-  warning: {
-    main: '#F59E0B',
-    light: '#FBBF24',
-    dark: '#D97706',
-    opacity: {
-      10: 'rgba(245, 158, 11, 0.1)',
-      20: 'rgba(245, 158, 11, 0.2)',
-      50: 'rgba(245, 158, 11, 0.5)',
-      100: 'rgba(245, 158, 11, 1)',
-    },
-  },
-  error: {
-    main: '#EF4444',
-    light: '#F87171',
-    dark: '#DC2626',
-    opacity: {
-      10: 'rgba(239, 68, 68, 0.1)',
-      20: 'rgba(239, 68, 68, 0.2)',
-      50: 'rgba(239, 68, 68, 0.5)',
-      100: 'rgba(239, 68, 68, 1)',
-    },
-  },
-  info: {
-    main: '#3B82F6',
-    light: '#60A5FA',
-    dark: '#2563EB',
-    opacity: {
-      10: 'rgba(59, 130, 246, 0.1)',
-      20: 'rgba(59, 130, 246, 0.2)',
-      50: 'rgba(59, 130, 246, 0.5)',
-      100: 'rgba(59, 130, 246, 1)',
-    },
-  },
-} as const;
-
-// ==========================================
-// Surface Colors - ألوان الأسطح
-// ==========================================
-export const surfaceColors = {
-  void: '#08080C',
-  base: '#0F0F14',
-  raised: '#1C1B1F',
-  overlay: 'rgba(8, 8, 12, 0.9)',
-} as const;
-
-// ==========================================
-// Text Colors - ألوان النصوص
-// ==========================================
-export const textColors = {
-  primary: '#E8E4DC',
-  secondary: '#A8A5A0',
-  tertiary: '#71717A',
-  disabled: 'rgba(232, 228, 220, 0.4)',
-} as const;
-
-// ==========================================
-// Border Colors - ألوان الحدود
-// ==========================================
-export const borderColors = {
-  default: 'rgba(255, 255, 255, 0.15)',
-  muted: 'rgba(255, 255, 255, 0.08)',
-  focus: '#C9A962',
-  hover: 'rgba(255, 255, 255, 0.20)',
-} as const;
-
-// ==========================================
-// Complete Color Token System
-// ==========================================
 export const colorTokens = {
-  semantic: semanticColors,
-  surface: surfaceColors,
-  text: textColors,
-  border: borderColors,
-} as const;
+  /* Primary Colors - Brand Identity */
+  primary: {
+    cyan: {
+      main: '#06b6d4',
+      light: '#22d3ee',
+      dark: '#0891b2',
+    },
+    purple: {
+      main: '#a855f7',
+      light: '#c084fc',
+      dark: '#9333ea',
+    },
+    gold: {
+      main: '#f59e0b',
+      light: '#fbbf24',
+      dark: '#d97706',
+    },
+  },
 
-// ==========================================
-// Type Exports
-// ==========================================
-export type SemanticColors = typeof semanticColors;
-export type SurfaceColors = typeof surfaceColors;
-export type TextColors = typeof textColors;
-export type BorderColors = typeof borderColors;
-export type ColorTokens = typeof colorTokens;
+  /* Secondary Colors - Accent */
+  secondary: {
+    green: {
+      main: '#10b981',
+      light: '#34d399',
+      dark: '#059669',
+    },
+    red: {
+      main: '#ef4444',
+      light: '#f87171',
+      dark: '#dc2626',
+    },
+    orange: {
+      main: '#f97316',
+      light: '#fb923c',
+      dark: '#ea580c',
+    },
+    blue: {
+      main: '#3b82f6',
+      light: '#60a5fa',
+      dark: '#2563eb',
+    },
+    indigo: {
+      main: '#6366f1',
+      light: '#818cf8',
+      dark: '#4f46e5',
+    },
+    pink: {
+      main: '#ec4899',
+      light: '#f472b6',
+      dark: '#db2777',
+    },
+  },
 
-export default colorTokens;
+  /* Background Levels (Dark Theme) */
+  background: {
+    950: '#020617', // Main background
+    900: '#0f172a', // Secondary background
+    800: '#1e293b', // Tertiary background
+    700: '#334155', // Hover states
+    600: '#475569', // Borders
+    500: '#64748b', // Disabled
+  },
+
+  /* Text Levels */
+  text: {
+    white: '#ffffff',
+    'gray-300': '#d1d5db',
+    'gray-400': '#9ca3af',
+    'gray-500': '#6b7280',
+    'gray-600': '#4b5563',
+  },
+
+  /* Status Colors */
+  status: {
+    success: {
+      main: '#10b981',
+      light: '#34d399',
+      dark: '#059669',
+    },
+    warn: {
+      main: '#f59e0b',
+      light: '#fbbf24',
+      dark: '#d97706',
+    },
+    error: {
+      main: '#ef4444',
+      light: '#f87171',
+      dark: '#dc2626',
+    },
+    info: {
+      main: '#3b82f6',
+      light: '#60a5fa',
+      dark: '#2563eb',
+    },
+  },
+
+  /* Section Accents */
+  section: {
+    cyan: {
+      main: '#06b6d4',
+      hover: '#22d3ee',
+      bg: 'rgba(6, 182, 212, 0.1)',
+    },
+    green: {
+      main: '#10b981',
+      hover: '#34d399',
+      bg: 'rgba(16, 185, 129, 0.1)',
+    },
+    gold: {
+      main: '#f59e0b',
+      hover: '#fbbf24',
+      bg: 'rgba(245, 158, 11, 0.1)',
+    },
+    purple: {
+      main: '#a855f7',
+      hover: '#c084fc',
+      bg: 'rgba(168, 85, 247, 0.1)',
+    },
+    red: {
+      main: '#ef4444',
+      hover: '#f87171',
+      bg: 'rgba(239, 68, 68, 0.1)',
+    },
+    orange: {
+      main: '#f97316',
+      hover: '#fb923c',
+      bg: 'rgba(249, 115, 22, 0.1)',
+    },
+  },
+
+  /* Gradients */
+  gradients: {
+    primary: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
+    secondary: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+    gold: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+    dark: 'linear-gradient(180deg, #020617 0%, #0f172a 100%)',
+    card: 'linear-gradient(to top, #0f172a 0%, #020617 100%)',
+    overlay: 'linear-gradient(to top, #000000 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
+    glow: 'radial-gradient(circle at center, rgba(6,182,212,0.5) 0%, transparent 70%)',
+  },
+
+  /* Opacity Layers */
+  opacity: {
+    5: '0.05',
+    10: '0.10',
+    20: '0.20',
+    30: '0.30',
+    40: '0.40',
+    50: '0.50',
+    60: '0.60',
+    70: '0.70',
+    80: '0.80',
+    90: '0.90',
+  },
+}
+
+export default colorTokens

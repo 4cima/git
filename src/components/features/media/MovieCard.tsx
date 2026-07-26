@@ -8,6 +8,7 @@ import { Play, Star } from 'lucide-react'
 import Link from 'next/link'
 import { TmdbImage } from '../../common/TmdbImage'
 import { translateGenre } from '../../../utils/genreTranslator'
+import { getGenreColor, getMediaTypeColor } from '../../../utils/genreColors'
 
 const LazyReactPlayer = lazy(() => import('react-player'))
 
@@ -30,6 +31,7 @@ export type Movie = {
   overview_en?: string
   media_type?: 'movie' | 'tv' | 'game' | 'software' | 'anime' | 'quran' | string
   genre_ids?: number[]
+  genres_json?: string
   original_language?: string
   category?: string
   primary_genre?: string
@@ -82,11 +84,25 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
   const voteAvg = typeof movie.vote_average === 'number' ? movie.vote_average : parseFloat(String(movie.vote_average || 0))
   const rating = voteAvg > 0 ? Math.round(voteAvg * 10) / 10 : null
 
-  // Translate genre to Arabic
-  const genreRaw = movie.primary_genre || (movie as any).category
-  const genre = genreRaw ? translateGenre(genreRaw) : null
+  // Extract and translate genre to Arabic
+  const extractGenre = (genresJson: string | undefined): string | null => {
+    if (!genresJson) return null
+    try {
+      const genres = typeof genresJson === 'string' ? JSON.parse(genresJson) : genresJson
+      return Array.isArray(genres) && genres.length > 0 ? genres[0]?.name_ar || null : null
+    } catch {
+      return null
+    }
+  }
+
+  const genreRaw = movie.primary_genre || extractGenre(movie.genres_json) || (movie as any).category
+  const genre = genreRaw ? (typeof genreRaw === 'string' && /[\u0600-\u06FF]/.test(genreRaw) ? genreRaw : translateGenre(genreRaw)) : null
   const currentYear = new Date().getFullYear()
   const isCurrentYear = year === currentYear
+  
+  // Get color schemes
+  const genreColorScheme = getGenreColor(genre)
+  const mediaTypeColorScheme = getMediaTypeColor(mediaType)
 
   const hasPosterPath = Boolean(movie.poster_path && movie.poster_path.trim())
   const hasValidTitle = Boolean(mainTitle && mainTitle !== 'Untitled')
@@ -179,7 +195,7 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
               <TmdbImage
                 path={movie.poster_path || movie.backdrop_path}
                 alt={mainTitle}
-                size="w342"
+                size="w92"
                 className="h-full w-full"
                 imgClassName={`transition-all duration-500 ease-lumen ${isHovered ? 'scale-105 brightness-75' : 'scale-100'}`}
                 fallback={
@@ -250,7 +266,9 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
               {genre && (
                 <>
                   {rating != null && <span className="w-0.5 h-0.5 rounded-full bg-lumen-silver/50" />}
-                  <span className="truncate max-w-[80px]">{genre}</span>
+                  <span className={`${genreColorScheme.bg} ${genreColorScheme.text} ${genreColorScheme.border} border px-1.5 py-0.5 rounded truncate max-w-[80px] font-bold`}>
+                    {genre}
+                  </span>
                 </>
               )}
 
@@ -263,10 +281,11 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
                 </>
               )}
               
-              {/* Quality Badge - Hardcoded for now as it's a common request */}
+              {/* Media Type Badge */}
               <span className="w-0.5 h-0.5 rounded-full bg-lumen-silver/50" />
-              <span className="bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded text-[8px] font-bold">
-                FHD
+              <span className={`${mediaTypeColorScheme.bg} ${mediaTypeColorScheme.text} ${mediaTypeColorScheme.border} border px-1.5 py-0.5 rounded text-[8px] font-bold flex items-center gap-0.5`}>
+                <span>{mediaTypeColorScheme.icon}</span>
+                <span>{mediaTypeColorScheme.label}</span>
               </span>
             </div>
           </div>

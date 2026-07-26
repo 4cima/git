@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
-  Star, Calendar, Clock, Film, Tv, Users, Sparkles, AlertTriangle,
+  Star, Calendar, Clock, Film, Tv, Users, AlertTriangle,
   Play, Layers
 } from 'lucide-react'
 import { MovieCard } from '../features/media/MovieCard'
@@ -442,7 +442,7 @@ export const WatchPage = ({ type, slug, season, episode }: WatchPageProps) => {
         {similar.length > 0 && (
           <div className="p-6 rounded-lg bg-white/5 border border-white/10">
             <div className="flex items-center gap-2 mb-6">
-              <Sparkles size={20} className="text-yellow-400" />
+              <Film size={20} className="text-yellow-400" />
               <h3 className="text-xl font-bold text-white">
                 {isMovie ? 'أفلام مشابهة' : 'مسلسلات مشابهة'}
               </h3>

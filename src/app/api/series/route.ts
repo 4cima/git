@@ -96,10 +96,13 @@ export async function GET(request: NextRequest) {
     })
     const total = Number(countResult.rows[0]?.total || 0)
     
-    // Get series
+    // Get series with genres
     const seriesResult = await turso.execute({
       sql: `
-        SELECT * FROM tv_series 
+        SELECT 
+          s.*,
+          s.genres_json
+        FROM tv_series s
         ${whereClause}
         ORDER BY ${sortColumn} ${sortOrder}
         LIMIT ? OFFSET ?

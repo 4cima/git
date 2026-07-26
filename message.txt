@@ -1,0 +1,187 @@
+"يا كيرو، عمل ممتاز! الموقع الآن مستقر ويعمل بشكل مثالي كما أردت.
+
+خطوتنا التالية هي ترقية تصميم الهيرو فقط ليصبح شبيهاً بموقع TOD.tv. أريدك أن تفتح ملف src/components/features/hero/MegaHero.tsx وتستبدل محتواه بالكامل بالكود التالي.
+
+⚠️ تحذير هام: استخدم أداة تعديل الملفات العادية الخاصة بك (Edit file). ممنوع منعاً باتاً استخدام أوامر PowerShell أو Regex أو node -e لتعديل هذا الملف.
+
+"يا كيرو، لقد استعدنا استقرار الموقع، ولكنك لم تنفذ تصميم الهيرو المشابه لموقع TOD.tv الذي طلبته منك سابقاً (المعلومات على اليمين، صورة مصغرة على اليسار مع شريط تقدم).
+
+المطلوب منك الآن خطوة واحدة فقط:
+افتح ملف src/components/features/hero/MegaHero.tsx واستبدل محتواه بالكامل بالكود التالي.
+⚠️ استخدم أداة (Edit file) العادية، وممنوع استخدام PowerShell أو Regex نهائياً.
+
+TypeScript
+'use client'
+
+import { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
+import { Play, Info } from 'lucide-react'
+
+interface MediaItem {
+  id: number
+  slug: string
+  title: string
+  title_en: string
+  poster_path: string
+  backdrop_path: string
+  vote_average: number
+  overview_ar: string
+  year: number
+  media_type: string
+  primary_genre?: string
+  video_url?: string 
+}
+
+export const MegaHero = ({ items }: { items: MediaItem[] }) => {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  const activeItem = items[currentIndex]
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (!activeItem?.video_url) {
+      setProgress(0)
+      interval = setInterval(() => {
+        setProgress((prev) => (prev >= 100 ? 0 : prev + 1.5))
+      }, 100) 
+    }
+    return () => clearInterval(interval)
+  }, [currentIndex, activeItem])
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      const current = videoRef.current.currentTime
+      const total = videoRef.current.duration
+      setProgress((current / total) * 100)
+    }
+  }
+
+  if (!activeItem) return null
+
+  const bgImage = activeItem.backdrop_path
+    ? `https://image.tmdb.org/t/p/original${activeItem.backdrop_path}`
+    : ''
+
+  const posterImage = activeItem.poster_path
+    ? `https://image.tmdb.org/t/p/w500${activeItem.poster_path}`
+    : ''
+
+  return (
+    <section className="relative w-full h-screen min-h-[700px] overflow-hidden bg-gray-950 text-white" dir="rtl">
+      
+      <div className="absolute inset-0">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeItem.id}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="absolute inset-0"
+          >
+            {activeItem.video_url ? (
+              <video
+                ref={videoRef}
+                src={activeItem.video_url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                onTimeUpdate={handleTimeUpdate}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <img
+                src={bgImage}
+                alt={activeItem.title}
+                className="w-full h-full object-cover"
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        <div className="absolute inset-0 bg-gradient-to-l from-gray-950 via-gray-950/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-900/20 to-transparent" />
+      </div>
+
+      <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-16 pt-24 max-w-3xl">
+        <motion.div
+          key={`content-${activeItem.id}`}
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <span className="inline-block text-cyan-400 font-medium mb-4 text-sm tracking-widest bg-cyan-950/30 px-3 py-1 rounded-full border border-cyan-500/20">
+            {activeItem.media_type === 'tv' ? 'مسلسل' : 'فيلم'} {activeItem.primary_genre ? `• ${activeItem.primary_genre}` : ''}
+          </span>
+          
+          <h1 className="text-5xl md:text-7xl font-extrabold mb-4 drop-shadow-2xl leading-tight">
+            {activeItem.title}
+          </h1>
+          
+          <div className="flex items-center gap-4 text-gray-200 text-sm mb-6 font-medium">
+            <span className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-md backdrop-blur-sm border border-white/5">
+              ⭐ {activeItem.vote_average?.toFixed(1)}
+            </span>
+            <span className="bg-white/10 px-2 py-1 rounded-md backdrop-blur-sm border border-white/5">{activeItem.year}</span>
+          </div>
+
+          <p className="text-gray-300 text-lg md:text-xl line-clamp-3 mb-8 leading-relaxed max-w-2xl text-justify">
+            {activeItem.overview_ar || activeItem.title_en}
+          </p>
+
+          <div className="flex items-center gap-4">
+            <Link href={`/${activeItem.media_type === 'tv' ? 'series' : 'movies'}/${activeItem.slug}`}>
+              <button className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white px-8 py-3.5 rounded-full font-bold shadow-lg shadow-cyan-500/30 transition-all hover:scale-105">
+                <Play className="w-5 h-5 fill-current" />
+                شاهد الآن
+              </button>
+            </Link>
+            <button className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 py-3.5 rounded-full font-bold backdrop-blur-md transition-all">
+              <Info className="w-5 h-5" />
+              التفاصيل
+            </button>
+          </div>
+        </motion.div>
+      </div>
+
+      <div className="absolute bottom-8 left-8 md:left-16 z-20 flex gap-6 items-end">
+        <motion.div 
+          key={`thumb-${activeItem.id}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative w-36 md:w-44 rounded-xl overflow-hidden shadow-2xl border border-white/20 bg-gray-900 group"
+        >
+          <img 
+            src={posterImage} 
+            alt="Thumbnail" 
+            className="w-full aspect-[2/3] object-cover transition-transform duration-700 group-hover:scale-110" 
+          />
+          <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gray-950/80 backdrop-blur-sm">
+            <div 
+              className="h-full bg-cyan-500 transition-all duration-300 ease-linear shadow-[0_0_10px_rgba(6,182,212,0.8)]" 
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </motion.div>
+
+        <div className="flex flex-col gap-3 pb-4">
+          {items.slice(0, 5).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`w-2 transition-all duration-300 rounded-full shadow-lg ${
+                i === currentIndex ? 'h-8 bg-cyan-400 shadow-cyan-500/50' : 'h-2 bg-white/40 hover:bg-white/70 hover:scale-125'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+```"
+

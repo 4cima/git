@@ -7,6 +7,8 @@ import ReactPlayer from 'react-player'
 import clsx from 'clsx'
 import { EmbedPlayer } from '../features/media/EmbedPlayer'
 import { useServers } from '../../hooks/useServers'
+import { getGenreColor } from '@/utils/genreColors'
+import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 
 // @ts-ignore
 const Player = ReactPlayer as any
@@ -24,13 +26,13 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1)
   const [cinemaMode, setCinemaMode] = useState(false)
 
-  const title = series?.name_ar || series?.name || series?.original_name || 'مسلسل'
-  const titleEn = series?.name_en || series?.name || series?.original_name
-  const overview = series?.overview_ar || series?.overview || 'لا يوجد وصف متاح'
+  const title = sanitizeTitle(series?.name_ar || series?.name || series?.original_name || 'مسلسل')
+  const titleEn = sanitizeTitle(series?.name_en || series?.name || series?.original_name)
+  const overview = sanitizeOverview(series?.overview_ar || series?.overview || 'لا يوجد وصف متاح')
   const year = series?.first_air_date ? new Date(series.first_air_date).getFullYear() : 'غير محدد'
   const rating = series?.vote_average ? Math.round(series.vote_average * 10) / 10 : 0
   const poster = series?.poster_url || (series?.poster_path ? `/tmdb/w300${series.poster_path}` : '')
-  const backdrop = series?.backdrop_url || (series?.backdrop_path ? `/tmdb/w1280${series.backdrop_path}` : '')
+  const backdrop = series?.backdrop_url || (series?.backdrop_path ? `/tmdb/w300${series.backdrop_path}` : '')
   
   const effectiveId = series?.tmdb_id || series?.id || 0
   const { servers, active, setActive, loading: serversLoading, reportBroken, reporting } = useServers(
@@ -119,11 +121,17 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
               {genres.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {genres.map((g: any) => (
-                    <span key={g.id || g.name} className="text-xs font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-md">
-                      {g.name_ar || g.name_en || g.name}
-                    </span>
-                  ))}
+                  {genres.map((g: any) => {
+                    const genreColorScheme = getGenreColor(g.name_ar || g.name_en || g.name)
+                    return (
+                      <span 
+                        key={g.id || g.name} 
+                        className={`text-xs font-bold uppercase tracking-wider ${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-3 py-1.5 rounded-lg ${genreColorScheme.glow} shadow-lg transition-all hover:scale-105`}
+                      >
+                        {g.name_ar || g.name_en || g.name}
+                      </span>
+                    )
+                  })}
                 </div>
               )}
 

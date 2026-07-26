@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Film, Tv, Sparkles } from 'lucide-react'
+import { Film, Tv, Star } from 'lucide-react'
 
 interface Genre {
   id: number
@@ -39,7 +39,7 @@ export function GenresQuickAccess({ genres }: GenresQuickAccessProps) {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-lg">
-            <Sparkles className="w-6 h-6 text-cyan-400" />
+            <Star className="w-6 h-6 text-cyan-400" />
           </div>
           <div>
             <h2 className="text-2xl md:text-3xl font-black text-white">

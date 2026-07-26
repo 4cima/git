@@ -1,0 +1,62 @@
+Γùç injected env (12) from .env.local // tip: Γîü auth for agents [www.vestauth.com]
+
+≡ƒöì ┘ü╪¡╪╡ ╪º┘ä┘Ç484 ┘ü┘è┘ä┘à ┘ü┘è Turso ╪¿╪º┘ä┘ü┘ä╪¬╪▒ ╪º┘ä╪¼╪»┘è╪»...
+
+╪Ñ╪¼┘à╪º┘ä┘è ╪º┘ä╪ú┘ü┘ä╪º┘à: 484
+
+ΓÅ│ ╪¼╪º╪▒┘è ╪º┘ä╪│╪¡╪¿ ┘à┘å TMDB ┘ê┘ü╪¡╪╡ ┘â┘ä ┘ü┘è┘ä┘à...
+
+   ≡ƒÜ½ [33] Unforgiven
+      ╪º┘ä╪│╪¿╪¿: text_mild_overview:\bprostitute\b
+
+   ≡ƒÜ½ [103] Taxi Driver
+      ╪º┘ä╪│╪¿╪¿: keyword_hard:pornography
+
+   ... 50/484 (┘à╪╣┘ä┘æ┘à: 2)
+
+   ≡ƒÜ½ [115] The Big Lebowski
+      ╪º┘ä╪│╪¿╪¿: text_hard:\badult film\b
+
+   ≡ƒÜ½ [128] Princess Mononoke
+      ╪º┘ä╪│╪¿╪¿: descriptor_hard:violence,sexual content(BR)
+
+   ≡ƒÜ½ [142] Brokeback Mountain
+      ╪º┘ä╪│╪¿╪¿: text_mild_overview:\bsexual\b
+
+   ≡ƒÜ½ [145] Breaking the Waves
+      ╪º┘ä╪│╪¿╪¿: text_mild_overview:\bsex\b
+
+   ... 100/484 (┘à╪╣┘ä┘æ┘à: 6)
+
+   ... 150/484 (┘à╪╣┘ä┘æ┘à: 6)
+
+   ... 200/484 (┘à╪╣┘ä┘æ┘à: 6)
+
+   ... 250/484 (┘à╪╣┘ä┘æ┘à: 6)
+
+   ... 300/484 (┘à╪╣┘ä┘æ┘à: 6)
+
+   ... 350/484 (┘à╪╣┘ä┘æ┘à: 6)
+
+   ... 400/484 (┘à╪╣┘ä┘æ┘à: 6)
+
+   ... 450/484 (┘à╪╣┘ä┘æ┘à: 6)
+
+
+================================================================================
+≡ƒôè ╪º┘ä┘à┘ä╪«╪╡ ╪º┘ä┘å┘ç╪º╪ª┘è:
+================================================================================
+╪Ñ╪¼┘à╪º┘ä┘è: 484 ┘ü┘è┘ä┘à
+┘à┘ü┘ä╪¬╪▒╪⌐: 6 ┘ü┘è┘ä┘à
+┘å╪╕┘è┘ü╪⌐: 478 ┘ü┘è┘ä┘à
+
+≡ƒÜ¿ ╪º┘ä╪ú┘ü┘ä╪º┘à ╪º┘ä┘à┘ü┘ä╪¬╪▒╪⌐ (┘è╪¼╪¿ ╪¡╪░┘ü┘ç╪º ┘à┘å Turso):
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+33: Unforgiven (text_mild_overview:\bprostitute\b)
+103: Taxi Driver (keyword_hard:pornography)
+115: The Big Lebowski (text_hard:\badult film\b)
+128: Princess Mononoke (descriptor_hard:violence,sexual content(BR))
+142: Brokeback Mountain (text_mild_overview:\bsexual\b)
+145: Breaking the Waves (text_mild_overview:\bsex\b)
+
+≡ƒôä ╪¬┘à ╪Ñ┘å╪┤╪º╪í: REMOVE-EXPLICIT-FROM-TURSO.sql

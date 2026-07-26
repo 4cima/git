@@ -9,9 +9,14 @@ import { Home, Film, Tv, Gamepad2, Zap, User, Search, Menu, X, BookOpen, Mic, Lo
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
+  const [logoScrolled, setLogoScrolled] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50)
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY
+      setScrolled(scrollPosition > 50)
+      setLogoScrolled(scrollPosition > 100)
+    }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -21,7 +26,8 @@ export const QuantumNavbar = memo(() => {
     { to: '/movies', label: 'أفلام', icon: Film, color: '#00ccff' },
     { to: '/series', label: 'مسلسلات', icon: Tv, color: '#aa00ff' },
     { to: '/anime', label: 'أنمي', icon: Zap, color: '#f59e0b' },
-    { to: '/quran', label: 'القرآن الكريم', icon: BookOpen, color: '#ffd700' }
+    { to: '/quran', label: 'القرآن الكريم', icon: BookOpen, color: '#ffd700' },
+    { to: '/profile', label: 'دخول', icon: User, color: '#ec4899' }
   ], [])
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -61,8 +67,8 @@ export const QuantumNavbar = memo(() => {
   return (
     <>
       {/* Navbar */}
-      <nav className={`fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 ${ scrolled ? 'bg-gray-950/95 backdrop-blur-md border-b border-gray-700/50 shadow-lg shadow-black/50' : 'bg-transparent border-b border-transparent' }`}>
-        <div className="container-wrapper container-padding flex items-center justify-between h-16">
+      <nav className="fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 bg-transparent border-b border-transparent">
+        <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 flex items-center justify-between h-16">
 
           {/* Right: Menu + Logo */}
           <div className="flex items-center gap-3">
@@ -70,103 +76,69 @@ export const QuantumNavbar = memo(() => {
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 text-white hover:text-cyan-400 transition-colors cursor-pointer hover:bg-black/60 rounded-lg bg-black/40 backdrop-blur-sm"
+              className="p-2 text-white hover:text-cyan-400 transition-colors cursor-pointer"
               aria-label="القائمة"
             >
               <Menu size={28} />
             </button>
 
-            {/* Logo */}
-            <Link href="/" className="group flex items-center cursor-pointer bg-black/40 backdrop-blur-sm rounded-lg px-3 py-1 hover:bg-black/60 transition-colors">
-              <div className="relative flex items-center justify-center">
-                <div className="relative z-10 font-black text-3xl sm:text-4xl tracking-tighter lowercase group-hover:scale-105 transition-transform duration-300 flex items-center gap-0.5" dir="ltr">
-                  <span 
-                    className="text-red-600 text-4xl sm:text-5xl animate-wiggle drop-shadow-[0_0_12px_rgba(220,38,38,0.9)]"
-                    style={{ 
-                      display: 'inline-block', 
-                      transformOrigin: 'center',
-                      WebkitTextStroke: '1px black',
-                      textStroke: '1px black'
-                    }}
-                  >
-                    4
-                  </span>
-                  <span 
-                    className="animate-neon-flicker-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.6)]"
-                    style={{ 
-                      fontFamily: '"Brush Script MT", cursive',
-                      fontStyle: 'italic',
-                      letterSpacing: '0.05em',
-                      WebkitTextStroke: '1px black',
-                      textStroke: '1px black'
-                    }}
-                  >
-                    <span className="text-sky-400" style={{ textShadow: '0 0 10px rgba(56,189,248,0.5), 0 0 20px rgba(56,189,248,0.3)' }}>c</span>
-                    <span className="text-emerald-500 inline-block" style={{ textShadow: '0 0 10px rgba(16,185,129,0.5), 0 0 20px rgba(16,185,129,0.3)', animation: 'spinY 4s linear infinite', fontStyle: 'normal', fontSize: '120%', fontWeight: 'bold' }}>i</span>
-                    <span className="text-fuchsia-500" style={{ textShadow: '0 0 10px rgba(217,70,239,0.6), 0 0 20px rgba(217,70,239,0.4)' }}>m</span>
-                    <span className="text-amber-400" style={{ textShadow: '0 0 10px rgba(251,191,36,0.6), 0 0 20px rgba(251,191,36,0.4), 0 0 30px rgba(251,191,36,0.2)' }}>a</span>
-                  </span>
+            {/* Logo with Rope */}
+            <Link href="/" className="group flex items-center cursor-pointer transition-transform relative" style={{ marginTop: '5px' }}>
+              <div className={`relative ${logoScrolled ? 'logo-pulled-up' : 'logo-drop-animation'}`}>
+                {/* Realistic Rope with stretch animation */}
+                <div className={`absolute left-1/2 -translate-x-1/2 -top-16 w-1 ${logoScrolled ? 'rope-pulled-up' : 'rope-stretch-animation'}`} 
+                  style={{
+                    background: 'repeating-linear-gradient(0deg, #8B7355 0px, #8B7355 2px, #6B5845 2px, #6B5845 4px, #8B7355 4px, #8B7355 6px, #A0826D 6px, #A0826D 8px)',
+                    boxShadow: 'inset -1px 0 2px rgba(0,0,0,0.5), inset 1px 0 1px rgba(255,255,255,0.2)',
+                    borderRadius: '2px',
+                    marginLeft: '-3px',
+                    marginTop: '-10px'
+                  }}
+                ></div>
+                
+                <div className="relative flex items-center justify-center">
+                  <div className="relative z-10 font-black text-3xl sm:text-4xl tracking-tighter lowercase transition-transform duration-300 flex items-center gap-0.5" dir="ltr">
+                    <span 
+                      className="text-red-600 text-4xl sm:text-5xl animate-wiggle drop-shadow-[0_0_12px_rgba(220,38,38,0.9)]"
+                      style={{ 
+                        display: 'inline-block', 
+                        transformOrigin: 'center',
+                        WebkitTextStroke: '1px black',
+                        textStroke: '1px black'
+                      }}
+                    >
+                      4
+                    </span>
+                    <span 
+                      className="animate-neon-flicker-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.6)] relative"
+                      style={{ 
+                        fontFamily: '"Brush Script MT", cursive',
+                        fontStyle: 'italic',
+                        letterSpacing: '0.05em',
+                        WebkitTextStroke: '1px black',
+                        textStroke: '1px black'
+                      }}
+                    >
+                      {/* Cinema Camera above 'c' */}
+                      <span className="relative inline-block">
+                        <span className="absolute top-0 left-1/2 -translate-x-1/2 text-xs leading-none" style={{ animation: 'cinema-filming 4s ease-in-out infinite' }}>
+                          🎥
+                        </span>
+                        <span className="text-sky-400" style={{ textShadow: '0 0 10px rgba(56,189,248,0.5), 0 0 20px rgba(56,189,248,0.3)' }}>c</span>
+                      </span>
+                      <span className="text-emerald-500 inline-block" style={{ textShadow: '0 0 10px rgba(16,185,129,0.5), 0 0 20px rgba(16,185,129,0.3)', animation: 'spinY 4s linear infinite', fontStyle: 'normal', fontSize: '120%', fontWeight: 'bold' }}>i</span>
+                      <span className="text-fuchsia-500" style={{ textShadow: '0 0 10px rgba(217,70,239,0.6), 0 0 20px rgba(217,70,239,0.4)' }}>m</span>
+                      <span className="text-amber-400" style={{ textShadow: '0 0 10px rgba(251,191,36,0.6), 0 0 20px rgba(251,191,36,0.4), 0 0 30px rgba(251,191,36,0.2)' }}>a</span>
+                    </span>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-cyan-500/20 to-purple-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full animate-pulse" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-cyan-500/20 to-purple-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full animate-pulse" />
               </div>
             </Link>
           </div>
 
-          {/* Left: Search + Profile */}
+          {/* Left: Empty (removed search and profile) */}
           <div className="flex items-center gap-3">
-            {/* Desktop Search */}
-            <div className="hidden md:flex items-center relative">
-              <div className="relative group bg-black/40 backdrop-blur-sm rounded-full hover:bg-black/60 transition-colors">
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder={isListening ? 'تحدث الآن...' : 'بحث...'}
-                  className="bg-transparent border-none rounded-full py-2 pl-10 pr-10 text-sm text-zinc-300 w-36 lg:w-48 transition-all focus:outline-none placeholder:text-zinc-500"
-                />
-                <button
-                  type="button"
-                  onClick={handleSearch}
-                  aria-label="بحث"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-hover:text-cyan-400 transition-colors cursor-pointer"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={startListening}
-                  aria-label="بحث صوتي"
-                  className={`absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-cyan-400 transition-colors cursor-pointer ${isListening ? 'text-red-500 animate-pulse' : ''}`}
-                >
-                  {isListening ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Mobile Search Icon */}
-            <button
-              type="button"
-              className="md:hidden p-2 text-white hover:text-cyan-400 transition-colors bg-black/40 backdrop-blur-sm rounded-lg hover:bg-black/60 cursor-pointer"
-              onClick={() => {
-                const searchQuery = prompt('ابحث عن...')
-                if (searchQuery?.trim()) {
-                  router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
-                }
-              }}
-              aria-label="بحث"
-            >
-              <Search size={20} />
-            </button>
-
-            {/* Profile */}
-            <Link href="/profile" prefetch={false} className="bg-black/40 backdrop-blur-sm rounded-full hover:bg-black/60 transition-colors p-1 cursor-pointer">
-              <div className="w-9 h-9 rounded-full p-[1.5px] bg-gradient-to-tr from-purple-500 to-cyan-500">
-                <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
-                  <User size={18} className="text-white" />
-                </div>
-              </div>
-            </Link>
           </div>
         </div>
             </nav>
@@ -227,7 +199,5 @@ export const QuantumNavbar = memo(() => {
 })
 
 QuantumNavbar.displayName = 'QuantumNavbar'
-
-
 
 

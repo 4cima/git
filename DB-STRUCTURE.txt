@@ -1,0 +1,456 @@
+================================================================================
+   بنية قاعدة البيانات المحلية - movies table
+================================================================================
+
+📋 CREATE TABLE Statement:
+
+CREATE TABLE movies (
+  
+  id INTEGER PRIMARY KEY,
+  tmdb_id INTEGER UNIQUE NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  
+  
+  title_en TEXT NOT NULL,
+  title_ar TEXT NOT NULL,
+  
+  
+  overview_ar TEXT,
+  
+  
+  poster_path TEXT,
+  
+  
+  release_date TEXT,
+  release_year INTEGER,
+  
+  
+  vote_average REAL DEFAULT 0,
+  
+  
+  trailer_key TEXT,
+  
+  
+  genres_json TEXT,
+  cast_json TEXT,
+  countries_json TEXT,
+  keywords_json TEXT,
+  companies_json TEXT,
+  
+  
+  seo_title_ar TEXT,
+  seo_description_ar TEXT,
+  seo_keywords_json TEXT,
+  canonical_url TEXT,
+  
+  
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+, runtime INTEGER DEFAULT NULL, vote_count INTEGER DEFAULT 0, popularity REAL DEFAULT 0, backdrop_path TEXT, is_fetched INTEGER DEFAULT 0, fetched_at DATETIME, fetched_from TEXT, imdb_id TEXT, title_original TEXT, overview_en TEXT, tagline_ar TEXT, trailer_key_2 TEXT, additional_video_key TEXT, is_filtered INTEGER DEFAULT 0, filter_reason TEXT, original_language TEXT DEFAULT "en", content_language TEXT DEFAULT "ar", country_of_origin TEXT, production_companies TEXT, content_type TEXT NOT NULL DEFAULT "movie", quality TEXT DEFAULT "HD", age_rating TEXT DEFAULT "PG", has_arabic_title INTEGER DEFAULT 0, has_arabic_overview INTEGER DEFAULT 0, has_trailer INTEGER DEFAULT 0, has_servers INTEGER DEFAULT 0, has_cast INTEGER DEFAULT 0, has_genres INTEGER DEFAULT 0, has_keywords INTEGER DEFAULT 0, is_complete INTEGER DEFAULT 0, source TEXT DEFAULT "tmdb", backed_up_at TEXT, backup_version INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1, is_featured INTEGER DEFAULT 0, view_count INTEGER DEFAULT 0, download_count INTEGER DEFAULT 0, synced_to_turso INTEGER DEFAULT 0, synced_at TEXT, sync_priority INTEGER DEFAULT 5, sync_error TEXT, primary_genre TEXT, keywords TEXT, global_keywords TEXT, seo_title_en TEXT)
+
+================================================================================
+📊 أعمدة جدول movies:
+================================================================================
+
+1. id
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: نعم
+
+2. tmdb_id
+   - النوع: INTEGER
+   - NOT NULL: نعم
+   - Default: N/A
+   - Primary Key: لا
+
+3. slug
+   - النوع: TEXT
+   - NOT NULL: نعم
+   - Default: N/A
+   - Primary Key: لا
+
+4. title_en
+   - النوع: TEXT
+   - NOT NULL: نعم
+   - Default: N/A
+   - Primary Key: لا
+
+5. title_ar
+   - النوع: TEXT
+   - NOT NULL: نعم
+   - Default: N/A
+   - Primary Key: لا
+
+6. overview_ar
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+7. poster_path
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+8. release_date
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+9. release_year
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+10. vote_average
+   - النوع: REAL
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+11. trailer_key
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+12. genres_json
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+13. cast_json
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+14. countries_json
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+15. keywords_json
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+16. companies_json
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+17. seo_title_ar
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+18. seo_description_ar
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+19. seo_keywords_json
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+20. canonical_url
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+21. created_at
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: datetime('now')
+   - Primary Key: لا
+
+22. updated_at
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: datetime('now')
+   - Primary Key: لا
+
+23. runtime
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: NULL
+   - Primary Key: لا
+
+24. vote_count
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+25. popularity
+   - النوع: REAL
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+26. backdrop_path
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+27. is_fetched
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+28. fetched_at
+   - النوع: DATETIME
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+29. fetched_from
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+30. imdb_id
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+31. title_original
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+32. overview_en
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+33. tagline_ar
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+34. trailer_key_2
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+35. additional_video_key
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+36. is_filtered
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+37. filter_reason
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+38. original_language
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: "en"
+   - Primary Key: لا
+
+39. content_language
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: "ar"
+   - Primary Key: لا
+
+40. country_of_origin
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+41. production_companies
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+42. content_type
+   - النوع: TEXT
+   - NOT NULL: نعم
+   - Default: "movie"
+   - Primary Key: لا
+
+43. quality
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: "HD"
+   - Primary Key: لا
+
+44. age_rating
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: "PG"
+   - Primary Key: لا
+
+45. has_arabic_title
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+46. has_arabic_overview
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+47. has_trailer
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+48. has_servers
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+49. has_cast
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+50. has_genres
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+51. has_keywords
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+52. is_complete
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+53. source
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: "tmdb"
+   - Primary Key: لا
+
+54. backed_up_at
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+55. backup_version
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+56. is_active
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 1
+   - Primary Key: لا
+
+57. is_featured
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+58. view_count
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+59. download_count
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+60. synced_to_turso
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 0
+   - Primary Key: لا
+
+61. synced_at
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+62. sync_priority
+   - النوع: INTEGER
+   - NOT NULL: لا
+   - Default: 5
+   - Primary Key: لا
+
+63. sync_error
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+64. primary_genre
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+65. keywords
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+66. global_keywords
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
+67. seo_title_en
+   - النوع: TEXT
+   - NOT NULL: لا
+   - Default: N/A
+   - Primary Key: لا
+
