@@ -286,7 +286,7 @@ async function main() {
   while (true) {
     const batch = db.prepare(`
       SELECT tmdb_id FROM movies
-      WHERE is_complete = 1 AND is_filtered = 0 AND synced_to_turso = 0
+      WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') AND synced_to_turso = 0
       LIMIT ?
     `).all(BATCH_SIZE).map(r => r.tmdb_id)
     
@@ -302,7 +302,7 @@ async function main() {
   while (true) {
     const batch = db.prepare(`
       SELECT tmdb_id FROM tv_series
-      WHERE is_complete = 1 AND is_filtered = 0 AND synced_to_turso = 0
+      WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') AND synced_to_turso = 0
       LIMIT ?
     `).all(BATCH_SIZE).map(r => r.tmdb_id)
     
