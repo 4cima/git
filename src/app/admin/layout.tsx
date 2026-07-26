@@ -13,11 +13,13 @@ import {
   Activity,
   Menu,
   X,
-  LogOut
+  LogOut,
+  ShieldAlert
 } from 'lucide-react'
 
 const navItems = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+  { name: 'Review', href: '/admin/review', icon: ShieldAlert },
   { name: 'Movies', href: '/admin/movies', icon: Film },
   { name: 'Series', href: '/admin/series', icon: Tv },
   { name: 'Users', href: '/admin/users', icon: Users },
