@@ -19,16 +19,15 @@ const db = new Database(dbPath)
 
 db.pragma('journal_mode = WAL')
 db.pragma('foreign_keys = ON')
+db.pragma('busy_timeout = 30000')   // 30s — safe for concurrent writes
+db.pragma('synchronous = NORMAL')   // faster than FULL, still crash-safe with WAL
+db.pragma('cache_size = -32000')    // 32MB page cache
 
 // تشغيل الـ schema
 const schemaPath = path.join(__dirname, '../../LOCAL-SCHEMA-CLEAN.sql')
 const schema = fs.readFileSync(schemaPath, 'utf-8')
 db.exec(schema)
 
-console.log('✅ Database initialized successfully!')
-console.log(`📊 Database: ${dbPath}`)
-
-module.exports = db
 console.log('✅ Database initialized successfully!')
 console.log(`📊 Database: ${dbPath}`)
 
