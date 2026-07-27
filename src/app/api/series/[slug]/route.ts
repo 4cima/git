@@ -29,7 +29,7 @@ export async function GET(
     const series = result.rows[0]
     
     // Fetch seasons for this series (if seasons table exists)
-    let seasons = []
+    let seasons: unknown[] = []
     try {
       const seasonsResult = await turso.execute({
         sql: 'SELECT * FROM tv_seasons WHERE tv_series_id = ? ORDER BY season_number ASC',

@@ -151,8 +151,8 @@ export const ActivityItem = ({ activity, currentUserId, currentUserRole }: Activ
     if (error || !profiles?.length) return
     await Promise.all(
       profiles
-        .filter((profile) => profile.id !== currentUserId)
-        .map((profile) =>
+        .filter((profile: any) => profile.id !== currentUserId)
+        .map((profile: any) =>
           createNotification({
             userId: profile.id,
             title: 'إشارة جديدة',

@@ -19,21 +19,21 @@ export default async function DashboardPage() {
   const stats = [
     { 
       name: 'Total Movies', 
-      value: moviesCount.rows[0].count, 
+      value: String(moviesCount.rows[0].count ?? 0),
       icon: Film, 
       color: 'text-blue-400',
       bg: 'bg-blue-400/10'
     },
     { 
       name: 'Total Series', 
-      value: seriesCount.rows[0].count, 
+      value: String(seriesCount.rows[0].count ?? 0),
       icon: Tv, 
       color: 'text-purple-400',
       bg: 'bg-purple-400/10'
     },
     { 
       name: 'Total Seasons', 
-      value: seasonsCount.rows[0].count, 
+      value: String(seasonsCount.rows[0].count ?? 0),
       icon: Activity, 
       color: 'text-green-400',
       bg: 'bg-green-400/10'

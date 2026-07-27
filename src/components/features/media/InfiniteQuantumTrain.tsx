@@ -1,1 +1,0 @@
-InfiniteQuantumTrain.displayName = 'InfiniteQuantumTrain'

@@ -65,7 +65,7 @@ export function mapItems(items: MediaItem[], mediaType: 'movie' | 'tv'): Process
     release_year: i.year,
     first_air_year: i.year,
     year: i.year,
-    primary_genre: extractGenre(i.genres_json)
+    primary_genre: extractGenre(i.genres_json) || undefined
   }))
 }
 

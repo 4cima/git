@@ -103,8 +103,7 @@ export const QuantumNavbar = memo(() => {
                       style={{ 
                         display: 'inline-block', 
                         transformOrigin: 'center',
-                        WebkitTextStroke: '1px black',
-                        textStroke: '1px black'
+                        WebkitTextStroke: '1px black'
                       }}
                     >
                       4
@@ -115,8 +114,7 @@ export const QuantumNavbar = memo(() => {
                         fontFamily: '"Brush Script MT", cursive',
                         fontStyle: 'italic',
                         letterSpacing: '0.05em',
-                        WebkitTextStroke: '1px black',
-                        textStroke: '1px black'
+                        WebkitTextStroke: '1px black'
                       }}
                     >
                       {/* Cinema Camera above 'c' */}

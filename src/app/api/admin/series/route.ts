@@ -26,12 +26,17 @@ export async function PATCH(request: NextRequest) {
 
   const safe = Object.entries(fields as Record<string, unknown>)
     .filter(([k]) => PATCHABLE_SERIES_COLS.has(k))
+    .filter(([, v]) => v !== undefined) // Remove undefined values
 
   if (safe.length === 0)
     return NextResponse.json({ ok: false, error: 'No patchable fields provided' }, { status: 400 })
 
   const setClauses = safe.map(([k]) => `${k} = ?`).join(', ')
-  const args = [...safe.map(([, v]) => v), new Date().toISOString().replace('T', ' ').slice(0, 19), tmdb_id]
+  const args: import('@libsql/client').InValue[] = [
+    ...safe.map(([, v]) => v as import('@libsql/client').InValue),
+    new Date().toISOString().replace('T', ' ').slice(0, 19),
+    tmdb_id
+  ]
 
   const check = await turso.execute({ sql: 'SELECT tmdb_id FROM tv_series WHERE tmdb_id = ?', args: [tmdb_id] })
   if (!check.rows?.length)

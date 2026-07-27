@@ -84,7 +84,7 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
           <button
             onClick={() => {
               setContentType('all')
-              setPagination(prev => ({ ...prev, page: 1 }))
+              setPagination((prev: any) => ({ ...prev, page: 1 }))
             }}
             className={`px-6 py-3 rounded-xl font-semibold transition-all ${
               contentType === 'all'
@@ -97,7 +97,7 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
           <button
             onClick={() => {
               setContentType('movie')
-              setPagination(prev => ({ ...prev, page: 1 }))
+              setPagination((prev: any) => ({ ...prev, page: 1 }))
             }}
             className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
               contentType === 'movie'
@@ -111,7 +111,7 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
           <button
             onClick={() => {
               setContentType('tv')
-              setPagination(prev => ({ ...prev, page: 1 }))
+              setPagination((prev: any) => ({ ...prev, page: 1 }))
             }}
             className={`px-6 py-3 rounded-xl font-semibold transition-all flex items-center gap-2 ${
               contentType === 'tv'
@@ -151,7 +151,7 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
             {pagination.totalPages > 1 && (
               <div className="flex items-center justify-center gap-2 mt-8">
                 <button
-                  onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                  onClick={() => setPagination((prev: any) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
                   disabled={pagination.page === 1}
                   className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -163,7 +163,7 @@ export function GenrePageClient({ initialData, slug }: GenrePageClientProps) {
                 </span>
                 
                 <button
-                  onClick={() => setPagination(prev => ({ ...prev, page: Math.min(pagination.totalPages, prev.page + 1) }))}
+                  onClick={() => setPagination((prev: any) => ({ ...prev, page: Math.min(pagination.totalPages, prev.page + 1) }))}
                   disabled={pagination.page === pagination.totalPages}
                   className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
