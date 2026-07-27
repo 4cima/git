@@ -160,27 +160,29 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // ── 4. Update local.db (best-effort) ─────────────────────
+  // ── 4. Update local.db (best-effort, only available on developer machine) ──
   let localDbSynced  = false
   let localDbWarning = ''
 
-  try {
-    const stmt = localDb.prepare(
-      `UPDATE ${table} SET filter_status = ?, updated_at = ? WHERE tmdb_id = ?`
-    )
-    const info = stmt.run(newStatus, nowStr, tmdb_id)
-
-    if (info.changes > 0) {
-      localDbSynced = true
-    } else {
-      // Row not in local.db yet (not yet ingested locally) — not a real error
-      localDbWarning = `tmdb_id=${tmdb_id} not found in local.db (may not be ingested yet)`
-      console.warn(`[POST /api/admin/review] ${localDbWarning}`)
+  if (localDb) {
+    try {
+      const stmt = localDb.prepare(
+        `UPDATE ${table} SET filter_status = ?, updated_at = ? WHERE tmdb_id = ?`
+      )
+      const info = stmt.run(newStatus, nowStr, tmdb_id)
+      if (info.changes > 0) {
+        localDbSynced = true
+      } else {
+        localDbWarning = `tmdb_id=${tmdb_id} not found in local.db (may not be ingested yet)`
+        console.warn(`[POST /api/admin/review] ${localDbWarning}`)
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      localDbWarning = `local.db update failed: ${msg}`
+      console.error(`[POST /api/admin/review] ${localDbWarning}`)
     }
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    localDbWarning = `local.db update failed: ${msg}`
-    console.error(`[POST /api/admin/review] ${localDbWarning}`)
+  } else {
+    localDbWarning = 'local.db not available on this server (production environment)'
   }
 
   // ── 5. Return result ──────────────────────────────────────
