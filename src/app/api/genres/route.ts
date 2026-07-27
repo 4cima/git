@@ -1,13 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { turso } from '@/lib/turso'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 3600 // Cache for 1 hour
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams
+    const type = searchParams.get('type') // 'movie' or 'tv'
+    
     // Get all genres with counts
-    const genresResult = await turso.execute(`
+    let query = `
       SELECT 
         g.*,
         (SELECT COUNT(*) FROM content_genres cg 
@@ -15,8 +18,22 @@ export async function GET() {
         (SELECT COUNT(*) FROM content_genres cg 
          WHERE cg.genre_id = g.id AND cg.content_type = 'tv_series') as series_count
       FROM genres g
-      ORDER BY g.name_ar ASC
-    `)
+    `
+    
+    // Filter by type if specified
+    if (type === 'movie' || type === 'tv') {
+      const contentType = type === 'movie' ? 'movie' : 'tv_series'
+      query += `
+        WHERE EXISTS (
+          SELECT 1 FROM content_genres cg 
+          WHERE cg.genre_id = g.id AND cg.content_type = '${contentType}'
+        )
+      `
+    }
+    
+    query += ` ORDER BY g.name_ar ASC`
+    
+    const genresResult = await turso.execute(query)
     
     const genres = genresResult.rows.map(genre => ({
       ...genre,

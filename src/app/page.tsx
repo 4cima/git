@@ -153,6 +153,7 @@ export default function Home() {
   const [heroIndex, setHeroIndex] = useState(0)
   const [heroItems, setHeroItems] = useState<MediaItem[]>([])
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right'>('left')
+  const [hoveredItemSlug, setHoveredItemSlug] = useState<string | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // جلب البيانات من API
@@ -698,37 +699,55 @@ export default function Home() {
                   </div>
 
                   {/* Metadata */}
-                  <div className="p-3.5 flex-1 flex flex-col justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold">
-                        <span className="text-slate-400">{item.year}</span>
-                        <span className="flex items-center text-amber-400">
-                          <Star className="w-3 h-3 ml-0.5 fill-amber-400" />{' '}
-                          {item.vote_average.toFixed(1)}
-                        </span>
-                      </div>
-
-                      <h3 className="text-xs font-black text-slate-200 line-clamp-1 group-hover:text-amber-400 transition">
+                  <div className="p-3.5 flex-1 flex flex-col justify-between relative">
+                    {/* Title - Hidden on hover */}
+                    <div className={`space-y-1 transition-opacity duration-200 ${item.slug === hoveredItemSlug ? 'opacity-0' : 'opacity-100'}`}>
+                      <h3 className="text-xs font-black text-slate-200 line-clamp-2 group-hover:text-amber-400 transition min-h-[32px]">
                         {sanitizeTitle(item.title_ar)}
                       </h3>
+                      <p className="text-[10px] text-slate-500 line-clamp-1">
+                        {item.title_en || '—'}
+                      </p>
                     </div>
 
-                    <div className="flex items-center justify-between mt-2 border-t border-slate-900/60 pt-2">
-                      {(() => {
-                        const mediaColorScheme = getMediaTypeColor(item.media_type)
-                        const genreColorScheme = getGenreColor(item.primary_genre)
-                        return (
-                          <>
-                            <span className={`text-[9px] ${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-0.5 rounded flex items-center gap-1 font-bold`}>
-                              <span>{mediaColorScheme.icon}</span>
-                              <span>{mediaColorScheme.label}</span>
-                            </span>
-                            <span className={`text-[10px] truncate pl-2 max-w-[80px] ${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-1.5 py-0.5 rounded font-bold`} title={item.primary_genre || 'غير محدد'}>
-                              {item.primary_genre || 'دراما'}
-                            </span>
-                          </>
-                        )
-                      })()}
+                    {/* Overview on hover - replaces title */}
+                    {item.slug === hoveredItemSlug && (
+                      <div className="absolute top-3.5 left-3.5 right-3.5">
+                        <p className="text-[10px] text-slate-300 line-clamp-3 leading-relaxed">
+                          {item.overview_ar || 'لا يوجد وصف متاح'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Bottom row - Always visible */}
+                    <div className="mt-auto pt-2 space-y-1.5">
+                      <div className="flex items-center justify-between border-t border-slate-900/60 pt-2">
+                        {(() => {
+                          const mediaColorScheme = getMediaTypeColor(item.media_type)
+                          const genreColorScheme = getGenreColor(item.primary_genre)
+                          return (
+                            <>
+                              <span className={`text-[9px] ${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-0.5 rounded flex items-center gap-1 font-bold shrink-0`}>
+                                <span>{mediaColorScheme.icon}</span>
+                                <span>{mediaColorScheme.label}</span>
+                              </span>
+                              <span className={`text-[10px] truncate pl-2 max-w-[70px] ${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-1.5 py-0.5 rounded font-bold shrink-0`} title={item.primary_genre || 'غير محدد'}>
+                                {item.primary_genre || 'دراما'}
+                              </span>
+                              {item.year && (
+                                <>
+                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-700 shrink-0" />
+                                  <span className="text-[10px] text-slate-400 shrink-0">{item.year}</span>
+                                </>
+                              )}
+                              <span className="flex items-center text-amber-400 text-[10px] shrink-0">
+                                <Star className="w-3 h-3 ml-0.5 fill-amber-400" />
+                                {item.vote_average.toFixed(1)}
+                              </span>
+                            </>
+                          )
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </Link>

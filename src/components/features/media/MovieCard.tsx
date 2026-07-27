@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client'
 
+// Updated: Card layout redesign with overview on hover
 import { memo, useState, useEffect, useRef, lazy, Suspense } from 'react'
 import type { DragEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -106,6 +107,11 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
 
   const hasPosterPath = Boolean(movie.poster_path && movie.poster_path.trim())
   const hasValidTitle = Boolean(mainTitle && mainTitle !== 'Untitled')
+
+  // Debug log
+  if (typeof window !== 'undefined') {
+    console.log('🎬 MovieCard rendered:', mainTitle)
+  }
 
   useEffect(() => {
     let mounted = true
@@ -248,46 +254,87 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
           </div>
 
           {/* Title & meta */}
-          <div className="p-3 h-[104px] grid grid-rows-[18px_16px_1fr] bg-gradient-to-b from-transparent to-lumen-void/60">
-            <h3 className="line-clamp-1 text-sm font-semibold leading-[18px] text-lumen-cream group-hover/card:text-lumen-gold transition-colors duration-200">
-              {mainTitle}
-            </h3>
-            <p className={`line-clamp-1 text-xs leading-4 text-lumen-gold/80 font-arabic ${subTitle ? '' : 'invisible'}`}>
-              {subTitle || '—'}
-            </p>
-            <div className="self-end mt-1 flex flex-wrap items-center gap-1 text-[9px] font-medium uppercase tracking-wider text-lumen-silver">
-              {rating != null && (
-                <span className="flex items-center gap-0.5 text-lumen-gold">
-                  <Star size={10} fill="currentColor" />
-                  {rating}
-                </span>
-              )}
-
-              {genre && (
-                <>
-                  {rating != null && <span className="w-0.5 h-0.5 rounded-full bg-lumen-silver/50" />}
-                  <span className={`${genreColorScheme.bg} ${genreColorScheme.text} ${genreColorScheme.border} border px-1.5 py-0.5 rounded truncate max-w-[80px] font-bold`}>
-                    {genre}
-                  </span>
-                </>
-              )}
-
-              {year && (
-                <>
-                  <span className="w-0.5 h-0.5 rounded-full bg-lumen-silver/50" />
-                  <span className={isCurrentYear ? 'text-cyan-400 animate-neon-flash font-bold drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]' : ''}>
-                    {year}
-                  </span>
-                </>
-              )}
+          <div className="relative p-3 h-[104px] flex flex-col bg-gradient-to-b from-transparent to-lumen-void/60 overflow-hidden">
+            {/* Arabic Title - Top (hidden on hover) */}
+            <div className={`transition-opacity duration-200 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
+              <h3 className="line-clamp-1 text-sm font-semibold leading-[18px] text-lumen-cream group-hover/card:text-lumen-gold mb-1">
+                {mainTitle}
+              </h3>
               
-              {/* Media Type Badge */}
-              <span className="w-0.5 h-0.5 rounded-full bg-lumen-silver/50" />
-              <span className={`${mediaTypeColorScheme.bg} ${mediaTypeColorScheme.text} ${mediaTypeColorScheme.border} border px-1.5 py-0.5 rounded text-[8px] font-bold flex items-center gap-0.5`}>
-                <span>{mediaTypeColorScheme.icon}</span>
-                <span>{mediaTypeColorScheme.label}</span>
-              </span>
+              {/* English Title (Original) - Second Line */}
+              <p className={`line-clamp-1 text-[11px] leading-4 text-lumen-silver/80 font-english ${subTitle ? '' : 'invisible'}`}>
+                {subTitle || '—'}
+              </p>
             </div>
+
+            {/* Overview on Hover - Replaces title */}
+            <AnimatePresence>
+              {isHovered && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute top-3 left-3 right-3"
+                >
+                  <p className="text-[10px] leading-relaxed text-zinc-300 line-clamp-3 mb-1">
+                    {movie.overview_ar || movie.overview || 'لا يوجد وصف متاح'}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            {/* Bottom Row: Compact single line - Always Visible */}
+            <div className="mt-auto pt-2 border-t border-lumen-void/30">
+              <div className="flex items-center justify-between gap-1 text-[9px] font-medium">
+                {/* Left side: Media Type + Genre */}
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <span className={`${mediaTypeColorScheme.text} text-[10px] font-bold shrink-0`}>
+                    {mediaTypeColorScheme.icon}
+                  </span>
+                  {genre && (
+                    <span className={`${genreColorScheme.text} truncate text-[9px] font-bold`} title={genre}>
+                      {genre}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Right side: Year + Rating */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {year && (
+                    <span className={`text-[9px] ${isCurrentYear ? 'text-cyan-400 animate-neon-flash font-bold' : 'text-lumen-silver'}`}>
+                      {year}
+                    </span>
+                  )}
+                  {rating != null && (
+                    <>
+                      <span className="w-0.5 h-0.5 rounded-full bg-lumen-silver/50" />
+                      <span className="flex items-center gap-0.5 text-lumen-gold">
+                        <Star size={10} fill="currentColor" />
+                        <span className="text-[9px] font-bold">{rating}</span>
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Play Button Overlay on Hover - Over the poster */}
+            <AnimatePresence>
+              {isHovered && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[120%] z-30 pointer-events-none"
+                >
+                  <div className="w-14 h-14 rounded-full bg-lumen-gold/95 flex items-center justify-center shadow-2xl shadow-lumen-gold/60">
+                    <Play size={24} fill="currentColor" className="text-black translate-x-0.5" />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </Link>

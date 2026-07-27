@@ -222,10 +222,31 @@ export const VideoCard = memo(
         </div>
 
         <div className='mt-3 h-[72px] flex flex-col justify-between space-y-1'>
-          <h3 className='font-bold text-sm text-zinc-100 line-clamp-2 min-h-[40px] group-hover:text-cyan-400 transition-colors leading-snug'>
-            {displayTitle}
-          </h3>
+          {/* Title - Hidden on hover, replaced by description */}
+          <div className={`transition-opacity duration-200 ${isHovered ? 'opacity-0 absolute' : 'opacity-100'}`}>
+            <h3 className='font-bold text-sm text-zinc-100 line-clamp-2 min-h-[40px] group-hover:text-cyan-400 transition-colors leading-snug'>
+              {displayTitle}
+            </h3>
+          </div>
 
+          {/* Description on hover - replaces title */}
+          <AnimatePresence>
+            {isHovered && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.2 }}
+                className='min-h-[40px]'
+              >
+                <p className='text-xs text-zinc-300 line-clamp-2 leading-relaxed'>
+                  {video.category ? `${video.category} • ` : ''}مشاهدة ممتعة
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Bottom info - Always visible */}
           <div className='flex items-center justify-between text-xs text-zinc-500'>
             <div className='flex items-center gap-2'>
               {video.year && <span>{video.year}</span>}
