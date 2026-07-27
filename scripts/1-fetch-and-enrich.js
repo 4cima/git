@@ -315,6 +315,9 @@ async function main() {
   updateProgress('1-fetch-and-enrich', { status: 'idle' });
   console.log('\n✅ اكتملت المعالجة!');
   printProgress();
+  
+  // Force flush stdout before exit
+  await new Promise(resolve => process.stdout.write('', resolve));
 }
 
 main().catch(err => { console.error('❌ خطأ فادح:', err); process.exit(1); });

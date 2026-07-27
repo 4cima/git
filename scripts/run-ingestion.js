@@ -79,13 +79,29 @@ function runBatch(type, limit) {
     child.stderr.on('data', d => { stderr += d; });
 
     child.on('close', (code) => {
-      // Parse progress line from output: ✅X 🚫Y ❓Z ❌W
-      const match = stdout.match(/[✅Γ£à](\d+)\s*[🚫ΓÜ½](\d+)\s*[❓Γ¥ô](\d+)\s*[❌Γ¥î](\d+)/);
+      // Parse progress line from output
+      // Expected format: 🎬 ✅2 🚫0 ❓0 ❌1
+      const lines = stdout.split('\n');
+      const movieLine = lines.find(line => line.includes('🎬') && line.includes('✅'));
+      
+      let ok = 0, filtered = 0, notfound = 0, errors = 0;
+      
+      if (movieLine) {
+        // Extract all numbers from the line in order
+        const numbers = movieLine.match(/\d+/g);
+        if (numbers && numbers.length >= 4) {
+          ok       = parseInt(numbers[0]);
+          filtered = parseInt(numbers[1]);
+          notfound = parseInt(numbers[2]);
+          errors   = parseInt(numbers[3]);
+        }
+      }
+      
       resolve({
-        ok:       match ? parseInt(match[1]) : 0,
-        filtered: match ? parseInt(match[2]) : 0,
-        notfound: match ? parseInt(match[3]) : 0,
-        errors:   match ? parseInt(match[4]) : 0,
+        ok,
+        filtered,
+        notfound,
+        errors,
         code,
         stderr:   stderr.slice(0, 200),
       });
