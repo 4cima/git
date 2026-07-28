@@ -7,8 +7,6 @@ import { AuroraBackground } from '../effects/AuroraBackground'
 import { Footer } from './Footer'
 import { usePathname } from 'next/navigation'
 import { useLang } from '../../state/useLang'
-import { QuranPlayerBar } from '../features/quran/QuranPlayerBar'
-import { useAudioController } from '../../hooks/useAudioController'
 import { ErrorBoundary } from '../common/ErrorBoundary'
 
 interface MainLayoutProps {
@@ -18,13 +16,6 @@ interface MainLayoutProps {
 export const MainLayout = ({ children }: MainLayoutProps) => {
   const { lang } = useLang()
   const pathname = usePathname()
-  
-  // Initialize Audio Controller (Global Singleton)
-  useAudioController()
-
-  if (pathname === '/quran/radio') {
-    return <>{children}</>
-  }
 
   return (
     <div className={`min-h-screen font-dm selection:bg-lumen-gold selection:text-lumen-void ${lang === 'ar' ? 'font-cairo' : ''}`}>
@@ -53,7 +44,6 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       </div>
 
       <Footer />
-      <QuranPlayerBar />
     </div>
   )
 }

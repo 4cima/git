@@ -13,7 +13,7 @@ export const GENRE_TRANSLATIONS: Record<string, string> = {
     'documentary': 'وثائقي',
     'drama': 'دراما',
     'family': 'عائلي',
-    'fantasy': 'خيال',
+    'fantasy': 'فانتازيا',
     'history': 'تاريخي',
     'horror': 'رعب',
     'music': 'موسيقي',

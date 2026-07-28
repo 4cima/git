@@ -10,272 +10,278 @@ export interface GenreColorScheme {
   glow: string    // تأثير التوهج
 }
 
-// ألوان التصنيفات (17+ تصنيف)
+// ألوان التصنيفات (17+ تصنيف) - ألوان غامقة مريحة للعين
 export const genreColors: Record<string, GenreColorScheme> = {
-  // Action - أحمر
+  // Action - أحمر داكن جداً
   'action': {
-    bg: 'bg-red-500/20',
-    text: 'text-red-400',
-    border: 'border-red-500/30',
+    bg: 'bg-red-950',
+    text: 'text-white',
+    border: 'border-red-900',
     glow: 'shadow-red-500/20'
   },
   'أكشن': {
-    bg: 'bg-red-500/20',
-    text: 'text-red-400',
-    border: 'border-red-500/30',
+    bg: 'bg-red-950',
+    text: 'text-white',
+    border: 'border-red-900',
     glow: 'shadow-red-500/20'
   },
   
   // Drama - بنفسجي
   'drama': {
-    bg: 'bg-purple-500/20',
-    text: 'text-purple-400',
-    border: 'border-purple-500/30',
+    bg: 'bg-purple-800',
+    text: 'text-white',
+    border: 'border-purple-700',
     glow: 'shadow-purple-500/20'
   },
   'دراما': {
-    bg: 'bg-purple-500/20',
-    text: 'text-purple-400',
-    border: 'border-purple-500/30',
+    bg: 'bg-purple-800',
+    text: 'text-white',
+    border: 'border-purple-700',
     glow: 'shadow-purple-500/20'
   },
   
   // Comedy - أصفر
   'comedy': {
-    bg: 'bg-yellow-500/20',
-    text: 'text-yellow-400',
-    border: 'border-yellow-500/30',
+    bg: 'bg-yellow-700',
+    text: 'text-white',
+    border: 'border-yellow-600',
     glow: 'shadow-yellow-500/20'
   },
   'كوميديا': {
-    bg: 'bg-yellow-500/20',
-    text: 'text-yellow-400',
-    border: 'border-yellow-500/30',
+    bg: 'bg-yellow-700',
+    text: 'text-white',
+    border: 'border-yellow-600',
     glow: 'shadow-yellow-500/20'
   },
   
   // Horror - رمادي داكن
   'horror': {
-    bg: 'bg-gray-500/20',
-    text: 'text-gray-300',
-    border: 'border-gray-500/30',
+    bg: 'bg-gray-800',
+    text: 'text-white',
+    border: 'border-gray-700',
     glow: 'shadow-gray-500/20'
   },
   'رعب': {
-    bg: 'bg-gray-500/20',
-    text: 'text-gray-300',
-    border: 'border-gray-500/30',
+    bg: 'bg-gray-800',
+    text: 'text-white',
+    border: 'border-gray-700',
     glow: 'shadow-gray-500/20'
   },
   
   // Romance - وردي
   'romance': {
-    bg: 'bg-pink-500/20',
-    text: 'text-pink-400',
-    border: 'border-pink-500/30',
+    bg: 'bg-pink-800',
+    text: 'text-white',
+    border: 'border-pink-700',
     glow: 'shadow-pink-500/20'
   },
   'رومانسي': {
-    bg: 'bg-pink-500/20',
-    text: 'text-pink-400',
-    border: 'border-pink-500/30',
+    bg: 'bg-pink-800',
+    text: 'text-white',
+    border: 'border-pink-700',
     glow: 'shadow-pink-500/20'
   },
   
   // Sci-Fi - سماوي
   'science fiction': {
-    bg: 'bg-cyan-500/20',
-    text: 'text-cyan-400',
-    border: 'border-cyan-500/30',
+    bg: 'bg-cyan-800',
+    text: 'text-white',
+    border: 'border-cyan-700',
     glow: 'shadow-cyan-500/20'
   },
   'sci-fi': {
-    bg: 'bg-cyan-500/20',
-    text: 'text-cyan-400',
-    border: 'border-cyan-500/30',
+    bg: 'bg-cyan-800',
+    text: 'text-white',
+    border: 'border-cyan-700',
     glow: 'shadow-cyan-500/20'
   },
   'خيال علمي': {
-    bg: 'bg-cyan-500/20',
-    text: 'text-cyan-400',
-    border: 'border-cyan-500/30',
+    bg: 'bg-cyan-800',
+    text: 'text-white',
+    border: 'border-cyan-700',
     glow: 'shadow-cyan-500/20'
   },
   
   // Adventure - أخضر زمردي
   'adventure': {
-    bg: 'bg-emerald-500/20',
-    text: 'text-emerald-400',
-    border: 'border-emerald-500/30',
+    bg: 'bg-emerald-800',
+    text: 'text-white',
+    border: 'border-emerald-700',
     glow: 'shadow-emerald-500/20'
   },
   'مغامرة': {
-    bg: 'bg-emerald-500/20',
-    text: 'text-emerald-400',
-    border: 'border-emerald-500/30',
+    bg: 'bg-emerald-800',
+    text: 'text-white',
+    border: 'border-emerald-700',
     glow: 'shadow-emerald-500/20'
   },
   
   // Thriller - برتقالي
   'thriller': {
-    bg: 'bg-orange-500/20',
-    text: 'text-orange-400',
-    border: 'border-orange-500/30',
+    bg: 'bg-orange-800',
+    text: 'text-white',
+    border: 'border-orange-700',
     glow: 'shadow-orange-500/20'
   },
   'إثارة': {
-    bg: 'bg-orange-500/20',
-    text: 'text-orange-400',
-    border: 'border-orange-500/30',
+    bg: 'bg-orange-800',
+    text: 'text-white',
+    border: 'border-orange-700',
     glow: 'shadow-orange-500/20'
   },
   
   // Crime - أحمر داكن
   'crime': {
-    bg: 'bg-red-900/30',
-    text: 'text-red-300',
-    border: 'border-red-900/40',
+    bg: 'bg-red-950',
+    text: 'text-white',
+    border: 'border-red-900',
     glow: 'shadow-red-900/20'
   },
   'جريمة': {
-    bg: 'bg-red-900/30',
-    text: 'text-red-300',
-    border: 'border-red-900/40',
+    bg: 'bg-red-950',
+    text: 'text-white',
+    border: 'border-red-900',
     glow: 'shadow-red-900/20'
   },
   
   // Fantasy - نيلي
   'fantasy': {
-    bg: 'bg-indigo-500/20',
-    text: 'text-indigo-400',
-    border: 'border-indigo-500/30',
+    bg: 'bg-indigo-800',
+    text: 'text-white',
+    border: 'border-indigo-700',
     glow: 'shadow-indigo-500/20'
   },
   'فانتازيا': {
-    bg: 'bg-indigo-500/20',
-    text: 'text-indigo-400',
-    border: 'border-indigo-500/30',
+    bg: 'bg-indigo-800',
+    text: 'text-white',
+    border: 'border-indigo-700',
     glow: 'shadow-indigo-500/20'
   },
   
   // Animation - أزرق
   'animation': {
-    bg: 'bg-blue-500/20',
-    text: 'text-blue-400',
-    border: 'border-blue-500/30',
+    bg: 'bg-blue-800',
+    text: 'text-white',
+    border: 'border-blue-700',
     glow: 'shadow-blue-500/20'
   },
   'أنيميشن': {
-    bg: 'bg-blue-500/20',
-    text: 'text-blue-400',
-    border: 'border-blue-500/30',
+    bg: 'bg-blue-800',
+    text: 'text-white',
+    border: 'border-blue-700',
+    glow: 'shadow-blue-500/20'
+  },
+  'رسوم متحركة': {
+    bg: 'bg-blue-800',
+    text: 'text-white',
+    border: 'border-blue-700',
     glow: 'shadow-blue-500/20'
   },
   
   // Family - أخضر
   'family': {
-    bg: 'bg-green-500/20',
-    text: 'text-green-400',
-    border: 'border-green-500/30',
+    bg: 'bg-green-800',
+    text: 'text-white',
+    border: 'border-green-700',
     glow: 'shadow-green-500/20'
   },
   'عائلي': {
-    bg: 'bg-green-500/20',
-    text: 'text-green-400',
-    border: 'border-green-500/30',
+    bg: 'bg-green-800',
+    text: 'text-white',
+    border: 'border-green-700',
     glow: 'shadow-green-500/20'
   },
   
   // War - رمادي مزرق
   'war': {
-    bg: 'bg-slate-500/20',
-    text: 'text-slate-300',
-    border: 'border-slate-500/30',
+    bg: 'bg-slate-700',
+    text: 'text-white',
+    border: 'border-slate-600',
     glow: 'shadow-slate-500/20'
   },
   'حرب': {
-    bg: 'bg-slate-500/20',
-    text: 'text-slate-300',
-    border: 'border-slate-500/30',
+    bg: 'bg-slate-700',
+    text: 'text-white',
+    border: 'border-slate-600',
     glow: 'shadow-slate-500/20'
   },
   
   // History - كهرماني
   'history': {
-    bg: 'bg-amber-500/20',
-    text: 'text-amber-400',
-    border: 'border-amber-500/30',
+    bg: 'bg-amber-800',
+    text: 'text-white',
+    border: 'border-amber-700',
     glow: 'shadow-amber-500/20'
   },
   'تاريخي': {
-    bg: 'bg-amber-500/20',
-    text: 'text-amber-400',
-    border: 'border-amber-500/30',
+    bg: 'bg-amber-800',
+    text: 'text-white',
+    border: 'border-amber-700',
     glow: 'shadow-amber-500/20'
   },
   
   // Mystery - بنفسجي داكن
   'mystery': {
-    bg: 'bg-violet-500/20',
-    text: 'text-violet-400',
-    border: 'border-violet-500/30',
+    bg: 'bg-violet-800',
+    text: 'text-white',
+    border: 'border-violet-700',
     glow: 'shadow-violet-500/20'
   },
   'غموض': {
-    bg: 'bg-violet-500/20',
-    text: 'text-violet-400',
-    border: 'border-violet-500/30',
+    bg: 'bg-violet-800',
+    text: 'text-white',
+    border: 'border-violet-700',
     glow: 'shadow-violet-500/20'
   },
   
   // Documentary - أزرق مخضر
   'documentary': {
-    bg: 'bg-teal-500/20',
-    text: 'text-teal-400',
-    border: 'border-teal-500/30',
+    bg: 'bg-teal-800',
+    text: 'text-white',
+    border: 'border-teal-700',
     glow: 'shadow-teal-500/20'
   },
   'وثائقي': {
-    bg: 'bg-teal-500/20',
-    text: 'text-teal-400',
-    border: 'border-teal-500/30',
+    bg: 'bg-teal-800',
+    text: 'text-white',
+    border: 'border-teal-700',
     glow: 'shadow-teal-500/20'
   },
   
   // Western - بني
   'western': {
-    bg: 'bg-orange-700/20',
-    text: 'text-orange-300',
-    border: 'border-orange-700/30',
+    bg: 'bg-orange-900',
+    text: 'text-white',
+    border: 'border-orange-800',
     glow: 'shadow-orange-700/20'
   },
   'غربي': {
-    bg: 'bg-orange-700/20',
-    text: 'text-orange-300',
-    border: 'border-orange-700/30',
+    bg: 'bg-orange-900',
+    text: 'text-white',
+    border: 'border-orange-800',
     glow: 'shadow-orange-700/20'
   },
   
   // Music - وردي فاتح
   'music': {
-    bg: 'bg-fuchsia-500/20',
-    text: 'text-fuchsia-400',
-    border: 'border-fuchsia-500/30',
+    bg: 'bg-fuchsia-800',
+    text: 'text-white',
+    border: 'border-fuchsia-700',
     glow: 'shadow-fuchsia-500/20'
   },
   'موسيقي': {
-    bg: 'bg-fuchsia-500/20',
-    text: 'text-fuchsia-400',
-    border: 'border-fuchsia-500/30',
+    bg: 'bg-fuchsia-800',
+    text: 'text-white',
+    border: 'border-fuchsia-700',
     glow: 'shadow-fuchsia-500/20'
   }
 }
 
 // لون افتراضي للتصنيفات غير المعروفة
 const defaultGenreColor: GenreColorScheme = {
-  bg: 'bg-zinc-500/20',
-  text: 'text-zinc-400',
-  border: 'border-zinc-500/30',
+  bg: 'bg-zinc-700',
+  text: 'text-white',
+  border: 'border-zinc-600',
   glow: 'shadow-zinc-500/20'
 }
 
@@ -303,58 +309,58 @@ export interface MediaTypeColorScheme {
 
 export const mediaTypeColors: Record<string, MediaTypeColorScheme> = {
   'movie': {
-    bg: 'bg-gradient-to-r from-red-500/20 to-amber-500/20',
-    text: 'text-red-400',
-    border: 'border-red-500/30',
+    bg: 'bg-red-700',
+    text: 'text-white',
+    border: 'border-red-600',
     icon: '🎬',
     label: 'فيلم'
   },
   'movies': {
-    bg: 'bg-gradient-to-r from-red-500/20 to-amber-500/20',
-    text: 'text-red-400',
-    border: 'border-red-500/30',
+    bg: 'bg-red-700',
+    text: 'text-white',
+    border: 'border-red-600',
     icon: '🎬',
     label: 'فيلم'
   },
   'tv': {
-    bg: 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20',
-    text: 'text-blue-400',
-    border: 'border-blue-500/30',
+    bg: 'bg-blue-800',
+    text: 'text-white',
+    border: 'border-blue-700',
     icon: '📺',
     label: 'مسلسل'
   },
   'series': {
-    bg: 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20',
-    text: 'text-blue-400',
-    border: 'border-blue-500/30',
+    bg: 'bg-blue-800',
+    text: 'text-white',
+    border: 'border-blue-700',
     icon: '📺',
     label: 'مسلسل'
   },
   'anime': {
-    bg: 'bg-gradient-to-r from-pink-500/20 to-purple-500/20',
-    text: 'text-pink-400',
-    border: 'border-pink-500/30',
+    bg: 'bg-pink-800',
+    text: 'text-white',
+    border: 'border-pink-700',
     icon: '🎌',
     label: 'أنمي'
   },
   'game': {
-    bg: 'bg-gradient-to-r from-green-500/20 to-emerald-500/20',
-    text: 'text-green-400',
-    border: 'border-green-500/30',
+    bg: 'bg-green-800',
+    text: 'text-white',
+    border: 'border-green-700',
     icon: '🎮',
     label: 'لعبة'
   },
   'software': {
-    bg: 'bg-gradient-to-r from-indigo-500/20 to-violet-500/20',
-    text: 'text-indigo-400',
-    border: 'border-indigo-500/30',
+    bg: 'bg-indigo-800',
+    text: 'text-white',
+    border: 'border-indigo-700',
     icon: '💾',
     label: 'برنامج'
   },
   'quran': {
-    bg: 'bg-gradient-to-r from-teal-500/20 to-cyan-500/20',
-    text: 'text-teal-400',
-    border: 'border-teal-500/30',
+    bg: 'bg-teal-800',
+    text: 'text-white',
+    border: 'border-teal-700',
     icon: '📖',
     label: 'قرآن'
   }
@@ -362,9 +368,9 @@ export const mediaTypeColors: Record<string, MediaTypeColorScheme> = {
 
 // لون افتراضي لنوع المحتوى
 const defaultMediaTypeColor: MediaTypeColorScheme = {
-  bg: 'bg-zinc-500/20',
-  text: 'text-zinc-400',
-  border: 'border-zinc-500/30',
+  bg: 'bg-zinc-700',
+  text: 'text-white',
+  border: 'border-zinc-600',
   icon: '🎥',
   label: 'محتوى'
 }

@@ -668,8 +668,10 @@ export default function Home() {
                   }`}
                   key={`${item.media_type}-${item.id}`}
                   className="group bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative"
+                  onMouseEnter={() => setHoveredItemSlug(item.slug)}
+                  onMouseLeave={() => setHoveredItemSlug(null)}
                 >
-                  {/* Poster */}
+                  {/* Poster with Overlay Badges */}
                   <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
                     {item.poster_path ? (
                       <img
@@ -687,68 +689,105 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* Dark gradient */}
+                    {/* Dark gradient on hover */}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                    {/* Play Hover Button */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {/* Top Right - Media Type Badge */}
+                    {(() => {
+                      const mediaColorScheme = getMediaTypeColor(item.media_type)
+                      return (
+                        <div className="absolute top-2 right-2 z-20">
+                          <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                            {mediaColorScheme.label}
+                          </span>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Top Left - Rating Badge */}
+                    {item.vote_average > 0 && (
+                      <div className="absolute top-2 left-2 z-20">
+                        <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                          <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
+                          <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Bottom Right - Genre Badge */}
+                    {item.primary_genre && (() => {
+                      const genreColorScheme = getGenreColor(item.primary_genre)
+                      return (
+                        <div className="absolute bottom-2 right-2 z-20">
+                          <span className={`${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                            {item.primary_genre}
+                          </span>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Bottom Left - Year Badge */}
+                    {item.year && (() => {
+                      const y = Number(item.year)
+                      const currentYear = new Date().getFullYear()
+                      
+                      let yearStyle = ''
+                      if (y === currentYear) {
+                        // Current year - Purple neon glow
+                        yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
+                      } else if (y >= 2020 && y <= 2025) {
+                        // 2020-2025 - Blue
+                        yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
+                      } else if (y >= 2010 && y <= 2019) {
+                        // 2010-2019 - Cyan
+                        yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
+                      } else if (y >= 2000 && y <= 2009) {
+                        // 2000-2009 - White/Silver
+                        yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
+                      } else {
+                        // Before 2000 - Dim gray (classic)
+                        yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
+                      }
+                      
+                      return (
+                        <div className="absolute bottom-2 left-2 z-20">
+                          <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>
+                            {item.year}
+                          </span>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Play Hover Button - Center */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
                       <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
                         <Play className="w-5 h-5 text-white fill-white mr-0.5" />
                       </div>
                     </div>
                   </div>
 
-                  {/* Metadata */}
-                  <div className="p-3.5 flex-1 flex flex-col justify-between relative">
-                    {/* Title - Hidden on hover */}
-                    <div className={`space-y-1 transition-opacity duration-200 ${item.slug === hoveredItemSlug ? 'opacity-0' : 'opacity-100'}`}>
-                      <h3 className="text-xs font-black text-slate-200 line-clamp-2 group-hover:text-amber-400 transition min-h-[32px]">
+                  {/* Title Section - Reduced Height */}
+                  <div className="p-2.5 h-[52px] flex flex-col justify-center relative overflow-hidden">
+                    {/* Titles - Hidden on hover */}
+                    <div className={`transition-opacity duration-200 ${item.slug === hoveredItemSlug ? 'opacity-0' : 'opacity-100'}`}>
+                      <h3 className="text-[13px] font-bold text-slate-200 line-clamp-1 group-hover:text-amber-400 transition leading-tight">
                         {sanitizeTitle(item.title_ar)}
                       </h3>
-                      <p className="text-[10px] text-slate-500 line-clamp-1">
-                        {item.title_en || '—'}
-                      </p>
+                      {item.title_en && (
+                        <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 leading-tight">
+                          {item.title_en}
+                        </p>
+                      )}
                     </div>
 
-                    {/* Overview on hover - replaces title */}
+                    {/* Overview on hover - replaces titles */}
                     {item.slug === hoveredItemSlug && (
-                      <div className="absolute top-3.5 left-3.5 right-3.5">
-                        <p className="text-[10px] text-slate-300 line-clamp-3 leading-relaxed">
+                      <div className="absolute inset-0 p-2.5 flex items-center">
+                        <p className="text-[9px] text-slate-300 line-clamp-3 leading-relaxed">
                           {item.overview_ar || 'لا يوجد وصف متاح'}
                         </p>
                       </div>
                     )}
-
-                    {/* Bottom row - Always visible */}
-                    <div className="mt-auto pt-2 space-y-1.5">
-                      <div className="flex items-center justify-between border-t border-slate-900/60 pt-2">
-                        {(() => {
-                          const mediaColorScheme = getMediaTypeColor(item.media_type)
-                          const genreColorScheme = getGenreColor(item.primary_genre)
-                          return (
-                            <>
-                              <span className={`text-[9px] ${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-0.5 rounded flex items-center gap-1 font-bold shrink-0`}>
-                                <span>{mediaColorScheme.icon}</span>
-                                <span>{mediaColorScheme.label}</span>
-                              </span>
-                              <span className={`text-[10px] truncate pl-2 max-w-[70px] ${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-1.5 py-0.5 rounded font-bold shrink-0`} title={item.primary_genre || 'غير محدد'}>
-                                {item.primary_genre || 'دراما'}
-                              </span>
-                              {item.year && (
-                                <>
-                                  <span className="w-0.5 h-0.5 rounded-full bg-slate-700 shrink-0" />
-                                  <span className="text-[10px] text-slate-400 shrink-0">{item.year}</span>
-                                </>
-                              )}
-                              <span className="flex items-center text-amber-400 text-[10px] shrink-0">
-                                <Star className="w-3 h-3 ml-0.5 fill-amber-400" />
-                                {item.vote_average.toFixed(1)}
-                              </span>
-                            </>
-                          )
-                        })()}
-                      </div>
-                    </div>
                   </div>
                 </Link>
               )

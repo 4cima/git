@@ -59,6 +59,29 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
   const date = movie.release_date || movie.first_air_date || ''
   const year = date ? new Date(date).getFullYear() : ''
 
+  // Year color logic based on range
+  const getYearStyle = (year: number | string) => {
+    const y = Number(year)
+    const currentYear = new Date().getFullYear()
+    
+    if (y === currentYear) {
+      // Current year - Purple neon glow
+      return 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
+    } else if (y >= 2020 && y <= 2025) {
+      // 2020-2025 - Blue
+      return 'bg-blue-600 text-white border border-blue-500 shadow-md'
+    } else if (y >= 2010 && y <= 2019) {
+      // 2010-2019 - Cyan
+      return 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
+    } else if (y >= 2000 && y <= 2009) {
+      // 2000-2009 - White/Silver
+      return 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
+    } else {
+      // Before 2000 - Dim gray (classic)
+      return 'bg-slate-700 text-slate-300 border border-slate-600'
+    }
+  }
+
   const isTv = movie.media_type === 'tv' || (!!movie.name && !movie.title)
   const isGame = movie.media_type === 'game'
   const isSoftware = movie.media_type === 'software'
@@ -98,8 +121,6 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
 
   const genreRaw = movie.primary_genre || extractGenre(movie.genres_json) || (movie as any).category
   const genre = genreRaw ? (typeof genreRaw === 'string' && /[\u0600-\u06FF]/.test(genreRaw) ? genreRaw : translateGenre(genreRaw)) : null
-  const currentYear = new Date().getFullYear()
-  const isCurrentYear = year === currentYear
   
   // Get color schemes
   const genreColorScheme = getGenreColor(genre)
@@ -186,7 +207,7 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
         className="block relative h-full w-full lumen-focus-ring rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-lumen-gold focus-visible:outline-offset-2 touch-pan-y"
       >
         <div className="lumen-card h-full flex flex-col transition-transform duration-300 ease-lumen hover:scale-[1.03] focus-within:scale-[1.02]">
-          {/* Poster */}
+          {/* Poster with Overlay Badges */}
           <div className="relative aspect-[2/3] w-full overflow-hidden bg-lumen-muted">
             {thumbSrc ? (
               <img
@@ -251,75 +272,43 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
 
             {/* LUMEN grain overlay */}
             <div className="lumen-grain rounded-2xl" aria-hidden />
-          </div>
 
-          {/* Title & meta */}
-          <div className="relative p-3 h-[104px] flex flex-col bg-gradient-to-b from-transparent to-lumen-void/60 overflow-hidden">
-            {/* Arabic Title - Top (hidden on hover) */}
-            <div className={`transition-opacity duration-200 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
-              <h3 className="line-clamp-1 text-sm font-semibold leading-[18px] text-lumen-cream group-hover/card:text-lumen-gold mb-1">
-                {mainTitle}
-              </h3>
-              
-              {/* English Title (Original) - Second Line */}
-              <p className={`line-clamp-1 text-[11px] leading-4 text-lumen-silver/80 font-english ${subTitle ? '' : 'invisible'}`}>
-                {subTitle || '—'}
-              </p>
+            {/* Top Right - Media Type Badge */}
+            <div className="absolute top-2 right-2 z-20">
+              <span className={`${mediaTypeColorScheme.bg} ${mediaTypeColorScheme.text} ${mediaTypeColorScheme.border} border px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                {mediaTypeColorScheme.label}
+              </span>
             </div>
 
-            {/* Overview on Hover - Replaces title */}
-            <AnimatePresence>
-              {isHovered && (
-                <motion.div
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-3 left-3 right-3"
-                >
-                  <p className="text-[10px] leading-relaxed text-zinc-300 line-clamp-3 mb-1">
-                    {movie.overview_ar || movie.overview || 'لا يوجد وصف متاح'}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            
-            {/* Bottom Row: Compact single line - Always Visible */}
-            <div className="mt-auto pt-2 border-t border-lumen-void/30">
-              <div className="flex items-center justify-between gap-1 text-[9px] font-medium">
-                {/* Left side: Media Type + Genre */}
-                <div className="flex items-center gap-1 min-w-0 flex-1">
-                  <span className={`${mediaTypeColorScheme.text} text-[10px] font-bold shrink-0`}>
-                    {mediaTypeColorScheme.icon}
-                  </span>
-                  {genre && (
-                    <span className={`${genreColorScheme.text} truncate text-[9px] font-bold`} title={genre}>
-                      {genre}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Right side: Year + Rating */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {year && (
-                    <span className={`text-[9px] ${isCurrentYear ? 'text-cyan-400 animate-neon-flash font-bold' : 'text-lumen-silver'}`}>
-                      {year}
-                    </span>
-                  )}
-                  {rating != null && (
-                    <>
-                      <span className="w-0.5 h-0.5 rounded-full bg-lumen-silver/50" />
-                      <span className="flex items-center gap-0.5 text-lumen-gold">
-                        <Star size={10} fill="currentColor" />
-                        <span className="text-[9px] font-bold">{rating}</span>
-                      </span>
-                    </>
-                  )}
-                </div>
+            {/* Top Left - Rating Badge */}
+            {rating != null && (
+              <div className="absolute top-2 left-2 z-20">
+                <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                  <Star size={11} fill="currentColor" className="shrink-0" />
+                  <span className="text-[9px] font-bold">{rating}</span>
+                </span>
               </div>
-            </div>
+            )}
 
-            {/* Play Button Overlay on Hover - Over the poster */}
+            {/* Bottom Right - Genre Badge */}
+            {genre && (
+              <div className="absolute bottom-2 right-2 z-20">
+                <span className={`${genreColorScheme.bg} ${genreColorScheme.text} ${genreColorScheme.border} border px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                  {genre}
+                </span>
+              </div>
+            )}
+
+            {/* Bottom Left - Year Badge */}
+            {year && (
+              <div className="absolute bottom-2 left-2 z-20">
+                <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${getYearStyle(year)}`}>
+                  {year}
+                </span>
+              </div>
+            )}
+
+            {/* Play Button Overlay on Hover */}
             <AnimatePresence>
               {isHovered && (
                 <motion.div
@@ -327,11 +316,43 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[120%] z-30 pointer-events-none"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none"
                 >
                   <div className="w-14 h-14 rounded-full bg-lumen-gold/95 flex items-center justify-center shadow-2xl shadow-lumen-gold/60">
                     <Play size={24} fill="currentColor" className="text-black translate-x-0.5" />
                   </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Title Section - Reduced Height */}
+          <div className="relative p-2.5 h-[52px] flex flex-col justify-center bg-gradient-to-b from-transparent to-lumen-void/60 overflow-hidden">
+            {/* Titles - Hidden on hover */}
+            <div className={`transition-opacity duration-200 ${isHovered ? 'opacity-0' : 'opacity-100'}`}>
+              <h3 className="line-clamp-1 text-[13px] font-bold leading-tight text-lumen-cream group-hover/card:text-lumen-gold">
+                {mainTitle}
+              </h3>
+              {subTitle && (
+                <p className="line-clamp-1 text-[11px] leading-tight text-lumen-silver font-english mt-1">
+                  {subTitle}
+                </p>
+              )}
+            </div>
+
+            {/* Overview on Hover - Replaces titles */}
+            <AnimatePresence>
+              {isHovered && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 p-2.5 flex items-center"
+                >
+                  <p className="text-[9px] leading-relaxed text-zinc-300 line-clamp-3">
+                    {movie.overview_ar || movie.overview || 'لا يوجد وصف متاح'}
+                  </p>
                 </motion.div>
               )}
             </AnimatePresence>

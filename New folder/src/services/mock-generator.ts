@@ -24,7 +24,7 @@ export async function generateMockData(): Promise<{ success: boolean; count: num
       { tmdbId: 80, nameEn: "Crime", nameAr: "جريمة", slug: "crime" },
       { tmdbId: 99, nameEn: "Documentary", nameAr: "وثائقي", slug: "documentary" },
       { tmdbId: 18, nameEn: "Drama", nameAr: "دراما", slug: "drama" },
-      { tmdbId: 14, nameEn: "Fantasy", nameAr: "خيال", slug: "fantasy" },
+      { tmdbId: 14, nameEn: "Fantasy", nameAr: "فانتازيا", slug: "fantasy" },
       { tmdbId: 878, nameEn: "Science Fiction", nameAr: "خيال علمي", slug: "science-fiction" },
       { tmdbId: 9648, nameEn: "Mystery", nameAr: "غموض", slug: "mystery" },
       { tmdbId: 10749, nameEn: "Romance", nameAr: "رومانسي", slug: "romance" },

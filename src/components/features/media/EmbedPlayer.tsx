@@ -55,8 +55,8 @@ export const EmbedPlayer = ({ server, serverIndex = 0, cinemaMode, toggleCinemaM
     errorCountRef.current = 0
     lastErrorTimeRef.current = 0
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsIframeLoading(true); setHasError(false); setIframeKey(prev => prev + 1); setShowPosterOverlay(true)
+
 
     // Set timeout to detect stuck/infinite loop iframes (15 seconds)
     loadTimeoutRef.current = setTimeout(() => {

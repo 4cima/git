@@ -28,7 +28,7 @@ import { clsx } from 'clsx'
 import { logger } from '../../../lib/logger'
 import { toast } from '../../../lib/toast-manager'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports
 const ReactPlayer = require('react-player').default as any
 
 interface VideoPlayerProps {

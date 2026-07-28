@@ -30,7 +30,7 @@ const genresArabic = {
   'Documentary': 'وثائقي',
   'Drama': 'دراما',
   'Family': 'عائلي',
-  'Fantasy': 'خيال',
+  'Fantasy': 'فانتازيا',
   'History': 'تاريخي',
   'Horror': 'رعب',
   'Music': 'موسيقى',
@@ -46,7 +46,7 @@ const genresArabic = {
   'Kids': 'أطفال',
   'News': 'أخبار',
   'Reality': 'واقعي',
-  'Sci-Fi & Fantasy': 'خيال علمي وخيال',
+  'Sci-Fi & Fantasy': 'خيال علمي وفانتازيا',
   'Soap': 'مسلسل درامي',
   'Talk': 'برنامج حواري',
   'War & Politics': 'حرب وسياسة'

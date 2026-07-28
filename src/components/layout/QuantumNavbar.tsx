@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useMemo, memo, useEffect } from 'react'
-import { Home, Film, Tv, Gamepad2, Zap, User, Search, Menu, X, BookOpen, Mic, Loader2 } from 'lucide-react'
+import { Home, Film, Tv, Gamepad2, Zap, User, Search, Menu, X, Mic, Loader2 } from 'lucide-react'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
@@ -26,7 +26,6 @@ export const QuantumNavbar = memo(() => {
     { to: '/movies', label: 'أفلام', icon: Film, color: '#00ccff' },
     { to: '/series', label: 'مسلسلات', icon: Tv, color: '#aa00ff' },
     { to: '/anime', label: 'أنمي', icon: Zap, color: '#f59e0b' },
-    { to: '/quran', label: 'القرآن الكريم', icon: BookOpen, color: '#ffd700' },
     { to: '/profile', label: 'دخول', icon: User, color: '#ec4899' }
   ], [])
 

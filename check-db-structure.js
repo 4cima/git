@@ -1,38 +1,37 @@
 const Database = require('better-sqlite3');
+const path = require('path');
 
-const db = new Database('./data/local.db', { readonly: true });
+const dbPath = path.join(__dirname, 'data', '4cima-local.db');
+const db = new Database(dbPath, { readonly: true });
 
-// Get all tables
-console.log('=== TABLES IN DATABASE ===');
-const tables = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`).all();
-tables.forEach(t => console.log(`  - ${t.name}`));
+try {
+  console.log('Checking database structure...\n');
 
-// Check genres table
-console.log('\n=== GENRES TABLE STRUCTURE ===');
-const genresColumns = db.prepare(`PRAGMA table_info(genres)`).all();
-genresColumns.forEach(c => console.log(`  ${c.name}: ${c.type}`));
+  // Get all tables
+  const tables = db.prepare(`
+    SELECT name FROM sqlite_master 
+    WHERE type='table' 
+    ORDER BY name
+  `).all();
 
-// Check movies table
-console.log('\n=== MOVIES TABLE STRUCTURE (first 10 columns) ===');
-const moviesColumns = db.prepare(`PRAGMA table_info(movies)`).all();
-moviesColumns.slice(0, 10).forEach(c => console.log(`  ${c.name}: ${c.type}`));
-console.log(`  ... total ${moviesColumns.length} columns`);
+  console.log('Available tables:');
+  tables.forEach(table => {
+    console.log(`- ${table.name}`);
+    
+    // Get column info for each table
+    const columns = db.prepare(`PRAGMA table_info(${table.name})`).all();
+    console.log('  Columns:');
+    columns.forEach(col => {
+      console.log(`    - ${col.name} (${col.type})`);
+    });
+    
+    // Get row count
+    const count = db.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get();
+    console.log(`  Row count: ${count.count}\n`);
+  });
 
-// Check if content_genres exists
-console.log('\n=== CHECKING content_genres ===');
-const contentGenres = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='content_genres'`).all();
-if (contentGenres.length > 0) {
-  console.log('  ✅ content_genres table EXISTS');
-  const cgColumns = db.prepare(`PRAGMA table_info(content_genres)`).all();
-  cgColumns.forEach(c => console.log(`    ${c.name}: ${c.type}`));
-} else {
-  console.log('  ❌ content_genres table DOES NOT EXIST');
+} catch (error) {
+  console.error('Error:', error.message);
+} finally {
+  db.close();
 }
-
-// Sample genres
-console.log('\n=== SAMPLE GENRES ===');
-const sampleGenres = db.prepare(`SELECT * FROM genres LIMIT 5`).all();
-sampleGenres.forEach(g => console.log(`  ${g.id}: ${g.name_ar} (${g.slug})`));
-
-db.close();
-console.log('\n✅ Done!');

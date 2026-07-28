@@ -109,9 +109,9 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
 
   // Reset countdown when ad changes
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCountdown(durationSeconds)
   }, [ad?.id, durationSeconds])
+
 
   // 1. Fetch Ad
   useEffect(() => {

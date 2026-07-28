@@ -175,20 +175,18 @@ export const VideoCard = memo(
                     playing
                     muted
                     loop
-                    config={
-                      {
-                        youtube: {
-                          playerVars: {
-                            autoplay: 1,
-                            controls: 0,
-                            showinfo: 0,
-                            modestbranding: 1,
-                            rel: 0,
-                            iv_load_policy: 3,
-                          },
-                        },
-                      } as any
-                    }
+                    config={{
+                      youtube: {
+                        playerVars: {
+                          autoplay: 1,
+                          controls: 0,
+                          showinfo: 0,
+                          modestbranding: 1,
+                          rel: 0,
+                          iv_load_policy: 3
+                        }
+                      }
+                    } as any}
                     className='pointer-events-none scale-150'
                   />
                 </Suspense>
