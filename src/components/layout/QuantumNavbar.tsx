@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useMemo, memo, useEffect } from 'react'
-import { Home, Film, Tv, Gamepad2, Zap, Search, Menu, X, Mic, Loader2, ArrowLeft, Swords, Drama, Laugh, Ghost, Heart, Palette, Rocket } from 'lucide-react'
+import { Home, Film, Tv, Gamepad2, Zap, Search, Menu, X, Mic, Loader2, ArrowLeft } from 'lucide-react'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
@@ -28,29 +28,14 @@ export const QuantumNavbar = memo(() => {
     { to: '/anime', label: 'أنمي', icon: Zap, color: '#f59e0b' }
   ], [])
 
-  const genreLinks = useMemo(() => [
-    { slug: 'action', label: 'أكشن', icon: Swords },
-    { slug: 'action-&-adventure', label: 'أكشن ومغامرة', icon: Swords },
-    { slug: 'thriller', label: 'إثارة', icon: Zap },
-    { slug: 'talk', label: 'برنامج حواري', icon: Mic },
-    { slug: 'history', label: 'تاريخي', icon: Film },
-    { slug: 'crime', label: 'جريمة', icon: Film },
-    { slug: 'war', label: 'حرب', icon: Swords },
-    { slug: 'science-fiction', label: 'خيال علمي', icon: Rocket },
-    { slug: 'sci-fi-&-fantasy', label: 'خيال علمي وفانتازيا', icon: Rocket },
-    { slug: 'drama', label: 'دراما', icon: Drama },
-    { slug: 'animation', label: 'رسوم متحركة', icon: Palette },
-    { slug: 'horror', label: 'رعب', icon: Ghost },
-    { slug: 'romance', label: 'رومانسي', icon: Heart },
-    { slug: 'family', label: 'عائلي', icon: Heart },
-    { slug: 'western', label: 'غربي', icon: Film },
-    { slug: 'mystery', label: 'غموض', icon: Search },
-    { slug: 'fantasy', label: 'فانتازيا', icon: Zap },
-    { slug: 'tv-movie', label: 'فيلم تلفزيوني', icon: Tv },
-    { slug: 'comedy', label: 'كوميديا', icon: Laugh },
-    { slug: 'adventure', label: 'مغامرة', icon: Gamepad2 },
-    { slug: 'music', label: 'موسيقى', icon: Mic },
-    { slug: 'documentary', label: 'وثائقي', icon: Film }
+  const countryLinks = useMemo(() => [
+    { code: 'ar', label: 'عربي', icon: Film, filter: 'ar' },
+    { code: 'tr', label: 'تركي', icon: Film, filter: 'tr' },
+    { code: 'ko', label: 'كوري', icon: Tv, filter: 'ko' },
+    { code: 'hi', label: 'هندي', icon: Film, filter: 'hi,ta,ml' },
+    { code: 'zh', label: 'صيني', icon: Film, filter: 'zh,cn' },
+    { code: 'en', label: 'إنجليزي', icon: Film, filter: 'en' },
+    { code: 'eu', label: 'أوروبي', icon: Film, filter: 'fr,es,de,it,ru' }
   ], [])
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -214,22 +199,22 @@ export const QuantumNavbar = memo(() => {
                   ))}
                 </div>
 
-                {/* Genre Section */}
+                {/* Country/Language Section */}
                 <div className="px-4 pt-2 pb-2 border-t border-white/10">
-                  <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">الأقسام ({genreLinks.length})</h3>
+                  <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">حسب البلد ({countryLinks.length})</h3>
                 </div>
 
-                {/* Genre Links - 2 Columns Grid */}
+                {/* Country Links - 2 Columns Grid */}
                 <div className="px-4 pb-4 grid grid-cols-2 gap-2">
-                  {genreLinks.map((genre) => (
+                  {countryLinks.map((country) => (
                     <Link
-                      key={genre.slug}
-                      href={`/genres/${genre.slug}`}
+                      key={country.code}
+                      href={`/movies?language=${country.filter}`}
                       onClick={() => setSidebarOpen(false)}
                       className="flex items-center gap-2 p-2.5 rounded-lg hover:bg-white/10 text-zinc-300 hover:text-white transition-all group text-sm"
                     >
-                      <genre.icon size={16} className="text-cyan-400 group-hover:scale-110 transition-transform flex-shrink-0" />
-                      <span className="font-medium truncate">{genre.label}</span>
+                      <country.icon size={16} className="text-cyan-400 group-hover:scale-110 transition-transform flex-shrink-0" />
+                      <span className="font-medium truncate">{country.label}</span>
                     </Link>
                   ))}
                 </div>
