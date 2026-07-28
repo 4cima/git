@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
 import { errorLogger } from '../../../services/errorLogging';
 import {AlertTriangle, Loader2, Server} from 'lucide-react';
 

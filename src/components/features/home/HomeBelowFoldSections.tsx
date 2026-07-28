@@ -15,8 +15,6 @@ import { CONFIG } from '../../../lib/constants'
 import { useCategoryVideos } from '../../../hooks/useFetchContent'
 import { HolographicCard } from '../../effects/HolographicCard'
 import { PrefetchLink } from '../../common/PrefetchLink'
-import { getRecommendations } from '../../../services/recommendations'
-import { useAuth } from '../../../hooks/useAuth'
 
 const mapResults = (data: any, type: 'movie' | 'tv'): TmdbMedia[] => {
   return (data?.results || []).map((item: any) => ({ ...item, media_type: type }))
@@ -92,40 +90,7 @@ const BentoBox = ({
   )
 }
 
-const AIRecommended = ({ userId }: { userId: string }) => {
-  const q = useQuery<any[]>({
-    queryKey: ['recs', userId],
-    queryFn: () => getRecommendations(userId),
-    staleTime: 1000 * 60 * 60,
-  })
-
-  if (!q.data?.length) {
-    return <div className="text-zinc-500">Initializing Neural Net...</div>
-  }
-
-  return (
-    <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-8 gap-4 md:gap-6">
-      {q.data.slice(0, 8).map((m: any) => (
-        <HolographicCard key={m.id} className="aspect-[2/3]">
-          <PrefetchLink href={generateWatchUrl({ ...m, media_type: 'movie' })}>
-            <img
-              src={`/tmdb/w300${m.poster_path}`}
-              className="w-full h-full object-cover"
-              alt={m.title}
-              width={300}
-              height={450}
-              style={{ aspectRatio: '2 / 3' }}
-              loading="lazy"
-            />
-          </PrefetchLink>
-        </HolographicCard>
-      ))}
-    </div>
-  )
-}
-
 const HomeBelowFoldSectionsInner = ({ criticalHomeData, topRatedMovies }: HomeBelowFoldSectionsProps) => {
-  const { user } = useAuth()
   const { lang } = useLang()
 
   const koreanSeries = useQuery<{ results: TmdbMedia[] }>({
@@ -501,20 +466,6 @@ const HomeBelowFoldSectionsInner = ({ criticalHomeData, topRatedMovies }: HomeBe
           </div>
         )}
       </section>
-
-      {user && (
-        <section className="relative p-6 rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-3xl">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10" />
-          <div className="relative z-10">
-            <SectionHeader
-              title={lang === 'ar' ? 'اكتشافات الذكاء الاصطناعي' : 'AI Discovery Protocol'}
-              icon={<Smile />}
-              color="cyan"
-            />
-            <AIRecommended userId={user.id} />
-          </div>
-        </section>
-      )}
     </>
   )
 }

@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
 import { DOWNLOAD_SERVER_IDS, SERVER_PROVIDERS, generateServerUrl } from '../lib/serverCatalog'
-import { supabase } from '../lib/supabase'
 
 export type Server = {
   id?: string

@@ -9,7 +9,6 @@
  */
 
 import { CONFIG } from '../lib/constants';
-import { supabase } from '../lib/supabase';
 
 // API Base URL - points to new Express server
 const API_BASE = CONFIG.API_BASE || process.env.NEXT_PUBLIC_API_URL || 'https://api.4cima.com';
@@ -18,20 +17,11 @@ const API_BASE = CONFIG.API_BASE || process.env.NEXT_PUBLIC_API_URL || 'https://
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
 
 /**
- * Helper: Get Supabase JWT token for admin authentication
+ * Helper: Get auth token (no longer using Supabase)
  */
 async function getAuthToken(): Promise<string> {
-  try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) {
-      console.error('[IngestionAPI] Auth error:', error);
-      return '';
-    }
-    return session?.access_token || '';
-  } catch (error: any) {
-    console.error('[IngestionAPI] Failed to get auth token:', error);
-    return '';
-  }
+  // Auth removed - return empty string
+  return '';
 }
 
 /**
