@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useMemo, memo, useEffect } from 'react'
-import { Home, Film, Tv, Gamepad2, Zap, Search, Menu, X, Mic, Loader2 } from 'lucide-react'
+import { Home, Film, Tv, Gamepad2, Zap, Search, Menu, X, Mic, Loader2, ChevronDown, ArrowLeft, Swords, Drama, Laugh, Ghost, Heart, Palette, Rocket } from 'lucide-react'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
@@ -26,6 +26,17 @@ export const QuantumNavbar = memo(() => {
     { to: '/movies', label: 'أفلام', icon: Film, color: '#00ccff' },
     { to: '/series', label: 'مسلسلات', icon: Tv, color: '#aa00ff' },
     { to: '/anime', label: 'أنمي', icon: Zap, color: '#f59e0b' }
+  ], [])
+
+  const genreLinks = useMemo(() => [
+    { slug: 'action', label: 'أكشن', icon: Swords },
+    { slug: 'drama', label: 'دراما', icon: Drama },
+    { slug: 'comedy', label: 'كوميديا', icon: Laugh },
+    { slug: 'horror', label: 'رعب', icon: Ghost },
+    { slug: 'romance', label: 'رومانسي', icon: Heart },
+    { slug: 'thriller', label: 'إثارة', icon: Zap },
+    { slug: 'animation', label: 'رسوم متحركة', icon: Palette },
+    { slug: 'science-fiction', label: 'خيال علمي', icon: Rocket }
   ], [])
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -133,8 +144,47 @@ export const QuantumNavbar = memo(() => {
             </Link>
           </div>
 
-          {/* Left: Empty (removed search and profile) */}
-          <div className="flex items-center gap-3">
+          {/* Left: Desktop Genre Dropdown (hidden on mobile) */}
+          <div className="hidden md:flex items-center gap-3">
+            {/* Genre Dropdown */}
+            <div className="relative group">
+              <button 
+                type="button"
+                className="flex items-center gap-2 px-4 py-2 text-white/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <span className="font-bold">الأقسام</span>
+                <ChevronDown size={16} className="group-hover:rotate-180 transition-transform duration-200" />
+              </button>
+              
+              {/* Dropdown Panel */}
+              <div className="absolute top-full left-0 mt-2 w-64 bg-black/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden">
+                <div className="p-2">
+                  {genreLinks.map(genre => (
+                    <Link
+                      key={genre.slug}
+                      href={`/genres/${genre.slug}`}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 text-zinc-300 hover:text-white transition-all group/item"
+                    >
+                      <genre.icon size={18} className="text-cyan-400 group-hover/item:scale-110 transition-transform" />
+                      <span className="font-medium">{genre.label}</span>
+                    </Link>
+                  ))}
+                </div>
+                
+                {/* Divider */}
+                <div className="h-px bg-white/10 mx-2" />
+                
+                {/* "كل الأقسام" Link */}
+                <Link
+                  href="/genres"
+                  className="flex items-center gap-3 px-6 py-4 hover:bg-cyan-500/10 text-cyan-400 hover:text-cyan-300 transition-all group/all"
+                >
+                  <Film size={18} className="group-hover/all:scale-110 transition-transform" />
+                  <span className="font-bold">كل الأقسام</span>
+                  <ArrowLeft size={16} className="mr-auto group-hover/all:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
             </nav>
@@ -185,6 +235,37 @@ export const QuantumNavbar = memo(() => {
                     <span className="font-bold">{link.label}</span>
                   </Link>
                 ))}
+              </div>
+
+              {/* Genre Section */}
+              <div className="px-4 pt-2 pb-2 border-t border-white/10">
+                <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">الأقسام</h3>
+              </div>
+
+              {/* Genre Links */}
+              <div className="p-4 pt-0 space-y-2">
+                {genreLinks.map((genre) => (
+                  <Link
+                    key={genre.slug}
+                    href={`/genres/${genre.slug}`}
+                    onClick={() => setSidebarOpen(false)}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-zinc-300 hover:text-white transition-all group"
+                  >
+                    <genre.icon size={20} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+                    <span className="font-medium">{genre.label}</span>
+                  </Link>
+                ))}
+                
+                {/* "كل الأقسام" */}
+                <Link
+                  href="/genres"
+                  onClick={() => setSidebarOpen(false)}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 transition-all group mt-2"
+                >
+                  <Film size={20} className="group-hover:scale-110 transition-transform" />
+                  <span className="font-bold">كل الأقسام</span>
+                  <ArrowLeft size={16} className="mr-auto" />
+                </Link>
               </div>
             </motion.div>
           </>

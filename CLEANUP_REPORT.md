@@ -1,53 +1,75 @@
 # 4CIMA Cleanup Report
 
-## Out-of-Scope Features Requiring Decision
+## Data Quality Issues
 
-### 1. Quran Feature (@dnd-kit dependencies)
-**Location:** `src/components/features/quran/`  
-**Dependencies Added:** `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` (~100KB)  
-**Files:**
-- QueueView.tsx
-- QueueItem.tsx
-- QuranPlayer.tsx (if exists)
+### 1. Genre Database Inconsistencies
 
-**Issue:** Quran (القرآن الكريم) feature is completely outside the scope of a movies/TV series platform (4CIMA).
+#### Missing TV-Specific Genres
+**Issue:** 5 TV-specific genres defined in `worker/src/db/seed-genres.sql` are not synced to production database (Turso):
+- `Kids` (10762) - أطفال
+- `News` (10763) - أخبار  
+- `Reality` (10764) - ريالتي
+- `Soap` (10766) - مسلسل درامي
+- `War & Politics` (10768) - حرب وسياسة
 
-**Recommendation:** Consider removing this feature and its dependencies to reduce bundle size, unless there's a specific reason to keep it (e.g., Ramadan special content, user engagement feature).
+**Current State:**
+- Seed file contains 27 TMDB genres
+- Local DB (data/4cima-local.db) contains only 22 genres
+- Turso production DB also contains only 22 genres
 
-**Decision:** Deferred to project owner.
+**Impact:**
+- TV series with these genres will not display genre information correctly
+- Genre filtering for these types will not work
+- Navigation/discovery features incomplete
+
+**Recommendation:** 
+1. Decide if these TV-specific genres are needed for the platform
+2. If yes: Sync them from seed file to both local and Turso
+3. If no: Remove them from seed file to avoid confusion
+
+**Note:** Most are US TV-specific (Talk shows, News, Soap operas) and may not be relevant for Arabic audience focus.
 
 ---
 
-### 2. Social/Reviews Feature (@supabase/supabase-js)
-**Location:** 
-- `src/components/features/social/`
-- `src/components/features/reviews/`
-- `src/hooks/useAuth.ts`
-- `src/lib/supabase.ts`
-- `src/contexts/AuthContext.tsx`
+#### Unescaped Special Characters in Genre Slugs
+**Issue:** Genre slugs contain unescaped `&` character:
+- `/genres/action-&-adventure` (should be `/genres/action-and-adventure`)
+- `/genres/sci-fi-&-fantasy` (should be `/genres/sci-fi-and-fantasy`)
 
-**Dependencies Added:** `@supabase/supabase-js` (large package)  
-**Related Dependencies:** `react-hot-toast`, `date-fns`, `axios`
+**Impact:**
+- URL encoding issues in browsers (& → %26)
+- Inconsistent URL patterns
+- Potential routing problems
+- Poor SEO
 
-**Features Included:**
-- User authentication (Supabase)
-- User reviews/ratings
-- Social activity feed
-- Notifications system
-- User profiles
+**Recommendation:** Update slugs to use `-and-` instead of `-&-` for URL-safe format.
 
-**Issue:** Full-featured social platform built on Supabase. Not clear if these features are actively used or if the Supabase backend is properly configured and maintained.
+**Priority:** Medium (affects URLs but currently functional)
 
-**Questions:**
-1. Is the Supabase instance active and configured?
-2. Are reviews/social features actually used by users?
-3. Is this worth the bundle size and maintenance cost?
+---
 
-**Recommendation:** 
-- If features are not used: Remove completely and use simpler TMDB ratings only
-- If features are used: Keep but ensure proper error handling and fallbacks
+## Out-of-Scope Features Requiring Decision
 
-**Decision:** Deferred to project owner. Requires checking analytics/usage data.
+### 1. Quran Feature (REMOVED ✅)
+**Status:** DELETED in commit `6dac242`
+
+**Previously:**
+- Location: `src/components/features/quran/`  
+- Dependencies: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` (~100KB)
+
+**Action Taken:** Complete removal - out of scope for movies/TV platform.
+
+---
+
+### 2. Social/Reviews Feature (REMOVED ✅)
+**Status:** DELETED in commit `2217296`
+
+**Previously:**
+- Locations: `src/components/features/social/`, `src/components/features/reviews/`
+- Dependencies: `@supabase/supabase-js` (large package)
+- Features: User auth, reviews/ratings, social activity, notifications
+
+**Action Taken:** Complete removal - not actively used, reduces bundle size significantly.
 
 ---
 
