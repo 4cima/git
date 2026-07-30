@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
     const moviesResult = await turso.execute({
       sql: `
         SELECT id, slug, title_ar, title_en, poster_path,
-               vote_average, release_year, year,
+               vote_average, release_year,
                genres_json, overview_ar, original_language
         FROM movies
         ${whereClause}
