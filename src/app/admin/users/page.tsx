@@ -1,3 +1,9 @@
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Users | 4CIMA Admin',
+}
+
 export default function ComingSoonPage() {
   return (
     <div className="flex items-center justify-center min-h-[400px]">
