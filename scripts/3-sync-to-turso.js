@@ -2,6 +2,7 @@
 /**
  * Script 3: Sync to Turso
  * Syncs local database to Turso production
+ * FIXED: Added original_language, proper JSON handling for all columns
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env.local') })
@@ -14,6 +15,25 @@ const turso = createClient({
 })
 
 const BATCH_SIZE = 100
+
+// ============================================================
+// Helper: Convert value to JSON or null
+// ============================================================
+function toJsonOrNull(value) {
+  if (value === null || value === undefined) {
+    return null
+  }
+  if (typeof value === 'string') {
+    // Already a JSON string, return as-is
+    return value
+  }
+  if (typeof value === 'object') {
+    // Object or array, stringify it
+    return JSON.stringify(value)
+  }
+  // Primitive types that shouldn't be JSON columns
+  return null
+}
 
 // ============================================================
 // Movies Sync
@@ -62,8 +82,8 @@ async function syncMoviesBatch(movieIds) {
           seo_title_ar, seo_description_ar, seo_keywords_json,
           canonical_url,
           created_at, updated_at,
-          filter_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          filter_status, original_language
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(tmdb_id) DO UPDATE SET
           slug = excluded.slug,
           title_en = excluded.title_en,
@@ -88,7 +108,8 @@ async function syncMoviesBatch(movieIds) {
           seo_keywords_json = excluded.seo_keywords_json,
           canonical_url = excluded.canonical_url,
           updated_at = excluded.updated_at,
-          filter_status = excluded.filter_status
+          filter_status = excluded.filter_status,
+          original_language = excluded.original_language
       `,
       args: [
         movie.tmdb_id, movie.tmdb_id, movie.slug,
@@ -101,12 +122,12 @@ async function syncMoviesBatch(movieIds) {
         JSON.stringify(genres),
         JSON.stringify(cast),
         JSON.stringify(countries),
-        movie.keywords_json,
-        movie.companies_json,
-        movie.seo_title_ar, movie.seo_description_ar, movie.seo_keywords_json,
+        toJsonOrNull(movie.keywords_json),
+        toJsonOrNull(movie.companies_json),
+        movie.seo_title_ar, movie.seo_description_ar, toJsonOrNull(movie.seo_keywords_json),
         movie.canonical_url,
         movie.created_at, movie.updated_at,
-        movie.filter_status
+        movie.filter_status, movie.original_language || null
       ]
     })
   }
@@ -238,7 +259,7 @@ async function syncSeriesBatch(seriesIds) {
         JSON.stringify(cast),
         JSON.stringify(seasons),
         JSON.stringify(episodes),
-        series.seo_title_ar, series.seo_description_ar, series.seo_keywords_json,
+        series.seo_title_ar, series.seo_description_ar, toJsonOrNull(series.seo_keywords_json),
         series.canonical_url,
         series.created_at, series.updated_at,
         series.filter_status

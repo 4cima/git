@@ -67,7 +67,14 @@ function getStats() {
 // ─── Run one batch ────────────────────────────────────────────
 function runBatch(type, limit) {
   return new Promise((resolve) => {
-    const args  = [SCRIPT, `--type=${type}`, `--limit=${limit}`];
+    // Map internal type names to CLI argument values expected by 1-fetch-and-enrich.js
+    const typeMap = {
+      'movies': 'movies',
+      'series': 'tv',  // 1-fetch-and-enrich.js expects 'tv' not 'series'
+    };
+    const cliType = typeMap[type] || type;
+    
+    const args  = [SCRIPT, `--type=${cliType}`, `--limit=${limit}`];
     const child = spawn('node', args, {
       cwd:   path.join(__dirname, '..'),
       env:   process.env,
@@ -80,15 +87,19 @@ function runBatch(type, limit) {
 
     child.on('close', (code) => {
       // Parse progress line from output
-      // Expected format: 🎬 ✅2 🚫0 ❓0 ❌1
+      // Expected format: 🎬 ✅2 🚫0 ❓0 ❌1  (movies)
+      //             or:  📺 ✅2 🚫0 ❓0 ❌1  (series)
       const lines = stdout.split('\n');
-      const movieLine = lines.find(line => line.includes('🎬') && line.includes('✅'));
+      
+      // Look for either movie (🎬) or series (📺) emoji based on type
+      const emoji = type === 'movies' ? '🎬' : '📺';
+      const resultLine = lines.find(line => line.includes(emoji) && line.includes('✅'));
       
       let ok = 0, filtered = 0, notfound = 0, errors = 0;
       
-      if (movieLine) {
+      if (resultLine) {
         // Extract all numbers from the line in order
-        const numbers = movieLine.match(/\d+/g);
+        const numbers = resultLine.match(/\d+/g);
         if (numbers && numbers.length >= 4) {
           ok       = parseInt(numbers[0]);
           filtered = parseInt(numbers[1]);

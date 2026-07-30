@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const ratingMax = searchParams.get('rating_max')
     const runtimeMin = searchParams.get('runtime_min')
     const runtimeMax = searchParams.get('runtime_max')
+    const search = searchParams.get('search')
     
     // Sort
     const sort = searchParams.get('sort') || 'popularity'
@@ -30,13 +31,29 @@ export async function GET(request: NextRequest) {
     const conditions: string[] = []
     const args: any[] = []
     
+    if (search) {
+      conditions.push(`(title_ar LIKE ? OR title_en LIKE ?)`)
+      args.push(`%${search}%`, `%${search}%`)
+    }
+
     if (genre) {
-      conditions.push(`id IN (
-        SELECT cg.content_id FROM content_genres cg
-        JOIN genres g ON cg.genre_id = g.id
-        WHERE g.slug = ? AND cg.content_type = 'movie'
-      )`)
-      args.push(genre)
+      const genreResult = await turso.execute({
+        sql: 'SELECT tmdb_id FROM genres WHERE slug = ? LIMIT 1',
+        args: [genre]
+      })
+      
+      if (genreResult.rows && genreResult.rows.length > 0) {
+        const genreTmdbId = genreResult.rows[0].tmdb_id
+        // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
+        conditions.push(`EXISTS (
+          SELECT 1 FROM json_each(genres_json)
+          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
+        )`)
+        args.push(genreTmdbId)
+      } else {
+        // Genre slug not found - return empty results instead of all movies
+        conditions.push('1 = 0')
+      }
     }
     
     if (year) {
@@ -50,8 +67,16 @@ export async function GET(request: NextRequest) {
     }
     
     if (language) {
-      conditions.push('original_language = ?')
-      args.push(language)
+      // Support comma-separated language codes (e.g., "hi,ta,ml" or "zh,cn")
+      const languages = language.split(',').map(l => l.trim()).filter(l => l)
+      if (languages.length === 1) {
+        conditions.push('original_language = ?')
+        args.push(languages[0])
+      } else if (languages.length > 1) {
+        const placeholders = languages.map(() => '?').join(',')
+        conditions.push(`original_language IN (${placeholders})`)
+        args.push(...languages)
+      }
     }
     
     if (ratingMin) {
@@ -83,36 +108,32 @@ export async function GET(request: NextRequest) {
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
-    // Get total count
-    const countResult = await turso.execute({
-      sql: `SELECT COUNT(*) as total FROM movies ${whereClause}`,
-      args
-    })
-    const total = Number(countResult.rows[0]?.total || 0)
+    // Get total count - removed, use limit+1 trick instead
     
-    // Get movies with genres
+    // Get movies
     const moviesResult = await turso.execute({
       sql: `
-        SELECT 
-          m.*,
-          m.genres_json
-        FROM movies m
+        SELECT id, slug, title_ar, title_en, poster_path,
+               vote_average, release_year, year,
+               genres_json, overview_ar, original_language
+        FROM movies
         ${whereClause}
         ORDER BY ${sortColumn} ${sortOrder}
         LIMIT ? OFFSET ?
       `,
-      args: [...args, limit, offset]
+      args: [...args, limit + 1, offset]
     })
-    
-    return NextResponse.json({
-      movies: moviesResult.rows || [],
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
+
+    const rows = moviesResult.rows || []
+    const hasMore = rows.length > limit
+    if (hasMore) rows.pop()
+
+    const response = NextResponse.json({
+      movies: rows,
+      pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }
     })
+    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
+    return response
   } catch (error) {
     console.error('Error fetching movies:', error)
     return NextResponse.json(

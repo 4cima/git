@@ -688,6 +688,25 @@ a:focus-visible,
   }
 }
 
+@keyframes swipe-hint {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  10% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  90% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
 @keyframes spinY {
   0% {
     transform: rotateY(0deg);
@@ -1324,53 +1343,54 @@ select option {
 
 @keyframes logo-rope-drop {
   0% {
-    transform: translateY(-250px) rotate(0deg);
+    transform: translateY(-600px) rotate(0deg);
     opacity: 0;
   }
-  5% {
+  3% {
     opacity: 1;
   }
-  /* السقوط السريع بتسارع (الجاذبية) */
-  30% {
-    transform: translateY(35px) rotate(18deg);
-    animation-timing-function: ease-in;
+  /* السقوط السريع - اللوجو ينزل أكتر من الحبل */
+  35% {
+    transform: translateY(45px) rotate(20deg);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
   }
-  /* الارتداد الأول - قوي */
-  42% {
-    transform: translateY(-12px) rotate(-14deg);
-    animation-timing-function: ease-out;
+  /* الارتداد الأول - اللوجو يطلع أكتر من الحبل */
+  48% {
+    transform: translateY(-20px) rotate(-16deg);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
-  /* الهبوط الثاني */
-  52% {
-    transform: translateY(18px) rotate(8deg);
-    animation-timing-function: ease-in;
+  /* الهبوط الثاني - اللوجو ينزل أكتر */
+  58% {
+    transform: translateY(22px) rotate(11deg);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
   }
-  /* الارتداد الثاني - متوسط */
-  60% {
-    transform: translateY(-6px) rotate(-5deg);
-    animation-timing-function: ease-out;
+  /* الارتداد الثاني - اللوجو يطلع أكتر */
+  66% {
+    transform: translateY(-12px) rotate(-7deg);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
   /* الهبوط الثالث */
-  67% {
-    transform: translateY(8px) rotate(3deg);
-    animation-timing-function: ease-in;
-  }
-  /* الارتداد الثالث - خفيف */
   73% {
-    transform: translateY(-2px) rotate(-1.5deg);
-    animation-timing-function: ease-out;
+    transform: translateY(11px) rotate(4.5deg);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
   }
-  /* الهبوط الرابع - نهائي */
-  78% {
-    transform: translateY(3px) rotate(1deg);
+  /* الارتداد الثالث */
+  79% {
+    transform: translateY(-6px) rotate(-2.5deg);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
-  /* أرجحة خفيفة جداً */
-  83% {
-    transform: translateY(-0.5px) rotate(-0.5deg);
+  /* الهبوط الرابع */
+  84% {
+    transform: translateY(4px) rotate(1.2deg);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
   }
-  /* الشد النهائي للأعلى */
-  90% {
-    transform: translateY(-3px) rotate(0deg);
+  /* أرجحة خفيفة */
+  88% {
+    transform: translateY(-2px) rotate(-0.6deg);
+  }
+  /* الشد النهائي */
+  93% {
+    transform: translateY(-1px) rotate(0deg);
   }
   /* الاستقرار التام */
   100% {
@@ -1381,48 +1401,49 @@ select option {
 
 @keyframes rope-stretch {
   0% {
-    height: calc(4rem - 230px);
+    height: calc(4rem - 600px);
     opacity: 0;
   }
-  5% {
+  3% {
     opacity: 1;
   }
-  /* التمدد مع السقوط - أقل من حركة اللوجو لأن الحبل مرن */
-  30% {
-    height: calc(4rem + 1.25rem + 30px);
+  /* اللوجو ينزل 45px، الحبل يتمدد أقل (25px) */
+  35% {
+    height: calc(4rem + 1.25rem + 25px);
   }
-  /* الانكماش مع الارتداد الأول */
-  42% {
+  /* اللوجو يطلع -20px، الحبل ينكمش أقل (-10px) */
+  48% {
     height: calc(4rem + 1.25rem - 10px);
   }
-  /* التمدد الثاني */
-  52% {
-    height: calc(4rem + 1.25rem + 15px);
+  /* اللوجو ينزل 22px، الحبل يتمدد أقل (12px) */
+  58% {
+    height: calc(4rem + 1.25rem + 12px);
   }
-  /* الانكماش الثاني */
-  60% {
+  /* اللوجو يطلع -12px، الحبل ينكمش أقل (-5px) */
+  66% {
     height: calc(4rem + 1.25rem - 5px);
   }
-  /* التمدد الثالث */
-  67% {
+  /* اللوجو ينزل 11px، الحبل يتمدد أقل (6px) */
+  73% {
     height: calc(4rem + 1.25rem + 6px);
   }
-  /* الانكماش الثالث */
-  73% {
+  /* اللوجو يطلع -6px، الحبل ينكمش أقل (-2px) */
+  79% {
     height: calc(4rem + 1.25rem - 2px);
   }
-  /* التذبذب الخفيف */
-  78% {
+  /* اللوجو ينزل 4px، الحبل يتمدد أقل (2px) */
+  84% {
     height: calc(4rem + 1.25rem + 2px);
   }
-  83% {
+  /* اللوجو يطلع -2px، الحبل ينكمش أقل (-0.5px) */
+  88% {
     height: calc(4rem + 1.25rem - 0.5px);
   }
-  /* الشد النهائي */
-  90% {
-    height: calc(4rem + 1.25rem - 2px);
+  /* يبدأ التزامن */
+  93% {
+    height: calc(4rem + 1.25rem - 1px);
   }
-  /* الطول النهائي */
+  /* الاستقرار التام - متزامنين */
   100% {
     height: calc(4rem + 1.25rem);
   }
@@ -1443,26 +1464,26 @@ select option {
   0% {
     filter: drop-shadow(0 0px 0px rgba(0, 0, 0, 0));
   }
-  30% {
-    filter: drop-shadow(0 45px 25px rgba(0, 0, 0, 0.6)) blur(1px);
+  35% {
+    filter: drop-shadow(0 55px 30px rgba(0, 0, 0, 0.62)) blur(1.3px);
   }
-  42% {
-    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.4)) blur(0.5px);
+  48% {
+    filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.42)) blur(0.5px);
   }
-  52% {
-    filter: drop-shadow(0 25px 18px rgba(0, 0, 0, 0.5)) blur(0.8px);
+  58% {
+    filter: drop-shadow(0 28px 22px rgba(0, 0, 0, 0.52)) blur(0.9px);
   }
-  60% {
-    filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.35)) blur(0.3px);
-  }
-  67% {
-    filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.4)) blur(0.4px);
+  66% {
+    filter: drop-shadow(0 6px 11px rgba(0, 0, 0, 0.36)) blur(0.3px);
   }
   73% {
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3)) blur(0.2px);
+    filter: drop-shadow(0 16px 17px rgba(0, 0, 0, 0.43)) blur(0.5px);
   }
-  90% {
-    filter: drop-shadow(0 -3px 6px rgba(0, 0, 0, 0.25)) blur(0px);
+  79% {
+    filter: drop-shadow(0 3px 9px rgba(0, 0, 0, 0.3)) blur(0.2px);
+  }
+  93% {
+    filter: drop-shadow(0 -1px 6px rgba(0, 0, 0, 0.25)) blur(0px);
   }
   100% {
     filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3)) blur(0px);

@@ -20,6 +20,7 @@ import {
 import { Loading } from '@/components/common/Loading'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
+import { Footer } from '@/components/layout/Footer'
 
 // Genres constant - خارج الكومبوننت لتحسين الأداء
 const GENRES = [
@@ -179,27 +180,42 @@ export default function Home() {
           series,
         })
 
-        // إنشاء قائمة الهيرو: 5 أفلام + 5 مسلسلات بالتناوب - فقط أعمال 2026
+        // إنشاء قائمة الهيرو: 5 أفلام + 5 مسلسلات بالتناوب
         const heroList: MediaItem[] = []
+        const addedIds = new Set<number>() // لتتبع الأعمال المضافة ومنع التكرار
         
         // فلترة الأفلام والمسلسلات لتكون من سنة 2026 فقط
-        const movies2026 = trendingMovies.filter(item => item.year === 2026).slice(0, 5)
-        const tvShows2026 = trendingSeries.filter(item => item.year === 2026).slice(0, 5)
+        const movies2026 = trendingMovies.filter(item => item.year === 2026).slice(0, 10)
+        const tvShows2026 = trendingSeries.filter(item => item.year === 2026).slice(0, 10)
         
-        // التناوب بين الأفلام والمسلسلات
-        for (let i = 0; i < 5; i++) {
-          if (movies2026[i]) heroList.push(movies2026[i])
-          if (tvShows2026[i]) heroList.push(tvShows2026[i])
+        // التناوب بين الأفلام والمسلسلات من 2026
+        const maxItems = Math.max(movies2026.length, tvShows2026.length)
+        for (let i = 0; i < maxItems && heroList.length < 10; i++) {
+          if (movies2026[i] && !addedIds.has(movies2026[i].id)) {
+            heroList.push(movies2026[i])
+            addedIds.add(movies2026[i].id)
+          }
+          if (tvShows2026[i] && !addedIds.has(tvShows2026[i].id) && heroList.length < 10) {
+            heroList.push(tvShows2026[i])
+            addedIds.add(tvShows2026[i].id)
+          }
         }
         
         // إذا لم نجد أعمال كافية من 2026، نضيف من باقي الأعمال
-        if (heroList.length < 6) {
-          const movies = trendingMovies.slice(0, 5)
-          const tvShows = trendingSeries.slice(0, 5)
+        if (heroList.length < 10) {
+          const allMovies = trendingMovies.slice(0, 20)
+          const allTvShows = trendingSeries.slice(0, 20)
           
-          for (let i = 0; i < 5; i++) {
-            if (movies[i] && heroList.length < 10) heroList.push(movies[i])
-            if (tvShows[i] && heroList.length < 10) heroList.push(tvShows[i])
+          const maxExtra = Math.max(allMovies.length, allTvShows.length)
+          for (let i = 0; i < maxExtra && heroList.length < 10; i++) {
+            if (allMovies[i] && !addedIds.has(allMovies[i].id) && heroList.length < 10) {
+              heroList.push(allMovies[i])
+              addedIds.add(allMovies[i].id)
+            }
+            if (allTvShows[i] && !addedIds.has(allTvShows[i].id) && heroList.length < 10) {
+              heroList.push(allTvShows[i])
+              addedIds.add(allTvShows[i].id)
+            }
           }
         }
         
@@ -287,12 +303,12 @@ export default function Home() {
       <section className="w-full bg-slate-950">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
           {/* Cinema Banner Board */}
-          <div className="relative bg-slate-950 rounded-lg border-2 border-slate-800 shadow-2xl overflow-hidden h-14 md:h-16">
+          <div className="relative bg-slate-950/80 backdrop-blur-sm rounded-lg border-2 border-slate-800 shadow-2xl overflow-hidden h-14 md:h-16">
             {/* Animated Background Image with Film Strip Effect */}
             <div className="absolute inset-0 overflow-hidden">
               {/* Moving Background - Seamless infinite scroll */}
               <div 
-                className="absolute inset-0 opacity-70"
+                className="absolute inset-0 opacity-40"
                 style={{ 
                   backgroundImage: 'url(/banner.png)',
                   backgroundSize: '2000px 100%',
@@ -372,110 +388,84 @@ export default function Home() {
               {/* Backdrop Background with transition */}
               <div
                 key={`backdrop-${heroItem.id}`}
-                className="absolute inset-0 bg-cover bg-center transition-all duration-1000 scale-105 animate-fadeIn"
+                className="absolute inset-0 bg-cover transition-all duration-1000 scale-105 animate-fadeIn"
                 style={{
                   backgroundImage: `url(/tmdb/original${heroItem.backdrop_path || heroItem.poster_path})`,
+                  backgroundPosition: 'center 30%'
                 }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-l from-slate-950/80 via-transparent to-transparent" />
 
               {/* Hero Content */}
-              <div className="relative w-full pb-12 md:pb-20 z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-end px-4 md:px-8">
-                <div className="lg:col-span-8 space-y-4 text-right">
-                  {/* Badge row */}
-                  <div className="flex flex-wrap gap-2 items-center text-xs">
-                    {(() => {
-                      const mediaColorScheme = getMediaTypeColor(heroItem.media_type)
-                      return (
-                        <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider animate-fadeIn flex items-center gap-1.5`}>
-                          <span>{mediaColorScheme.icon}</span>
-                          <span>{heroItem.media_type === 'movie' ? 'فيلم مميز' : 'مسلسل رائج'}</span>
-                        </span>
-                      )
-                    })()}
-                    <span className="bg-slate-900/80 border border-slate-800 px-2 py-0.5 rounded text-slate-300 animate-fadeIn">
-                      {heroItem.year}
-                    </span>
-                    <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-bold flex items-center animate-fadeIn">
-                      <Star className="w-3 h-3 ml-1 fill-amber-400" />{' '}
-                      {heroItem.vote_average.toFixed(1)}
-                    </span>
-                    {heroItem.primary_genre && (
-                      <span className={`${getGenreColor(heroItem.primary_genre).bg} ${getGenreColor(heroItem.primary_genre).text} border ${getGenreColor(heroItem.primary_genre).border} px-2 py-0.5 rounded font-bold animate-fadeIn`}>
-                        {heroItem.primary_genre}
+              <div className="relative w-full h-full pt-8 pb-6 md:pb-8 z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 md:px-8">
+                <div className="lg:col-span-8 flex flex-col justify-between h-full text-right">
+                  
+                  {/* Top Section: Badges, Titles, Description */}
+                  <div className="space-y-3">
+                    {/* Badge row - Fixed at Top */}
+                    <div className="flex flex-wrap gap-2 items-center text-xs">
+                      {(() => {
+                        const mediaColorScheme = getMediaTypeColor(heroItem.media_type)
+                        return (
+                          <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider animate-fadeIn flex items-center gap-1.5`}>
+                            <span>{mediaColorScheme.icon}</span>
+                            <span>{heroItem.media_type === 'movie' ? 'فيلم' : 'مسلسل'}</span>
+                          </span>
+                        )
+                      })()}
+                      <span className="bg-slate-900/80 border border-slate-800 px-2 py-0.5 rounded text-slate-300 animate-fadeIn">
+                        {heroItem.year}
                       </span>
-                    )}
-                  </div>
+                      <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-bold flex items-center animate-fadeIn">
+                        <Star className="w-3 h-3 ml-1 fill-amber-400" />{' '}
+                        {heroItem.vote_average.toFixed(1)}
+                      </span>
+                      {heroItem.primary_genre && (
+                        <span className={`${getGenreColor(heroItem.primary_genre).bg} ${getGenreColor(heroItem.primary_genre).text} border ${getGenreColor(heroItem.primary_genre).border} px-2 py-0.5 rounded font-bold animate-fadeIn`}>
+                          {heroItem.primary_genre}
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Title with animation */}
-                  <div className="space-y-1" key={`title-${heroItem.id}`}>
-                    <h1 className="text-3xl md:text-5xl font-black text-slate-100 tracking-tight leading-none animate-slideInRight">
+                    {/* Arabic Title */}
+                    <h1 className="text-3xl md:text-5xl font-black text-slate-100 tracking-tight leading-none animate-slideInRight" key={`title-ar-${heroItem.id}`}>
                       {sanitizeTitle(heroItem.title_ar)}
                     </h1>
-                    <p className="text-sm text-slate-400 italic animate-slideInRight" style={{ animationDelay: '0.1s' }}>
+                    
+                    {/* English Title */}
+                    <p className="text-sm text-slate-400 italic animate-slideInRight" style={{ animationDelay: '0.1s' }} key={`title-en-${heroItem.id}`}>
                       {sanitizeTitle(heroItem.title_en)}
+                    </p>
+
+                    {/* Description with Limited Width */}
+                    <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-sm line-clamp-7 animate-fadeIn" style={{ animationDelay: '0.2s' }}>
+                      {sanitizeOverview(heroItem.overview_ar)}
                     </p>
                   </div>
 
-                  {/* Description */}
-                  <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-2xl line-clamp-3 animate-fadeIn" style={{ animationDelay: '0.2s' }}>
-                    {sanitizeOverview(heroItem.overview_ar)}
-                  </p>
-
-                  {/* Action Buttons */}
-                  <div className="pt-4 flex flex-wrap gap-3 animate-fadeIn" style={{ animationDelay: '0.3s' }}>
-                    <Link
-                      href={`${
-                        heroItem.media_type === 'movie'
-                          ? `/movies/${heroItem.slug}`
-                          : `/series/${heroItem.slug}`
-                      }`}
-                      className="px-6 py-3 bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-slate-950 font-black rounded-xl transition shadow-lg shadow-red-950/30 flex items-center"
-                    >
-                      <Play className="w-5 h-5 ml-2 fill-slate-950" /> شاهد العمل الآن
-                    </Link>
-                  </div>
-
-                  {/* Hero Progress Indicators - Styled Dots with Better Clickability */}
-                  <div className="pt-6 flex gap-3 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
-                    {heroItems.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleHeroChange(idx, idx > heroIndex ? 'left' : 'right')}
-                        className={`relative group transition-all duration-300 p-2 -m-2 cursor-pointer ${
-                          idx === heroIndex ? 'scale-110' : 'hover:scale-125'
+                  {/* Bottom Section: Buttons */}
+                  <div className="space-y-4">
+                    {/* Action Button */}
+                    <div className="animate-fadeIn" style={{ animationDelay: '0.3s' }}>
+                      <Link
+                        href={`${
+                          heroItem.media_type === 'movie'
+                            ? `/movies/${heroItem.slug}`
+                            : `/series/${heroItem.slug}`
                         }`}
-                        aria-label={`الانتقال للعمل ${idx + 1}`}
+                        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-slate-950 font-black rounded-xl transition shadow-lg shadow-red-950/30"
                       >
-                        {/* Hover Background Circle */}
-                        <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 scale-150" />
-                        
-                        {/* The Dot */}
-                        <div className={`relative w-3 h-3 rounded-full transition-all duration-300 ${
-                          idx === heroIndex
-                            ? 'bg-gradient-to-r from-red-500 to-amber-500 shadow-lg shadow-amber-500/60 ring-2 ring-amber-400/30 ring-offset-2 ring-offset-slate-950'
-                            : 'bg-slate-700 group-hover:bg-gradient-to-r group-hover:from-cyan-400 group-hover:to-blue-500 group-hover:shadow-md group-hover:shadow-cyan-500/40'
-                        }`}>
-                          {/* Inner Glow */}
-                          {idx === heroIndex && (
-                            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-400 to-amber-400 blur-sm animate-pulse" />
-                          )}
-                        </div>
-                        
-                        {/* Ping Effect for Active */}
-                        {idx === heroIndex && (
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500 to-amber-500 animate-ping opacity-40" />
-                        )}
-                      </button>
-                    ))}
+                        <Play className="w-5 h-5 ml-2 fill-slate-950" /> شاهد العمل الآن
+                      </Link>
+                    </div>
                   </div>
                 </div>
 
                 {/* Animated Poster Thumbnail with Swipe Gesture */}
                 <div className="hidden lg:block lg:col-span-4 pl-8">
                   <div 
-                    className="relative w-64 aspect-[2/3] cursor-grab active:cursor-grabbing select-none"
+                    className="relative w-64 aspect-[2/3] cursor-grab active:cursor-grabbing select-none translate-y-2 hover:animate-wiggle"
                     onMouseDown={(e) => {
                       const startX = e.clientX
                       const handleMouseMove = (moveEvent: MouseEvent) => {
@@ -531,7 +521,7 @@ export default function Home() {
                       
                       return (
                         <div
-                          key={item.id}
+                          key={`hero-${idx}-${item.id}`}
                           className={`absolute inset-0 w-full h-full rounded-2xl overflow-hidden border-2 border-slate-800 shadow-2xl transition-all duration-700 ${
                             isActive
                               ? swipeDirection === 'left'
@@ -550,19 +540,22 @@ export default function Home() {
                             className="w-full h-full object-cover pointer-events-none"
                             draggable="false"
                           />
+                          
+                          {/* Shimmer Effect on Active Card */}
+                          {isActive && (
+                            <div className="absolute inset-0 pointer-events-none">
+                              <div 
+                                className="absolute -inset-full"
+                                style={{
+                                  background: 'linear-gradient(110deg, transparent 0%, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%, transparent 100%)',
+                                  animation: 'shimmer 4s ease-in-out infinite'
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       )
                     })}
-                    
-                    {/* Swipe Hint Overlay */}
-                    <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-between px-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
-                      <div className="w-10 h-10 rounded-full bg-slate-950/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-400 animate-pulse">
-                        <ChevronRight className="w-6 h-6" />
-                      </div>
-                      <div className="w-10 h-10 rounded-full bg-slate-950/80 backdrop-blur-sm border border-slate-700 flex items-center justify-center text-slate-400 animate-pulse">
-                        <ChevronRight className="w-6 h-6 rotate-180" />
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -820,248 +813,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 5. Footer - Full Width Edge-to-Edge */}
-      <footer className="relative border-t border-slate-800 bg-slate-950 mt-10 overflow-hidden w-full">
-        <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950 to-black pointer-events-none" />
-        
-        <div className="relative">
-          {/* Main Footer Content */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 py-10 border-b border-slate-800/50">
-            {/* Column 1: Brand & Description - 3 columns */}
-            <div className="md:col-span-3 space-y-3">
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <div className="text-3xl font-black bg-gradient-to-r from-red-600 via-red-500 to-amber-500 bg-clip-text text-transparent">
-                  فور سيما
-                </div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800/50 text-slate-400 border border-slate-700 font-bold">
-                  v2.0
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                منصة المشاهدة العائلية الآمنة بتكنولوجيا الفلترة الذكية
-              </p>
-              
-              {/* Status & Social - Compact */}
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center space-x-2 space-x-reverse px-3 py-1.5 rounded-lg bg-emerald-950/20 border border-emerald-900/30 text-xs">
-                  <div className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                  </div>
-                  <span className="font-bold text-emerald-400">حماية نشطة</span>
-                </div>
-                
-                <a 
-                  href="https://www.facebook.com/4cima2" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 space-x-reverse px-3 py-1.5 rounded-lg bg-blue-950/20 border border-blue-900/30 hover:border-blue-800/50 transition-all group text-xs"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
-                  <span className="font-medium text-blue-400 group-hover:text-blue-300">فيسبوك</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Column 2: Quick Links - 2 columns */}
-            <div className="md:col-span-2 space-y-3">
-              <h3 className="text-xs font-bold text-slate-100 pb-2 border-b border-slate-800/50">
-                التصفح
-              </h3>
-              <ul className="space-y-2">
-                <li>
-                  <button 
-                    onClick={() => setActiveTab('all')}
-                    className="w-full text-right text-xs text-slate-400 hover:text-amber-400 transition-colors flex items-center space-x-1.5 space-x-reverse group"
-                  >
-                    <ChevronRight className="w-3 h-3 group-hover:translate-x-[-2px] transition-transform" />
-                    <span>الرئيسية</span>
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => setActiveTab('movie')}
-                    className="w-full text-right text-xs text-slate-400 hover:text-amber-400 transition-colors flex items-center space-x-1.5 space-x-reverse group"
-                  >
-                    <ChevronRight className="w-3 h-3 group-hover:translate-x-[-2px] transition-transform" />
-                    <span>الأفلام</span>
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => setActiveTab('tv')}
-                    className="w-full text-right text-xs text-slate-400 hover:text-amber-400 transition-colors flex items-center space-x-1.5 space-x-reverse group"
-                  >
-                    <ChevronRight className="w-3 h-3 group-hover:translate-x-[-2px] transition-transform" />
-                    <span>المسلسلات</span>
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 3: Legal - 2 columns */}
-            <div className="md:col-span-2 space-y-3">
-              <h3 className="text-xs font-bold text-slate-100 pb-2 border-b border-slate-800/50">
-                قانوني
-              </h3>
-              
-              {/* DMCA - Compact */}
-              <Link 
-                href="/dmca" 
-                className="block p-2.5 rounded-lg bg-gradient-to-br from-red-950/30 to-red-950/10 border border-red-900/40 hover:border-red-800/60 transition-all group"
-              >
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <div className="p-1.5 rounded bg-red-900/30 border border-red-800/40 group-hover:scale-110 transition-transform">
-                    <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-red-400 group-hover:text-red-300">DMCA</div>
-                    <div className="text-[9px] text-slate-500">حقوق النشر</div>
-                  </div>
-                </div>
-              </Link>
-
-              {/* Other Links */}
-              <ul className="space-y-2">
-                <li>
-                  <Link 
-                    href="/copyright" 
-                    className="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center space-x-1.5 space-x-reverse group"
-                  >
-                    <ChevronRight className="w-3 h-3 group-hover:translate-x-[-2px] transition-transform" />
-                    <span>حقوق النشر</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/terms" 
-                    className="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center space-x-1.5 space-x-reverse group"
-                  >
-                    <ChevronRight className="w-3 h-3 group-hover:translate-x-[-2px] transition-transform" />
-                    <span>الشروط</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/privacy" 
-                    className="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center space-x-1.5 space-x-reverse group"
-                  >
-                    <ChevronRight className="w-3 h-3 group-hover:translate-x-[-2px] transition-transform" />
-                    <span>الخصوصية</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link 
-                    href="/contact" 
-                    className="text-xs text-slate-400 hover:text-slate-200 transition-colors flex items-center space-x-1.5 space-x-reverse group"
-                  >
-                    <ChevronRight className="w-3 h-3 group-hover:translate-x-[-2px] transition-transform" />
-                    <span>اتصل بنا</span>
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 4: Stats & Trust - 5 columns */}
-            <div className="md:col-span-5 space-y-3">
-              <h3 className="text-xs font-bold text-slate-100 pb-2 border-b border-slate-800/50">
-                الإحصائيات والأمان
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-3">
-                {/* Content Count */}
-                <div className="p-3 rounded-lg bg-gradient-to-br from-slate-900/50 to-slate-900/20 border border-slate-800/50">
-                  <div className="flex items-center space-x-1.5 space-x-reverse mb-1">
-                    <Database className="w-3.5 h-3.5 text-slate-500" />
-                    <span className="text-[10px] text-slate-500 font-medium">المحتوى</span>
-                  </div>
-                  <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-amber-500">
-                    {allContent.length.toLocaleString('ar-EG')}
-                  </span>
-                </div>
-
-                {/* System Status */}
-                <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-950/30 to-emerald-950/10 border border-emerald-900/40">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] text-slate-400 font-medium">الخوادم</span>
-                    <div className="flex items-center space-x-1 space-x-reverse">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                      </span>
-                      <span className="text-[10px] font-bold text-emerald-400">متصل</span>
-                    </div>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-900/50 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 w-[98%]" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Trust Badges - Horizontal Compact */}
-              <div className="grid grid-cols-4 gap-2 pt-2">
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/30 border border-slate-800/50 hover:border-emerald-500/30 transition-all group">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform flex-shrink-0" />
-                  <div className="text-right">
-                    <div className="text-[10px] font-bold text-slate-300 group-hover:text-emerald-400 transition leading-tight">SSL</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/30 border border-slate-800/50 hover:border-blue-500/30 transition-all group">
-                  <Star className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform flex-shrink-0" />
-                  <div className="text-right">
-                    <div className="text-[10px] font-bold text-slate-300 group-hover:text-blue-400 transition leading-tight">آمن</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/30 border border-slate-800/50 hover:border-purple-500/30 transition-all group">
-                  <BadgeCheck className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform flex-shrink-0" />
-                  <div className="text-right">
-                    <div className="text-[10px] font-bold text-slate-300 group-hover:text-purple-400 transition leading-tight">معتمد</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-900/30 border border-slate-800/50 hover:border-amber-500/30 transition-all group">
-                  <Star className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform flex-shrink-0" />
-                  <div className="text-right">
-                    <div className="text-[10px] font-bold text-slate-300 group-hover:text-amber-400 transition leading-tight">سريع</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Bar - Compact */}
-          <div className="py-5">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              {/* Copyright */}
-              <div className="text-xs text-slate-500 text-center md:text-right">
-                © {new Date().getFullYear()} <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-amber-500 font-bold">فور سيما</span> - جميع الحقوق محفوظة
-              </div>
-
-              {/* Tags */}
-              <div className="flex items-center space-x-3 space-x-reverse text-[11px]">
-                <span className="flex items-center space-x-1 space-x-reverse text-slate-600 hover:text-emerald-400 transition cursor-pointer">
-                  <ShieldCheck className="w-3 h-3" />
-                  <span>فلترة ذكية</span>
-                </span>
-                <span className="text-slate-800">•</span>
-                <span className="flex items-center space-x-1 space-x-reverse text-slate-600 hover:text-amber-400 transition cursor-pointer">
-                  <Heart className="w-3 h-3" />
-                  <span>صُنع بحب</span>
-                </span>
-                <span className="text-slate-800">•</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800/50 border border-slate-700 text-slate-400 font-bold">
-                  v2.0
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        </div>
-      </footer>
+      {/* Footer Component */}
+      <Footer />
     </div>
   )
 }

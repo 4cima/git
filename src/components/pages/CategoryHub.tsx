@@ -7,6 +7,7 @@ import { MovieCard } from '../features/media/MovieCard'
 import { Star, Clock, TrendingUp, SearchX } from 'lucide-react'
 import { SectionHeader } from '../common/SectionHeader'
 import { UnifiedFilters } from '../unified/UnifiedFilters'
+import { Footer } from '../layout/Footer'
 import type { ContentType } from '../../types/unified-section'
 
 const CATEGORY_MAP: Record<string, any> = {
@@ -294,6 +295,8 @@ export const CategoryHub = ({ type = 'movie', category }: CategoryHubProps) => {
           ))}
         </motion.div>
       )}
+      
+      <Footer />
     </div>
   )
 }

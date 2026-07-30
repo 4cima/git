@@ -10,9 +10,15 @@ const nextConfig: NextConfig = {
       fullUrl: false,
     },
   },
+  
+  // Disable scroll restoration warning for sticky/fixed elements
+  experimental: {
+    scrollRestoration: true,
+  },
   // Optimize compilation
   experimental: {
     optimizePackageImports: ['@/components', '@/lib'],
+    scrollRestoration: true,
   },
   // Redirects from old watch URLs to new detail pages
   async redirects() {

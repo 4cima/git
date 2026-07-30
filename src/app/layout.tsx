@@ -33,6 +33,11 @@ export const metadata: Metadata = {
   authors: [{ name: '4cima' }],
   creator: '4cima',
   publisher: '4cima',
+  icons: {
+    icon: '/icons/favicon.ico?v=3',
+    shortcut: '/icons/favicon.ico?v=3',
+    apple: '/icons/favicon.ico?v=3',
+  },
   formatDetection: {
     email: false,
     address: false,

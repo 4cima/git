@@ -9,18 +9,37 @@ export async function GET(request: NextRequest) {
     const page  = parseInt(searchParams.get('page')  || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
+    
+    // Filters
+    const language = searchParams.get('language')
+    
+    // Build WHERE clause
+    const conditions: string[] = ['(filter_status IN (\'clean\', \'reviewed_approved\') OR filter_status IS NULL)']
+    const args: any[] = []
+    
+    if (language) {
+      // Support comma-separated language codes (e.g., "ko" or "hi,ta,ml")
+      const languages = language.split(',').map(l => l.trim()).filter(l => l)
+      if (languages.length === 1) {
+        conditions.push('original_language = ?')
+        args.push(languages[0])
+      } else if (languages.length > 1) {
+        const placeholders = languages.map(() => '?').join(',')
+        conditions.push(`original_language IN (${placeholders})`)
+        args.push(...languages)
+      }
+    }
+    
+    const whereClause = `WHERE ${conditions.join(' AND ')}`
 
     const [result, countResult] = await Promise.all([
       turso.execute({
-        sql: `SELECT * FROM tv_series
-              WHERE (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-              ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        args: [limit, offset]
+        sql: `SELECT * FROM tv_series ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+        args: [...args, limit, offset]
       }),
       turso.execute({
-        sql: `SELECT COUNT(*) as total FROM tv_series
-              WHERE (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)`,
-        args: []
+        sql: `SELECT COUNT(*) as total FROM tv_series ${whereClause}`,
+        args
       })
     ])
 

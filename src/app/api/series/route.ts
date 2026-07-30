@@ -9,19 +9,18 @@ export async function GET(request: NextRequest) {
     
     // Pagination
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const offset = (page - 1) * limit
+    const limit = parseInt(searchParams.get('limit') || '24')
+    const offsetParam = searchParams.get('offset')
+    const offset = offsetParam !== null ? parseInt(offsetParam) : (page - 1) * limit
     
     // Filters
-    const genre = searchParams.get('genre') // slug
+    const genre = searchParams.get('genre')
     const year = searchParams.get('year')
     const country = searchParams.get('country')
-    const language = searchParams.get('language')
     const ratingMin = searchParams.get('rating_min')
-    const ratingMax = searchParams.get('rating_max')
-    const seasonsMin = searchParams.get('seasons_min')
-    const seasonsMax = searchParams.get('seasons_max')
-    const status = searchParams.get('status') // Returning Series, Ended, Canceled
+    const ageRating = searchParams.get('age_rating')
+    const status = searchParams.get('status')
+    const search = searchParams.get('search')
     
     // Sort
     const sort = searchParams.get('sort') || 'popularity'
@@ -32,27 +31,31 @@ export async function GET(request: NextRequest) {
     const args: any[] = []
     
     if (genre) {
-      conditions.push(`id IN (
-        SELECT cg.content_id FROM content_genres cg
-        JOIN genres g ON cg.genre_id = g.id
-        WHERE g.slug = ? AND cg.content_type = 'tv_series'
-      )`)
-      args.push(genre)
+      conditions.push(`genres_json LIKE ?`)
+      args.push(`%"name_ar":"${genre}"%`)
+    }
+    
+    if (search) {
+      conditions.push(`(name_ar LIKE ? OR name_en LIKE ?)`)
+      args.push(`%${search}%`, `%${search}%`)
     }
     
     if (year) {
-      conditions.push('first_air_year = ?')
-      args.push(parseInt(year))
+      if (year === 'before-1990') {
+        conditions.push('first_air_year < 1990')
+      } else if (year.includes('-')) {
+        const [from, to] = year.split('-').map(Number)
+        conditions.push('first_air_year BETWEEN ? AND ?')
+        args.push(from, to)
+      } else {
+        conditions.push('first_air_year = ?')
+        args.push(parseInt(year))
+      }
     }
     
     if (country) {
-      conditions.push(`countries_json LIKE ?`)
-      args.push(`%${country}%`)
-    }
-    
-    if (language) {
-      conditions.push('original_language = ?')
-      args.push(language)
+      conditions.push('country_of_origin = ?')
+      args.push(country)
     }
     
     if (ratingMin) {
@@ -60,70 +63,63 @@ export async function GET(request: NextRequest) {
       args.push(parseFloat(ratingMin))
     }
     
-    if (ratingMax) {
-      conditions.push('vote_average <= ?')
-      args.push(parseFloat(ratingMax))
-    }
-    
-    if (seasonsMin) {
-      conditions.push('number_of_seasons >= ?')
-      args.push(parseInt(seasonsMin))
-    }
-    
-    if (seasonsMax) {
-      conditions.push('number_of_seasons <= ?')
-      args.push(parseInt(seasonsMax))
+    if (ageRating) {
+      if (ageRating === 'family') {
+        conditions.push(`(age_rating IN ('TV-G', 'TV-PG', 'TV-Y', 'TV-Y7'))`)
+      } else if (ageRating === 'teens') {
+        conditions.push(`age_rating = 'TV-14'`)
+      } else if (ageRating === 'mature') {
+        conditions.push(`age_rating = 'TV-MA'`)
+      }
     }
     
     if (status) {
-      conditions.push('status = ?')
-      args.push(status)
+      if (status === 'ongoing') conditions.push(`status = 'ongoing'`)
+      else if (status === 'ended') conditions.push(`status = 'ended'`)
     }
     
-    const whereClause = conditions.length > 0 
-      ? `WHERE ${conditions.join(' AND ')}`
-      : ''
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
     
-    // Valid sort columns
     const validSorts = ['popularity', 'vote_average', 'first_air_year', 'created_at', 'name_ar']
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
-    // Get total count
-    const countResult = await turso.execute({
-      sql: `SELECT COUNT(*) as total FROM tv_series ${whereClause}`,
-      args
-    })
-    const total = Number(countResult.rows[0]?.total || 0)
-    
-    // Get series with genres
+    // Single query - fetch limit+1 to know if there's a next page (no COUNT needed)
     const seriesResult = await turso.execute({
       sql: `
-        SELECT 
-          s.*,
-          s.genres_json
-        FROM tv_series s
+        SELECT
+          id, slug, name_ar, name_en, poster_path,
+          vote_average, first_air_year,
+          genres_json, overview_ar, country_of_origin
+        FROM tv_series
         ${whereClause}
         ORDER BY ${sortColumn} ${sortOrder}
         LIMIT ? OFFSET ?
       `,
-      args: [...args, limit, offset]
+      args: [...args, limit + 1, offset]
     })
-    
-    return NextResponse.json({
-      series: seriesResult.rows || [],
+
+    const rows = seriesResult.rows || []
+    const hasMore = rows.length > limit
+    if (hasMore) rows.pop()
+
+    const response = NextResponse.json({
+      series: rows,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit)
+        hasMore,
+        totalPages: hasMore ? page + 1 : page
       }
     })
+
+    // Cache for 60 seconds - revalidate in background
+    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
+
+    return response
+
   } catch (error) {
     console.error('Error fetching series:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch series' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch series' }, { status: 500 })
   }
 }

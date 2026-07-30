@@ -10,23 +10,42 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') // 'movie' or 'tv'
     
     // Get all genres with counts
+    // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
     let query = `
       SELECT 
         g.*,
-        (SELECT COUNT(*) FROM content_genres cg 
-         WHERE cg.genre_id = g.id AND cg.content_type = 'movie') as movie_count,
-        (SELECT COUNT(*) FROM content_genres cg 
-         WHERE cg.genre_id = g.id AND cg.content_type = 'tv_series') as series_count
+        (SELECT COUNT(*) FROM movies m
+         WHERE EXISTS (
+           SELECT 1 FROM json_each(m.genres_json)
+           WHERE CAST(json_extract(value, '$.id') AS INTEGER) = g.tmdb_id
+         )) as movie_count,
+        (SELECT COUNT(*) FROM tv_series s
+         WHERE EXISTS (
+           SELECT 1 FROM json_each(s.genres_json)
+           WHERE CAST(json_extract(value, '$.id') AS INTEGER) = g.tmdb_id
+         )) as series_count
       FROM genres g
     `
     
     // Filter by type if specified
-    if (type === 'movie' || type === 'tv') {
-      const contentType = type === 'movie' ? 'movie' : 'tv_series'
+    if (type === 'movie') {
       query += `
         WHERE EXISTS (
-          SELECT 1 FROM content_genres cg 
-          WHERE cg.genre_id = g.id AND cg.content_type = '${contentType}'
+          SELECT 1 FROM movies m
+          WHERE EXISTS (
+            SELECT 1 FROM json_each(m.genres_json)
+            WHERE CAST(json_extract(value, '$.id') AS INTEGER) = g.tmdb_id
+          )
+        )
+      `
+    } else if (type === 'tv') {
+      query += `
+        WHERE EXISTS (
+          SELECT 1 FROM tv_series s
+          WHERE EXISTS (
+            SELECT 1 FROM json_each(s.genres_json)
+            WHERE CAST(json_extract(value, '$.id') AS INTEGER) = g.tmdb_id
+          )
         )
       `
     }

@@ -48,15 +48,31 @@ export default async function SeriesDetails({ params }: PageProps) {
     notFound()
   }
   
-  // Fetch seasons
-  const seasonsResult = await turso.execute({
-    sql: 'SELECT * FROM tv_seasons WHERE tv_series_id = ? ORDER BY season_number ASC',
-    args: [seriesData.id]
-  })
+  // Parse seasons from JSON column (stored in tv_series table)
+  const seasonsJson = seriesData.seasons_json
+  let seasons = []
+  
+  try {
+    seasons = seasonsJson ? JSON.parse(String(seasonsJson)) : []
+  } catch (e) {
+    console.error('Error parsing seasons_json:', e)
+    seasons = []
+  }
+  
+  // If no seasons data, create a default season 1
+  if (!seasons || seasons.length === 0) {
+    seasons = [{
+      season_number: 1,
+      name_en: 'Season 1',
+      name_ar: 'الموسم 1',
+      episode_count: seriesData.number_of_episodes || 10,
+      air_date: seriesData.first_air_date,
+      poster_path: null
+    }]
+  }
   
   // Convert to plain objects
   const series = JSON.parse(JSON.stringify(seriesData))
-  const seasons = JSON.parse(JSON.stringify(seasonsResult.rows || []))
   
   return <SeriesDetailsClient series={series} seasons={seasons} />
 }

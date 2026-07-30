@@ -18,6 +18,9 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      gridTemplateColumns: {
+        '15': 'repeat(15, minmax(0, 1fr))',
+      },
       screens: {
         '3xl': '1920px',
         '4xl': '2560px',
@@ -141,6 +144,7 @@ export default {
         'shimmer': 'shimmer 1.5s infinite',
         'wiggle': 'wiggle 3s ease-in-out infinite',
         'bounce': 'bounce 2s ease-in-out infinite',
+        'swipe-hint': 'swipe-hint 5s ease-in-out 1s 1 forwards',
       },
       keyframes: {
         'lumen-breathe': {

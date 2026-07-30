@@ -1,225 +1,283 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Film, Calendar, Star } from 'lucide-react'
-import { FilterSidebar } from '@/components/features/filters/FilterSidebar'
-import { SortBar } from '@/components/features/filters/SortBar'
-import { MovieCard } from '@/components/features/media/MovieCard'
+import Link from 'next/link'
+import { Film, Star, Search, Play, Filter as FilterIcon } from 'lucide-react'
+import { Footer } from '@/components/layout/Footer'
+import { getGenreColor } from '@/utils/genreColors'
+import { sanitizeTitle } from '@/utils/textSanitizer'
 
 const GENRES = [
-  { value: 'action', label: 'أكشن' },
-  { value: 'comedy', label: 'كوميديا' },
-  { value: 'drama', label: 'دراما' },
-  { value: 'horror', label: 'رعب' },
-  { value: 'thriller', label: 'إثارة' },
-  { value: 'romance', label: 'رومانسي' },
-  { value: 'sci-fi', label: 'خيال علمي' },
-  { value: 'fantasy', label: 'فانتازيا' },
-  { value: 'animation', label: 'أنيميشن' },
-  { value: 'crime', label: 'جريمة' },
+  { name: 'دراما',        emoji: '🎭', color: 'purple' },
+  { name: 'كوميديا',      emoji: '😂', color: 'yellow' },
+  { name: 'أكشن',         emoji: '🔥', color: 'red'    },
+  { name: 'إثارة',        emoji: '⚡', color: 'orange' },
+  { name: 'رومانسي',      emoji: '💕', color: 'pink'   },
+  { name: 'خيال علمي',   emoji: '🚀', color: 'cyan'   },
+  { name: 'رعب',          emoji: '👻', color: 'gray'   },
+  { name: 'جريمة',        emoji: '🕵️', color: 'rose'   },
+  { name: 'مغامرة',       emoji: '🗡️', color: 'emerald'},
+  { name: 'رسوم متحركة', emoji: '🎨', color: 'blue'   },
+  { name: 'عائلي',        emoji: '🎪', color: 'green'  },
+  { name: 'فانتازيا',     emoji: '🧙', color: 'indigo' },
+  { name: 'حرب',          emoji: '⚔️', color: 'slate'  },
+] as const
+
+const COLOR_CLASSES: Record<string, { active: string; inactive: string }> = {
+  purple:  { active: 'bg-purple-600 text-white border-2 border-purple-500',   inactive: 'bg-purple-600/10 hover:bg-purple-600/20 border border-purple-600/30 hover:border-purple-600/50 text-purple-400 hover:text-purple-300' },
+  yellow:  { active: 'bg-yellow-600 text-white border-2 border-yellow-500',   inactive: 'bg-yellow-600/10 hover:bg-yellow-600/20 border border-yellow-600/30 hover:border-yellow-600/50 text-yellow-400 hover:text-yellow-300' },
+  red:     { active: 'bg-red-600 text-white border-2 border-red-500',         inactive: 'bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 hover:border-red-600/50 text-red-400 hover:text-red-300' },
+  orange:  { active: 'bg-orange-600 text-white border-2 border-orange-500',   inactive: 'bg-orange-600/10 hover:bg-orange-600/20 border border-orange-600/30 hover:border-orange-600/50 text-orange-400 hover:text-orange-300' },
+  pink:    { active: 'bg-pink-600 text-white border-2 border-pink-500',       inactive: 'bg-pink-600/10 hover:bg-pink-600/20 border border-pink-600/30 hover:border-pink-600/50 text-pink-400 hover:text-pink-300' },
+  cyan:    { active: 'bg-cyan-600 text-white border-2 border-cyan-500',       inactive: 'bg-cyan-600/10 hover:bg-cyan-600/20 border border-cyan-600/30 hover:border-cyan-600/50 text-cyan-400 hover:text-cyan-300' },
+  gray:    { active: 'bg-gray-600 text-white border-2 border-gray-500',       inactive: 'bg-gray-600/10 hover:bg-gray-600/20 border border-gray-600/30 hover:border-gray-600/50 text-gray-400 hover:text-gray-300' },
+  rose:    { active: 'bg-rose-700 text-white border-2 border-rose-600',       inactive: 'bg-rose-700/10 hover:bg-rose-700/20 border border-rose-700/30 hover:border-rose-700/50 text-rose-400 hover:text-rose-300' },
+  emerald: { active: 'bg-emerald-600 text-white border-2 border-emerald-500', inactive: 'bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-600/30 hover:border-emerald-600/50 text-emerald-400 hover:text-emerald-300' },
+  blue:    { active: 'bg-blue-600 text-white border-2 border-blue-500',       inactive: 'bg-blue-600/10 hover:bg-blue-600/20 border border-blue-600/30 hover:border-blue-600/50 text-blue-400 hover:text-blue-300' },
+  green:   { active: 'bg-green-600 text-white border-2 border-green-500',     inactive: 'bg-green-600/10 hover:bg-green-600/20 border border-green-600/30 hover:border-green-600/50 text-green-400 hover:text-green-300' },
+  indigo:  { active: 'bg-indigo-600 text-white border-2 border-indigo-500',   inactive: 'bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/30 hover:border-indigo-600/50 text-indigo-400 hover:text-indigo-300' },
+  slate:   { active: 'bg-slate-600 text-white border-2 border-slate-500',     inactive: 'bg-slate-600/10 hover:bg-slate-600/20 border border-slate-600/30 hover:border-slate-600/50 text-slate-400 hover:text-slate-300' },
+}
+
+const YEARS = [
+  { value: 'all', label: 'جميع السنوات' },
+  ...Array.from({ length: new Date().getFullYear() - 1979 }, (_, i) => {
+    const y = new Date().getFullYear() - i
+    return { value: y.toString(), label: y.toString() }
+  })
 ]
 
-const YEARS = Array.from({ length: 30 }, (_, i) => {
-  const year = new Date().getFullYear() - i
-  return { value: year.toString(), label: year.toString() }
-})
-
 const RATINGS = [
-  { value: '9-10', label: 'ممتاز (9+)' },
-  { value: '8-9', label: 'جيد جداً (8-9)' },
-  { value: '7-8', label: 'جيد (7-8)' },
-  { value: '6-7', label: 'مقبول (6-7)' },
+  { value: 'all', label: 'كل التقييمات' },
+  { value: '9',   label: '⭐ 9+ ممتاز'    },
+  { value: '8',   label: '⭐ 8+ جيد جداً' },
+  { value: '7',   label: '⭐ 7+ جيد'      },
+  { value: '6',   label: '⭐ 6+ مقبول'    },
 ]
 
 const SORT_OPTIONS = [
-  { value: 'popularity', label: 'الأكثر شهرة' },
-  { value: 'vote_average', label: 'الأعلى تقييماً' },
-  { value: 'release_year', label: 'الأحدث' },
-  { value: 'title_ar', label: 'الاسم (أ-ي)' },
+  { value: 'popularity',   label: 'الأكثر شهرة',   icon: '🔥' },
+  { value: 'vote_average', label: 'الأعلى تقييماً', icon: '⭐' },
+  { value: 'release_year', label: 'الأحدث',         icon: '📅' },
+  { value: 'title_ar',     label: 'الاسم (أ-ي)',    icon: '🔤' },
 ]
 
 export function MoviesPageClient() {
-  const [movies, setMovies] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0 })
-  
-  // Filters
-  const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({
-    genre: [],
-    year: '',
-    rating: '',
-  })
-  
-  // Sort
-  const [sort, setSort] = useState('popularity')
-  const [order, setOrder] = useState<'asc' | 'desc'>('desc')
+  const [movies, setMovies]               = useState<any[]>([])
+  const [loading, setLoading]             = useState(true)
+  const [searchQuery, setSearchQuery]     = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [selectedGenre, setSelectedGenre] = useState<string>('all')
+  const [selectedYear, setSelectedYear]   = useState<string>('all')
+  const [selectedRating, setSelectedRating] = useState<string>('all')
+  const [sortBy, setSortBy]               = useState('popularity')
+  const [page, setPage]                   = useState(1)
+  const [hasMore, setHasMore]             = useState(false)
+  const [showFilters, setShowFilters]     = useState(false)
 
-  // Fetch movies
   useEffect(() => {
-    fetchMovies()
-  }, [activeFilters, sort, order, pagination.page])
+    const t = setTimeout(() => { setPage(1); setDebouncedSearch(searchQuery) }, 400)
+    return () => clearTimeout(t)
+  }, [searchQuery])
 
-  const fetchMovies = async () => {
+  useEffect(() => {
+    let cancelled = false
+    const params = new URLSearchParams({ page: page.toString(), limit: '24', sort: sortBy, order: 'desc' })
+    if (selectedGenre  !== 'all') params.set('genre',      selectedGenre)
+    if (selectedYear   !== 'all') params.set('year',       selectedYear)
+    if (selectedRating !== 'all') params.set('rating_min', selectedRating)
+    if (debouncedSearch.trim())   params.set('search',     debouncedSearch.trim())
+
     setLoading(true)
-    try {
-      const params = new URLSearchParams()
-      params.set('page', pagination.page.toString())
-      params.set('limit', '20')
-      params.set('sort', sort)
-      params.set('order', order)
-      
-      // Add filters
-      const genres = activeFilters.genre as string[]
-      if (genres && genres.length > 0) {
-        params.set('genre', genres[0]) // For now, single genre
-      }
-      
-      if (activeFilters.year) {
-        params.set('year', activeFilters.year as string)
-      }
-      
-      if (activeFilters.rating) {
-        const [min, max] = (activeFilters.rating as string).split('-')
-        params.set('rating_min', min)
-        if (max) params.set('rating_max', max)
-      }
-      
-      const response = await fetch(`/api/movies?${params}`)
-      const data = await response.json()
-      
-      setMovies(data.movies || [])
-      setPagination(data.pagination || { page: 1, total: 0, totalPages: 0 })
-    } catch (error) {
-      console.error('Error fetching movies:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+    fetch(`/api/movies?${params}`)
+      .then(r => r.json())
+      .then(data => { if (cancelled) return; setMovies(data.movies || []); setHasMore(data.pagination?.hasMore || false) })
+      .catch(() => { if (!cancelled) setMovies([]) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [selectedGenre, selectedYear, selectedRating, sortBy, page, debouncedSearch])
 
-  const handleFilterChange = (filterId: string, value: string | string[]) => {
-    setActiveFilters(prev => ({ ...prev, [filterId]: value }))
-    setPagination(prev => ({ ...prev, page: 1 })) // Reset to page 1
-  }
-
-  const handleClearAll = () => {
-    setActiveFilters({ genre: [], year: '', rating: '' })
-    setPagination(prev => ({ ...prev, page: 1 }))
-  }
-
-  const handleSortChange = (newSort: string, newOrder: 'asc' | 'desc') => {
-    setSort(newSort)
-    setOrder(newOrder)
-    setPagination(prev => ({ ...prev, page: 1 }))
-  }
-
-  const filterSections = [
-    {
-      id: 'genre',
-      title: 'النوع',
-      icon: <Film className="w-4 h-4" />,
-      options: GENRES,
-      multiple: true
-    },
-    {
-      id: 'year',
-      title: 'السنة',
-      icon: <Calendar className="w-4 h-4" />,
-      options: YEARS,
-      multiple: false
-    },
-    {
-      id: 'rating',
-      title: 'التقييم',
-      icon: <Star className="w-4 h-4" />,
-      options: RATINGS,
-      multiple: false
-    }
-  ]
+  const resetFilters = () => { setSelectedGenre('all'); setSelectedYear('all'); setSelectedRating('all'); setPage(1) }
 
   return (
-    <div className="min-h-screen bg-black text-white pt-20 pb-12">
-      <div className="page-container">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl md:text-6xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">
-            🎬 الأفلام
-          </h1>
-          <p className="text-lg text-zinc-400">
-            اكتشف آلاف الأفلام المترجمة بجودة عالية
-          </p>
-        </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
 
-        {/* Sort Bar */}
-        <SortBar
-          totalResults={pagination.total}
-          sortOptions={SORT_OPTIONS}
-          currentSort={sort}
-          currentOrder={order}
-          onSortChange={handleSortChange}
-          className="mb-6"
-        />
-
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-          {/* Filters Sidebar */}
-          <aside className="lg:sticky lg:top-24 h-fit">
-            <FilterSidebar
-              sections={filterSections}
-              activeFilters={activeFilters}
-              onFilterChange={handleFilterChange}
-              onClearAll={handleClearAll}
-            />
-          </aside>
-
-          {/* Movies Grid */}
-          <main>
-            {loading ? (
-              <div className="flex items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
-              </div>
-            ) : movies.length > 0 ? (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {movies.map((movie, index) => (
-                    <MovieCard key={movie.id} movie={movie} index={index} />
-                  ))}
+      {/* Cinema Banner */}
+      <section className="w-full bg-slate-950">
+        <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 mb-6">
+          <div className="relative bg-slate-950/80 backdrop-blur-sm rounded-lg border-2 border-slate-800 shadow-2xl overflow-hidden h-14 md:h-16">
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'url(/banner.png)', backgroundSize: '2000px 100%', backgroundRepeat: 'repeat-x', backgroundPosition: '0 center', animation: 'banner-scroll 40s linear infinite' }} />
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-0 left-0 right-0 h-2 bg-slate-950/90 flex justify-around items-center px-2">
+                  {[...Array(25)].map((_, i) => <div key={i} className="w-1.5 h-1.5 bg-slate-800 rounded-sm" />)}
                 </div>
-
-                {/* Pagination */}
-                {pagination.totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-8">
-                    <button
-                      onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-                      disabled={pagination.page === 1}
-                      className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      السابق
-                    </button>
-                    
-                    <span className="text-sm text-zinc-400">
-                      صفحة {pagination.page} من {pagination.totalPages}
-                    </span>
-                    
-                    <button
-                      onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
-                      disabled={pagination.page === pagination.totalPages}
-                      className="px-4 py-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      التالي
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-96 text-center">
-                <Film className="w-16 h-16 text-zinc-700 mb-4" />
-                <p className="text-xl text-zinc-400">لا توجد نتائج</p>
-                <p className="text-sm text-zinc-500 mt-2">جرب تغيير الفلاتر</p>
+                <div className="absolute bottom-0 left-0 right-0 h-2 bg-slate-950/90 flex justify-around items-center px-2">
+                  {[...Array(25)].map((_, i) => <div key={i} className="w-1.5 h-1.5 bg-slate-800 rounded-sm" />)}
+                </div>
               </div>
-            )}
-          </main>
+              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/30 via-transparent to-slate-950/30" />
+            </div>
+            <div className="absolute top-0 left-0 w-3 h-full bg-slate-950/95 border-r border-amber-500/40 flex flex-col justify-around py-1 z-10">
+              {[...Array(5)].map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_#fbbf24] mx-auto" style={{ animation: 'pulse-glow 1.5s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />)}
+            </div>
+            <div className="absolute top-0 right-0 w-3 h-full bg-slate-950/95 border-l border-amber-500/40 flex flex-col justify-around py-1 z-10">
+              {[...Array(5)].map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_#fbbf24] mx-auto" style={{ animation: 'pulse-glow 1.5s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />)}
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="w-full bg-slate-950 pt-20">
+        <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 space-y-6">
+
+          {/* Search & Sort Header */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800 p-4 rounded-xl">
+            <div className="relative flex-1 max-w-md">
+              <input type="text" placeholder="ابحث عن فيلم..." value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-3 pr-10 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500 text-sm"
+              />
+              <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-3.5" />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-slate-400 text-sm hidden md:block">ترتيب:</span>
+              <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); setPage(1) }}
+                className="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-red-500">
+                {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.icon} {o.label}</option>)}
+              </select>
+              <button onClick={() => setShowFilters(!showFilters)}
+                className="md:hidden px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 flex items-center gap-2">
+                <FilterIcon className="w-4 h-4" /> فلاتر
+              </button>
+            </div>
+          </div>
+
+          {/* Genres + extra filters */}
+          <div className={`bg-slate-900/40 border border-slate-800 rounded-xl p-4 ${showFilters ? '' : 'hidden md:block'}`}>
+            <div className="flex flex-wrap gap-2 items-center">
+              <button onClick={() => { setSelectedGenre('all'); setPage(1) }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${selectedGenre === 'all' ? 'bg-amber-600 text-white border-2 border-amber-500' : 'bg-amber-600/10 hover:bg-amber-600/20 border border-amber-600/30 text-amber-400 hover:text-amber-300'}`}>
+                الكل
+              </button>
+              {GENRES.map(g => (
+                <button key={g.name} onClick={() => { setSelectedGenre(g.name); setPage(1) }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${selectedGenre === g.name ? COLOR_CLASSES[g.color].active : COLOR_CLASSES[g.color].inactive}`}>
+                  {g.emoji} {g.name}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <select value={selectedYear} onChange={(e) => { setSelectedYear(e.target.value); setPage(1) }}
+                className="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-slate-100 text-sm focus:outline-none focus:border-red-500">
+                {YEARS.map(y => <option key={y.value} value={y.value}>{y.label}</option>)}
+              </select>
+              <select value={selectedRating} onChange={(e) => { setSelectedRating(e.target.value); setPage(1) }}
+                className="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-slate-100 text-sm focus:outline-none focus:border-red-500">
+                {RATINGS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+              {(selectedGenre !== 'all' || selectedYear !== 'all' || selectedRating !== 'all') && (
+                <button onClick={resetFilters} className="text-xs text-slate-400 hover:text-white underline">مسح الفلاتر</button>
+              )}
+            </div>
+          </div>
+
+          {/* Grid */}
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              {[...Array(24)].map((_, i) => (
+                <div key={i} className="rounded-2xl overflow-hidden bg-slate-900/20 border border-slate-800/60">
+                  <div className="aspect-[2/3] w-full bg-slate-800 animate-pulse" />
+                  <div className="p-2.5 h-[52px] flex flex-col justify-center gap-2">
+                    <div className="h-3 bg-slate-800 rounded animate-pulse w-3/4" />
+                    <div className="h-2 bg-slate-800 rounded animate-pulse w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : movies.length > 0 ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                {movies.map((item) => {
+                  let primaryGenre = null
+                  try { const g = JSON.parse(item.genres_json || '[]'); primaryGenre = g?.[0]?.name_ar || null } catch {}
+                  const year = Number(item.release_year || item.year)
+                  const currentYear = new Date().getFullYear()
+                  const yearStyle = year === currentYear
+                    ? 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
+                    : year >= 2020 ? 'bg-blue-600 text-white border border-blue-500'
+                    : year >= 2010 ? 'bg-cyan-600 text-white border border-cyan-500'
+                    : year >= 2000 ? 'bg-slate-100 text-slate-900 border border-slate-200 font-bold'
+                    : 'bg-slate-700 text-slate-300 border border-slate-600'
+
+                  return (
+                    <Link key={item.id} href={`/movies/${item.slug}`}
+                      className="group bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative"
+                    >
+                      <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
+                        <img src={`/tmdb/w500${item.poster_path}`} alt={item.title_ar}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        {item.vote_average > 0 && (
+                          <div className="absolute top-2 left-2 z-20">
+                            <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                              <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
+                              <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
+                            </span>
+                          </div>
+                        )}
+                        {primaryGenre && (
+                          <div className="absolute bottom-2 right-2 z-20">
+                            <span className={`${getGenreColor(primaryGenre).bg} ${getGenreColor(primaryGenre).text} border ${getGenreColor(primaryGenre).border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>{primaryGenre}</span>
+                          </div>
+                        )}
+                        {year > 0 && (
+                          <div className="absolute bottom-2 left-2 z-20">
+                            <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>{year}</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
+                          <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                            <Play className="w-5 h-5 text-white fill-white mr-0.5" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-2.5 h-[52px] flex flex-col justify-center relative overflow-hidden">
+                        <div className="transition-opacity duration-200 group-hover:opacity-0">
+                          <h3 className="text-[13px] font-bold text-slate-200 line-clamp-1 leading-tight">{sanitizeTitle(item.title_ar)}</h3>
+                          {item.title_en && <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 leading-tight">{item.title_en}</p>}
+                        </div>
+                        <div className="absolute inset-0 p-2.5 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <p className="text-[9px] text-slate-300 line-clamp-3 leading-relaxed">{item.overview_ar || 'لا يوجد وصف متاح'}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+
+              {(page > 1 || hasMore) && (
+                <div className="flex items-center justify-center gap-3 mt-8">
+                  <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
+                    className="px-6 py-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-100 font-bold">السابق</button>
+                  <span className="text-slate-400 font-bold">صفحة {page}</span>
+                  <button onClick={() => setPage(page + 1)} disabled={!hasMore}
+                    className="px-6 py-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-100 font-bold">التالي</button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-96 text-center">
+              <Film className="w-20 h-20 text-slate-800 mb-4" />
+              <p className="text-2xl font-bold text-slate-300 mb-2">لا توجد نتائج</p>
+              <p className="text-slate-500">جرب تغيير الفلاتر أو البحث</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <div className="pb-12"><Footer /></div>
     </div>
   )
 }

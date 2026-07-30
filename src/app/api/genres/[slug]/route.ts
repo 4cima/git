@@ -41,92 +41,133 @@ export async function GET(
     }
     
     const genre = genreResult.rows[0]
-    const genreId = genre.id
+    const genreTmdbId = genre.tmdb_id
     
     // Build query based on type
     let contentQuery = ''
     let countQuery = ''
     
     if (type === 'movie') {
+      // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
       contentQuery = `
         SELECT m.*, 'movie' as media_type
         FROM movies m
-        JOIN content_genres cg ON m.id = cg.content_id AND cg.content_type = 'movie'
-        WHERE cg.genre_id = ?
+        WHERE EXISTS (
+          SELECT 1 FROM json_each(m.genres_json)
+          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
+        )
         ORDER BY m.${sort} ${order.toUpperCase()}
         LIMIT ? OFFSET ?
       `
       countQuery = `
         SELECT COUNT(*) as total
-        FROM content_genres
-        WHERE genre_id = ? AND content_type = 'movie'
+        FROM movies m
+        WHERE EXISTS (
+          SELECT 1 FROM json_each(m.genres_json)
+          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
+        )
       `
     } else if (type === 'tv') {
+      // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
       contentQuery = `
         SELECT s.*, 'tv' as media_type
         FROM tv_series s
-        JOIN content_genres cg ON s.id = cg.content_id AND cg.content_type = 'tv_series'
-        WHERE cg.genre_id = ?
+        WHERE EXISTS (
+          SELECT 1 FROM json_each(s.genres_json)
+          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
+        )
         ORDER BY s.${sort} ${order.toUpperCase()}
         LIMIT ? OFFSET ?
       `
       countQuery = `
         SELECT COUNT(*) as total
-        FROM content_genres
-        WHERE genre_id = ? AND content_type = 'tv_series'
+        FROM tv_series s
+        WHERE EXISTS (
+          SELECT 1 FROM json_each(s.genres_json)
+          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
+        )
       `
     } else {
-      // All content
-      contentQuery = `
-        SELECT * FROM (
-          SELECT m.*, 'movie' as media_type, m.popularity as sort_value
+      // All content - fetch separately and combine in code (movies/series have different column counts)
+      // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
+      
+      // Get movies
+      const moviesResult = await turso.execute({
+        sql: `
+          SELECT m.*, 'movie' as media_type
           FROM movies m
-          JOIN content_genres cg ON m.id = cg.content_id AND cg.content_type = 'movie'
-          WHERE cg.genre_id = ?
-          UNION ALL
-          SELECT s.*, 'tv' as media_type, s.popularity as sort_value
+          WHERE EXISTS (
+            SELECT 1 FROM json_each(m.genres_json)
+            WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
+          )
+        `,
+        args: [genreTmdbId]
+      })
+      
+      // Get series
+      const seriesResult = await turso.execute({
+        sql: `
+          SELECT s.*, 'tv' as media_type
           FROM tv_series s
-          JOIN content_genres cg ON s.id = cg.content_id AND cg.content_type = 'tv_series'
-          WHERE cg.genre_id = ?
-        )
-        ORDER BY sort_value ${order.toUpperCase()}
-        LIMIT ? OFFSET ?
-      `
-      countQuery = `
-        SELECT COUNT(*) as total
-        FROM content_genres
-        WHERE genre_id = ?
-      `
+          WHERE EXISTS (
+            SELECT 1 FROM json_each(s.genres_json)
+            WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
+          )
+        `,
+        args: [genreTmdbId]
+      })
+      
+      // Combine and sort by popularity
+      const combined = [...(moviesResult.rows || []), ...(seriesResult.rows || [])]
+        .sort((a: any, b: any) => {
+          const aVal = Number(a.popularity || 0)
+          const bVal = Number(b.popularity || 0)
+          return order.toLowerCase() === 'asc' ? aVal - bVal : bVal - aVal
+        })
+      
+      const total = combined.length
+      const paginatedContent = combined.slice(offset, offset + limit)
+      
+      return NextResponse.json({
+        genre,
+        content: paginatedContent,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      })
     }
     
-    // Get total count
-    const countArgs = type === 'all' ? [genreId] : [genreId]
-    const countResult = await turso.execute({
-      sql: countQuery,
-      args: countArgs
-    })
-    const total = Number(countResult.rows[0]?.total || 0)
-    
-    // Get content
-    const contentArgs = type === 'all' 
-      ? [genreId, genreId, limit, offset]
-      : [genreId, limit, offset]
-    
-    const contentResult = await turso.execute({
-      sql: contentQuery,
-      args: contentArgs
-    })
-    
-    return NextResponse.json({
-      genre,
-      content: contentResult.rows || [],
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    })
+    // Get total count (only for movie and tv types, 'all' is handled above)
+    if (type !== 'all') {
+      const countArgs = [genreTmdbId]
+      const countResult = await turso.execute({
+        sql: countQuery,
+        args: countArgs
+      })
+      const total = Number(countResult.rows[0]?.total || 0)
+      
+      // Get content
+      const contentArgs = [genreTmdbId, limit, offset]
+      
+      const contentResult = await turso.execute({
+        sql: contentQuery,
+        args: contentArgs
+      })
+      
+      return NextResponse.json({
+        genre,
+        content: contentResult.rows || [],
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      })
+    }
   } catch (error) {
     console.error('Error fetching genre content:', error)
     return NextResponse.json(

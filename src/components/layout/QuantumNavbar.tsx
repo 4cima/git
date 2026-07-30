@@ -1,13 +1,14 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useMemo, memo, useEffect } from 'react'
-import { Home, Film, Tv, Gamepad2, Zap, Search, Menu, X, Mic, Loader2, ArrowLeft } from 'lucide-react'
+import { Home, Film, Tv, Zap, Rocket, Sparkles, Drama, Smile, Eye, Heart, Skull, Menu, X, LogIn } from 'lucide-react'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
+  const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [logoScrolled, setLogoScrolled] = useState(false)
 
@@ -24,53 +25,36 @@ export const QuantumNavbar = memo(() => {
   const navLinks = useMemo(() => [
     { to: '/', label: 'الرئيسية', icon: Home, color: '#00ffcc' },
     { to: '/movies', label: 'أفلام', icon: Film, color: '#00ccff' },
-    { to: '/series', label: 'مسلسلات', icon: Tv, color: '#aa00ff' },
-    { to: '/anime', label: 'أنمي', icon: Zap, color: '#f59e0b' }
+    { to: '/series', label: 'مسلسلات', icon: Tv, color: '#aa00ff' }
   ], [])
 
   const countryLinks = useMemo(() => [
-    { code: 'ar', label: 'عربي', icon: Film, filter: 'ar' },
-    { code: 'tr', label: 'تركي', icon: Film, filter: 'tr' },
-    { code: 'ko', label: 'كوري', icon: Tv, filter: 'ko' },
-    { code: 'hi', label: 'هندي', icon: Film, filter: 'hi,ta,ml' },
-    { code: 'zh', label: 'صيني', icon: Film, filter: 'zh,cn' },
-    { code: 'en', label: 'إنجليزي', icon: Film, filter: 'en' },
-    { code: 'eu', label: 'أوروبي', icon: Film, filter: 'fr,es,de,it,ru' }
+    { code: 'ar', label: 'عربي', icon: '🇸🇦', filter: 'ar' },
+    { code: 'en', label: 'إنجليزي', icon: '🇺🇸', filter: 'en' },
+    { code: 'tr', label: 'تركي', icon: '🇹🇷', filter: 'tr' },
+    { code: 'hi', label: 'هندي', icon: '🇮🇳', filter: 'hi' },
+    { code: 'ko', label: 'كوري', icon: '🇰🇷', filter: 'ko' },
+    { code: 'zh', label: 'صيني', icon: '🇨🇳', filter: 'zh,cn' },
+    { code: 'ja', label: 'ياباني', icon: '🇯🇵', filter: 'ja' },
+    { code: 'fr', label: 'فرنسي', icon: '🇫🇷', filter: 'fr' },
+    { code: 'es', label: 'إسباني', icon: '🇪🇸', filter: 'es' },
+    { code: 'de', label: 'ألماني', icon: '🇩🇪', filter: 'de' }
+  ], [])
+
+  const genreLinks = useMemo(() => [
+    { slug: 'action', label: 'أكشن', icon: Zap, color: 'red-500' },
+    { slug: 'comedy', label: 'كوميديا', icon: Smile, color: 'yellow-400' },
+    { slug: 'drama', label: 'دراما', icon: Drama, color: 'slate-400' },
+    { slug: 'romance', label: 'رومانسي', icon: Heart, color: 'pink-400' },
+    { slug: 'thriller', label: 'إثارة', icon: Eye, color: 'orange-500' },
+    { slug: 'horror', label: 'رعب', icon: Skull, color: 'red-700' },
+    { slug: 'crime', label: 'جريمة', icon: Film, color: 'gray-400' },
+    { slug: 'adventure', label: 'مغامرات', icon: Rocket, color: 'green-400' },
+    { slug: 'fantasy', label: 'فانتازيا', icon: Sparkles, color: 'purple-400' },
+    { slug: 'animation', label: 'أنمي', icon: Tv, color: 'cyan-400' }
   ], [])
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [isListening, setIsListening] = useState(false)
-
-  const handleSearch = () => {
-    if (query.trim()) {
-      router.push(`/search?q=${encodeURIComponent(query.trim())}`)
-      setQuery('')
-    }
-  }
-
-  const startListening = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
-      const recognition = new SpeechRecognition()
-      recognition.lang = 'ar-SA'
-      recognition.continuous = false
-      recognition.interimResults = false
-
-      recognition.onstart = () => setIsListening(true)
-      recognition.onend = () => setIsListening(false)
-      recognition.onerror = () => setIsListening(false)
-
-      recognition.onresult = (event: any) => {
-        const text = event.results[0][0].transcript
-        setQuery(text)
-      }
-
-      recognition.start()
-    } else {
-      alert('البحث الصوتي غير مدعوم')
-    }
-  }
 
   return (
     <>
@@ -79,7 +63,7 @@ export const QuantumNavbar = memo(() => {
         <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 flex items-center justify-between h-16">
 
           {/* Right: Menu + Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mr-6">
             {/* Menu Button */}
             <button
               type="button"
@@ -168,68 +152,132 @@ export const QuantumNavbar = memo(() => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-80 z-[1200] bg-black/95 backdrop-blur-xl border-l border-white/10 shadow-2xl flex flex-col"
+              className="fixed top-0 right-0 h-full w-60 z-[1200] bg-black/95 backdrop-blur-xl border-l border-white/10 shadow-2xl flex flex-col"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-white/10 flex-shrink-0">
-                <h2 className="text-xl font-bold text-white">القائمة</h2>
+              <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/10 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors group ${
+                      pathname === '/' ? 'bg-cyan-500/20 text-cyan-400' : 'text-white hover:text-cyan-400'
+                    }`}
+                  >
+                    <Home size={16} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-sm font-bold">الرئيسية</span>
+                  </Link>
+                  <Link
+                    href="/admin"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors group ${
+                      pathname?.startsWith('/admin') ? 'bg-emerald-500/20 text-emerald-400' : 'text-white hover:text-emerald-400'
+                    }`}
+                  >
+                    <LogIn size={16} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-sm font-bold">الدخول</span>
+                  </Link>
+                </div>
                 <button
                   onClick={() => setSidebarOpen(false)}
-                  className="p-2 text-white hover:text-red-500 transition-colors"
+                  className="p-1.5 text-white hover:text-red-500 transition-colors"
                   aria-label="إغلاق"
                 >
-                  <X size={24} />
+                  <X size={20} />
                 </button>
               </div>
 
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto">
-                {/* Main Links */}
-                <div className="p-4 space-y-2">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.to}
-                      href={link.to}
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/10 text-zinc-300 hover:text-white transition-all group"
-                    >
-                      <link.icon size={20} style={{ color: link.color }} className="group-hover:scale-110 transition-transform" />
-                      <span className="font-bold">{link.label}</span>
-                    </Link>
-                  ))}
+                {/* Main Links - Grid 2 columns */}
+                <div className="px-3 pt-2 pb-1 grid grid-cols-2 gap-1.5">
+                  {navLinks.slice(1).map((link) => {
+                    const isActive = pathname === link.to || pathname?.startsWith(link.to + '/')
+                    return (
+                      <Link
+                        key={link.to}
+                        href={link.to}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
+                          isActive 
+                            ? 'bg-white/20 text-white border border-cyan-400/50' 
+                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
+                        }`}
+                      >
+                        <link.icon size={14} style={{ color: link.color }} className="group-hover:scale-110 transition-transform flex-shrink-0" />
+                        <span className="font-medium truncate">{link.label}</span>
+                      </Link>
+                    )
+                  })}
                 </div>
 
-                {/* Country/Language Section */}
-                <div className="px-4 pt-2 pb-2 border-t border-white/10">
-                  <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">حسب البلد ({countryLinks.length})</h3>
+                {/* Language Section */}
+                <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
                 </div>
 
-                {/* Country Links - 2 Columns Grid */}
-                <div className="px-4 pb-4 grid grid-cols-2 gap-2">
-                  {countryLinks.map((country) => (
-                    <Link
-                      key={country.code}
-                      href={`/movies?language=${country.filter}`}
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center gap-2 p-2.5 rounded-lg hover:bg-white/10 text-zinc-300 hover:text-white transition-all group text-sm"
-                    >
-                      <country.icon size={16} className="text-cyan-400 group-hover:scale-110 transition-transform flex-shrink-0" />
-                      <span className="font-medium truncate">{country.label}</span>
-                    </Link>
-                  ))}
+                {/* Language Links - 2 Columns Grid */}
+                <div className="px-3 pb-1 grid grid-cols-2 gap-1.5">
+                  {countryLinks.map((country) => {
+                    const isActive = pathname?.includes(`language=${country.filter}`)
+                    return (
+                      <Link
+                        key={country.code}
+                        href={`/movies?language=${country.filter}`}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
+                          isActive
+                            ? 'bg-white/20 text-white border border-cyan-400/50'
+                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
+                        }`}
+                      >
+                        <span className="text-sm group-hover:scale-110 transition-transform flex-shrink-0">{country.icon}</span>
+                        <span className="font-medium truncate">{country.label}</span>
+                      </Link>
+                    )
+                  })}
                 </div>
-                
-                {/* "كل الأقسام" Button */}
-                <div className="px-4 pb-4">
-                  <Link
-                    href="/genres"
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center justify-center gap-3 p-4 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 transition-all group border border-cyan-500/20"
-                  >
-                    <Film size={20} className="group-hover:scale-110 transition-transform" />
-                    <span className="font-bold">كل الأقسام</span>
-                    <ArrowLeft size={16} className="group-hover:translate-x-1 transition-transform" />
-                  </Link>
+
+                {/* Genre Section */}
+                <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
+                </div>
+
+                {/* Genre Links - 2 Columns Grid */}
+                <div className="px-3 pb-2 grid grid-cols-2 gap-1.5">
+                  {genreLinks.map((genre) => {
+                    const isActive = pathname?.includes(`/movies?genre=${genre.slug}`) || pathname === `/genres/${genre.slug}`
+                    
+                    // تحديد اللون حسب النوع
+                    let iconColorClass = ''
+                    switch(genre.color) {
+                      case 'red-500': iconColorClass = 'text-red-500'; break;
+                      case 'red-700': iconColorClass = 'text-red-700'; break;
+                      case 'yellow-400': iconColorClass = 'text-yellow-400'; break;
+                      case 'slate-400': iconColorClass = 'text-slate-400'; break;
+                      case 'pink-400': iconColorClass = 'text-pink-400'; break;
+                      case 'orange-500': iconColorClass = 'text-orange-500'; break;
+                      case 'gray-400': iconColorClass = 'text-gray-400'; break;
+                      case 'green-400': iconColorClass = 'text-green-400'; break;
+                      case 'purple-400': iconColorClass = 'text-purple-400'; break;
+                      case 'cyan-400': iconColorClass = 'text-cyan-400'; break;
+                      default: iconColorClass = 'text-purple-400';
+                    }
+                    
+                    return (
+                      <Link
+                        key={genre.slug}
+                        href={`/movies?genre=${genre.slug}`}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
+                          isActive
+                            ? 'bg-white/20 text-white border border-purple-400/50'
+                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
+                        }`}
+                      >
+                        <genre.icon size={14} className={`${iconColorClass} group-hover:scale-110 transition-transform flex-shrink-0`} />
+                        <span className="font-medium truncate">{genre.label}</span>
+                      </Link>
+                    )
+                  })}
                 </div>
               </div>
             </motion.div>

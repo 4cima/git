@@ -176,65 +176,6 @@ export const EmbedPlayer = ({ server, serverIndex = 0, cinemaMode, toggleCinemaM
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2 p-2 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm">
-          {servers.map((s, idx) => {
-            const isActive = idx === activeServerIndex
-            const isServerOffline = s.status === 'offline'
-
-            return (
-              <button
-                key={`${s.name}-${idx}`}
-                onClick={() => !isServerOffline && onServerSelect(idx)}
-                title={`${s.name} - ${isServerOffline ? 'Offline' : isActive ? 'Active' : 'Available'}`}
-                disabled={isServerOffline}
-                className={clsx(
-                  "flex items-center justify-center p-3 rounded-xl border transition-all duration-300 font-black text-xs",
-                  isActive
-                    ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                    : isServerOffline
-                      ? "bg-rose-500/5 border-rose-500/20 text-rose-500/50 cursor-not-allowed opacity-50"
-                      : "bg-white/5 border-white/5 text-zinc-400 hover:bg-white/10 hover:border-white/10 hover:text-white"
-                )}
-              >
-                V{idx + 1}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="flex items-center gap-2 p-2 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm">
-          {isPiPSupported && onPiPToggle && (
-            <button
-              onClick={onPiPToggle}
-              title={isPiPActive ? (lang === 'ar' ? 'إيقاف صورة داخل صورة' : 'Exit PiP') : (lang === 'ar' ? 'صورة داخل صورة' : 'Picture in Picture')}
-              className={clsx(
-                "group relative flex items-center justify-center p-3 rounded-xl transition-all duration-500 border overflow-hidden",
-                isPiPActive
-                  ? "bg-primary border-primary text-black shadow-[0_0_20px_rgba(245,197,24,0.3)]"
-                  : "bg-white/5 border-white/5 text-zinc-400 hover:text-white hover:border-white/10"
-              )}
-            >
-              <PictureInPicture size={18} className={clsx("transition-transform duration-500", isPiPActive ? "scale-110" : "group-hover:scale-110")} />
-            </button>
-          )}
-
-          <button
-            onClick={onReport}
-            disabled={reporting}
-            title={reporting ? (lang === 'ar' ? 'جاري الإبلاغ...' : 'Reporting...') : (lang === 'ar' ? 'إبلاغ عن مشكلة' : 'Report Issue')}
-            className={clsx(
-              "flex items-center justify-center p-3 rounded-xl border transition-all duration-300",
-              reporting
-                ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 cursor-not-allowed"
-                : "bg-white/5 border-white/5 text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-500/30 hover:text-yellow-300"
-            )}
-          >
-            <AlertTriangle size={18} />
-          </button>
-        </div>
-      </div>
-
       <div
         className={clsx(
           "relative aspect-video w-full overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] group",
