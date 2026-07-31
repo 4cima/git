@@ -141,7 +141,7 @@ export async function GET(
     }
     
     // Get total count (only for movie and tv types, 'all' is handled above)
-    if (type !== 'all') {
+    if (type === 'movie' || type === 'tv') {
       const countArgs = [genreTmdbId]
       const countResult = await turso.execute({
         sql: countQuery,

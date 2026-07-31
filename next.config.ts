@@ -11,11 +11,7 @@ const nextConfig: NextConfig = {
     },
   },
   
-  // Disable scroll restoration warning for sticky/fixed elements
-  experimental: {
-    scrollRestoration: true,
-  },
-  // Optimize compilation
+  // Optimize compilation and features
   experimental: {
     optimizePackageImports: ['@/components', '@/lib'],
     scrollRestoration: true,
