@@ -48,6 +48,12 @@ tmdb-exports/
 # Temporary/scratch files
 temp-check.txt
 $null
+test-genres-api.js
+
+# Temporary analysis/debugging scripts (not needed in repo)
+analyze-*.js
+check-*.js
+measure-*.js
 
 # Kiro IDE workspace files
 .kiro/
