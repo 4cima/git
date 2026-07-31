@@ -2,30 +2,20 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Film, Tv } from 'lucide-react'
 import { getGenreColor } from '@/utils/genreColors'
+import { getGenresWithCounts } from '@/lib/genres'
 
 export const metadata: Metadata = {
   title: 'التصنيفات | فور سيما',
   description: 'تصفح جميع التصنيفات - أفلام ومسلسلات'
 }
 
-export const revalidate = 3600
-
-async function getGenres() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/genres`, {
-      next: { revalidate: 3600 }
-    })
-    if (!response.ok) throw new Error('Failed to fetch')
-    const data = await response.json()
-    return data.genres || []
-  } catch (error) {
-    console.error('Error fetching genres:', error)
-    return []
-  }
-}
+// Now safe for static generation - uses direct DB query via shared function
+// Fast query on genre_counts table (JOIN on primary key, ~75ms)
+export const dynamic = 'force-static'
+export const revalidate = 7200 // 2 hours
 
 export default async function GenresPage() {
-  const genres = await getGenres()
+  const genres = await getGenresWithCounts()
   
   return (
     <div className="min-h-screen bg-black text-white">

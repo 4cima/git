@@ -2,7 +2,7 @@
 
 **Purpose:** Centralized tracking of all temporary solutions, workarounds, and deferred optimizations that need attention before scaling.
 
-**Last Updated:** 2026-07-28 (Added Item #2: type=all in-memory merge)
+**Last Updated:** 2026-07-31 (Added Item #3: genre_counts maintenance requirement)
 
 ---
 
@@ -123,6 +123,68 @@ const moviesResult = await turso.execute({
 **Trigger:** When any genre reaches 500+ items OR users report slow page loads  
 **Priority:** High (same as #1) - both part of same scaling blocker  
 **Reference:** User review 2026-07-28, curl test results showing 283 items fetched for pagination
+
+---
+
+### 3. Genre Counts Table - Manual Update Required After Ingestion
+
+**Current Implementation:** Precomputed `genre_counts` table populated once manually  
+**Date Introduced:** 2026-07-31  
+**Affected Files:**
+- `src/lib/genres.ts` (uses genre_counts)
+- `src/app/api/genres/route.ts` (uses shared function)
+- `src/app/genres/page.tsx` (uses shared function)
+- `populate-genre-counts.js` (population script)
+
+**Problem:**
+- `genre_counts` table stores precomputed movie/series counts per genre
+- Created as optimization to avoid expensive `json_each()` queries on 321K rows
+- Table is **NOT automatically updated** after ingestion/sync runs
+- Counts will become stale and inaccurate as new content is added
+- Users will see outdated numbers on /genres page
+
+**Why This Approach:**
+- Original genre queries used `json_each()` causing 60+ second timeouts at build time
+- Solution was to precompute counts in dedicated table
+- Immediate fix for build failures, but creates maintenance requirement
+
+**Current Maintenance Process (Manual):**
+1. After running ingestion/sync scripts
+2. Manually run: `node populate-genre-counts.js`
+3. Verify counts are updated in production database
+
+**Proper Long-Term Solutions:**
+
+**Option A: Automate in Sync Scripts (Recommended)**
+- Add genre count recalculation to end of `3-sync-to-turso.js`
+- Runs automatically after each sync completes
+- Ensures counts always match current data
+```javascript
+// At end of 3-sync-to-turso.js
+console.log('Updating genre counts...')
+await updateGenreCounts()
+```
+
+**Option B: Trigger-Based Updates (If Turso Supports)**
+- Use database triggers to update counts on INSERT/UPDATE
+- Automatic, no script changes needed
+- Check if Turso/libSQL supports triggers
+
+**Option C: Resolve Root Cause (Item #1)**
+- Implement `genre_ids_csv` indexed column solution
+- Eliminates need for precomputed counts entirely
+- Queries fast enough to run on-demand
+- This is the proper long-term fix
+
+**Estimated Effort:**
+- Option A (automation): 2-3 hours
+- Option B (triggers): 1 day (research + implement + test)
+- Option C (full fix): Included in Item #1 (1 day total)
+
+**Trigger:** Before next major content ingestion OR monthly maintenance schedule  
+**Priority:** High - impacts data accuracy visible to users  
+**Relationship:** Temporary workaround for Item #1 (genre filtering performance)  
+**Reference:** `populate-genre-counts.js`, conversation 2026-07-31
 
 ---
 

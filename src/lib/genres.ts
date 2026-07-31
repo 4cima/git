@@ -1,30 +1,38 @@
-// Genre utilities for Next.js
+/**
+ * Shared genre utilities using precomputed genre_counts table
+ * Used by both /api/genres route handler and /genres page
+ * 
+ * NOTE: genre_counts table must be updated after ingestion runs.
+ * Run populate-genre-counts.js after sync to keep counts accurate.
+ */
 
-export function getGenreName(genreId: number, lang: string = 'ar'): string {
-  const genres: Record<number, { ar: string; en: string }> = {
-    28: { ar: 'أكشن', en: 'Action' },
-    12: { ar: 'مغامرة', en: 'Adventure' },
-    16: { ar: 'أنمي', en: 'Animation' },
-    35: { ar: 'كوميدي', en: 'Comedy' },
-    80: { ar: 'جريمة', en: 'Crime' },
-    99: { ar: 'وثائقي', en: 'Documentary' },
-    18: { ar: 'دراما', en: 'Drama' },
-    10751: { ar: 'عائلي', en: 'Family' },
-    14: { ar: 'فانتازيا', en: 'Fantasy' },
-    36: { ar: 'تاريخي', en: 'History' },
-    27: { ar: 'رعب', en: 'Horror' },
-    10402: { ar: 'موسيقي', en: 'Music' },
-    9648: { ar: 'غموض', en: 'Mystery' },
-    10749: { ar: 'رومانسي', en: 'Romance' },
-    878: { ar: 'خيال علمي', en: 'Science Fiction' },
-    10770: { ar: 'تلفزيوني', en: 'TV Movie' },
-    53: { ar: 'إثارة', en: 'Thriller' },
-    10752: { ar: 'حرب', en: 'War' },
-    37: { ar: 'غربي', en: 'Western' },
-  }
+import { turso } from '@/lib/turso'
 
-  const genre = genres[genreId]
-  if (!genre) return ''
+export async function getGenresWithCounts(type?: 'movie' | 'tv') {
+  let query = `
+    SELECT 
+      g.*,
+      COALESCE(gc.movie_count, 0) as movie_count,
+      COALESCE(gc.series_count, 0) as series_count
+    FROM genres g
+    LEFT JOIN genre_counts gc ON gc.genre_id = g.tmdb_id
+  `
   
-  return lang === 'ar' ? genre.ar : genre.en
+  // Filter by type if specified
+  if (type === 'movie') {
+    query += ` WHERE COALESCE(gc.movie_count, 0) > 0`
+  } else if (type === 'tv') {
+    query += ` WHERE COALESCE(gc.series_count, 0) > 0`
+  }
+  
+  query += ` ORDER BY g.name_ar ASC`
+  
+  const result = await turso.execute(query)
+  
+  return result.rows.map(genre => ({
+    ...genre,
+    movie_count: Number(genre.movie_count || 0),
+    series_count: Number(genre.series_count || 0),
+    total_count: Number(genre.movie_count || 0) + Number(genre.series_count || 0)
+  }))
 }

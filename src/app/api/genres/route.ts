@@ -1,65 +1,17 @@
 import { NextResponse, NextRequest } from 'next/server'
-import { turso } from '@/lib/turso'
+import { getGenresWithCounts } from '@/lib/genres'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 3600 // Cache for 1 hour
+// Safe for force-static - uses precomputed genre_counts table (fast JOIN on primary key)
+// Instead of expensive json_each() on 321k rows
+export const dynamic = 'force-static'
+export const revalidate = 7200 // 2 hours
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const type = searchParams.get('type') // 'movie' or 'tv'
+    const type = searchParams.get('type') as 'movie' | 'tv' | null
     
-    // Get all genres with counts
-    // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
-    let query = `
-      SELECT 
-        g.*,
-        (SELECT COUNT(*) FROM movies m
-         WHERE EXISTS (
-           SELECT 1 FROM json_each(m.genres_json)
-           WHERE CAST(json_extract(value, '$.id') AS INTEGER) = g.tmdb_id
-         )) as movie_count,
-        (SELECT COUNT(*) FROM tv_series s
-         WHERE EXISTS (
-           SELECT 1 FROM json_each(s.genres_json)
-           WHERE CAST(json_extract(value, '$.id') AS INTEGER) = g.tmdb_id
-         )) as series_count
-      FROM genres g
-    `
-    
-    // Filter by type if specified
-    if (type === 'movie') {
-      query += `
-        WHERE EXISTS (
-          SELECT 1 FROM movies m
-          WHERE EXISTS (
-            SELECT 1 FROM json_each(m.genres_json)
-            WHERE CAST(json_extract(value, '$.id') AS INTEGER) = g.tmdb_id
-          )
-        )
-      `
-    } else if (type === 'tv') {
-      query += `
-        WHERE EXISTS (
-          SELECT 1 FROM tv_series s
-          WHERE EXISTS (
-            SELECT 1 FROM json_each(s.genres_json)
-            WHERE CAST(json_extract(value, '$.id') AS INTEGER) = g.tmdb_id
-          )
-        )
-      `
-    }
-    
-    query += ` ORDER BY g.name_ar ASC`
-    
-    const genresResult = await turso.execute(query)
-    
-    const genres = genresResult.rows.map(genre => ({
-      ...genre,
-      movie_count: Number(genre.movie_count || 0),
-      series_count: Number(genre.series_count || 0),
-      total_count: Number(genre.movie_count || 0) + Number(genre.series_count || 0)
-    }))
+    const genres = await getGenresWithCounts(type || undefined)
     
     return NextResponse.json({ genres })
   } catch (error) {
