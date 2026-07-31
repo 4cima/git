@@ -22,7 +22,7 @@ export async function GET() {
       }),
       turso.execute({
         sql: `SELECT id, slug, name_ar as title_ar, name_en as title_en, poster_path, backdrop_path, overview_ar, first_air_year as year, vote_average, genres_json
-              FROM tv_series INDEXED BY idx_series_backdrop_poster
+              FROM tv_series INDEXED BY idx_series_home_trending
               WHERE poster_path IS NOT NULL 
                 AND backdrop_path IS NOT NULL 
                 AND vote_average > 0
@@ -32,7 +32,7 @@ export async function GET() {
       }),
       turso.execute({
         sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar, release_year as year, vote_average, genres_json
-              FROM movies INDEXED BY idx_movies_year_partial
+              FROM movies INDEXED BY idx_movies_home_latest
               WHERE poster_path IS NOT NULL
               ORDER BY release_year DESC, popularity DESC
               LIMIT 50`,
@@ -40,7 +40,7 @@ export async function GET() {
       }),
       turso.execute({
         sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar, release_year as year, vote_average, genres_json
-              FROM movies INDEXED BY idx_movies_rating_partial
+              FROM movies INDEXED BY idx_movies_home_toprated
               WHERE poster_path IS NOT NULL 
                 AND vote_average >= 7.5
               ORDER BY vote_average DESC
@@ -49,7 +49,7 @@ export async function GET() {
       }),
       turso.execute({
         sql: `SELECT id, slug, name_ar as title_ar, name_en as title_en, poster_path, backdrop_path, overview_ar, first_air_year as year, vote_average, genres_json
-              FROM tv_series INDEXED BY idx_series_poster_popularity
+              FROM tv_series INDEXED BY idx_series_home_all
               WHERE poster_path IS NOT NULL
               ORDER BY popularity DESC
               LIMIT 50`,
