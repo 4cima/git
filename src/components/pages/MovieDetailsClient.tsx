@@ -9,6 +9,7 @@ import { useServers } from '../../hooks/useServers'
 import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
+import { useImageBrightness } from '@/utils/imageAnalysis'
 
 interface MovieDetailsClientProps {
   movie: any
@@ -26,6 +27,9 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
   const rating = movie?.vote_average ? Math.round(movie.vote_average * 10) / 10 : 0
   const poster = movie?.poster_url || (movie?.poster_path ? `/tmdb/w342${movie.poster_path}` : '')
   const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w780${movie.backdrop_path}` : '')
+  
+  // Analyze backdrop brightness for adaptive overlay
+  const overlayConfig = useImageBrightness(backdrop)
   
   const effectiveId = movie?.tmdb_id || movie?.id || 0
   const { servers, active, setActive, loading: serversLoading, reportBroken, reporting } = useServers(
@@ -133,12 +137,13 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
   return (
     <div className="min-h-screen bg-zinc-800 text-white relative overflow-hidden">
-      {/* Backdrop */}
+      {/* Backdrop with Adaptive Overlay */}
       <div className="absolute top-0 left-0 right-0 h-[70vh]">
         {backdrop && (
           <div className="absolute inset-0">
             <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="lazy" />
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-800 via-zinc-800/50 to-transparent" />
+            {/* Adaptive gradient based on image brightness */}
+            <div className={`absolute inset-0 ${overlayConfig.gradient}`} />
           </div>
         )}
       </div>

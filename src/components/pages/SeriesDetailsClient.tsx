@@ -9,6 +9,7 @@ import { useServers } from '../../hooks/useServers'
 import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
+import { useImageBrightness } from '@/utils/imageAnalysis'
 
 interface SeriesDetailsClientProps {
   series: any
@@ -41,6 +42,9 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const rating = series?.vote_average ? Math.round(series.vote_average * 10) / 10 : 0
   const poster = series?.poster_url || (series?.poster_path ? `/tmdb/w342${series.poster_path}` : '')
   const backdrop = series?.backdrop_url || (series?.backdrop_path ? `/tmdb/w780${series.backdrop_path}` : '')
+  
+  // Analyze backdrop brightness for adaptive overlay
+  const overlayConfig = useImageBrightness(backdrop)
   
   // Parse episode runtime (can be array or single value)
   const episodeRuntime = useMemo(() => {
@@ -407,12 +411,13 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
   return (
     <div className="min-h-screen bg-zinc-800 text-white relative overflow-hidden">
-      {/* Backdrop */}
+      {/* Backdrop with Adaptive Overlay */}
       <div className="absolute top-0 left-0 right-0 h-[70vh]">
         {backdrop && (
           <div className="absolute inset-0">
             <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="lazy" />
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-800 via-zinc-800/50 to-transparent" />
+            {/* Adaptive gradient based on image brightness */}
+            <div className={`absolute inset-0 ${overlayConfig.gradient}`} />
           </div>
         )}
       </div>
