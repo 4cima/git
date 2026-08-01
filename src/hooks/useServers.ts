@@ -74,7 +74,7 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
         sourceProviders = STREAM_SERVERS.map((s, i) => ({
           id: s.id,
           name: s.name,
-          base: s.base,
+          url: s.base,  // ServerProvider requires 'url' property
           priority: i,
           supports_movie: true,
           supports_tv: true,
@@ -107,7 +107,7 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
           const streamServer = STREAM_SERVERS.find(s => s.id === p.id || s.name === p.name)
           const url = streamServer 
             ? buildServerUrl(streamServer, type as 'movie' | 'tv', tmdbId, season, episode)
-            : `${p.base}/${type === 'movie' ? 'movie' : 'tv'}/${tmdbId}${type === 'tv' ? `/${season}/${episode}` : ''}`
+            : `${p.url}/${type === 'movie' ? 'movie' : 'tv'}/${tmdbId}${type === 'tv' ? `/${season}/${episode}` : ''}`
           
           return {
             name: p.name,
