@@ -74,6 +74,31 @@ export function MoviesPageClient() {
   const [page, setPage]                   = useState(1)
   const [hasMore, setHasMore]             = useState(false)
   const [showFilters, setShowFilters]     = useState(false)
+  const [itemsPerPage, setItemsPerPage]   = useState(84) // Dynamic based on screen
+
+  // Calculate items per page based on screen width
+  // Target: 12 rows per page
+  useEffect(() => {
+    const calculateItemsPerPage = () => {
+      const width = window.innerWidth
+      let columns = 2 // default mobile
+      
+      if (width >= 1536) columns = 8      // 2xl: 8 columns
+      else if (width >= 1280) columns = 7 // xl: 7 columns  
+      else if (width >= 1024) columns = 6 // lg: 6 columns
+      else if (width >= 768) columns = 5  // md: 5 columns
+      else if (width >= 640) columns = 4  // sm: 4 columns
+      else if (width >= 480) columns = 3  // xs: 3 columns
+      else columns = 2                    // mobile: 2 columns
+      
+      const ROWS_PER_PAGE = 12
+      setItemsPerPage(columns * ROWS_PER_PAGE)
+    }
+
+    calculateItemsPerPage()
+    window.addEventListener('resize', calculateItemsPerPage)
+    return () => window.removeEventListener('resize', calculateItemsPerPage)
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => { setPage(1); setDebouncedSearch(searchQuery) }, 400)
@@ -82,7 +107,7 @@ export function MoviesPageClient() {
 
   useEffect(() => {
     let cancelled = false
-    const params = new URLSearchParams({ page: page.toString(), limit: '24', sort: sortBy, order: 'desc' })
+    const params = new URLSearchParams({ page: page.toString(), limit: itemsPerPage.toString(), sort: sortBy, order: 'desc' })
     if (selectedGenre  !== 'all') params.set('genre',      selectedGenre)
     if (selectedYear   !== 'all') params.set('year',       selectedYear)
     if (selectedRating !== 'all') params.set('rating_min', selectedRating)
@@ -95,7 +120,7 @@ export function MoviesPageClient() {
       .catch(() => { if (!cancelled) setMovies([]) })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [selectedGenre, selectedYear, selectedRating, sortBy, page, debouncedSearch])
+  }, [selectedGenre, selectedYear, selectedRating, sortBy, page, debouncedSearch, itemsPerPage])
 
   const resetFilters = () => { setSelectedGenre('all'); setSelectedYear('all'); setSelectedRating('all'); setPage(1) }
 
@@ -186,7 +211,7 @@ export function MoviesPageClient() {
           {/* Grid */}
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-              {[...Array(24)].map((_, i) => (
+              {[...Array(itemsPerPage)].map((_, i) => (
                 <div key={i} className="rounded-2xl overflow-hidden bg-slate-900/20 border border-slate-800/60">
                   <div className="aspect-[2/3] w-full bg-slate-800 animate-pulse" />
                   <div className="p-2.5 h-[52px] flex flex-col justify-center gap-2">
@@ -216,7 +241,7 @@ export function MoviesPageClient() {
                       className="group bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative"
                     >
                       <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
-                        <img src={`/tmdb/w500${item.poster_path}`} alt={item.title_ar}
+                        <img src={`/tmdb/w185${item.poster_path}`} alt={item.title_ar}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         {item.vote_average > 0 && (

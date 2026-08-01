@@ -28,10 +28,11 @@ export interface StreamServer {
 }
 
 // ==========================================
-// Server List (10 Free Servers)
+// Server List (12 Free Servers)
 // ==========================================
 export const STREAM_SERVERS: StreamServer[] = [
   { id: 'vidsrc_vip', name: 'VidSrc.vip', base: 'https://vidrock.net/embed' },
+  { id: 'vidrock_ru', name: 'VidRock.ru', base: 'https://vidrock.ru/embed' },
   { id: 'autoembed_co', name: 'AutoEmbed', base: 'https://autoembed.co/movie/tmdb' },
   { id: 'vidsrc_net', name: 'VidSrc.net', base: 'https://vidsrc.net/embed' },
   { id: '2embed_cc', name: '2Embed', base: 'https://www.2embed.cc/embed' },
@@ -53,6 +54,7 @@ const BASE_OVERRIDES: Record<string, string> = {
   vidsrc_xyz: 'https://vidsrc.xyz/embed',
   vidsrc_me: 'https://vidsrc.me/embed',
   vidsrc_vip: 'https://vidrock.net/embed',
+  vidrock_ru: 'https://vidrock.ru/embed',
   '2embed_cc': 'https://www.2embed.cc/embed',
   '2embed_skin': 'https://www.2embed.skin/embed',
   smashystream: 'https://player.smashy.stream',

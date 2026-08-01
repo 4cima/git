@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Calendar, Clock, Play, AlertTriangle } from 'lucide-react'
-import ReactPlayer from 'react-player'
+import { Star, Calendar, Clock, AlertTriangle } from 'lucide-react'
 import clsx from 'clsx'
 import { EmbedPlayer } from '../features/media/EmbedPlayer'
 import { useServers } from '../../hooks/useServers'
@@ -11,23 +10,22 @@ import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
 
-// @ts-ignore
-const Player = ReactPlayer as any
-
 interface MovieDetailsClientProps {
   movie: any
 }
 
 export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
   const [cinemaMode, setCinemaMode] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const title = sanitizeTitle(movie?.title_ar || movie?.title_en || movie?.title || 'فيلم')
   const titleEn = sanitizeTitle(movie?.title_en || movie?.title)
   const overview = sanitizeOverview(movie?.overview_ar || movie?.overview || 'لا يوجد وصف متاح')
   const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : (movie?.release_year || 'غير محدد')
   const rating = movie?.vote_average ? Math.round(movie.vote_average * 10) / 10 : 0
-  const poster = movie?.poster_url || (movie?.poster_path ? `/tmdb/w300${movie.poster_path}` : '')
-  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w300${movie.backdrop_path}` : '')
+  const poster = movie?.poster_url || (movie?.poster_path ? `/tmdb/w342${movie.poster_path}` : '')
+  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w780${movie.backdrop_path}` : '')
   
   const effectiveId = movie?.tmdb_id || movie?.id || 0
   const { servers, active, setActive, loading: serversLoading, reportBroken, reporting } = useServers(
@@ -67,6 +65,71 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
       return null
     }
   }, [movie])
+  
+  // Build YouTube embed URL with quality restriction
+  const trailerUrl = useMemo(() => {
+    if (!trailerKey) return null
+    const params = new URLSearchParams({
+      autoplay: '1',
+      controls: '1',
+      modestbranding: '1',
+      rel: '0',
+      showinfo: '0',
+      fs: '0', // Disable YouTube's fullscreen button
+      iv_load_policy: '3',
+      vq: 'medium', // Force 480p quality
+      disablekb: '1' // Disable keyboard controls to prevent conflicts
+    })
+    return `https://www.youtube.com/embed/${trailerKey}?${params.toString()}`
+  }, [trailerKey])
+  
+  // Debug: Log values
+  console.log('🎬 Movie Debug:', {
+    title: movie?.title_ar || movie?.title_en,
+    backdrop: movie?.backdrop_path,
+    trailerKey,
+    trailerUrl
+  })
+
+  // Close trailer on scroll
+  useEffect(() => {
+    if (!isModalOpen) return
+
+    const handleScroll = () => {
+      handleCloseTrailer()
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    document.addEventListener('wheel', handleScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      document.removeEventListener('wheel', handleScroll)
+    }
+  }, [isModalOpen])
+
+  const handleOpenTrailer = () => {
+    setIsModalOpen(true)
+  }
+
+  const handleCloseTrailer = () => {
+    setIsModalOpen(false)
+  }
+
+  const toggleFullscreen = () => {
+    const modalElement = document.querySelector('.trailer-modal') as HTMLElement
+    if (!modalElement) return
+
+    if (!document.fullscreenElement) {
+      if (modalElement.requestFullscreen) {
+        modalElement.requestFullscreen()
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      }
+    }
+  }
 
   return (
     <div className="min-h-screen bg-zinc-800 text-white relative overflow-hidden">
@@ -74,7 +137,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
       <div className="absolute top-0 left-0 right-0 h-[70vh]">
         {backdrop && (
           <div className="absolute inset-0">
-            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-40" loading="lazy" />
+            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-zinc-800 via-zinc-800/50 to-transparent" />
           </div>
         )}
@@ -88,6 +151,16 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
             animate={{ opacity: 1, y: 0 }}
             className="mt-16"
           >
+            {/* Film Badge - Above poster, aligned to right edge, same level as title */}
+            <div className="flex items-center justify-end mb-4 -mt-14">
+              <span className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-4 py-2 rounded-full text-red-400 text-base font-bold shadow-lg whitespace-nowrap">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v4H7V5zm8 8v2h1v-2h-1zm-2-2H7v4h6v-4zm2 0h1V9h-1v2zm1-4V5h-1v2h1zM5 5v2H4V5h1zm0 4H4v2h1V9zm-1 4h1v2H4v-2z" clipRule="evenodd" />
+                </svg>
+                فيلم
+              </span>
+            </div>
+            
             <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group">
               {poster && (
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
@@ -100,7 +173,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
               {/* Left side: Title, Info, Genres, Description */}
               <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
-                <h1 className="text-3xl md:text-4xl font-black mb-2 text-zinc-100">{title}</h1>
+                <h1 className="text-xl md:text-2xl font-black mb-2 text-zinc-100">{title}</h1>
                 {titleEn && titleEn !== title && (
                   <h2 className="text-xl text-zinc-400 mb-6 font-medium tracking-wide text-left">{titleEn}</h2>
                 )}
@@ -156,20 +229,89 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
               {/* Right side: Trailer or Backdrop */}
               <div className="space-y-4">
                 <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
-                  <div className="aspect-video rounded-xl overflow-hidden bg-black/50 border border-white/10">
-                    {trailerKey ? (
-                      <Player
-                        url={`https://www.youtube.com/watch?v=${trailerKey}`}
-                        width="100%"
-                        height="100%"
-                        controls
-                        light={backdrop}
-                      />
+                  {/* Trailer Thumbnail with Play Button */}
+                  <div className="aspect-video rounded-xl overflow-hidden bg-black/50 border border-white/10 relative group cursor-pointer" onClick={handleOpenTrailer}>
+                    {trailerKey && backdrop ? (
+                      <>
+                        {/* Backdrop Image */}
+                        <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                        {/* Play Button Overlay */}
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                          <div className="relative">
+                            <div className="absolute inset-0 bg-red-600/30 blur-3xl animate-pulse"></div>
+                            <button className="relative w-20 h-20 rounded-full bg-red-600 group-hover:bg-red-500 group-hover:scale-110 transition-all flex items-center justify-center shadow-2xl">
+                              <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        <div className="absolute bottom-3 left-3 bg-black/80 px-3 py-1.5 rounded-lg text-white text-sm font-bold">
+                          🎬 شاهد التريلر
+                        </div>
+                      </>
                     ) : backdrop ? (
                       <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
                     ) : null}
                   </div>
                 </div>
+
+                {/* Trailer Modal */}
+                {isModalOpen && trailerUrl && (
+                  <div 
+                    className="fixed inset-0 z-[100] bg-black flex items-center justify-center trailer-modal"
+                    onClick={handleCloseTrailer}
+                  >
+                    <div 
+                      className="relative w-full h-full flex items-center justify-center p-1 sm:p-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* YouTube iframe */}
+                      <div 
+                        className="w-full h-full max-w-full overflow-hidden relative"
+                        style={{aspectRatio: '16/9', maxHeight: '100vh'}}
+                      >
+                        <iframe
+                          ref={iframeRef}
+                          src={trailerUrl}
+                          className="absolute inset-0 w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          style={{border: 'none'}}
+                        />
+                        {/* Black overlay on top to hide YouTube title and block clicks - responsive height */}
+                        <div className="absolute top-0 left-0 right-0 h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black via-black to-transparent z-[10]" />
+                        
+                        {/* Black overlay on bottom to hide everything below progress bar - responsive height */}
+                        <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-14 md:h-16 bg-black z-[3]" />
+                      </div>
+                      
+                      {/* Close button - on top of bottom black overlay - responsive size and position */}
+                      <button
+                        onClick={handleCloseTrailer}
+                        className="absolute bottom-2 sm:bottom-3 md:bottom-4 left-2 sm:left-3 md:left-4 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-all flex items-center gap-1.5 sm:gap-2 z-50 shadow-lg text-xs sm:text-sm font-bold"
+                      >
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>إغلاق</span>
+                      </button>
+                      
+                      {/* Fullscreen button - opposite side - responsive size and position */}
+                      <button
+                        onClick={toggleFullscreen}
+                        className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-all flex items-center justify-center z-50 shadow-lg"
+                        title="ملء الشاشة"
+                        aria-label="ملء الشاشة"
+                      >
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                        </svg>
+                      </button>
+
+                    </div>
+                  </div>
+                )}
 
                 {/* Cast under trailer/backdrop */}
                 {cast.length > 0 && (
@@ -180,7 +322,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                           <div className="rounded-full overflow-hidden bg-zinc-800 mb-1" style={{width: '31px', height: '31px'}}>
                             {person.profile_path && (
                               <img
-                                src={`/tmdb/w185${person.profile_path}`}
+                                src={`/tmdb/w45${person.profile_path}`}
                                 alt={person.name_ar || person.name_en}
                                 className="w-full h-full object-cover"
                                 loading="lazy"

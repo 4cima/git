@@ -74,7 +74,12 @@ export const EmbedPlayer = ({ server, serverIndex = 0, cinemaMode, toggleCinemaM
   }, [server?.url])
 
   const iframeUrl = (() => {
-    if (!server?.url) return ''
+    if (!server?.url) {
+      console.log('❌ EmbedPlayer: No server URL')
+      return ''
+    }
+
+    console.log('🔗 EmbedPlayer: Building URL from', server.url)
 
     // 🛡️ VidSrc.cc only goes through protected proxy
     // Other servers load directly (faster, no protection overhead)
@@ -95,18 +100,18 @@ export const EmbedPlayer = ({ server, serverIndex = 0, cinemaMode, toggleCinemaM
     if (needsProtection) {
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
       const urlWithSubtitles = addSubtitleParams(server.url)
-      return `${API_BASE}/api/embed-proxy?url=${encodeURIComponent(urlWithSubtitles)}`
+      const finalUrl = `${API_BASE}/api/embed-proxy?url=${encodeURIComponent(urlWithSubtitles)}`
+      console.log('🛡️ EmbedPlayer: Using proxy URL', finalUrl)
+      return finalUrl
     }
 
     // Direct URL for other servers (no proxy = faster) with subtitle params
-    return addSubtitleParams(server.url)
+    const directUrl = addSubtitleParams(server.url)
+    console.log('⚡ EmbedPlayer: Using direct URL', directUrl)
+    return directUrl
   })()
 
-  // 🛡️ Sandbox attributes for VidSrc.cc (additional protection layer)
-  // Block pop-ups, top navigation, and other malicious behaviors
-  const iframeSandbox = server?.url?.includes('vidsrc.cc')
-    ? "allow-scripts allow-same-origin allow-forms allow-presentation"
-    : undefined
+
 
   if (loading) {
     return (
@@ -192,19 +197,11 @@ export const EmbedPlayer = ({ server, serverIndex = 0, cinemaMode, toggleCinemaM
               ref={iframeRef}
               key={iframeKey}
               src={iframeUrl}
-              sandbox={iframeSandbox}
               className="h-full w-full"
-              scrolling="no"
               onLoad={handleIframeLoad}
               onError={handleIframeError}
-              referrerPolicy="origin"
-              style={{ border: 'none', overflow: 'hidden', width: '100%', height: '100%', background: 'transparent' }}
-              allow="autoplay; fullscreen; encrypted-media; picture-in-picture; web-share; accelerometer; gyroscope"
-              title={`Stream ${server.name}`}
-              // CRITICAL: Add importance="low" to deprioritize iframe loading
-              // This helps reduce console spam from failed external resources
-              // @ts-expect-error - importance is not in React types yet
-              importance="low"
+              style={{ border: 'none', width: '100%', height: '100%' }}
+              allowFullScreen
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center text-zinc-500 gap-6 bg-black/80 backdrop-blur-sm relative z-10">

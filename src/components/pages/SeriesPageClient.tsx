@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { Tv, Star, Search, Play, ChevronDown, Filter as FilterIcon } from 'lucide-react'
 import { Footer } from '@/components/layout/Footer'
@@ -8,19 +9,24 @@ import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
 
 const GENRES = [
-  { name: 'دراما',              emoji: '🎭', color: 'purple' },
-  { name: 'كوميديا',            emoji: '😂', color: 'yellow' },
-  { name: 'أكشن ومغامرة',       emoji: '🔥', color: 'red'    },
-  { name: 'رومانسي',            emoji: '💕', color: 'pink'   },
-  { name: 'جريمة',              emoji: '🕵️', color: 'rose'   },
-  { name: 'غموض',               emoji: '🔍', color: 'indigo' },
-  { name: 'إثارة',              emoji: '😱', color: 'orange' },
-  { name: 'عائلي',              emoji: '🎪', color: 'green'  },
-  { name: 'رسوم متحركة',        emoji: '🎨', color: 'blue'   },
-  { name: 'خيال علمي وفانتازيا',emoji: '🚀', color: 'cyan'   },
-  { name: 'رعب',                emoji: '👻', color: 'gray'   },
-  { name: 'وثائقي',             emoji: '🎬', color: 'emerald'},
-  { name: 'تاريخي',             emoji: '🏛️', color: 'slate'  },
+  { name: 'دراما', emoji: '🎭' },
+  { name: 'كوميديا', emoji: '😂' },
+  { name: 'رسوم متحركة', emoji: '🎨' },
+  { name: 'وثائقي', emoji: '🎬' },
+  { name: 'أكشن ومغامرة', emoji: '💥' },
+  { name: 'خيال علمي وفانتازيا', emoji: '🚀' },
+  { name: 'جريمة', emoji: '🕵️' },
+  { name: 'واقعي', emoji: '📹' },
+  { name: 'غموض', emoji: '🔍' },
+  { name: 'عائلي', emoji: '👨‍👩‍👧‍👦' },
+  { name: 'أطفال', emoji: '👶' },
+  { name: 'دراما اجتماعية', emoji: '🎭' },
+  { name: 'حرب وسياسة', emoji: '⚔️' },
+  { name: 'برنامج حواري', emoji: '🎙️' },
+  { name: 'أخبار', emoji: '📰' },
+  { name: 'غربي', emoji: '🤠' },
+  { name: 'رومانسي', emoji: '💕' },
+  { name: 'تاريخي', emoji: '📜' },
 ] as const
 
 const COLOR_CLASSES: Record<string, { active: string; inactive: string }> = {
@@ -53,49 +59,68 @@ const YEARS = [
   { value: '2017', label: '2017' },
   { value: '2016', label: '2016' },
   { value: '2015', label: '2015' },
-  { value: '2000-2014', label: 'الألفينات' },
+  { value: '2014', label: '2014' },
+  { value: '2013', label: '2013' },
+  { value: '2012', label: '2012' },
+  { value: '2011', label: '2011' },
+  { value: '2000-2010', label: 'الألفينات' },
   { value: '1990-1999', label: 'التسعينات' },
   { value: 'before-1990', label: 'كلاسيكي' },
 ]
 
 const RATINGS = [
-  { value: 'all', label: 'كل التقييمات' },
-  { value: '9',   label: '⭐ 9+ ممتاز'    },
-  { value: '8',   label: '⭐ 8+ جيد جداً' },
-  { value: '7',   label: '⭐ 7+ جيد'      },
-  { value: '6',   label: '⭐ 6+ مقبول'    },
+  { value: 'all',   label: 'كل التقييمات' },
+  { value: '9.1-10',  label: '⭐ 10 مذهل' },
+  { value: '8.1-9',   label: '⭐ 9 ممتاز'     },
+  { value: '7.1-8',   label: '⭐ 8 جيد جداً'  },
+  { value: '6.1-7',   label: '⭐ 7 جيد'       },
+  { value: '5.1-6',   label: '⭐ 6 مقبول'    },
+  { value: '4.1-5',   label: '⭐ 5 متوسط'    },
+  { value: '3.1-4',   label: '⭐ 4 ضعيف'     },
 ]
 
 const COUNTRIES = [
-  { value: 'all', label: 'كل الدول'  },
-  { value: 'US',  label: '🇺🇸 أمريكي' },
-  { value: 'JP',  label: '🇯🇵 ياباني' },
-  { value: 'GB',  label: '🇬🇧 بريطاني'},
-  { value: 'KR',  label: '🇰🇷 كوري'   },
-  { value: 'CN',  label: '🇨🇳 صيني'   },
-  { value: 'FR',  label: '🇫🇷 فرنسي'  },
-  { value: 'DE',  label: '🇩🇪 ألماني' },
-  { value: 'IN',  label: '🇮🇳 هندي'   },
-  { value: 'TR',  label: '🇹🇷 تركي'   },
+  { value: 'all', label: 'كل الدول'      },
+  { value: 'US',  label: 'أمريكا'        },
+  { value: 'JP',  label: 'اليابان'       },
+  { value: 'GB',  label: 'بريطانيا'      },
+  { value: 'CN',  label: 'الصين'         },
+  { value: 'KR',  label: 'كوريا'         },
+  { value: 'CA',  label: 'كندا'          },
+  { value: 'FR',  label: 'فرنسا'         },
+  { value: 'DE',  label: 'ألمانيا'       },
+  { value: 'IN',  label: 'الهند'         },
+  { value: 'TH',  label: 'تايلاند'       },
+  { value: 'RU',  label: 'روسيا'         },
+  { value: 'AU',  label: 'أستراليا'      },
+  { value: 'BR',  label: 'البرازيل'      },
+  { value: 'MX',  label: 'المكسيك'       },
+  { value: 'TR',  label: 'تركيا'         },
 ]
 
 const AGE_RATINGS = [
   { value: 'all',    label: 'كل الأعمار' },
-  { value: 'family', label: '👶 أطفال'   },
-  { value: 'teens',  label: '🧑 شباب'    },
-  { value: 'mature', label: '📺 عادي'    },
+  { value: 'kids',   label: 'أطفال'     },
+  { value: 'family', label: 'عائلي'     },
+  { value: 'teens',  label: 'مراهقين'   },
+  { value: 'mature', label: 'بالغين'    },
 ]
 
 const SORT_OPTIONS = [
-  { value: 'popularity',     label: 'الأكثر شهرة',   icon: '🔥' },
-  { value: 'vote_average',   label: 'الأعلى تقييماً', icon: '⭐' },
-  { value: 'first_air_year', label: 'الأحدث',         icon: '📅' },
-  { value: 'name_ar',        label: 'الاسم (أ-ي)',    icon: '🔤' },
+  { value: 'popularity',     order: 'desc', label: 'الأكثر شهرة',      icon: '🔥' },
+  { value: 'vote_average',   order: 'desc', label: 'الأعلى تقييماً',   icon: '⭐' },
+  { value: 'vote_count',     order: 'desc', label: 'الأكثر تقييماً',   icon: '📊' },
+  { value: 'first_air_year', order: 'desc', label: 'الأحدث',          icon: '📅' },
+  { value: 'first_air_year', order: 'asc',  label: 'الأقدم',          icon: '🕰️' },
+  { value: 'created_at',     order: 'desc', label: 'آخر إضافة',       icon: '🆕' },
+  { value: 'name_ar',        order: 'asc',  label: 'الاسم (أ-ي)',     icon: '🔤' },
+  { value: 'name_ar',        order: 'desc', label: 'الاسم (ي-أ)',     icon: '🔤' },
 ]
 
 export function SeriesPageClient() {
   const [series, setSeries]                   = useState<any[]>([])
   const [loading, setLoading]                 = useState(true)
+  const [loadingMore, setLoadingMore]         = useState(false)
   const [searchQuery, setSearchQuery]         = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedGenre, setSelectedGenre]     = useState<string>('all')
@@ -104,12 +129,39 @@ export function SeriesPageClient() {
   const [selectedCountry, setSelectedCountry] = useState<string>('all')
   const [selectedAgeRating, setSelectedAgeRating] = useState<string>('all')
   const [sortBy, setSortBy]                   = useState('popularity')
+  const [sortOrder, setSortOrder]             = useState('desc')
   const [page, setPage]                       = useState(1)
   const [hasMore, setHasMore]                 = useState(false)
+  const [itemsPerPage, setItemsPerPage]       = useState(84) // Dynamic based on screen
+  const observerTarget = useRef<HTMLDivElement>(null)
 
   // Single open dropdown at a time
   const [openDropdown, setOpenDropdown] = useState<'genre'|'year'|'rating'|'country'|'age'|'sort'|null>(null)
   const filtersRef = useRef<HTMLDivElement>(null)
+
+  // Calculate items per page based on screen width
+  // Target: 12 rows per page
+  useEffect(() => {
+    const calculateItemsPerPage = () => {
+      const width = window.innerWidth
+      let columns = 2 // default mobile
+      
+      if (width >= 1536) columns = 8      // 2xl: 8 columns
+      else if (width >= 1280) columns = 7 // xl: 7 columns  
+      else if (width >= 1024) columns = 6 // lg: 6 columns
+      else if (width >= 768) columns = 5  // md: 5 columns
+      else if (width >= 640) columns = 4  // sm: 4 columns
+      else if (width >= 480) columns = 3  // xs: 3 columns
+      else columns = 2                    // mobile: 2 columns
+      
+      const ROWS_PER_PAGE = 12
+      setItemsPerPage(columns * ROWS_PER_PAGE)
+    }
+
+    calculateItemsPerPage()
+    window.addEventListener('resize', calculateItemsPerPage)
+    return () => window.removeEventListener('resize', calculateItemsPerPage)
+  }, [])
 
   // Debounce search
   useEffect(() => {
@@ -129,7 +181,7 @@ export function SeriesPageClient() {
   // Fetch
   useEffect(() => {
     let cancelled = false
-    const params = new URLSearchParams({ page: page.toString(), limit: '24', sort: sortBy, order: 'desc' })
+    const params = new URLSearchParams({ page: page.toString(), limit: itemsPerPage.toString(), sort: sortBy, order: sortOrder })
     if (selectedGenre     !== 'all') params.set('genre',      selectedGenre)
     if (selectedYear      !== 'all') params.set('year',       selectedYear)
     if (selectedRating    !== 'all') params.set('rating_min', selectedRating)
@@ -137,16 +189,72 @@ export function SeriesPageClient() {
     if (selectedAgeRating !== 'all') params.set('age_rating', selectedAgeRating)
     if (debouncedSearch.trim())      params.set('search',     debouncedSearch.trim())
 
-    setLoading(true)
+    const isFirstPage = page === 1
+    if (isFirstPage) setLoading(true)
+    else setLoadingMore(true)
+
     fetch(`/api/series?${params}`)
       .then(r => r.json())
-      .then(data => { if (cancelled) return; setSeries(data.series || []); setHasMore(data.pagination?.hasMore || false) })
+      .then(data => { 
+        if (cancelled) return
+        const newSeries = data.series || []
+        
+        // Remove duplicates by id
+        const uniqueSeries = isFirstPage 
+          ? newSeries 
+          : [...series, ...newSeries]
+        
+        const seenIds = new Set()
+        const filtered = uniqueSeries.filter((item: any) => {
+          if (seenIds.has(item.id)) return false
+          seenIds.add(item.id)
+          return true
+        })
+        
+        setSeries(filtered)
+        setHasMore(data.pagination?.hasMore || false)
+      })
       .catch(() => { if (!cancelled) setSeries([]) })
-      .finally(() => { if (!cancelled) setLoading(false) })
+      .finally(() => { 
+        if (!cancelled) {
+          setLoading(false)
+          setLoadingMore(false)
+        }
+      })
     return () => { cancelled = true }
-  }, [selectedGenre, selectedYear, selectedRating, selectedCountry, selectedAgeRating, sortBy, page, debouncedSearch])
+  }, [selectedGenre, selectedYear, selectedRating, selectedCountry, selectedAgeRating, sortBy, sortOrder, page, debouncedSearch, itemsPerPage])
+
+  // Infinite scroll observer - prefetch before reaching last rows
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          setPage(prev => prev + 1)
+        }
+      },
+      { threshold: 0.1, rootMargin: '800px' } // Start loading 800px before reaching the trigger
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
+      }
+    }
+  }, [hasMore, loading, loadingMore])
 
   const toggle = (name: typeof openDropdown) => setOpenDropdown(prev => prev === name ? null : name)
+
+  // Reset to page 1 when filters change
+  const resetAndFetch = (callback: () => void) => {
+    callback()
+    setPage(1)
+    setSeries([])
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
@@ -178,26 +286,26 @@ export function SeriesPageClient() {
       </section>
 
       {/* Main Content */}
-      <section className="w-full bg-slate-950 pt-20">
+      <section className="w-full bg-slate-950">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
 
           {/* Search & Filters */}
-          <div ref={filtersRef} className="flex flex-col md:flex-row items-stretch md:items-center gap-4 bg-slate-900/60 border border-slate-800 p-4 rounded-xl">
+          <div ref={filtersRef} className="flex flex-col md:flex-row items-stretch md:items-center gap-4 bg-slate-800/40 border border-slate-700 p-4 rounded-xl">
 
             {/* Dropdowns row */}
             <div className="flex flex-wrap items-center gap-3 order-2 md:order-1">
 
               {/* Genre */}
               <div className="relative">
-                <button onClick={()=>toggle('genre')} className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[120px] justify-between">
+                <button onClick={()=>toggle('genre')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 flex items-center gap-2 min-w-[120px] justify-between">
                   <span>{selectedGenre==='all' ? 'كل التصنيفات' : GENRES.find(g=>g.name===selectedGenre)?.emoji+' '+selectedGenre}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='genre'?'rotate-180':''}`}/>
                 </button>
                 {openDropdown==='genre' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
-                    <button onClick={()=>{setSelectedGenre('all');setPage(1);setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-800 ${selectedGenre==='all'?'bg-slate-800 text-cyan-400':'text-slate-100'}`}>كل التصنيفات</button>
+                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
+                    <button onClick={()=>{resetAndFetch(() => setSelectedGenre('all'));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedGenre==='all'?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>كل التصنيفات</button>
                     {GENRES.map(g=>(
-                      <button key={g.name} onClick={()=>{setSelectedGenre(g.name);setPage(1);setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-800 ${selectedGenre===g.name?'bg-slate-800 text-cyan-400':'text-slate-100'}`}>{g.emoji} {g.name}</button>
+                      <button key={g.name} onClick={()=>{resetAndFetch(() => setSelectedGenre(g.name));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 whitespace-nowrap ${selectedGenre===g.name?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>{g.emoji} {g.name}</button>
                     ))}
                   </div>
                 )}
@@ -205,14 +313,14 @@ export function SeriesPageClient() {
 
               {/* Year */}
               <div className="relative">
-                <button onClick={()=>toggle('year')} className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[110px] justify-between">
+                <button onClick={()=>toggle('year')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[110px] justify-between">
                   <span>{YEARS.find(y=>y.value===selectedYear)?.label||'كل السنوات'}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='year'?'rotate-180':''}`}/>
                 </button>
                 {openDropdown==='year' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
+                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
                     {YEARS.map(y=>(
-                      <button key={y.value} onClick={()=>{setSelectedYear(y.value);setPage(1);setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-800 ${selectedYear===y.value?'bg-slate-800 text-cyan-400':'text-slate-100'}`}>{y.label}</button>
+                      <button key={y.value} onClick={()=>{resetAndFetch(() => setSelectedYear(y.value));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedYear===y.value?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>{y.label}</button>
                     ))}
                   </div>
                 )}
@@ -220,14 +328,14 @@ export function SeriesPageClient() {
 
               {/* Rating */}
               <div className="relative">
-                <button onClick={()=>toggle('rating')} className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[120px] justify-between">
+                <button onClick={()=>toggle('rating')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[120px] justify-between">
                   <span>{RATINGS.find(r=>r.value===selectedRating)?.label||'كل التقييمات'}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='rating'?'rotate-180':''}`}/>
                 </button>
                 {openDropdown==='rating' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
+                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
                     {RATINGS.map(r=>(
-                      <button key={r.value} onClick={()=>{setSelectedRating(r.value);setPage(1);setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-800 ${selectedRating===r.value?'bg-slate-800 text-cyan-400':'text-slate-100'}`}>{r.label}</button>
+                      <button key={r.value} onClick={()=>{resetAndFetch(() => setSelectedRating(r.value));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedRating===r.value?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>{r.label}</button>
                     ))}
                   </div>
                 )}
@@ -235,14 +343,14 @@ export function SeriesPageClient() {
 
               {/* Country */}
               <div className="relative">
-                <button onClick={()=>toggle('country')} className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[100px] justify-between">
+                <button onClick={()=>toggle('country')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[100px] justify-between">
                   <span>{COUNTRIES.find(c=>c.value===selectedCountry)?.label||'كل الدول'}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='country'?'rotate-180':''}`}/>
                 </button>
                 {openDropdown==='country' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
+                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
                     {COUNTRIES.map(c=>(
-                      <button key={c.value} onClick={()=>{setSelectedCountry(c.value);setPage(1);setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-800 ${selectedCountry===c.value?'bg-slate-800 text-cyan-400':'text-slate-100'}`}>{c.label}</button>
+                      <button key={c.value} onClick={()=>{resetAndFetch(() => setSelectedCountry(c.value));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedCountry===c.value?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>{c.label}</button>
                     ))}
                   </div>
                 )}
@@ -250,14 +358,14 @@ export function SeriesPageClient() {
 
               {/* Age */}
               <div className="relative">
-                <button onClick={()=>toggle('age')} className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[100px] justify-between">
+                <button onClick={()=>toggle('age')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[100px] justify-between">
                   <span>{AGE_RATINGS.find(a=>a.value===selectedAgeRating)?.label||'كل الأعمار'}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='age'?'rotate-180':''}`}/>
                 </button>
                 {openDropdown==='age' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
+                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
                     {AGE_RATINGS.map(a=>(
-                      <button key={a.value} onClick={()=>{setSelectedAgeRating(a.value);setPage(1);setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-800 ${selectedAgeRating===a.value?'bg-slate-800 text-cyan-400':'text-slate-100'}`}>{a.label}</button>
+                      <button key={a.value} onClick={()=>{resetAndFetch(() => setSelectedAgeRating(a.value));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedAgeRating===a.value?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>{a.label}</button>
                     ))}
                   </div>
                 )}
@@ -265,14 +373,14 @@ export function SeriesPageClient() {
 
               {/* Sort */}
               <div className="relative">
-                <button onClick={()=>toggle('sort')} className="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[120px] justify-between">
-                  <span>{SORT_OPTIONS.find(s=>s.value===sortBy)?.icon} {SORT_OPTIONS.find(s=>s.value===sortBy)?.label}</span>
+                <button onClick={()=>toggle('sort')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[120px] justify-between">
+                  <span>{SORT_OPTIONS.find(s=>s.value===sortBy && s.order===sortOrder)?.icon} {SORT_OPTIONS.find(s=>s.value===sortBy && s.order===sortOrder)?.label}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='sort'?'rotate-180':''}`}/>
                 </button>
                 {openDropdown==='sort' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
-                    {SORT_OPTIONS.map(o=>(
-                      <button key={o.value} onClick={()=>{setSortBy(o.value);setPage(1);setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-800 ${sortBy===o.value?'bg-slate-800 text-cyan-400':'text-slate-100'}`}>{o.icon} {o.label}</button>
+                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
+                    {SORT_OPTIONS.map((o, idx)=>(
+                      <button key={`${o.value}-${o.order}-${idx}`} onClick={()=>{resetAndFetch(() => { setSortBy(o.value); setSortOrder(o.order) });setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 whitespace-nowrap ${sortBy===o.value && sortOrder===o.order?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>{o.icon} {o.label}</button>
                     ))}
                   </div>
                 )}
@@ -284,33 +392,17 @@ export function SeriesPageClient() {
             <div className="relative flex-1 order-1 md:order-2">
               <input type="text" placeholder="ابحث عن مسلسل..." value={searchQuery}
                 onChange={e=>setSearchQuery(e.target.value)}
-                className="w-full bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-3 pr-10 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-sm"
+                className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 pr-10 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 text-sm"
               />
               <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-3.5"/>
             </div>
           </div>
 
-          {/* Genre buttons */}
-          <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 mt-6">
-            <div className="flex flex-wrap gap-2 items-center">
-              <button onClick={()=>{setSelectedGenre('all');setPage(1)}}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${selectedGenre==='all'?'bg-amber-600 text-white border-2 border-amber-500':'bg-amber-600/10 hover:bg-amber-600/20 border border-amber-600/30 text-amber-400 hover:text-amber-300'}`}>
-                الكل
-              </button>
-              {GENRES.map(g=>(
-                <button key={g.name} onClick={()=>{setSelectedGenre(g.name);setPage(1)}}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${selectedGenre===g.name?COLOR_CLASSES[g.color].active:COLOR_CLASSES[g.color].inactive}`}>
-                  {g.emoji} {g.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Grid */}
           <div className="mt-6">
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-              {[...Array(24)].map((_,i)=>(
+          {loading && series.length === 0 ? (
+            <div className="grid-responsive gap-6">
+              {[...Array(itemsPerPage)].map((_,i)=>(
                 <div key={i} className="rounded-2xl overflow-hidden bg-slate-900/20 border border-slate-800/60">
                   <div className="aspect-[2/3] w-full bg-slate-800 animate-pulse"/>
                   <div className="p-2.5 h-[52px] flex flex-col justify-center gap-2">
@@ -322,7 +414,7 @@ export function SeriesPageClient() {
             </div>
           ) : series.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              <div className="grid-responsive gap-6">
                 {series.map((item)=>{
                   let primaryGenre = null
                   try { const g=JSON.parse(item.genres_json||'[]'); primaryGenre=g?.[0]?.name_ar||null } catch {}
@@ -337,10 +429,10 @@ export function SeriesPageClient() {
 
                   return (
                     <Link key={item.id} href={`/series/${item.slug}`}
-                      className="group bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative"
+                      className="group bg-slate-900/20 border-2 border-slate-800/60 hover:border-cyan-500 focus:border-cyan-500 focus:outline-none focus:ring-4 focus:ring-cyan-500/50 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 focus:-translate-y-1.5 focus:shadow-xl focus:shadow-cyan-500/20 relative"
                     >
                       <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
-                        <img src={`/tmdb/w500${item.poster_path}`} alt={item.name_ar}
+                        <img src={`/tmdb/w185${item.poster_path}`} alt={item.name_ar}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy"/>
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
                         {item.vote_average>0 && (
@@ -381,13 +473,16 @@ export function SeriesPageClient() {
                 })}
               </div>
 
-              {(page>1||hasMore) && (
-                <div className="flex items-center justify-center gap-3 mt-8">
-                  <button onClick={()=>setPage(Math.max(1,page-1))} disabled={page===1}
-                    className="px-6 py-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-100 font-bold">السابق</button>
-                  <span className="text-slate-400 font-bold">صفحة {page}</span>
-                  <button onClick={()=>setPage(page+1)} disabled={!hasMore}
-                    className="px-6 py-3 bg-slate-900 border border-slate-800 rounded-xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-100 font-bold">التالي</button>
+              {/* Infinite scroll trigger */}
+              <div ref={observerTarget} className="h-10 mt-6"></div>
+
+              {/* Loading indicator */}
+              {loadingMore && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-3 text-slate-400">
+                    <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm font-bold">جاري التحميل...</span>
+                  </div>
                 </div>
               )}
             </>
@@ -403,11 +498,89 @@ export function SeriesPageClient() {
       </section>
 
       <style jsx global>{`
-        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgb(51 65 85) transparent; }
-        .custom-scrollbar::-webkit-scrollbar { width: 12px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgb(51 65 85); border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgb(100 116 139); }
+        /* Responsive grid with auto-fill - always complete rows */
+        .grid-responsive {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        }
+        
+        @media (min-width: 640px) {
+          .grid-responsive {
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          }
+        }
+        
+        @media (min-width: 768px) {
+          .grid-responsive {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          }
+        }
+        
+        @media (min-width: 1024px) {
+          .grid-responsive {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          }
+        }
+        
+        @media (min-width: 1280px) {
+          .grid-responsive {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          }
+        }
+        
+        @media (min-width: 1536px) {
+          .grid-responsive {
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+          }
+        }
+        
+        @media (min-width: 1920px) {
+          .grid-responsive {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          }
+        }
+
+        /* Responsive grid for large screens (TVs) */
+        @media (min-width: 1536px) {
+          .grid-cols-2xl { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1920px) {
+          .grid-cols-3xl { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+        }
+
+        /* Scrollbar styling */
+        .custom-scrollbar { 
+          scrollbar-width: thin; 
+          scrollbar-color: rgb(59 130 246) rgb(30 41 59); 
+        }
+        .custom-scrollbar::-webkit-scrollbar { 
+          width: 14px; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-track { 
+          background: rgb(30 41 59); 
+          border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+          background: linear-gradient(180deg, rgb(59 130 246), rgb(37 99 235)); 
+          border-radius: 8px; 
+          border: 2px solid rgb(30 41 59);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
+          background: linear-gradient(180deg, rgb(96 165 250), rgb(59 130 246)); 
+        }
+
+        /* Keyboard/Remote navigation support */
+        *:focus-visible {
+          outline: 2px solid rgb(6 182 212);
+          outline-offset: 4px;
+        }
+
+        /* TV-optimized text sizes */
+        @media (min-width: 1920px) {
+          body {
+            font-size: 18px;
+          }
+        }
       `}</style>
 
       <div className="pb-12"><Footer/></div>

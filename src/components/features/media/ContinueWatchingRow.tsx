@@ -84,7 +84,7 @@ export const ContinueWatchingRow = ({ userId }: { userId: string }) => {
                 <div className="aspect-[2/3] bg-zinc-900">
                   {(movie.poster_path || r.meta?.poster_path) ? (
                     <img
-                      src={`/tmdb/w342${movie.poster_path || r.meta?.poster_path}`}
+                      src={`/tmdb/w185${movie.poster_path || r.meta?.poster_path}`}
                       alt={movie.title || movie.name || ''}
                       className="w-full h-full object-cover"
                       loading="lazy"

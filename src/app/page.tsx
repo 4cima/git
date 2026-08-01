@@ -155,7 +155,32 @@ export default function Home() {
   const [heroItems, setHeroItems] = useState<MediaItem[]>([])
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right'>('left')
   const [hoveredItemSlug, setHoveredItemSlug] = useState<string | null>(null)
+  const [itemsToShow, setItemsToShow] = useState(60) // Dynamic based on screen
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Calculate items to show based on screen width
+  // Target: 10 rows on home page
+  useEffect(() => {
+    const calculateItemsToShow = () => {
+      const width = window.innerWidth
+      let columns = 2 // default mobile
+      
+      if (width >= 1536) columns = 8      // 2xl: 8 columns (xl:grid-cols-6 in code but can fit 8)
+      else if (width >= 1280) columns = 7 // xl: 7 columns  
+      else if (width >= 1024) columns = 6 // lg: 6 columns (lg:grid-cols-5)
+      else if (width >= 768) columns = 5  // md: 5 columns (md:grid-cols-4)
+      else if (width >= 640) columns = 4  // sm: 4 columns (sm:grid-cols-3)
+      else if (width >= 480) columns = 3  // xs: 3 columns
+      else columns = 2                    // mobile: 2 columns
+      
+      const ROWS_ON_HOME = 10
+      setItemsToShow(columns * ROWS_ON_HOME)
+    }
+
+    calculateItemsToShow()
+    window.addEventListener('resize', calculateItemsToShow)
+    return () => window.removeEventListener('resize', calculateItemsToShow)
+  }, [])
 
   // جلب البيانات من API
   useEffect(() => {
@@ -390,7 +415,7 @@ export default function Home() {
                 key={`backdrop-${heroItem.id}`}
                 className="absolute inset-0 bg-cover transition-all duration-1000 scale-105 animate-fadeIn"
                 style={{
-                  backgroundImage: `url(/tmdb/original${heroItem.backdrop_path || heroItem.poster_path})`,
+                  backgroundImage: `url(/tmdb/w780${heroItem.backdrop_path || heroItem.poster_path})`,
                   backgroundPosition: 'center 30%'
                 }}
               />
@@ -535,7 +560,7 @@ export default function Home() {
                           }`}
                         >
                           <img
-                            src={`/tmdb/w500${item.poster_path}`}
+                            src={`/tmdb/w300${item.poster_path}`}
                             alt={item.title_ar}
                             className="w-full h-full object-cover pointer-events-none"
                             draggable="false"
@@ -651,7 +676,7 @@ export default function Home() {
         {/* 4. Grid of Content Cards */}
         {filteredContent.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mt-6">
-            {filteredContent.slice(0, 60).map((item) => {
+            {filteredContent.slice(0, itemsToShow).map((item) => {
               return (
                 <Link
                   href={`${
@@ -668,7 +693,7 @@ export default function Home() {
                   <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
                     {item.poster_path ? (
                       <img
-                        src={`/tmdb/w500${item.poster_path}`}
+                        src={`/tmdb/w185${item.poster_path}`}
                         alt={item.title_ar}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"

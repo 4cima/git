@@ -5,7 +5,7 @@ import { ShieldCheck, Lock, Server, ExternalLink, AlertTriangle, Gauge } from 'l
 
 export const Footer = () => {
   return (
-    <footer className="relative z-10 bg-slate-950 backdrop-blur-xl border-t border-slate-800">
+    <footer className="relative z-10 bg-slate-950 backdrop-blur-xl border-t border-slate-800 w-full">
       {/* Subtle Top Line */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-zinc-800/50">
         <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'linear-gradient(90deg, transparent 50%, rgba(6,182,212,0.1) 50%)', backgroundSize: '20px 100%' }} />
@@ -13,9 +13,10 @@ export const Footer = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-[1px] bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.8)]" />
       </div>
 
-      {/* Main Content */}
-      <div className="container-wrapper container-padding py-8">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      {/* Main Content - Container with Same Padding as Page Content */}
+      <div className="relative z-10">
+        <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           
           {/* Brand Section - 3 cols */}
           <div className="md:col-span-3 space-y-1">
@@ -123,6 +124,7 @@ export const Footer = () => {
               <span className="px-1.5 py-0.5 rounded bg-slate-800/50 text-slate-400 border border-slate-700 font-bold">v2.4.0</span>
             </p>
           </div>
+        </div>
         </div>
       </div>
     </footer>

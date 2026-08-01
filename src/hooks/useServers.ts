@@ -35,12 +35,11 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
     const loadProviders = async () => {
       setLoading(true)
 
-      // Fetch from CockroachDB API instead of Supabase
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || process.env.NEXT_PUBLIC_API_URL || ''
+      // Fetch server configs from Next.js API (not Worker)
       let sourceProviders = SERVER_PROVIDERS
 
       try {
-        const response = await fetch(`${API_BASE}/api/server-configs`)
+        const response = await fetch(`/api/server-configs`)
         if (response.ok) {
           const data = await response.json()
           if (data && data.length > 0) {
@@ -96,6 +95,15 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
           return true
         })
 
+      console.log('🎯 useServers: Generated servers', {
+        type,
+        tmdbId,
+        season,
+        episode,
+        serverCount: allServers.length,
+        firstServer: allServers[0]
+      })
+
       setBaseServers(allServers)
       const resolvedDownloadIds = sourceProviders
         .filter((provider) => provider.is_download === true)
@@ -119,9 +127,8 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
     )
     try {
       if (current.id) {
-        // Report to CockroachDB via API instead of Supabase
-        const API_BASE = process.env.NEXT_PUBLIC_API_BASE || process.env.NEXT_PUBLIC_API_URL || ''
-        await fetch(`${API_BASE}/api/link-checks`, {
+        // Report to API
+        await fetch(`/api/link-checks`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -83,8 +83,8 @@ export const SeriesDetailsPage = ({ slug }: { slug: string }) => {
   const overview = series?.overview_ar || series?.overview || 'لا يوجد وصف متاح'
   const year = series?.first_air_date ? new Date(series.first_air_date).getFullYear() : 'غير محدد'
   const rating = series?.vote_average ? Math.round(series.vote_average * 10) / 10 : 0
-  const poster = series?.poster_url || (series?.poster_path ? `/tmdb/w300${series.poster_path}` : '')
-  const backdrop = series?.backdrop_url || (series?.backdrop_path ? `/tmdb/w300${series.backdrop_path}` : '')
+  const poster = series?.poster_url || (series?.poster_path ? `/tmdb/w185${series.poster_path}` : '')
+  const backdrop = series?.backdrop_url || (series?.backdrop_path ? `/tmdb/w780${series.backdrop_path}` : '')
   const genres = series?.genres || []
   const status = series?.status || 'غير محدد'
   const networks = series?.networks || []
@@ -237,7 +237,7 @@ export const SeriesDetailsPage = ({ slug }: { slug: string }) => {
                       <div className="aspect-video w-full overflow-hidden bg-zinc-900">
                         {episode.still_path && (
                           <img
-                            src={`/tmdb/w300${episode.still_path}`}
+                            src={`/tmdb/w185${episode.still_path}`}
                             alt={episode.name}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                             loading="lazy"

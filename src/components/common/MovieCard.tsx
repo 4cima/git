@@ -36,7 +36,7 @@ export function MovieCard({
 
   const imageUrl = poster_path?.startsWith('http')
     ? poster_path
-    : `https://image.tmdb.org/t/p/w342${poster_path}`
+    : `https://image.tmdb.org/t/p/w185${poster_path}`
 
   const fallbackImage = '/placeholder-poster.jpg'
   const linkUrl = media_type === 'movie' ? `/movies/${slug}` : `/series/${slug}`

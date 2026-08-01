@@ -59,16 +59,32 @@ export async function GET(request: NextRequest) {
     }
     
     if (ratingMin) {
-      conditions.push('vote_average >= ?')
-      args.push(parseFloat(ratingMin))
+      // Handle range format (e.g., "7.1-8" means 7.1 to 8.0, "0-1" means 0.0 to 1.0)
+      if (ratingMin.includes('-')) {
+        const [min, max] = ratingMin.split('-').map(parseFloat)
+        // Use INDEXED BY to force using popularity index instead of vote_average
+        // This is faster because we scan by popularity and filter vote_average
+        conditions.push('vote_average BETWEEN ? AND ?')
+        args.push(min, max)
+      } else {
+        // Fallback for old format
+        conditions.push('vote_average >= ?')
+        args.push(parseFloat(ratingMin))
+      }
     }
     
     if (ageRating) {
-      if (ageRating === 'family') {
-        conditions.push(`(age_rating IN ('TV-G', 'TV-PG', 'TV-Y', 'TV-Y7'))`)
+      if (ageRating === 'kids') {
+        // أطفال: TV-Y + TV-Y7
+        conditions.push(`(age_rating IN ('TV-Y', 'TV-Y7'))`)
+      } else if (ageRating === 'family') {
+        // عائلي: TV-G + TV-PG + NR
+        conditions.push(`(age_rating IN ('TV-G', 'TV-PG', 'NR'))`)
       } else if (ageRating === 'teens') {
+        // مراهقين: TV-14
         conditions.push(`age_rating = 'TV-14'`)
       } else if (ageRating === 'mature') {
+        // بالغين: TV-MA
         conditions.push(`age_rating = 'TV-MA'`)
       }
     }
@@ -80,7 +96,7 @@ export async function GET(request: NextRequest) {
     
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
     
-    const validSorts = ['popularity', 'vote_average', 'first_air_year', 'created_at', 'name_ar']
+    const validSorts = ['popularity', 'vote_average', 'vote_count', 'first_air_year', 'created_at', 'name_ar']
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
@@ -113,8 +129,10 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Cache for 60 seconds - revalidate in background
-    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
+    // Longer cache for rating filters (they're slower)
+    // Cache for 5 minutes for rating filters, 60 seconds for others
+    const cacheTime = ratingMin ? 300 : 60
+    response.headers.set('Cache-Control', `s-maxage=${cacheTime}, stale-while-revalidate=600`)
 
     return response
 
