@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import React from 'react'
 import Link from 'next/link'
 import { Tv, Star, Search, Play, ChevronDown, Filter as FilterIcon } from 'lucide-react'
@@ -28,22 +28,6 @@ const GENRES = [
   { name: 'رومانسي', emoji: '💕' },
   { name: 'تاريخي', emoji: '📜' },
 ] as const
-
-const COLOR_CLASSES: Record<string, { active: string; inactive: string }> = {
-  purple:  { active: 'bg-purple-600 text-white border-2 border-purple-500',   inactive: 'bg-purple-600/10 hover:bg-purple-600/20 border border-purple-600/30 hover:border-purple-600/50 text-purple-400 hover:text-purple-300' },
-  yellow:  { active: 'bg-yellow-600 text-white border-2 border-yellow-500',   inactive: 'bg-yellow-600/10 hover:bg-yellow-600/20 border border-yellow-600/30 hover:border-yellow-600/50 text-yellow-400 hover:text-yellow-300' },
-  red:     { active: 'bg-red-600 text-white border-2 border-red-500',         inactive: 'bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 hover:border-red-600/50 text-red-400 hover:text-red-300' },
-  orange:  { active: 'bg-orange-600 text-white border-2 border-orange-500',   inactive: 'bg-orange-600/10 hover:bg-orange-600/20 border border-orange-600/30 hover:border-orange-600/50 text-orange-400 hover:text-orange-300' },
-  pink:    { active: 'bg-pink-600 text-white border-2 border-pink-500',       inactive: 'bg-pink-600/10 hover:bg-pink-600/20 border border-pink-600/30 hover:border-pink-600/50 text-pink-400 hover:text-pink-300' },
-  cyan:    { active: 'bg-cyan-600 text-white border-2 border-cyan-500',       inactive: 'bg-cyan-600/10 hover:bg-cyan-600/20 border border-cyan-600/30 hover:border-cyan-600/50 text-cyan-400 hover:text-cyan-300' },
-  gray:    { active: 'bg-gray-600 text-white border-2 border-gray-500',       inactive: 'bg-gray-600/10 hover:bg-gray-600/20 border border-gray-600/30 hover:border-gray-600/50 text-gray-400 hover:text-gray-300' },
-  rose:    { active: 'bg-rose-700 text-white border-2 border-rose-600',       inactive: 'bg-rose-700/10 hover:bg-rose-700/20 border border-rose-700/30 hover:border-rose-700/50 text-rose-400 hover:text-rose-300' },
-  emerald: { active: 'bg-emerald-600 text-white border-2 border-emerald-500', inactive: 'bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-600/30 hover:border-emerald-600/50 text-emerald-400 hover:text-emerald-300' },
-  blue:    { active: 'bg-blue-600 text-white border-2 border-blue-500',       inactive: 'bg-blue-600/10 hover:bg-blue-600/20 border border-blue-600/30 hover:border-blue-600/50 text-blue-400 hover:text-blue-300' },
-  green:   { active: 'bg-green-600 text-white border-2 border-green-500',     inactive: 'bg-green-600/10 hover:bg-green-600/20 border border-green-600/30 hover:border-green-600/50 text-green-400 hover:text-green-300' },
-  indigo:  { active: 'bg-indigo-600 text-white border-2 border-indigo-500',   inactive: 'bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/30 hover:border-indigo-600/50 text-indigo-400 hover:text-indigo-300' },
-  slate:   { active: 'bg-slate-600 text-white border-2 border-slate-500',     inactive: 'bg-slate-600/10 hover:bg-slate-600/20 border border-slate-600/30 hover:border-slate-600/50 text-slate-400 hover:text-slate-300' },
-}
 
 const YEARS = [
   { value: 'all', label: 'كل السنوات' },
@@ -121,6 +105,7 @@ export function SeriesPageClient() {
   const [series, setSeries]                   = useState<any[]>([])
   const [loading, setLoading]                 = useState(true)
   const [loadingMore, setLoadingMore]         = useState(false)
+  const [error, setError]                     = useState<string | null>(null)
   const [searchQuery, setSearchQuery]         = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedGenre, setSelectedGenre]     = useState<string>('all')
@@ -158,9 +143,20 @@ export function SeriesPageClient() {
       setItemsPerPage(columns * ROWS_PER_PAGE)
     }
 
+    // Debounce resize to prevent excessive calculations
+    let resizeTimeout: NodeJS.Timeout
+    const debouncedCalculate = () => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(calculateItemsPerPage, 150)
+    }
+
     calculateItemsPerPage()
-    window.addEventListener('resize', calculateItemsPerPage)
-    return () => window.removeEventListener('resize', calculateItemsPerPage)
+    window.addEventListener('resize', debouncedCalculate)
+    
+    return () => {
+      clearTimeout(resizeTimeout)
+      window.removeEventListener('resize', debouncedCalculate)
+    }
   }, [])
 
   // Debounce search
@@ -192,29 +188,38 @@ export function SeriesPageClient() {
     const isFirstPage = page === 1
     if (isFirstPage) setLoading(true)
     else setLoadingMore(true)
+    
+    setError(null) // Clear previous errors
 
     fetch(`/api/series?${params}`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
       .then(data => { 
         if (cancelled) return
         const newSeries = data.series || []
         
-        // Remove duplicates by id
-        const uniqueSeries = isFirstPage 
-          ? newSeries 
-          : [...series, ...newSeries]
-        
-        const seenIds = new Set()
-        const filtered = uniqueSeries.filter((item: any) => {
-          if (seenIds.has(item.id)) return false
-          seenIds.add(item.id)
-          return true
+        // Remove duplicates by id using functional update
+        setSeries(prevSeries => {
+          const combined = isFirstPage ? newSeries : [...prevSeries, ...newSeries]
+          const seenIds = new Set<number>()
+          return combined.filter((item: any) => {
+            if (seenIds.has(item.id)) return false
+            seenIds.add(item.id)
+            return true
+          })
         })
         
-        setSeries(filtered)
         setHasMore(data.pagination?.hasMore || false)
       })
-      .catch(() => { if (!cancelled) setSeries([]) })
+      .catch((err) => { 
+        if (!cancelled) {
+          console.error('Failed to fetch series:', err)
+          setSeries(prev => isFirstPage ? [] : prev)
+          setError('فشل تحميل المسلسلات. حاول مرة أخرى.')
+        }
+      })
       .finally(() => { 
         if (!cancelled) {
           setLoading(false)
@@ -232,7 +237,7 @@ export function SeriesPageClient() {
           setPage(prev => prev + 1)
         }
       },
-      { threshold: 0.1, rootMargin: '800px' } // Start loading 800px before reaching the trigger
+      { threshold: 0.1, rootMargin: '400px' } // Start loading 400px before reaching the trigger (reduced from 800px)
     )
 
     const currentTarget = observerTarget.current
@@ -247,14 +252,17 @@ export function SeriesPageClient() {
     }
   }, [hasMore, loading, loadingMore])
 
-  const toggle = (name: typeof openDropdown) => setOpenDropdown(prev => prev === name ? null : name)
+  const toggle = useCallback((name: typeof openDropdown) => {
+    setOpenDropdown(prev => prev === name ? null : name)
+  }, [])
 
   // Reset to page 1 when filters change
-  const resetAndFetch = (callback: () => void) => {
+  const resetAndFetch = useCallback((callback: () => void) => {
     callback()
     setPage(1)
     setSeries([])
-  }
+    setError(null)
+  }, [])
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
@@ -297,15 +305,21 @@ export function SeriesPageClient() {
 
               {/* Genre */}
               <div className="relative">
-                <button onClick={()=>toggle('genre')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 flex items-center gap-2 min-w-[120px] justify-between">
+                <button 
+                  onClick={()=>toggle('genre')} 
+                  className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 flex items-center gap-2 min-w-[120px] justify-between"
+                  aria-label="اختر التصنيف"
+                  aria-expanded={openDropdown==='genre'}
+                  aria-haspopup="listbox"
+                >
                   <span>{selectedGenre==='all' ? 'كل التصنيفات' : GENRES.find(g=>g.name===selectedGenre)?.emoji+' '+selectedGenre}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='genre'?'rotate-180':''}`}/>
                 </button>
                 {openDropdown==='genre' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
-                    <button onClick={()=>{resetAndFetch(() => setSelectedGenre('all'));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedGenre==='all'?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>كل التصنيفات</button>
+                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain" role="listbox">
+                    <button onClick={()=>{resetAndFetch(() => setSelectedGenre('all'));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedGenre==='all'?'bg-slate-700 text-cyan-400':'text-slate-100'}`} role="option" aria-selected={selectedGenre==='all'}>كل التصنيفات</button>
                     {GENRES.map(g=>(
-                      <button key={g.name} onClick={()=>{resetAndFetch(() => setSelectedGenre(g.name));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 whitespace-nowrap ${selectedGenre===g.name?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>{g.emoji} {g.name}</button>
+                      <button key={g.name} onClick={()=>{resetAndFetch(() => setSelectedGenre(g.name));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 whitespace-nowrap ${selectedGenre===g.name?'bg-slate-700 text-cyan-400':'text-slate-100'}`} role="option" aria-selected={selectedGenre===g.name}>{g.emoji} {g.name}</button>
                     ))}
                   </div>
                 )}
@@ -400,6 +414,24 @@ export function SeriesPageClient() {
 
           {/* Grid */}
           <div className="mt-6">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
+              <div className="text-red-400">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-red-300 text-sm font-bold">{error}</p>
+              </div>
+              <button 
+                onClick={() => setPage(1)}
+                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-300 text-sm font-bold transition-colors"
+              >
+                إعادة المحاولة
+              </button>
+            </div>
+          )}
           {loading && series.length === 0 ? (
             <div className="grid-responsive gap-6">
               {[...Array(itemsPerPage)].map((_,i)=>(
@@ -498,54 +530,57 @@ export function SeriesPageClient() {
       </section>
 
       <style jsx global>{`
-        /* Responsive grid with auto-fill - always complete rows */
+        /* Fixed grid columns - always complete rows */
         .grid-responsive {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 1.5rem;
         }
         
+        /* Mobile: 2 columns */
+        .grid-responsive {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        
+        /* XS: 3 columns */
+        @media (min-width: 480px) {
+          .grid-responsive {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+        
+        /* SM: 4 columns */
         @media (min-width: 640px) {
           .grid-responsive {
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
           }
         }
         
+        /* MD: 5 columns */
         @media (min-width: 768px) {
           .grid-responsive {
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
           }
         }
         
+        /* LG: 6 columns */
         @media (min-width: 1024px) {
           .grid-responsive {
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(6, minmax(0, 1fr));
           }
         }
         
+        /* XL: 7 columns */
         @media (min-width: 1280px) {
           .grid-responsive {
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            grid-template-columns: repeat(7, minmax(0, 1fr));
           }
         }
         
+        /* 2XL: 8 columns */
         @media (min-width: 1536px) {
           .grid-responsive {
-            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            grid-template-columns: repeat(8, minmax(0, 1fr));
           }
-        }
-        
-        @media (min-width: 1920px) {
-          .grid-responsive {
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-          }
-        }
-
-        /* Responsive grid for large screens (TVs) */
-        @media (min-width: 1536px) {
-          .grid-cols-2xl { grid-template-columns: repeat(8, minmax(0, 1fr)); }
-        }
-        @media (min-width: 1920px) {
-          .grid-cols-3xl { grid-template-columns: repeat(10, minmax(0, 1fr)); }
         }
 
         /* Scrollbar styling */
