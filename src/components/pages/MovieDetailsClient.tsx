@@ -144,6 +144,8 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
             <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="lazy" />
             {/* Adaptive gradient based on image brightness */}
             <div className={`absolute inset-0 ${overlayConfig.gradient}`} />
+            {/* Bottom fade for smooth transition - last 25% fades to background */}
+            <div className="absolute inset-x-0 bottom-0 h-[25%] bg-gradient-to-b from-transparent to-zinc-800" />
           </div>
         )}
       </div>
