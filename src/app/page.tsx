@@ -148,6 +148,7 @@ function mapItems(items: any[] | undefined, type: 'movie' | 'tv'): MediaItem[] {
 export default function Home() {
   const [data, setData] = useState<HomeData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'all' | 'movie' | 'tv'>('all')
   const [selectedGenre, setSelectedGenre] = useState<string>('all') // التصنيف المحدد
@@ -157,6 +158,7 @@ export default function Home() {
   const [hoveredItemSlug, setHoveredItemSlug] = useState<string | null>(null)
   const [itemsToShow, setItemsToShow] = useState(60) // Dynamic based on screen
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Calculate items to show based on screen width
   // Target: 10 rows on home page
@@ -165,11 +167,11 @@ export default function Home() {
       const width = window.innerWidth
       let columns = 2 // default mobile
       
-      if (width >= 1536) columns = 8      // 2xl: 8 columns (xl:grid-cols-6 in code but can fit 8)
+      if (width >= 1536) columns = 8      // 2xl: 8 columns
       else if (width >= 1280) columns = 7 // xl: 7 columns  
-      else if (width >= 1024) columns = 6 // lg: 6 columns (lg:grid-cols-5)
-      else if (width >= 768) columns = 5  // md: 5 columns (md:grid-cols-4)
-      else if (width >= 640) columns = 4  // sm: 4 columns (sm:grid-cols-3)
+      else if (width >= 1024) columns = 6 // lg: 6 columns
+      else if (width >= 768) columns = 5  // md: 5 columns
+      else if (width >= 640) columns = 4  // sm: 4 columns
       else if (width >= 480) columns = 3  // xs: 3 columns
       else columns = 2                    // mobile: 2 columns
       
@@ -178,8 +180,22 @@ export default function Home() {
     }
 
     calculateItemsToShow()
-    window.addEventListener('resize', calculateItemsToShow)
-    return () => window.removeEventListener('resize', calculateItemsToShow)
+    
+    // Debounced resize handler
+    const handleResize = () => {
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
+      resizeTimeoutRef.current = setTimeout(calculateItemsToShow, 150)
+    }
+    
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
+    }
   }, [])
 
   // جلب البيانات من API
@@ -187,8 +203,13 @@ export default function Home() {
     const fetchData = async () => {
       try {
         setLoading(true)
+        setError(null)
         const res = await fetch('/api/home')
-        if (!res.ok) throw new Error('Failed to fetch')
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+        }
+        
         const json = await res.json()
 
         const trendingMovies = mapItems(json.trendingMovies, 'movie')
@@ -247,6 +268,7 @@ export default function Home() {
         setHeroItems(heroList)
       } catch (error) {
         console.error('Error fetching home data:', error)
+        setError(error instanceof Error ? error.message : 'فشل تحميل البيانات')
       } finally {
         setLoading(false)
       }
@@ -280,17 +302,24 @@ export default function Home() {
     }
   }, [heroItems.length, resetAutoRotate])
 
-  const handleToggleWatchlist = (e: React.MouseEvent, id: number) => {
+  const handleToggleWatchlist = useCallback((e: React.MouseEvent, id: number) => {
     e.preventDefault()
     e.stopPropagation()
     // Removed watchlist functionality
-  }
+  }, [])
 
-  const handleHeroChange = (newIndex: number, direction: 'left' | 'right') => {
+  const handleHeroChange = useCallback((newIndex: number, direction: 'left' | 'right') => {
     setSwipeDirection(direction)
     setHeroIndex(newIndex)
     resetAutoRotate() // إعادة تشغيل المهلة
-  }
+  }, [])
+  
+  const retryFetch = useCallback(() => {
+    setError(null)
+    setLoading(true)
+    // Re-trigger fetch by re-mounting (simple approach)
+    window.location.reload()
+  }, [])
 
   // دمج البيانات وترتيبها
   const allContent = useMemo(() => 
@@ -320,6 +349,27 @@ export default function Home() {
   const heroItem = heroItems.length > 0 ? heroItems[heroIndex] : null
 
   if (loading) return <Loading fullScreen text="جاري التحميل..." />
+  
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-900/50 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-8 h-8 text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-200">حدث خطأ أثناء التحميل</h2>
+          <p className="text-sm text-slate-400">{error}</p>
+          <button
+            onClick={retryFetch}
+            className="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold transition-colors"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans" dir="rtl">
@@ -675,7 +725,7 @@ export default function Home() {
 
         {/* 4. Grid of Content Cards */}
         {filteredContent.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mt-6">
+          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-6 mt-6">
             {filteredContent.slice(0, itemsToShow).map((item) => {
               return (
                 <Link

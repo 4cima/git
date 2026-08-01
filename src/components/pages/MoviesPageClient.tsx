@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Film, Star, Search, Play, Filter as FilterIcon } from 'lucide-react'
 import { Footer } from '@/components/layout/Footer'
@@ -65,6 +65,7 @@ const SORT_OPTIONS = [
 export function MoviesPageClient() {
   const [movies, setMovies]               = useState<any[]>([])
   const [loading, setLoading]             = useState(true)
+  const [error, setError]                 = useState<string | null>(null)
   const [searchQuery, setSearchQuery]     = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedGenre, setSelectedGenre] = useState<string>('all')
@@ -95,9 +96,20 @@ export function MoviesPageClient() {
       setItemsPerPage(columns * ROWS_PER_PAGE)
     }
 
+    // Debounce resize to prevent excessive calculations
+    let resizeTimeout: NodeJS.Timeout
+    const debouncedCalculate = () => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(calculateItemsPerPage, 150)
+    }
+
     calculateItemsPerPage()
-    window.addEventListener('resize', calculateItemsPerPage)
-    return () => window.removeEventListener('resize', calculateItemsPerPage)
+    window.addEventListener('resize', debouncedCalculate)
+    
+    return () => {
+      clearTimeout(resizeTimeout)
+      window.removeEventListener('resize', debouncedCalculate)
+    }
   }, [])
 
   useEffect(() => {
@@ -114,15 +126,36 @@ export function MoviesPageClient() {
     if (debouncedSearch.trim())   params.set('search',     debouncedSearch.trim())
 
     setLoading(true)
+    setError(null)
+    
     fetch(`/api/movies?${params}`)
-      .then(r => r.json())
-      .then(data => { if (cancelled) return; setMovies(data.movies || []); setHasMore(data.pagination?.hasMore || false) })
-      .catch(() => { if (!cancelled) setMovies([]) })
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then(data => { 
+        if (cancelled) return
+        setMovies(data.movies || [])
+        setHasMore(data.pagination?.hasMore || false)
+      })
+      .catch((err) => { 
+        if (!cancelled) {
+          console.error('Failed to fetch movies:', err)
+          setMovies([])
+          setError('فشل تحميل الأفلام. حاول مرة أخرى.')
+        }
+      })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [selectedGenre, selectedYear, selectedRating, sortBy, page, debouncedSearch, itemsPerPage])
 
-  const resetFilters = () => { setSelectedGenre('all'); setSelectedYear('all'); setSelectedRating('all'); setPage(1) }
+  const resetFilters = useCallback(() => {
+    setSelectedGenre('all')
+    setSelectedYear('all')
+    setSelectedRating('all')
+    setPage(1)
+    setError(null)
+  }, [])
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
@@ -209,8 +242,26 @@ export function MoviesPageClient() {
           </div>
 
           {/* Grid */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
+              <div className="text-red-400">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-red-300 text-sm font-bold">{error}</p>
+              </div>
+              <button 
+                onClick={() => setPage(1)}
+                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-300 text-sm font-bold transition-colors"
+              >
+                إعادة المحاولة
+              </button>
+            </div>
+          )}
           {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-6">
               {[...Array(itemsPerPage)].map((_, i) => (
                 <div key={i} className="rounded-2xl overflow-hidden bg-slate-900/20 border border-slate-800/60">
                   <div className="aspect-[2/3] w-full bg-slate-800 animate-pulse" />
@@ -223,7 +274,7 @@ export function MoviesPageClient() {
             </div>
           ) : movies.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-6">
                 {movies.map((item) => {
                   let primaryGenre = null
                   try { const g = JSON.parse(item.genres_json || '[]'); primaryGenre = g?.[0]?.name_ar || null } catch {}
