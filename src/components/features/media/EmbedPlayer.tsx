@@ -74,8 +74,9 @@ export const EmbedPlayer = ({ server, serverIndex = 0, cinemaMode, toggleCinemaM
   }, [server?.url])
 
   const iframeUrl = (() => {
+    console.log('🔍 EmbedPlayer: Checking server', { server, servers, activeServerIndex })
     if (!server?.url) {
-      console.log('❌ EmbedPlayer: No server URL')
+      console.log('❌ EmbedPlayer: No server URL', { server })
       return ''
     }
 

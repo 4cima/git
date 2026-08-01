@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
+import { STREAM_SERVERS } from '@/services/streamService'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  // Return empty server configs for now
   return NextResponse.json({
-    servers: [],
+    servers: STREAM_SERVERS.map(server => ({
+      id: server.id,
+      name: server.name,
+      url: server.base
+    })),
     lastUpdated: new Date().toISOString()
   })
 }

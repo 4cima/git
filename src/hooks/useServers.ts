@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
-import { DOWNLOAD_SERVER_IDS, SERVER_PROVIDERS, generateServerUrl } from '../lib/serverCatalog'
+import { DOWNLOAD_SERVER_IDS, SERVER_PROVIDERS } from '../lib/serverCatalog'
+import { STREAM_SERVERS, buildServerUrl } from '@/services/streamService'
 
 export type Server = {
   id?: string
@@ -19,7 +20,10 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
 
   // Initialize providers
   useEffect(() => {
+    console.log('🔄 useServers: useEffect triggered', { tmdbId, type, season, episode, isValid: Number.isFinite(tmdbId) && tmdbId > 0 })
+    
     if (!Number.isFinite(tmdbId) || tmdbId <= 0) {
+      console.log('⚠️ useServers: Invalid tmdbId, skipping', { tmdbId })
       setBaseServers([])
       setActive(0)
       setLoading(true)
@@ -34,24 +38,28 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
 
     const loadProviders = async () => {
       setLoading(true)
+      console.log('🚀 useServers: loadProviders called', { tmdbId, type, season, episode })
 
       // Fetch server configs from Next.js API (not Worker)
       let sourceProviders = SERVER_PROVIDERS
 
       try {
         const response = await fetch(`/api/server-configs`)
+        console.log('📡 useServers: API response', { ok: response.ok, status: response.status })
         if (response.ok) {
           const data = await response.json()
-          if (data && data.length > 0) {
-            sourceProviders = data.map((row: Record<string, unknown>) => ({
+          const servers = data.servers || data
+          console.log('📦 useServers: Received servers', { count: servers?.length, first: servers?.[0] })
+          if (servers && servers.length > 0) {
+            sourceProviders = servers.map((row: Record<string, unknown>) => ({
               id: row.id,
               name: row.name,
-              base: row.base,
+              base: row.base || row.url, // Use url as base if base not provided
               movie_template: row.movie_template,
               tv_template: row.tv_template,
-              is_active: row.is_active,
-              supports_movie: row.supports_movie,
-              supports_tv: row.supports_tv,
+              is_active: row.is_active ?? true,
+              supports_movie: row.supports_movie ?? true,
+              supports_tv: row.supports_tv ?? true,
               is_download: row.is_download,
               priority: row.priority
             }))
@@ -59,6 +67,19 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
         }
       } catch (error: any) {
         console.error('Failed to load server configs from CockroachDB:', error)
+      }
+
+      // If no servers from API, use STREAM_SERVERS from streamService
+      if (sourceProviders === SERVER_PROVIDERS || sourceProviders.length === 0) {
+        sourceProviders = STREAM_SERVERS.map((s, i) => ({
+          id: s.id,
+          name: s.name,
+          base: s.base,
+          priority: i,
+          supports_movie: true,
+          supports_tv: true,
+          is_active: true
+        }))
       }
 
       // Show ALL servers (remove is_active filter for testing)
@@ -81,13 +102,21 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
 
       const dedupe = new Set<string>()
       const allServers = rankedProviders
-        .map((p, index) => ({
-          name: p.name,
-          url: generateServerUrl(p, type, tmdbId, season, episode, imdbId),
-          priority: Number.isFinite(Number(p.priority)) ? Number(p.priority) : index,
-          status: 'online' as const,
-          id: p.id
-        }))
+        .map((p, index) => {
+          // Find matching server from STREAM_SERVERS for URL building
+          const streamServer = STREAM_SERVERS.find(s => s.id === p.id || s.name === p.name)
+          const url = streamServer 
+            ? buildServerUrl(streamServer, type as 'movie' | 'tv', tmdbId, season, episode)
+            : `${p.base}/${type === 'movie' ? 'movie' : 'tv'}/${tmdbId}${type === 'tv' ? `/${season}/${episode}` : ''}`
+          
+          return {
+            name: p.name,
+            url,
+            priority: Number.isFinite(Number(p.priority)) ? Number(p.priority) : index,
+            status: 'online' as const,
+            id: p.id
+          }
+        })
         .filter((s) => {
           if (!s.url) return false
           if (dedupe.has(s.url)) return false
@@ -101,7 +130,9 @@ export const useServers = (tmdbId: number, type: 'movie' | 'tv', season?: number
         season,
         episode,
         serverCount: allServers.length,
-        firstServer: allServers[0]
+        firstServer: allServers[0],
+        sourceProviders: sourceProviders.length,
+        streamServersMatch: STREAM_SERVERS.length
       })
 
       setBaseServers(allServers)
