@@ -1545,3 +1545,138 @@ select option {
   animation: rope-pull-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   height: calc(4rem + 1.25rem);
 }
+
+
+/* -------------------------------------------------------------------------- */
+/*  Volume Slider Styling                                                     */
+/* -------------------------------------------------------------------------- */
+/* Custom styling for range input (volume slider) */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+input[type="range"].slider::-webkit-slider-thumb:hover {
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+input[type="range"].slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  transition: all 0.2s ease;
+}
+
+input[type="range"].slider::-moz-range-thumb:hover {
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+input[type="range"].slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type="range"].slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Responsive Grid System - Shared by Movies & Series Pages                 */
+/* -------------------------------------------------------------------------- */
+
+/* Fixed grid columns - always complete rows */
+.grid-responsive {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* Mobile: 2 columns */
+}
+
+/* XS: 3 columns */
+@media (min-width: 480px) {
+  .grid-responsive {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* SM: 4 columns */
+@media (min-width: 640px) {
+  .grid-responsive {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* MD: 5 columns */
+@media (min-width: 768px) {
+  .grid-responsive {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* LG: 6 columns */
+@media (min-width: 1024px) {
+  .grid-responsive {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* XL: 7 columns */
+@media (min-width: 1280px) {
+  .grid-responsive {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+/* 2XL: 8 columns */
+@media (min-width: 1536px) {
+  .grid-responsive {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Custom Scrollbar for Dropdown Menus                                      */
+/* -------------------------------------------------------------------------- */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(239 68 68) rgb(30 41 59);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 14px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgb(30 41 59);
+  border-radius: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgb(239 68 68), rgb(220 38 38));
+  border-radius: 8px;
+  border: 2px solid rgb(30 41 59);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgb(248 113 113), rgb(239 68 68));
+}
