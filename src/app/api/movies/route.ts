@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
       : ''
     
     // Valid sort columns
-    const validSorts = ['popularity', 'vote_average', 'vote_count', 'release_year', 'created_at', 'title_ar']
+    const validSorts = ['popularity', 'vote_average', 'vote_count', 'release_year']
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     

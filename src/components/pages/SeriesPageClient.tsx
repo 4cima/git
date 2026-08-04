@@ -90,9 +90,6 @@ const SORT_OPTIONS = [
   { value: 'vote_count',     order: 'desc', label: 'الأكثر تقييماً',   icon: '📊' },
   { value: 'first_air_year', order: 'desc', label: 'الأحدث',          icon: '📅' },
   { value: 'first_air_year', order: 'asc',  label: 'الأقدم',          icon: '🕰️' },
-  { value: 'created_at',     order: 'desc', label: 'آخر إضافة',       icon: '🆕' },
-  { value: 'name_ar',        order: 'asc',  label: 'الاسم (أ-ي)',     icon: '🔤' },
-  { value: 'name_ar',        order: 'desc', label: 'الاسم (ي-أ)',     icon: '🔤' },
 ]
 
 export function SeriesPageClient() {

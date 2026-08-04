@@ -84,9 +84,6 @@ const SORT_OPTIONS = [
   { value: 'vote_count',   order: 'desc', label: 'الأكثر تقييماً',   icon: '📊' },
   { value: 'release_year', order: 'desc', label: 'الأحدث',          icon: '📅' },
   { value: 'release_year', order: 'asc',  label: 'الأقدم',          icon: '🕰️' },
-  { value: 'created_at',   order: 'desc', label: 'آخر إضافة',       icon: '🆕' },
-  { value: 'title_ar',     order: 'asc',  label: 'الاسم (أ-ي)',     icon: '🔤' },
-  { value: 'title_ar',     order: 'desc', label: 'الاسم (ي-أ)',     icon: '🔤' },
 ]
 
 export function MoviesPageClient() {
