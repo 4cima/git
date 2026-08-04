@@ -265,7 +265,10 @@ export const QuantumNavbar = memo(() => {
                     return (
                       <Link
                         key={genre.slug}
-                        href={`/movies?genre=${genre.slug}`}
+                        href={{
+                          pathname: '/movies',
+                          query: { genre: genre.slug }
+                        }}
                         onClick={() => setSidebarOpen(false)}
                         className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
                           isActive
