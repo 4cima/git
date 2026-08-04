@@ -56,7 +56,6 @@ const RATINGS = [
   { value: '6.1-7',   label: '⭐ 7 جيد'       },
   { value: '5.1-6',   label: '⭐ 6 مقبول'    },
   { value: '4.1-5',   label: '⭐ 5 متوسط'    },
-  { value: '3.1-4',   label: '⭐ 4 ضعيف'     },
 ]
 
 const COUNTRIES = [
