@@ -1,32 +1,34 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import React from 'react'
 import Link from 'next/link'
 import { Tv, Star, Search, Play, ChevronDown, Filter as FilterIcon } from 'lucide-react'
 import { Footer } from '@/components/layout/Footer'
 import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
+import { useResponsiveGrid } from '@/hooks/useResponsiveGrid'
 
 const GENRES = [
-  { name: 'دراما', emoji: '🎭' },
-  { name: 'كوميديا', emoji: '😂' },
-  { name: 'رسوم متحركة', emoji: '🎨' },
-  { name: 'وثائقي', emoji: '🎬' },
-  { name: 'أكشن ومغامرة', emoji: '💥' },
-  { name: 'خيال علمي وفانتازيا', emoji: '🚀' },
-  { name: 'جريمة', emoji: '🕵️' },
-  { name: 'واقعي', emoji: '📹' },
-  { name: 'غموض', emoji: '🔍' },
-  { name: 'عائلي', emoji: '👨‍👩‍👧‍👦' },
-  { name: 'أطفال', emoji: '👶' },
-  { name: 'دراما اجتماعية', emoji: '🎭' },
-  { name: 'حرب وسياسة', emoji: '⚔️' },
-  { name: 'برنامج حواري', emoji: '🎙️' },
-  { name: 'أخبار', emoji: '📰' },
-  { name: 'غربي', emoji: '🤠' },
-  { name: 'رومانسي', emoji: '💕' },
-  { name: 'تاريخي', emoji: '📜' },
+  { name: 'دراما',               slug: 'drama',            emoji: '🎭' },
+  { name: 'كوميديا',             slug: 'comedy',           emoji: '😂' },
+  { name: 'رسوم متحركة',        slug: 'animation',        emoji: '🎨' },
+  { name: 'وثائقي',              slug: 'documentary',      emoji: '🎬' },
+  { name: 'أكشن ومغامرة',        slug: 'action-adventure', emoji: '💥' },
+  { name: 'خيال علمي وفانتازيا', slug: 'sci-fi-fantasy',   emoji: '🚀' },
+  { name: 'جريمة',               slug: 'crime',            emoji: '🕵️' },
+  { name: 'واقعي',               slug: 'reality',          emoji: '📹' },
+  { name: 'غموض',                slug: 'mystery',          emoji: '🔍' },
+  { name: 'عائلي',               slug: 'family',           emoji: '👨‍👩‍👧‍👦' },
+  { name: 'أطفال',               slug: 'kids',             emoji: '👶' },
+  { name: 'دراما اجتماعية',     slug: 'soap',             emoji: '🎭' },
+  { name: 'حرب وسياسة',         slug: 'war-politics',     emoji: '⚔️' },
+  { name: 'برنامج حواري',       slug: 'talk',             emoji: '🎙️' },
+  { name: 'أخبار',               slug: 'news',             emoji: '📰' },
+  { name: 'غربي',                slug: 'western',          emoji: '🤠' },
+  { name: 'رومانسي',             slug: 'romance',          emoji: '💕' },
+  { name: 'تاريخي',              slug: 'history',          emoji: '📜' },
 ] as const
 
 const YEARS = [
@@ -82,14 +84,6 @@ const COUNTRIES = [
   { value: 'TR',  label: 'تركيا'         },
 ]
 
-const AGE_RATINGS = [
-  { value: 'all',    label: 'كل الأعمار' },
-  { value: 'kids',   label: 'أطفال'     },
-  { value: 'family', label: 'عائلي'     },
-  { value: 'teens',  label: 'مراهقين'   },
-  { value: 'mature', label: 'بالغين'    },
-]
-
 const SORT_OPTIONS = [
   { value: 'popularity',     order: 'desc', label: 'الأكثر شهرة',      icon: '🔥' },
   { value: 'vote_average',   order: 'desc', label: 'الأعلى تقييماً',   icon: '⭐' },
@@ -102,6 +96,7 @@ const SORT_OPTIONS = [
 ]
 
 export function SeriesPageClient() {
+  const searchParams = useSearchParams()
   const [series, setSeries]                   = useState<any[]>([])
   const [loading, setLoading]                 = useState(true)
   const [loadingMore, setLoadingMore]         = useState(false)
@@ -112,52 +107,108 @@ export function SeriesPageClient() {
   const [selectedYear, setSelectedYear]       = useState<string>('all')
   const [selectedRating, setSelectedRating]   = useState<string>('all')
   const [selectedCountry, setSelectedCountry] = useState<string>('all')
-  const [selectedAgeRating, setSelectedAgeRating] = useState<string>('all')
   const [sortBy, setSortBy]                   = useState('popularity')
   const [sortOrder, setSortOrder]             = useState('desc')
   const [page, setPage]                       = useState(1)
   const [hasMore, setHasMore]                 = useState(false)
-  const [itemsPerPage, setItemsPerPage]       = useState(84) // Dynamic based on screen
   const observerTarget = useRef<HTMLDivElement>(null)
 
   // Single open dropdown at a time
-  const [openDropdown, setOpenDropdown] = useState<'genre'|'year'|'rating'|'country'|'age'|'sort'|null>(null)
+  const [openDropdown, setOpenDropdown] = useState<'genre'|'year'|'rating'|'country'|'sort'|null>(null)
   const filtersRef = useRef<HTMLDivElement>(null)
 
-  // Calculate items per page based on screen width
-  // Target: 12 rows per page
+  // Use shared responsive grid hook (12 rows per page)
+  const itemsPerPage = useResponsiveGrid(12)
+  
+  // Fixed skeleton count for SSR (avoids hydration mismatch)
+  const SKELETON_COUNT = 24 // 2 columns × 12 rows (mobile default)
+
+  // Sync filters from URL params whenever they change
   useEffect(() => {
-    const calculateItemsPerPage = () => {
-      const width = window.innerWidth
-      let columns = 2 // default mobile
-      
-      if (width >= 1536) columns = 8      // 2xl: 8 columns
-      else if (width >= 1280) columns = 7 // xl: 7 columns  
-      else if (width >= 1024) columns = 6 // lg: 6 columns
-      else if (width >= 768) columns = 5  // md: 5 columns
-      else if (width >= 640) columns = 4  // sm: 4 columns
-      else if (width >= 480) columns = 3  // xs: 3 columns
-      else columns = 2                    // mobile: 2 columns
-      
-      const ROWS_PER_PAGE = 12
-      setItemsPerPage(columns * ROWS_PER_PAGE)
+    // Read genre from URL (expects slug format)
+    const urlGenre = searchParams.get('genre')
+    if (urlGenre) {
+      // Find genre by slug and set the Arabic name as selected value
+      const genre = GENRES.find(g => g.slug === urlGenre)
+      if (genre) {
+        setSelectedGenre(genre.name)
+      }
+    } else {
+      setSelectedGenre('all')
     }
-
-    // Debounce resize to prevent excessive calculations
-    let resizeTimeout: NodeJS.Timeout
-    const debouncedCalculate = () => {
-      clearTimeout(resizeTimeout)
-      resizeTimeout = setTimeout(calculateItemsPerPage, 150)
-    }
-
-    calculateItemsPerPage()
-    window.addEventListener('resize', debouncedCalculate)
     
-    return () => {
-      clearTimeout(resizeTimeout)
-      window.removeEventListener('resize', debouncedCalculate)
+    // Read language from URL (maps to country filter)
+    const urlLanguage = searchParams.get('language')
+    if (urlLanguage) {
+      // Map language codes to country codes (e.g., 'ko' -> 'KR')
+      const languageMap: Record<string, string> = {
+        'ko': 'KR',  // Korean
+        'ja': 'JP',  // Japanese
+        'zh': 'CN',  // Chinese
+        'hi': 'IN',  // Hindi (India)
+        'tr': 'TR',  // Turkish
+        'ar': 'SA',  // Arabic (Saudi Arabia placeholder)
+        'en': 'US',  // English (US)
+        'es': 'MX',  // Spanish (Mexico)
+        'fr': 'FR',  // French
+        'de': 'DE',  // German
+        'pt': 'BR',  // Portuguese (Brazil)
+        'ru': 'RU',  // Russian
+      }
+      const country = languageMap[urlLanguage] || urlLanguage.toUpperCase()
+      const countryExists = COUNTRIES.some(c => c.value === country)
+      if (countryExists) {
+        setSelectedCountry(country)
+      }
+    } else if (!searchParams.get('country')) {
+      setSelectedCountry('all')
     }
-  }, [])
+    
+    // Read country from URL
+    const urlCountry = searchParams.get('country')
+    if (urlCountry) {
+      const countryExists = COUNTRIES.some(c => c.value === urlCountry)
+      if (countryExists) {
+        setSelectedCountry(urlCountry)
+      }
+    }
+    
+    // Read year from URL
+    const urlYear = searchParams.get('year')
+    if (urlYear) {
+      const yearExists = YEARS.some(y => y.value === urlYear)
+      if (yearExists) {
+        setSelectedYear(urlYear)
+      }
+    } else {
+      setSelectedYear('all')
+    }
+    
+    // Read rating from URL
+    const urlRating = searchParams.get('rating')
+    if (urlRating) {
+      const ratingExists = RATINGS.some(r => r.value === urlRating)
+      if (ratingExists) {
+        setSelectedRating(urlRating)
+      }
+    } else {
+      setSelectedRating('all')
+    }
+    
+    // Read search query from URL
+    const urlSearch = searchParams.get('search') || searchParams.get('q')
+    if (urlSearch) {
+      setSearchQuery(urlSearch)
+      setDebouncedSearch(urlSearch)
+    } else {
+      setSearchQuery('')
+      setDebouncedSearch('')
+    }
+    
+    // Reset to page 1 when URL changes
+    setPage(1)
+    setSeries([])
+  }, [searchParams]) // Re-run whenever URL search params change
 
   // Debounce search
   useEffect(() => {
@@ -178,11 +229,14 @@ export function SeriesPageClient() {
   useEffect(() => {
     let cancelled = false
     const params = new URLSearchParams({ page: page.toString(), limit: itemsPerPage.toString(), sort: sortBy, order: sortOrder })
-    if (selectedGenre     !== 'all') params.set('genre',      selectedGenre)
+    if (selectedGenre !== 'all') {
+      // Convert Arabic name to slug for API
+      const genre = GENRES.find(g => g.name === selectedGenre)
+      params.set('genre', genre?.slug || selectedGenre)
+    }
     if (selectedYear      !== 'all') params.set('year',       selectedYear)
     if (selectedRating    !== 'all') params.set('rating_min', selectedRating)
     if (selectedCountry   !== 'all') params.set('country',    selectedCountry)
-    if (selectedAgeRating !== 'all') params.set('age_rating', selectedAgeRating)
     if (debouncedSearch.trim())      params.set('search',     debouncedSearch.trim())
 
     const isFirstPage = page === 1
@@ -227,7 +281,7 @@ export function SeriesPageClient() {
         }
       })
     return () => { cancelled = true }
-  }, [selectedGenre, selectedYear, selectedRating, selectedCountry, selectedAgeRating, sortBy, sortOrder, page, debouncedSearch, itemsPerPage])
+  }, [selectedGenre, selectedYear, selectedRating, selectedCountry, sortBy, sortOrder, page, debouncedSearch])
 
   // Infinite scroll observer - prefetch before reaching last rows
   useEffect(() => {
@@ -370,21 +424,6 @@ export function SeriesPageClient() {
                 )}
               </div>
 
-              {/* Age */}
-              <div className="relative">
-                <button onClick={()=>toggle('age')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[100px] justify-between">
-                  <span>{AGE_RATINGS.find(a=>a.value===selectedAgeRating)?.label||'كل الأعمار'}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='age'?'rotate-180':''}`}/>
-                </button>
-                {openDropdown==='age' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain">
-                    {AGE_RATINGS.map(a=>(
-                      <button key={a.value} onClick={()=>{resetAndFetch(() => setSelectedAgeRating(a.value));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedAgeRating===a.value?'bg-slate-700 text-cyan-400':'text-slate-100'}`}>{a.label}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               {/* Sort */}
               <div className="relative">
                 <button onClick={()=>toggle('sort')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-cyan-500 flex items-center gap-2 min-w-[120px] justify-between">
@@ -434,7 +473,7 @@ export function SeriesPageClient() {
           )}
           {loading && series.length === 0 ? (
             <div className="grid-responsive gap-6">
-              {[...Array(itemsPerPage)].map((_,i)=>(
+              {[...Array(SKELETON_COUNT)].map((_,i)=>(
                 <div key={i} className="rounded-2xl overflow-hidden bg-slate-900/20 border border-slate-800/60">
                   <div className="aspect-[2/3] w-full bg-slate-800 animate-pulse"/>
                   <div className="p-2.5 h-[52px] flex flex-col justify-center gap-2">
@@ -528,95 +567,6 @@ export function SeriesPageClient() {
           </div>
         </div>
       </section>
-
-      <style jsx global>{`
-        /* Fixed grid columns - always complete rows */
-        .grid-responsive {
-          display: grid;
-          gap: 1.5rem;
-        }
-        
-        /* Mobile: 2 columns */
-        .grid-responsive {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-        
-        /* XS: 3 columns */
-        @media (min-width: 480px) {
-          .grid-responsive {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
-        }
-        
-        /* SM: 4 columns */
-        @media (min-width: 640px) {
-          .grid-responsive {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-          }
-        }
-        
-        /* MD: 5 columns */
-        @media (min-width: 768px) {
-          .grid-responsive {
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-          }
-        }
-        
-        /* LG: 6 columns */
-        @media (min-width: 1024px) {
-          .grid-responsive {
-            grid-template-columns: repeat(6, minmax(0, 1fr));
-          }
-        }
-        
-        /* XL: 7 columns */
-        @media (min-width: 1280px) {
-          .grid-responsive {
-            grid-template-columns: repeat(7, minmax(0, 1fr));
-          }
-        }
-        
-        /* 2XL: 8 columns */
-        @media (min-width: 1536px) {
-          .grid-responsive {
-            grid-template-columns: repeat(8, minmax(0, 1fr));
-          }
-        }
-
-        /* Scrollbar styling */
-        .custom-scrollbar { 
-          scrollbar-width: thin; 
-          scrollbar-color: rgb(59 130 246) rgb(30 41 59); 
-        }
-        .custom-scrollbar::-webkit-scrollbar { 
-          width: 14px; 
-        }
-        .custom-scrollbar::-webkit-scrollbar-track { 
-          background: rgb(30 41 59); 
-          border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb { 
-          background: linear-gradient(180deg, rgb(59 130 246), rgb(37 99 235)); 
-          border-radius: 8px; 
-          border: 2px solid rgb(30 41 59);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
-          background: linear-gradient(180deg, rgb(96 165 250), rgb(59 130 246)); 
-        }
-
-        /* Keyboard/Remote navigation support */
-        *:focus-visible {
-          outline: 2px solid rgb(6 182 212);
-          outline-offset: 4px;
-        }
-
-        /* TV-optimized text sizes */
-        @media (min-width: 1920px) {
-          body {
-            font-size: 18px;
-          }
-        }
-      `}</style>
 
       <div className="pb-12"><Footer/></div>
     </div>
