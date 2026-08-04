@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { turso } from '@/lib/turso'
+import { sanitizeSearchInput } from '@/lib/search-utils'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,34 +32,35 @@ export async function GET(request: NextRequest) {
     const conditions: string[] = []
     const args: any[] = []
     
+    // FTS5 search join (if search parameter provided)
+    let ftsJoin = ''
     if (search) {
-      conditions.push(`(title_ar LIKE ? OR title_en LIKE ?)`)
-      args.push(`%${search}%`, `%${search}%`)
+      const sanitized = sanitizeSearchInput(search)
+      if (sanitized) {
+        ftsJoin = 'JOIN movies_fts ON movies.id = movies_fts.rowid'
+        conditions.push('movies_fts MATCH ?')
+        args.push(sanitized)
+      }
     }
 
     if (genre) {
-      const genreResult = await turso.execute({
-        sql: 'SELECT tmdb_id FROM genres WHERE slug = ? LIMIT 1',
-        args: [genre]
-      })
-      
-      if (genreResult.rows && genreResult.rows.length > 0) {
-        const genreTmdbId = genreResult.rows[0].tmdb_id
-        // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
-        conditions.push(`EXISTS (
-          SELECT 1 FROM json_each(genres_json)
-          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
-        )`)
-        args.push(genreTmdbId)
-      } else {
-        // Genre slug not found - return empty results instead of all movies
-        conditions.push('1 = 0')
-      }
+      // Temporary: use LIKE on slug until genre_ids_csv index is implemented
+      // This is faster than json_each() without index (see TECH_DEBT.md #2)
+      conditions.push(`genres_json LIKE ?`)
+      args.push(`%"slug":"${genre}"%`)
     }
     
     if (year) {
-      conditions.push('release_year = ?')
-      args.push(parseInt(year))
+      if (year === 'before-1990') {
+        conditions.push('release_year < 1990')
+      } else if (year.includes('-')) {
+        const [from, to] = year.split('-').map(Number)
+        conditions.push('release_year BETWEEN ? AND ?')
+        args.push(from, to)
+      } else {
+        conditions.push('release_year = ?')
+        args.push(parseInt(year))
+      }
     }
     
     if (country) {
@@ -80,8 +82,16 @@ export async function GET(request: NextRequest) {
     }
     
     if (ratingMin) {
-      conditions.push('vote_average >= ?')
-      args.push(parseFloat(ratingMin))
+      // Handle range format (e.g., "7.1-8" means 7.1 to 8.0, "9.1-10" means 9.1 to 10.0)
+      if (ratingMin.includes('-')) {
+        const [min, max] = ratingMin.split('-').map(parseFloat)
+        conditions.push('vote_average BETWEEN ? AND ?')
+        args.push(min, max)
+      } else {
+        // Fallback for old format
+        conditions.push('vote_average >= ?')
+        args.push(parseFloat(ratingMin))
+      }
     }
     
     if (ratingMax) {
@@ -104,7 +114,7 @@ export async function GET(request: NextRequest) {
       : ''
     
     // Valid sort columns
-    const validSorts = ['popularity', 'vote_average', 'release_year', 'created_at', 'title_ar']
+    const validSorts = ['popularity', 'vote_average', 'vote_count', 'release_year', 'created_at', 'title_ar']
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
@@ -113,12 +123,13 @@ export async function GET(request: NextRequest) {
     // Get movies
     const moviesResult = await turso.execute({
       sql: `
-        SELECT id, slug, title_ar, title_en, poster_path,
-               vote_average, release_year,
-               genres_json, overview_ar, original_language
+        SELECT movies.id, movies.slug, movies.title_ar, movies.title_en, movies.poster_path,
+               movies.vote_average, movies.release_year,
+               movies.genres_json, movies.overview_ar, movies.original_language
         FROM movies
+        ${ftsJoin}
         ${whereClause}
-        ORDER BY ${sortColumn} ${sortOrder}
+        ORDER BY ${search ? 'rank,' : ''} ${sortColumn} ${sortOrder}
         LIMIT ? OFFSET ?
       `,
       args: [...args, limit + 1, offset]

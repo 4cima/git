@@ -227,7 +227,8 @@ export function SeriesPageClient() {
 
   // Fetch
   useEffect(() => {
-    let cancelled = false
+    const abortController = new AbortController()
+    
     const params = new URLSearchParams({ page: page.toString(), limit: itemsPerPage.toString(), sort: sortBy, order: sortOrder })
     if (selectedGenre !== 'all') {
       // Convert Arabic name to slug for API
@@ -245,13 +246,12 @@ export function SeriesPageClient() {
     
     setError(null) // Clear previous errors
 
-    fetch(`/api/series?${params}`)
+    fetch(`/api/series?${params}`, { signal: abortController.signal })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json()
       })
       .then(data => { 
-        if (cancelled) return
         const newSeries = data.series || []
         
         // Remove duplicates by id using functional update
@@ -268,19 +268,24 @@ export function SeriesPageClient() {
         setHasMore(data.pagination?.hasMore || false)
       })
       .catch((err) => { 
-        if (!cancelled) {
-          console.error('Failed to fetch series:', err)
-          setSeries(prev => isFirstPage ? [] : prev)
-          setError('فشل تحميل المسلسلات. حاول مرة أخرى.')
-        }
+        // Ignore abort errors
+        if (err.name === 'AbortError') return
+        
+        console.error('Failed to fetch series:', err)
+        setSeries(prev => isFirstPage ? [] : prev)
+        setError('فشل تحميل المسلسلات. حاول مرة أخرى.')
       })
       .finally(() => { 
-        if (!cancelled) {
+        // Check if request was aborted before updating loading state
+        if (!abortController.signal.aborted) {
           setLoading(false)
           setLoadingMore(false)
         }
       })
-    return () => { cancelled = true }
+    
+    return () => {
+      abortController.abort()
+    }
   }, [selectedGenre, selectedYear, selectedRating, selectedCountry, sortBy, sortOrder, page, debouncedSearch])
 
   // Infinite scroll observer - prefetch before reaching last rows
