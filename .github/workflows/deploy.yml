@@ -45,10 +45,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
-    - name: Deploy to Koyeb
-      uses: koyeb-community/koyeb-actions@v2
-      with:
-        api_token: ${{ secrets.KOYEB_API_TOKEN }}
-        app_name: "worldwide-brenna"
-        service_name: "com"
-        service_type: "redeploy"
+    - name: Trigger Koyeb Redeploy
+      run: |
+        curl -X POST "https://app.koyeb.com/v1/services/c9f0464e-1488-42d3-8d89-7bea7147ceb2/redeploy" \
+          -H "Authorization: Bearer ${{ secrets.KOYEB_API_TOKEN }}" \
+          -H "Content-Type: application/json"
