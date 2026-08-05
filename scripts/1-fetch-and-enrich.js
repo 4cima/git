@@ -68,7 +68,13 @@ async function processMovie(tmdbId) {
     const title_en = movie.title || movie.original_title;
     const title_ar = await translateField(title_en, movie.translations?.translations, 'title');
     const overview_ar = await translateField(movie.overview, movie.translations?.translations, 'overview');
-    const isComplete = (title_ar && movie.vote_average >= 5) ? 1 : 0;
+    
+    // Exclude content genres from sync: news, talk, documentary, reality (if single-genre)
+    const excludedGenreSlugs = ['news', 'talk', 'documentary', 'reality'];
+    const genreSlugs = (movie.genres || []).map(g => g.slug || g.name?.toLowerCase().replace(/\s+/g, '-'));
+    const isSingleExcludedGenre = genreSlugs.length === 1 && excludedGenreSlugs.includes(genreSlugs[0]);
+    
+    const isComplete = (title_ar && movie.vote_average >= 5 && !isSingleExcludedGenre) ? 1 : 0;
 
     const release_year = movie.release_date ? parseInt(movie.release_date.split('-')[0], 10) : null;
     const primary_genre = movie.genres?.[0]?.name?.toLowerCase() || null;
@@ -175,7 +181,13 @@ async function processSeries(tmdbId) {
     const name_en = series.name || series.original_name;
     const name_ar = await translateField(name_en, series.translations?.translations, 'name');
     const overview_ar = await translateField(series.overview, series.translations?.translations, 'overview');
-    const isComplete = (name_ar && series.vote_average >= 5) ? 1 : 0;
+    
+    // Exclude content genres from sync: news, talk, documentary, reality (if single-genre)
+    const excludedGenreSlugs = ['news', 'talk', 'documentary', 'reality'];
+    const genreSlugs = (series.genres || []).map(g => g.slug || g.name?.toLowerCase().replace(/\s+/g, '-'));
+    const isSingleExcludedGenre = genreSlugs.length === 1 && excludedGenreSlugs.includes(genreSlugs[0]);
+    
+    const isComplete = (name_ar && series.vote_average >= 5 && !isSingleExcludedGenre) ? 1 : 0;
 
     const first_air_year = series.first_air_date ? parseInt(series.first_air_date.split('-')[0], 10) : null;
     const primary_genre = series.genres?.[0]?.name?.toLowerCase() || null;
