@@ -113,9 +113,6 @@ interface MediaItem {
 interface HomeData {
   trendingMovies: MediaItem[]
   trendingSeries: MediaItem[]
-  latest: MediaItem[]
-  topRated: MediaItem[]
-  series: MediaItem[]
 }
 
 function mapItems(items: any[] | undefined, type: 'movie' | 'tv'): MediaItem[] {
@@ -214,16 +211,10 @@ export default function Home() {
 
         const trendingMovies = mapItems(json.trendingMovies, 'movie')
         const trendingSeries = mapItems(json.trendingSeries, 'tv')
-        const latest = mapItems(json.latest, 'movie')
-        const topRated = mapItems(json.topRated, 'movie')
-        const series = mapItems(json.series, 'tv')
 
         setData({
           trendingMovies,
-          trendingSeries,
-          latest,
-          topRated,
-          series,
+          trendingSeries
         })
 
         // إنشاء قائمة الهيرو: 5 أفلام + 5 مسلسلات بالتناوب

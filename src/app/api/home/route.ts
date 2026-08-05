@@ -9,7 +9,7 @@ export async function GET() {
     console.log('🔄 [API /home] Fetching...')
     const startTime = Date.now()
 
-    const [trendingMoviesRes, trendingSeriesRes, latestRes, topRatedRes, seriesRes] = await Promise.all([
+    const [trendingMoviesRes, trendingSeriesRes] = await Promise.all([
       turso.execute({
         sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar, release_year as year, vote_average, genres_json
               FROM movies INDEXED BY idx_movies_pop_partial2
@@ -29,40 +29,12 @@ export async function GET() {
               ORDER BY popularity DESC 
               LIMIT 50`,
         args: []
-      }),
-      turso.execute({
-        sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar, release_year as year, vote_average, genres_json
-              FROM movies INDEXED BY idx_movies_home_latest
-              WHERE poster_path IS NOT NULL
-              ORDER BY release_year DESC, popularity DESC
-              LIMIT 50`,
-        args: []
-      }),
-      turso.execute({
-        sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar, release_year as year, vote_average, genres_json
-              FROM movies INDEXED BY idx_movies_home_toprated
-              WHERE poster_path IS NOT NULL 
-                AND vote_average >= 7.5
-              ORDER BY vote_average DESC
-              LIMIT 50`,
-        args: []
-      }),
-      turso.execute({
-        sql: `SELECT id, slug, name_ar as title_ar, name_en as title_en, poster_path, backdrop_path, overview_ar, first_air_year as year, vote_average, genres_json
-              FROM tv_series INDEXED BY idx_series_home_all
-              WHERE poster_path IS NOT NULL
-              ORDER BY popularity DESC
-              LIMIT 50`,
-        args: []
       })
     ])
 
     const data = {
       trendingMovies: trendingMoviesRes.rows,
-      trendingSeries: trendingSeriesRes.rows,
-      latest: latestRes.rows,
-      topRated: topRatedRes.rows,
-      series: seriesRes.rows
+      trendingSeries: trendingSeriesRes.rows
     }
 
     const endTime = Date.now()
@@ -77,10 +49,7 @@ export async function GET() {
     console.error('❌ [API /home] Error:', error)
     return NextResponse.json({
       trendingMovies: [],
-      trendingSeries: [],
-      latest: [],
-      topRated: [],
-      series: []
+      trendingSeries: []
     }, { status: 500 })
   }
 }
