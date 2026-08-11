@@ -25,14 +25,42 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validation
+    // Clear previous errors
+    setError(null)
+    
+    // Validation - Empty fields
     if (!username || !email || !password || !confirmPassword) {
       setError('يرجى ملء جميع الحقول')
       return
     }
 
+    // Username validation (alphanumeric and underscore only, 3-20 chars)
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/
+    if (!usernameRegex.test(username.trim())) {
+      setError('اسم المستخدم يجب أن يكون من 3-20 حرف (أحرف وأرقام و _ فقط)')
+      return
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      setError('يرجى إدخال بريد إلكتروني صحيح')
+      return
+    }
+
+    // Password length validation
+    if (password.length < 6) {
+      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+      return
+    }
+
+    // Password confirmation match
+    if (password !== confirmPassword) {
+      setError('كلمات المرور غير متطابقة')
+      return
+    }
+
     setLoading(true)
-    setError(null)
 
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
