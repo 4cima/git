@@ -170,10 +170,10 @@ export const QuantumNavbar = memo(() => {
                     <span className="text-sm font-bold">الرئيسية</span>
                   </Link>
                   <Link
-                    href="/admin"
+                    href="/login"
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors group ${
-                      pathname?.startsWith('/admin') ? 'bg-emerald-500/20 text-emerald-400' : 'text-white hover:text-emerald-400'
+                      pathname?.startsWith('/login') ? 'bg-emerald-500/20 text-emerald-400' : 'text-white hover:text-emerald-400'
                     }`}
                   >
                     <LogIn size={16} className="group-hover:scale-110 transition-transform" />
