@@ -19,3 +19,5 @@
 9. Never print full credentials (passwords, API keys) in chat once they're already set in .env.local — refer to them by name only.
 
 10. Keep replies concise. No filler, no restating the plan before doing it.
+
+11. **NEVER leave placeholders, "قريباً", "coming soon", or mock data**. Build features complete and functional from the first time, with real database queries and actual working functionality. If real data doesn't exist yet, create the necessary tables/APIs first, then build the UI. Never ship half-done features with "TODO" comments or placeholder text.

@@ -1,17 +1,91 @@
 /**
- * Profile Page - Enhanced professional user profile
+ * Profile Page - Complete professional user profile with real data
  */
 
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { User, Mail, Calendar, Shield, Film, Tv, Clock, Heart, Award, TrendingUp, Star, Edit2, Settings, LogOut } from 'lucide-react'
-import { useState } from 'react'
+import { User, Mail, Calendar, Shield, Film, Tv, Clock, Heart, Award, TrendingUp, Star, Edit2, Settings, LogOut, Play } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+
+interface Stats {
+  moviesWatched: number
+  seriesWatched: number
+  totalWatchTime: number
+  favorites: number
+  reviews: number
+  achievements: number
+}
+
+interface Activity {
+  activity_type: 'watch' | 'favorite' | 'review'
+  content_type: 'movie' | 'series'
+  tmdb_id: number
+  title: string
+  poster_path?: string
+  activity_date: string
+  watch_duration?: number
+  completed?: boolean
+  season_number?: number
+  episode_number?: number
+  rating?: number
+  review_text?: string
+}
 
 export default function ProfilePage() {
   const { user, profile, logout } = useAuth()
   const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'stats'>('overview')
+  const [stats, setStats] = useState<Stats>({
+    moviesWatched: 0,
+    seriesWatched: 0,
+    totalWatchTime: 0,
+    favorites: 0,
+    reviews: 0,
+    achievements: 0,
+  })
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [loadingStats, setLoadingStats] = useState(true)
+  const [loadingActivity, setLoadingActivity] = useState(false)
+
+  useEffect(() => {
+    fetchStats()
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'activity' && activities.length === 0) {
+      fetchActivity()
+    }
+  }, [activeTab])
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('/api/profile/stats')
+      if (res.ok) {
+        const data = await res.json()
+        setStats(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error)
+    } finally {
+      setLoadingStats(false)
+    }
+  }
+
+  const fetchActivity = async () => {
+    setLoadingActivity(true)
+    try {
+      const res = await fetch('/api/profile/activity?limit=20')
+      if (res.ok) {
+        const data = await res.json()
+        setActivities(data.activities || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch activity:', error)
+    } finally {
+      setLoadingActivity(false)
+    }
+  }
 
   if (!user || !profile) {
     return null
@@ -33,14 +107,19 @@ export default function ProfilePage() {
   
   const roleInfo = roleConfig[profile.role as keyof typeof roleConfig] || roleConfig.user
 
-  // Mock stats - will be replaced with real data
-  const stats = {
-    moviesWatched: 0,
-    seriesWatched: 0,
-    totalWatchTime: 0,
-    favorites: 0,
-    reviews: 0,
-    achievements: 0,
+  const formatActivityDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'الآن'
+    if (diffMins < 60) return `منذ ${diffMins} دقيقة`
+    if (diffHours < 24) return `منذ ${diffHours} ساعة`
+    if (diffDays < 7) return `منذ ${diffDays} يوم`
+    return date.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })
   }
 
   return (
@@ -97,19 +176,15 @@ export default function ProfilePage() {
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2">
                     <button className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors text-sm font-medium">
-                      <Edit2 size={14} />
-                      تعديل
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors text-sm font-medium">
                       <Settings size={14} />
-                      الإعدادات
+                      <span className="hidden sm:inline">الإعدادات</span>
                     </button>
                     <button 
                       onClick={logout}
                       className="flex items-center gap-2 px-4 py-2 bg-red-600/10 hover:bg-red-600/20 text-red-400 rounded-xl transition-colors text-sm font-medium border border-red-600/20"
                     >
                       <LogOut size={14} />
-                      تسجيل الخروج
+                      <span className="hidden sm:inline">خروج</span>
                     </button>
                   </div>
                 </div>
@@ -125,9 +200,9 @@ export default function ProfilePage() {
               <div className="p-2 rounded-xl bg-cyan-600/10 text-cyan-400 group-hover:bg-cyan-600/20 transition-colors">
                 <Film size={20} />
               </div>
-              <TrendingUp size={14} className="text-cyan-400 opacity-50" />
+              {stats.moviesWatched > 0 && <TrendingUp size={14} className="text-cyan-400 opacity-50" />}
             </div>
-            <div className="text-3xl font-black text-zinc-100 mb-1">{stats.moviesWatched}</div>
+            <div className="text-3xl font-black text-zinc-100 mb-1">{loadingStats ? '...' : stats.moviesWatched}</div>
             <div className="text-xs text-zinc-500 font-medium">أفلام</div>
           </div>
           
@@ -136,9 +211,9 @@ export default function ProfilePage() {
               <div className="p-2 rounded-xl bg-purple-600/10 text-purple-400 group-hover:bg-purple-600/20 transition-colors">
                 <Tv size={20} />
               </div>
-              <TrendingUp size={14} className="text-purple-400 opacity-50" />
+              {stats.seriesWatched > 0 && <TrendingUp size={14} className="text-purple-400 opacity-50" />}
             </div>
-            <div className="text-3xl font-black text-zinc-100 mb-1">{stats.seriesWatched}</div>
+            <div className="text-3xl font-black text-zinc-100 mb-1">{loadingStats ? '...' : stats.seriesWatched}</div>
             <div className="text-xs text-zinc-500 font-medium">مسلسلات</div>
           </div>
           
@@ -148,8 +223,8 @@ export default function ProfilePage() {
                 <Clock size={20} />
               </div>
             </div>
-            <div className="text-3xl font-black text-zinc-100 mb-1">{stats.totalWatchTime}</div>
-            <div className="text-xs text-zinc-500 font-medium">ساعة مشاهدة</div>
+            <div className="text-3xl font-black text-zinc-100 mb-1">{loadingStats ? '...' : stats.totalWatchTime}</div>
+            <div className="text-xs text-zinc-500 font-medium">ساعة</div>
           </div>
           
           <div className="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-2xl p-5 hover:border-red-600/50 transition-colors group">
@@ -158,7 +233,7 @@ export default function ProfilePage() {
                 <Heart size={20} />
               </div>
             </div>
-            <div className="text-3xl font-black text-zinc-100 mb-1">{stats.favorites}</div>
+            <div className="text-3xl font-black text-zinc-100 mb-1">{loadingStats ? '...' : stats.favorites}</div>
             <div className="text-xs text-zinc-500 font-medium">مفضلة</div>
           </div>
           
@@ -168,7 +243,7 @@ export default function ProfilePage() {
                 <Star size={20} />
               </div>
             </div>
-            <div className="text-3xl font-black text-zinc-100 mb-1">{stats.reviews}</div>
+            <div className="text-3xl font-black text-zinc-100 mb-1">{loadingStats ? '...' : stats.reviews}</div>
             <div className="text-xs text-zinc-500 font-medium">تقييم</div>
           </div>
           
@@ -178,7 +253,7 @@ export default function ProfilePage() {
                 <Award size={20} />
               </div>
             </div>
-            <div className="text-3xl font-black text-zinc-100 mb-1">{stats.achievements}</div>
+            <div className="text-3xl font-black text-zinc-100 mb-1">{loadingStats ? '...' : stats.achievements}</div>
             <div className="text-xs text-zinc-500 font-medium">إنجاز</div>
           </div>
         </div>
@@ -273,7 +348,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Quick Links */}
-              {profile.role === 'admin' || profile.role === 'supervisor' ? (
+              {(profile.role === 'admin' || profile.role === 'supervisor') && (
                 <div>
                   <h2 className="text-xl font-bold text-zinc-100 mb-4 flex items-center gap-2">
                     <Shield size={20} className="text-orange-400" />
@@ -294,23 +369,263 @@ export default function ProfilePage() {
                     </Link>
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
           )}
 
           {activeTab === 'activity' && (
-            <div className="text-center py-12">
-              <Clock size={48} className="text-zinc-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-zinc-300 mb-2">قريباً</h3>
-              <p className="text-zinc-500">سيتم عرض نشاطك وسجل المشاهدة هنا</p>
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-zinc-100 flex items-center gap-2">
+                  <Clock size={20} className="text-purple-400" />
+                  النشاط الأخير
+                </h2>
+                {activities.length > 0 && (
+                  <button 
+                    onClick={fetchActivity}
+                    className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+                  >
+                    تحديث
+                  </button>
+                )}
+              </div>
+
+              {loadingActivity ? (
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-800 animate-pulse">
+                      <div className="w-16 h-24 rounded-lg bg-zinc-700" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-zinc-700 rounded w-3/4" />
+                        <div className="h-3 bg-zinc-700 rounded w-1/2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : activities.length === 0 ? (
+                <div className="text-center py-12">
+                  <Play size={48} className="text-zinc-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold text-zinc-300 mb-2">لم تبدأ بعد</h3>
+                  <p className="text-zinc-500 mb-6">ابدأ بمشاهدة الأفلام والمسلسلات لرؤية نشاطك هنا</p>
+                  <Link 
+                    href="/movies"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-cyan-600 text-white rounded-xl font-bold hover:shadow-lg transition-all"
+                  >
+                    <Film size={18} />
+                    تصفح الأفلام
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activities.map((activity, idx) => (
+                    <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-800 hover:border-zinc-700 transition-colors group">
+                      {/* Activity Icon */}
+                      <div className={`p-2 rounded-lg ${
+                        activity.activity_type === 'watch' ? 'bg-cyan-600/20 text-cyan-400' :
+                        activity.activity_type === 'favorite' ? 'bg-red-600/20 text-red-400' :
+                        'bg-yellow-600/20 text-yellow-400'
+                      }`}>
+                        {activity.activity_type === 'watch' ? <Play size={16} /> :
+                         activity.activity_type === 'favorite' ? <Heart size={16} /> :
+                         <Star size={16} />}
+                      </div>
+
+                      {/* Poster */}
+                      {activity.poster_path && (
+                        <img 
+                          src={`/tmdb/w92${activity.poster_path}`}
+                          alt={activity.title}
+                          className="w-12 h-18 rounded-lg object-cover border border-zinc-700 group-hover:border-zinc-600 transition-colors"
+                        />
+                      )}
+
+                      {/* Details */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-zinc-100 mb-1 line-clamp-1">{activity.title}</p>
+                        
+                        <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-500">
+                          {activity.activity_type === 'watch' && (
+                            <>
+                              <span className="px-2 py-0.5 rounded bg-cyan-600/10 text-cyan-400">شاهدت</span>
+                              {activity.season_number && activity.episode_number && (
+                                <span>الموسم {activity.season_number} • الحلقة {activity.episode_number}</span>
+                              )}
+                              {activity.watch_duration && activity.watch_duration > 0 && (
+                                <span>{Math.round(activity.watch_duration / 60)} دقيقة</span>
+                              )}
+                            </>
+                          )}
+                          {activity.activity_type === 'favorite' && (
+                            <span className="px-2 py-0.5 rounded bg-red-600/10 text-red-400">أضفت للمفضلة</span>
+                          )}
+                          {activity.activity_type === 'review' && (
+                            <>
+                              <span className="px-2 py-0.5 rounded bg-yellow-600/10 text-yellow-400">قيّمت</span>
+                              {activity.rating && (
+                                <span className="flex items-center gap-1">
+                                  <Star size={10} className="fill-yellow-400 text-yellow-400" />
+                                  {activity.rating.toFixed(1)}
+                                </span>
+                              )}
+                            </>
+                          )}
+                          <span>•</span>
+                          <span>{formatActivityDate(activity.activity_date)}</span>
+                        </div>
+
+                        {activity.review_text && (
+                          <p className="text-xs text-zinc-400 mt-2 line-clamp-2">{activity.review_text}</p>
+                        )}
+                      </div>
+
+                      {/* Content Type Badge */}
+                      <div className={`px-2 py-1 rounded text-xs font-bold ${
+                        activity.content_type === 'movie' 
+                          ? 'bg-cyan-600/10 text-cyan-400' 
+                          : 'bg-purple-600/10 text-purple-400'
+                      }`}>
+                        {activity.content_type === 'movie' ? (
+                          <><Film size={10} className="inline mr-1" />فيلم</>
+                        ) : (
+                          <><Tv size={10} className="inline mr-1" />مسلسل</>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === 'stats' && (
-            <div className="text-center py-12">
-              <TrendingUp size={48} className="text-zinc-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-zinc-300 mb-2">قريباً</h3>
-              <p className="text-zinc-500">سيتم عرض إحصائيات مفصلة هنا</p>
+            <div>
+              <h2 className="text-xl font-bold text-zinc-100 mb-6 flex items-center gap-2">
+                <TrendingUp size={20} className="text-emerald-400" />
+                إحصائيات مفصلة
+              </h2>
+
+              {loadingStats ? (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="p-6 rounded-xl bg-zinc-800/30 border border-zinc-800 animate-pulse">
+                      <div className="h-6 bg-zinc-700 rounded w-1/2 mb-4" />
+                      <div className="h-10 bg-zinc-700 rounded w-1/3" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Movies Stats */}
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-cyan-600/10 to-blue-600/10 border border-cyan-600/20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 rounded-xl bg-cyan-600/20 text-cyan-400">
+                        <Film size={24} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-zinc-100">الأفلام</h3>
+                        <p className="text-xs text-zinc-400">إحصائيات المشاهدة</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">شاهدت</span>
+                        <span className="text-2xl font-black text-cyan-400">{stats.moviesWatched}</span>
+                      </div>
+                      {stats.moviesWatched > 0 && (
+                        <div className="pt-3 border-t border-cyan-600/20">
+                          <p className="text-xs text-zinc-500">
+                            أنت من محبي السينما! استمر في المشاهدة
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Series Stats */}
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-purple-600/10 to-pink-600/10 border border-purple-600/20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 rounded-xl bg-purple-600/20 text-purple-400">
+                        <Tv size={24} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-zinc-100">المسلسلات</h3>
+                        <p className="text-xs text-zinc-400">إحصائيات المشاهدة</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">شاهدت</span>
+                        <span className="text-2xl font-black text-purple-400">{stats.seriesWatched}</span>
+                      </div>
+                      {stats.seriesWatched > 0 && (
+                        <div className="pt-3 border-t border-purple-600/20">
+                          <p className="text-xs text-zinc-500">
+                            تحب متابعة القصص الطويلة!
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Watch Time Stats */}
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-orange-600/10 to-red-600/10 border border-orange-600/20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 rounded-xl bg-orange-600/20 text-orange-400">
+                        <Clock size={24} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-zinc-100">وقت المشاهدة</h3>
+                        <p className="text-xs text-zinc-400">إجمالي الساعات</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">ساعات</span>
+                        <span className="text-2xl font-black text-orange-400">{stats.totalWatchTime}</span>
+                      </div>
+                      {stats.totalWatchTime > 0 && (
+                        <div className="pt-3 border-t border-orange-600/20">
+                          <p className="text-xs text-zinc-500">
+                            {stats.totalWatchTime > 100 ? 'أنت مشاهد نهم!' : 
+                             stats.totalWatchTime > 50 ? 'مشاهدة رائعة!' : 
+                             'بداية جيدة!'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Engagement Stats */}
+                  <div className="p-6 rounded-xl bg-gradient-to-br from-emerald-600/10 to-teal-600/10 border border-emerald-600/20">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 rounded-xl bg-emerald-600/20 text-emerald-400">
+                        <Heart size={24} />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-zinc-100">التفاعل</h3>
+                        <p className="text-xs text-zinc-400">المفضلة والتقييمات</p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">مفضلة</span>
+                        <span className="text-xl font-black text-emerald-400">{stats.favorites}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">تقييمات</span>
+                        <span className="text-xl font-black text-yellow-400">{stats.reviews}</span>
+                      </div>
+                      {(stats.favorites + stats.reviews) > 0 && (
+                        <div className="pt-3 border-t border-emerald-600/20">
+                          <p className="text-xs text-zinc-500">
+                            شكراً على مساهمتك في المجتمع!
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
