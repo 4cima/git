@@ -23,9 +23,9 @@ export default function AuthLayout({
         <div className="max-w-md">
           {/* Logo */}
           <Link href="/" className="inline-flex items-center gap-2 mb-8 group">
-            <div className="flex items-center gap-1 font-black text-4xl tracking-tighter">
+            <div className="flex items-center gap-1 font-black text-4xl tracking-tighter lowercase" dir="ltr">
               <span className="text-red-600 group-hover:scale-110 transition-transform">4</span>
-              <span className="text-cyan-400 group-hover:scale-110 transition-transform">CIMA</span>
+              <span className="text-cyan-400 group-hover:scale-110 transition-transform">cima</span>
             </div>
           </Link>
           
@@ -83,9 +83,9 @@ export default function AuthLayout({
       <div className="flex-1 relative z-10 flex items-center justify-center p-4 lg:p-8">
         {/* Mobile Logo */}
         <div className="absolute top-4 right-4 lg:hidden">
-          <Link href="/" className="inline-flex items-center gap-1 font-black text-2xl tracking-tighter">
+          <Link href="/" className="inline-flex items-center gap-1 font-black text-2xl tracking-tighter lowercase" dir="ltr">
             <span className="text-red-600">4</span>
-            <span className="text-cyan-400">CIMA</span>
+            <span className="text-cyan-400">cima</span>
           </Link>
         </div>
         
