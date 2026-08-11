@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useMemo, memo, useEffect } from 'react'
 import { Home, Film, Tv, Zap, Rocket, Sparkles, Drama, Smile, Eye, Heart, Skull, Menu, X, LogIn } from 'lucide-react'
+import { UserMenu } from './UserMenu'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
@@ -127,8 +128,9 @@ export const QuantumNavbar = memo(() => {
             </Link>
           </div>
 
-          {/* Left: Empty */}
+          {/* Left: User Menu */}
           <div className="flex items-center gap-3">
+            <UserMenu />
           </div>
         </div>
             </nav>
