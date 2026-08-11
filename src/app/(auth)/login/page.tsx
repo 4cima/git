@@ -25,14 +25,29 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Clear previous errors
+    setError(null)
+    
     // Validation
     if (!email || !password) {
       setError('يرجى ملء جميع الحقول')
       return
     }
 
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      setError('يرجى إدخال بريد إلكتروني صحيح')
+      return
+    }
+
+    // Password length validation
+    if (password.length < 6) {
+      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+      return
+    }
+
     setLoading(true)
-    setError(null)
 
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
