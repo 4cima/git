@@ -175,10 +175,13 @@ export default function ProfilePage() {
                   
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors text-sm font-medium">
+                    <Link 
+                      href="/profile/settings"
+                      className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors text-sm font-medium"
+                    >
                       <Settings size={14} />
                       <span className="hidden sm:inline">الإعدادات</span>
-                    </button>
+                    </Link>
                     <button 
                       onClick={logout}
                       className="flex items-center gap-2 px-4 py-2 bg-red-600/10 hover:bg-red-600/20 text-red-400 rounded-xl transition-colors text-sm font-medium border border-red-600/20"
