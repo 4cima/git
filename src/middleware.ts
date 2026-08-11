@@ -23,53 +23,66 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Try Supabase session + role check
+  // Try Supabase session + role check with timeout
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value)
+              response.cookies.set(name, value, options)
+            })
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
+      }
+    )
+
+    // Add timeout to prevent hanging
+    const sessionPromise = supabase.auth.getSession()
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Auth timeout')), 3000)
+    )
+
+    const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any
+
+    if (session) {
+      // Check if user has admin or supervisor role with timeout
+      const profilePromise = supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+      
+      const profileTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile timeout')), 2000)
+      )
+
+      const { data: profile } = await Promise.race([profilePromise, profileTimeout]) as any
+
+      if (profile?.role === 'admin' || profile?.role === 'supervisor') {
+        return response
+      }
     }
-  )
-
-  const { data: { session } } = await supabase.auth.getSession()
-
-  if (session) {
-    // Check if user has admin or supervisor role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profile?.role === 'admin' || profile?.role === 'supervisor') {
-      return response
-    }
+  } catch (error) {
+    // Auth check failed or timed out - redirect to login
+    console.error('Admin auth check failed:', error)
+    return NextResponse.redirect(new URL('/login?redirect=/admin', request.url))
   }
 
-  // Neither auth method succeeded - require HTTP Basic Auth
-  return new NextResponse('Unauthorized', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="4CIMA Admin", charset="UTF-8"',
-    },
-  })
+  // No valid session - redirect to login
+  return NextResponse.redirect(new URL('/login?redirect=/admin', request.url))
 }
 
 export const config = {
