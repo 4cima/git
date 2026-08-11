@@ -8,8 +8,10 @@
 import { useState } from 'react'
 import { Mail, Lock, User } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { AuthCard } from '@/components/auth/AuthCard'
 import { InputField } from '@/components/auth/InputField'
+import { supabase, ensureProfile } from '@/lib/supabase'
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('')
@@ -18,6 +20,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,13 +34,55 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
 
-    // TODO: Wire up supabase.auth.signUp + ensureProfile in next commit
-    console.log('Register attempt:', { username, email, password, confirmPassword })
-    
-    setTimeout(() => {
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            username: username.trim(),
+          },
+        },
+      })
+
+      if (signUpError) throw signUpError
+
+      if (data.user) {
+        // Ensure profile is created with the username
+        await ensureProfile(data.user.id, data.user.email)
+        
+        // Update username in profile
+        await supabase
+          .from('profiles')
+          .update({ username: username.trim() })
+          .eq('id', data.user.id)
+
+        // Redirect to home
+        router.push('/')
+        router.refresh()
+      }
+    } catch (err: any) {
+      console.error('Registration error:', err)
+      
+      // User-friendly error messages in Arabic
+      let message = 'حدث خطأ أثناء إنشاء الحساب'
+      
+      if (err.message?.includes('User already registered')) {
+        message = 'البريد الإلكتروني مسجل بالفعل'
+      } else if (err.message?.includes('Password should be at least 6 characters')) {
+        message = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
+      } else if (err.message?.includes('Unable to validate email address')) {
+        message = 'البريد الإلكتروني غير صحيح'
+      } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
+        message = 'خطأ في الاتصال بالشبكة. يرجى المحاولة مرة أخرى.'
+      } else if (err.message) {
+        message = err.message
+      }
+      
+      setError(message)
+    } finally {
       setLoading(false)
-      setError('سيتم توصيل التسجيل في الخطوة التالية')
-    }, 1000)
+    }
   }
 
   return (
