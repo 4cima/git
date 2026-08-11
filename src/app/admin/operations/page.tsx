@@ -61,7 +61,6 @@ export default function OperationsPage() {
   const [confirmAction, setConfirmAction] = useState<Operation | null>(null)
   
   const outputRef = useRef<HTMLDivElement>(null)
-  const eventSourceRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
     // Check if password is stored in sessionStorage
@@ -150,42 +149,51 @@ export default function OperationsPage() {
         return
       }
 
-      // Set up SSE
-      const eventSource = new EventSource(`/api/admin/operations`)
-      eventSourceRef.current = eventSource
+      // Read SSE stream from response body
+      const reader = res.body?.getReader()
+      const decoder = new TextDecoder()
 
-      eventSource.addEventListener('start', (e) => {
-        const data = JSON.parse(e.data)
-        setOutput((prev) => [...prev, `🚀 Started at ${data.timestamp}`])
-      })
-
-      eventSource.addEventListener('stdout', (e) => {
-        const data = JSON.parse(e.data)
-        setOutput((prev) => [...prev, data.line])
-      })
-
-      eventSource.addEventListener('stderr', (e) => {
-        const data = JSON.parse(e.data)
-        setOutput((prev) => [...prev, `⚠️ ${data.line}`])
-      })
-
-      eventSource.addEventListener('exit', (e) => {
-        const data = JSON.parse(e.data)
-        const exitMsg = data.code === 0 
-          ? `✅ Completed successfully in ${data.duration}s`
-          : `❌ Exited with code ${data.code} after ${data.duration}s`
-        setOutput((prev) => [...prev, exitMsg])
+      if (!reader) {
+        setOutput([`❌ Error: No response stream`])
         setRunning(null)
-        eventSource.close()
-        fetchLogs()
-      })
+        return
+      }
 
-      eventSource.addEventListener('error', (e: any) => {
-        const data = e.data ? JSON.parse(e.data) : {}
-        setOutput((prev) => [...prev, `❌ Error: ${data.message || 'Connection lost'}`])
-        setRunning(null)
-        eventSource.close()
-      })
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            const event = line.slice(7)
+            const dataLine = lines[lines.indexOf(line) + 1]
+            if (!dataLine || !dataLine.startsWith('data: ')) continue
+
+            const data = JSON.parse(dataLine.slice(6))
+
+            if (event === 'start') {
+              setOutput((prev) => [...prev, `🚀 Started at ${data.timestamp}`])
+            } else if (event === 'stdout') {
+              setOutput((prev) => [...prev, data.line])
+            } else if (event === 'stderr') {
+              setOutput((prev) => [...prev, `⚠️ ${data.line}`])
+            } else if (event === 'exit') {
+              const exitMsg = data.code === 0 
+                ? `✅ Completed successfully in ${data.duration}s`
+                : `❌ Exited with code ${data.code} after ${data.duration}s`
+              setOutput((prev) => [...prev, exitMsg])
+              setRunning(null)
+              fetchLogs()
+            } else if (event === 'error') {
+              setOutput((prev) => [...prev, `❌ Error: ${data.message}`])
+              setRunning(null)
+            }
+          }
+        }
+      }
     } catch (error) {
       setOutput((prev) => [...prev, `❌ Failed to start: ${error}`])
       setRunning(null)
@@ -193,10 +201,6 @@ export default function OperationsPage() {
   }
 
   const stopOperation = () => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close()
-      eventSourceRef.current = null
-    }
     setRunning(null)
     setOutput((prev) => [...prev, '⏹ Stopped by user'])
   }
