@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useMemo, memo, useEffect } from 'react'
-import { Home, Film, Tv, Zap, Rocket, Sparkles, Drama, Smile, Eye, Heart, Skull, Menu, X, LogIn, User, LogOut } from 'lucide-react'
+import { Home, Film, Tv, Zap, Rocket, Sparkles, Drama, Smile, Eye, Heart, Skull, Menu, X, LogIn, User, LogOut, ChevronDown, Settings } from 'lucide-react'
 import { UserMenu } from './UserMenu'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -13,6 +13,8 @@ export const QuantumNavbar = memo(() => {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [logoScrolled, setLogoScrolled] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, profile, signOut } = useAuth()
 
   useEffect(() => {
@@ -56,8 +58,6 @@ export const QuantumNavbar = memo(() => {
     { slug: 'fantasy', label: 'فانتازيا', icon: Sparkles, color: 'purple-400' },
     { slug: 'animation', label: 'أنمي', icon: Tv, color: 'cyan-400' }
   ], [])
-
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <>
@@ -174,21 +174,100 @@ export const QuantumNavbar = memo(() => {
                   
                   {/* User Profile or Login Button */}
                   {user ? (
-                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-800/50">
-                      {profile?.avatar_url ? (
-                        <img
-                          src={profile.avatar_url}
-                          alt={profile.username || 'User'}
-                          className="w-6 h-6 rounded-full object-cover border border-zinc-700"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-red-600 to-cyan-400 flex items-center justify-center text-white text-xs font-bold">
-                          {(profile?.username || user.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <span className="text-sm font-semibold text-white truncate max-w-[100px]">
-                        {profile?.username || user.email?.split('@')[0] || 'User'}
-                      </span>
+                    <div className="relative">
+                      <button
+                        onClick={() => setUserMenuOpen(!userMenuOpen)}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
+                      >
+                        {profile?.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt={profile.username || 'User'}
+                            className="w-6 h-6 rounded-full object-cover border border-zinc-700"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-red-600 to-cyan-400 flex items-center justify-center text-white text-xs font-bold">
+                            {(profile?.username || user.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="text-sm font-semibold text-white truncate max-w-[80px]">
+                          {profile?.username || user.email?.split('@')[0] || 'User'}
+                        </span>
+                        <ChevronDown size={14} className={`text-zinc-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      <AnimatePresence>
+                        {userMenuOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute top-full left-0 mt-1 w-48 bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden z-50"
+                          >
+                            {/* User Info */}
+                            <div className="px-3 py-2 border-b border-zinc-800">
+                              <p className="text-sm font-semibold text-zinc-100 truncate">
+                                {profile?.username || user.email?.split('@')[0]}
+                              </p>
+                              <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+                              {(profile?.role === 'admin' || profile?.role === 'supervisor') && (
+                                <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold bg-cyan-400/10 text-cyan-400 rounded">
+                                  مشرف
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Menu Items */}
+                            <div className="py-1">
+                              <Link
+                                href="/profile"
+                                onClick={() => {
+                                  setUserMenuOpen(false)
+                                  setSidebarOpen(false)
+                                }}
+                                className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+                              >
+                                <User size={16} />
+                                <span>الملف الشخصي</span>
+                              </Link>
+
+                              {(profile?.role === 'admin' || profile?.role === 'supervisor') && (
+                                <Link
+                                  href="/admin"
+                                  onClick={() => {
+                                    setUserMenuOpen(false)
+                                    setSidebarOpen(false)
+                                  }}
+                                  className="flex items-center gap-3 px-3 py-2 text-sm text-cyan-400 hover:bg-cyan-400/10 transition-colors"
+                                >
+                                  <Settings size={16} />
+                                  <span>لوحة التحكم</span>
+                                </Link>
+                              )}
+
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await signOut()
+                                    setUserMenuOpen(false)
+                                    setSidebarOpen(false)
+                                    router.push('/')
+                                    router.refresh()
+                                  } catch (error) {
+                                    console.error('Sign out error:', error)
+                                  }
+                                }}
+                                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-400/10 transition-colors"
+                              >
+                                <LogOut size={16} />
+                                <span>تسجيل الخروج</span>
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   ) : (
                     <Link
@@ -307,37 +386,6 @@ export const QuantumNavbar = memo(() => {
                     )
                   })}
                 </div>
-
-                {/* User Actions - Profile & Logout */}
-                {user && (
-                  <div className="px-3 pb-3 pt-2 border-t border-white/10 mt-2">
-                    <Link
-                      href="/profile"
-                      onClick={() => setSidebarOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors mb-2"
-                    >
-                      <User size={16} className="text-cyan-400" />
-                      <span className="text-sm font-semibold text-white">الملف الشخصي</span>
-                    </Link>
-                    
-                    <button
-                      onClick={async () => {
-                        try {
-                          await signOut()
-                          setSidebarOpen(false)
-                          router.push('/')
-                          router.refresh()
-                        } catch (error) {
-                          console.error('Sign out error:', error)
-                        }
-                      }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
-                    >
-                      <LogOut size={16} className="text-red-400" />
-                      <span className="text-sm font-semibold text-red-400">تسجيل الخروج</span>
-                    </button>
-                  </div>
-                )}
               </div>
             </motion.div>
           </>
