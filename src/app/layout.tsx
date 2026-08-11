@@ -4,6 +4,8 @@ import './globals.css'
 import { Providers } from './providers'
 import { QuantumNavbar } from '@/components/layout/QuantumNavbar'
 import { Toaster } from 'sonner'
+import { AuthProvider } from '@/contexts/AuthContext'
+import { ClientInit } from './ClientInit'
 
 const cairo = Cairo({ 
   subsets: ['arabic', 'latin'],
@@ -90,13 +92,16 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" data-scroll-behavior="smooth">
       <body className={`${cairo.className} bg-black text-white min-h-screen`}>
-        <Providers>
-          <QuantumNavbar />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <Toaster position="top-center" richColors />
-        </Providers>
+        <AuthProvider>
+          <ClientInit />
+          <Providers>
+            <QuantumNavbar />
+            <main className="min-h-screen">
+              {children}
+            </main>
+            <Toaster position="top-center" richColors />
+          </Providers>
+        </AuthProvider>
       </body>
     </html>
   )
