@@ -1,3 +1,5 @@
+'use client'
+
 // src/contexts/AuthContext.tsx
 // Thin wrapper around useAuth (Zustand) for React Context compatibility
 // The actual auth logic lives in src/hooks/useAuth.ts
