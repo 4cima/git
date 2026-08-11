@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Tv, Plus, Search, Edit, Trash2, Loader, X, Save } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Tv, Plus, Search, Edit, Trash2, Loader, X, Save, Layers } from 'lucide-react'
 import { updateSeries, deleteSeries } from '@/services/adminContentAPI'
 
 interface Series {
@@ -21,6 +22,7 @@ interface EditState {
 }
 
 export default function SeriesManage() {
+  const router = useRouter()
   const [series,   setSeries]   = useState<Series[]>([])
   const [loading,  setLoading]  = useState(true)
   const [search,   setSearch]   = useState('')
@@ -190,6 +192,13 @@ export default function SeriesManage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => router.push(`/admin/series/${item.tmdb_id}`)}
+                        className="p-1.5 hover:bg-purple-500/20 hover:text-purple-400 rounded-md transition-colors text-zinc-500"
+                        title="إدارة المواسم"
+                      >
+                        <Layers size={15} />
+                      </button>
                       <button onClick={() => handleEdit(item)}
                         className="p-1.5 hover:bg-blue-500/20 hover:text-blue-400 rounded-md transition-colors text-zinc-500" title="تعديل">
                         <Edit size={15} />
