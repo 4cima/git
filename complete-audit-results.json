@@ -1,0 +1,1832 @@
+[
+  {
+    "phase": "baseline",
+    "type": "movies",
+    "test": "No filters - الأكثر شهرة",
+    "filters": "none",
+    "sort": "popularity DESC",
+    "explain": "8 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1757,
+      675,
+      780
+    ],
+    "avg": 1070.6666666666667,
+    "severity": "FAST"
+  },
+  {
+    "phase": "baseline",
+    "type": "movies",
+    "test": "No filters - الأعلى تقييماً",
+    "filters": "none",
+    "sort": "vote_average DESC",
+    "explain": "7 | 0 | 216 | SCAN movies\n27 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      46158,
+      38147,
+      33134
+    ],
+    "avg": 39146.333333333336,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "baseline",
+    "type": "movies",
+    "test": "No filters - الأكثر تقييماً",
+    "filters": "none",
+    "sort": "vote_count DESC",
+    "explain": "7 | 0 | 216 | SCAN movies\n28 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      30375,
+      32180,
+      25100
+    ],
+    "avg": 29218.333333333332,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "baseline",
+    "type": "movies",
+    "test": "No filters - الأحدث",
+    "filters": "none",
+    "sort": "release_year DESC",
+    "explain": "8 | 0 | 222 | SCAN movies USING INDEX idx_movies_year_rating",
+    "timings": [
+      682,
+      609,
+      600
+    ],
+    "avg": 630.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "baseline",
+    "type": "movies",
+    "test": "No filters - الأقدم",
+    "filters": "none",
+    "sort": "release_year ASC",
+    "explain": "8 | 0 | 222 | SCAN movies USING INDEX idx_movies_year_rating",
+    "timings": [
+      725,
+      614,
+      629
+    ],
+    "avg": 656,
+    "severity": "FAST"
+  },
+  {
+    "phase": "baseline",
+    "type": "series",
+    "test": "No filters - الأكثر شهرة",
+    "filters": "none",
+    "sort": "popularity DESC",
+    "explain": "8 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      4909,
+      1613,
+      3715
+    ],
+    "avg": 3412.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "baseline",
+    "type": "series",
+    "test": "No filters - الأعلى تقييماً",
+    "filters": "none",
+    "sort": "vote_average DESC",
+    "explain": "8 | 0 | 222 | SCAN tv_series USING INDEX idx_series_vote_average",
+    "timings": [
+      991,
+      662,
+      620
+    ],
+    "avg": 757.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "baseline",
+    "type": "series",
+    "test": "No filters - الأكثر تقييماً",
+    "filters": "none",
+    "sort": "vote_count DESC",
+    "explain": "8 | 0 | 222 | SCAN tv_series USING INDEX idx_series_vote_count",
+    "timings": [
+      920,
+      704,
+      634
+    ],
+    "avg": 752.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "baseline",
+    "type": "series",
+    "test": "No filters - الأحدث",
+    "filters": "none",
+    "sort": "first_air_year DESC",
+    "explain": "8 | 0 | 222 | SCAN tv_series USING INDEX idx_series_year_asc",
+    "timings": [
+      693,
+      598,
+      638
+    ],
+    "avg": 643,
+    "severity": "FAST"
+  },
+  {
+    "phase": "baseline",
+    "type": "series",
+    "test": "No filters - الأقدم",
+    "filters": "none",
+    "sort": "first_air_year ASC",
+    "explain": "8 | 0 | 222 | SCAN tv_series USING INDEX idx_series_year_asc",
+    "timings": [
+      1025,
+      624,
+      699
+    ],
+    "avg": 782.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2000s (الألفينات)",
+    "filters": "year=2000-2010",
+    "sort": "popularity DESC",
+    "count": 36014,
+    "explain": "8 | 0 | 162 | SEARCH movies USING INDEX idx_movies_year_rating (release_year>? AND release_year<?)\n35 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      15850,
+      8590,
+      5968
+    ],
+    "avg": 10136,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 1990s (التسعينات)",
+    "filters": "year=1990-1999",
+    "sort": "popularity DESC",
+    "count": 21890,
+    "explain": "8 | 0 | 162 | SEARCH movies USING INDEX idx_movies_year_rating (release_year>? AND release_year<?)\n35 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      11346,
+      3695,
+      4489
+    ],
+    "avg": 6510,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: Before 1990 (كلاسيكي)",
+    "filters": "year=before-1990",
+    "sort": "popularity DESC",
+    "count": 87600,
+    "explain": "8 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      2226,
+      894,
+      955
+    ],
+    "avg": 1358.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2026",
+    "filters": "year=2026",
+    "sort": "popularity DESC",
+    "count": 2110,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      2940,
+      874,
+      2016
+    ],
+    "avg": 1943.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2025",
+    "filters": "year=2025",
+    "sort": "popularity DESC",
+    "count": 5561,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      5963,
+      1542,
+      2219
+    ],
+    "avg": 3241.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2024",
+    "filters": "year=2024",
+    "sort": "popularity DESC",
+    "count": 6316,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      6106,
+      1933,
+      2308
+    ],
+    "avg": 3449,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2023",
+    "filters": "year=2023",
+    "sort": "popularity DESC",
+    "count": 6792,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      5717,
+      2903,
+      2625
+    ],
+    "avg": 3748.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2020",
+    "filters": "year=2020",
+    "sort": "popularity DESC",
+    "count": 5993,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      6807,
+      2276,
+      2094
+    ],
+    "avg": 3725.6666666666665,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2015",
+    "filters": "year=2015",
+    "sort": "popularity DESC",
+    "count": 5877,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      6453,
+      1628,
+      1781
+    ],
+    "avg": 3287.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2010",
+    "filters": "year=2010",
+    "sort": "popularity DESC",
+    "count": 3460,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1416,
+      1304,
+      1306
+    ],
+    "avg": 1342,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2005",
+    "filters": "year=2005",
+    "sort": "popularity DESC",
+    "count": 3544,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1157,
+      1504,
+      1533
+    ],
+    "avg": 1398,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 2000",
+    "filters": "year=2000",
+    "sort": "popularity DESC",
+    "count": 2554,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1443,
+      1393,
+      1190
+    ],
+    "avg": 1342,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 1995",
+    "filters": "year=1995",
+    "sort": "popularity DESC",
+    "count": 2156,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1191,
+      1409,
+      1488
+    ],
+    "avg": 1362.6666666666667,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "movies",
+    "test": "Year: 1990",
+    "filters": "year=1990",
+    "sort": "popularity DESC",
+    "count": 2108,
+    "explain": "8 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1256,
+      1540,
+      1093
+    ],
+    "avg": 1296.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "series",
+    "test": "Year: 2000s (الألفينات)",
+    "filters": "year=2000-2010",
+    "sort": "popularity DESC",
+    "count": 7736,
+    "explain": "8 | 0 | 162 | SEARCH tv_series USING INDEX idx_series_year_asc (first_air_year>? AND first_air_year<?)\n35 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      15103,
+      4696,
+      4135
+    ],
+    "avg": 7978,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "series",
+    "test": "Year: 1990s (التسعينات)",
+    "filters": "year=1990-1999",
+    "sort": "popularity DESC",
+    "count": 3840,
+    "explain": "8 | 0 | 162 | SEARCH tv_series USING INDEX idx_series_year_asc (first_air_year>? AND first_air_year<?)\n35 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      5973,
+      3795,
+      2733
+    ],
+    "avg": 4167,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "series",
+    "test": "Year: Before 1990 (كلاسيكي)",
+    "filters": "year=before-1990",
+    "sort": "popularity DESC",
+    "count": 5408,
+    "explain": "8 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      2760,
+      3252,
+      2719
+    ],
+    "avg": 2910.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "series",
+    "test": "Year: 2026",
+    "filters": "year=2026",
+    "sort": "popularity DESC",
+    "count": 1323,
+    "explain": "8 | 0 | 60 | SEARCH tv_series USING INDEX idx_series_year_asc (first_air_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1970,
+      1147,
+      1151
+    ],
+    "avg": 1422.6666666666667,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "series",
+    "test": "Year: 2025",
+    "filters": "year=2025",
+    "sort": "popularity DESC",
+    "count": 2753,
+    "explain": "8 | 0 | 60 | SEARCH tv_series USING INDEX idx_series_year_asc (first_air_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      2463,
+      924,
+      1280
+    ],
+    "avg": 1555.6666666666667,
+    "severity": "FAST"
+  },
+  {
+    "phase": "year-filters",
+    "type": "series",
+    "test": "Year: 2024",
+    "filters": "year=2024",
+    "sort": "popularity DESC",
+    "count": 2827,
+    "explain": "8 | 0 | 60 | SEARCH tv_series USING INDEX idx_series_year_asc (first_air_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      2775,
+      1170,
+      2113
+    ],
+    "avg": 2019.3333333333333,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "series",
+    "test": "Year: 2023",
+    "filters": "year=2023",
+    "sort": "popularity DESC",
+    "count": 3008,
+    "explain": "8 | 0 | 60 | SEARCH tv_series USING INDEX idx_series_year_asc (first_air_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      3401,
+      2745,
+      1633
+    ],
+    "avg": 2593,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "year-filters",
+    "type": "series",
+    "test": "Year: 2020",
+    "filters": "year=2020",
+    "sort": "popularity DESC",
+    "count": 2609,
+    "explain": "8 | 0 | 60 | SEARCH tv_series USING INDEX idx_series_year_asc (first_air_year=?)\n32 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      4248,
+      2139,
+      1431
+    ],
+    "avg": 2606,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: drama",
+    "filters": "genre=drama",
+    "sort": "popularity DESC",
+    "count": 96178,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      4601,
+      1004,
+      974
+    ],
+    "avg": 2193,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: comedy",
+    "filters": "genre=comedy",
+    "sort": "popularity DESC",
+    "count": 59524,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1194,
+      1711,
+      788
+    ],
+    "avg": 1231,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: action",
+    "filters": "genre=action",
+    "sort": "popularity DESC",
+    "count": -1,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      3103,
+      966,
+      1044
+    ],
+    "avg": 1704.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: thriller",
+    "filters": "genre=thriller",
+    "sort": "popularity DESC",
+    "count": 20941,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1103,
+      658,
+      634
+    ],
+    "avg": 798.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: romance",
+    "filters": "genre=romance",
+    "sort": "popularity DESC",
+    "count": 26136,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1689,
+      683,
+      1000
+    ],
+    "avg": 1124,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: science-fiction",
+    "filters": "genre=science-fiction",
+    "sort": "popularity DESC",
+    "count": 7684,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      2451,
+      951,
+      1983
+    ],
+    "avg": 1795,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: horror",
+    "filters": "genre=horror",
+    "sort": "popularity DESC",
+    "count": 14169,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1433,
+      787,
+      781
+    ],
+    "avg": 1000.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: crime",
+    "filters": "genre=crime",
+    "sort": "popularity DESC",
+    "count": 18738,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      3007,
+      1158,
+      972
+    ],
+    "avg": 1712.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: adventure",
+    "filters": "genre=adventure",
+    "sort": "popularity DESC",
+    "count": 13161,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1411,
+      900,
+      2050
+    ],
+    "avg": 1453.6666666666667,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: animation",
+    "filters": "genre=animation",
+    "sort": "popularity DESC",
+    "count": -1,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      3398,
+      2505,
+      2402
+    ],
+    "avg": 2768.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: family",
+    "filters": "genre=family",
+    "sort": "popularity DESC",
+    "count": -1,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      47170,
+      663,
+      583
+    ],
+    "avg": 16138.666666666666,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: fantasy",
+    "filters": "genre=fantasy",
+    "sort": "popularity DESC",
+    "count": -1,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      2927,
+      1773,
+      1999
+    ],
+    "avg": 2233,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "movies",
+    "test": "Genre: war",
+    "filters": "genre=war",
+    "sort": "popularity DESC",
+    "count": 6137,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      4570,
+      1508,
+      2239
+    ],
+    "avg": 2772.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: drama",
+    "filters": "genre=drama",
+    "sort": "popularity DESC",
+    "count": 22048,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      4049,
+      2055,
+      1308
+    ],
+    "avg": 2470.6666666666665,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: comedy",
+    "filters": "genre=comedy",
+    "sort": "popularity DESC",
+    "count": 13896,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      4538,
+      2844,
+      2304
+    ],
+    "avg": 3228.6666666666665,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: animation",
+    "filters": "genre=animation",
+    "sort": "popularity DESC",
+    "count": 7551,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      4109,
+      2908,
+      2774
+    ],
+    "avg": 3263.6666666666665,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: documentary",
+    "filters": "genre=documentary",
+    "sort": "popularity DESC",
+    "count": 7548,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      9545,
+      3920,
+      4908
+    ],
+    "avg": 6124.333333333333,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: action-adventure",
+    "filters": "genre=action-adventure",
+    "sort": "popularity DESC",
+    "count": 0,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      109733,
+      39734,
+      32945
+    ],
+    "avg": 60804,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: sci-fi-fantasy",
+    "filters": "genre=sci-fi-fantasy",
+    "sort": "popularity DESC",
+    "count": 0,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      28614,
+      33085,
+      35537
+    ],
+    "avg": 32412,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: crime",
+    "filters": "genre=crime",
+    "sort": "popularity DESC",
+    "count": 5582,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      1971,
+      1590,
+      1204
+    ],
+    "avg": 1588.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: reality",
+    "filters": "genre=reality",
+    "sort": "popularity DESC",
+    "count": 4378,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      3674,
+      2714,
+      2920
+    ],
+    "avg": 3102.6666666666665,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: mystery",
+    "filters": "genre=mystery",
+    "sort": "popularity DESC",
+    "count": 4264,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      1675,
+      1814,
+      1289
+    ],
+    "avg": 1592.6666666666667,
+    "severity": "FAST"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: family",
+    "filters": "genre=family",
+    "sort": "popularity DESC",
+    "count": 3689,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      3945,
+      2360,
+      2819
+    ],
+    "avg": 3041.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: kids",
+    "filters": "genre=kids",
+    "sort": "popularity DESC",
+    "count": 2565,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      4154,
+      2632,
+      1942
+    ],
+    "avg": 2909.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: soap",
+    "filters": "genre=soap",
+    "sort": "popularity DESC",
+    "count": 1222,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      5585,
+      7926,
+      5265
+    ],
+    "avg": 6258.666666666667,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: war-politics",
+    "filters": "genre=war-politics",
+    "sort": "popularity DESC",
+    "count": 0,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      26937,
+      18669,
+      21494
+    ],
+    "avg": 22366.666666666668,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: talk",
+    "filters": "genre=talk",
+    "sort": "popularity DESC",
+    "count": 925,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      4286,
+      2954,
+      3586
+    ],
+    "avg": 3608.6666666666665,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: news",
+    "filters": "genre=news",
+    "sort": "popularity DESC",
+    "count": 305,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      6088,
+      5049,
+      3924
+    ],
+    "avg": 5020.333333333333,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: western",
+    "filters": "genre=western",
+    "sort": "popularity DESC",
+    "count": 292,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      4781,
+      3108,
+      4674
+    ],
+    "avg": 4187.666666666667,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: romance",
+    "filters": "genre=romance",
+    "sort": "popularity DESC",
+    "count": 116,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      9123,
+      12442,
+      12708
+    ],
+    "avg": 11424.333333333334,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "genres",
+    "type": "series",
+    "test": "Genre: history",
+    "filters": "genre=history",
+    "sort": "popularity DESC",
+    "count": 16,
+    "explain": "5 | 0 | 222 | SCAN tv_series USING INDEX idx_series_popularity",
+    "timings": [
+      62264,
+      49349,
+      86902
+    ],
+    "avg": 66171.66666666667,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: US",
+    "filters": "country=US",
+    "sort": "popularity DESC",
+    "count": 59234,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1065,
+      585,
+      571
+    ],
+    "avg": 740.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: JP",
+    "filters": "country=JP",
+    "sort": "popularity DESC",
+    "count": 11636,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      2185,
+      747,
+      731
+    ],
+    "avg": 1221,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: GB",
+    "filters": "country=GB",
+    "sort": "popularity DESC",
+    "count": 13462,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1283,
+      581,
+      602
+    ],
+    "avg": 822,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: CN",
+    "filters": "country=CN",
+    "sort": "popularity DESC",
+    "count": 3112,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      4623,
+      644,
+      1429
+    ],
+    "avg": 2232,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: KR",
+    "filters": "country=KR",
+    "sort": "popularity DESC",
+    "count": 3361,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      3927,
+      572,
+      569
+    ],
+    "avg": 1689.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: CA",
+    "filters": "country=CA",
+    "sort": "popularity DESC",
+    "count": 7179,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1249,
+      584,
+      620
+    ],
+    "avg": 817.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: FR",
+    "filters": "country=FR",
+    "sort": "popularity DESC",
+    "count": 14654,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1272,
+      593,
+      572
+    ],
+    "avg": 812.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: DE",
+    "filters": "country=DE",
+    "sort": "popularity DESC",
+    "count": 10134,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      938,
+      585,
+      566
+    ],
+    "avg": 696.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: IN",
+    "filters": "country=IN",
+    "sort": "popularity DESC",
+    "count": 10537,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      945,
+      588,
+      564
+    ],
+    "avg": 699,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: TH",
+    "filters": "country=TH",
+    "sort": "popularity DESC",
+    "count": 923,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      2945,
+      3304,
+      4262
+    ],
+    "avg": 3503.6666666666665,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: RU",
+    "filters": "country=RU",
+    "sort": "popularity DESC",
+    "count": 2025,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      2795,
+      1932,
+      1835
+    ],
+    "avg": 2187.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: AU",
+    "filters": "country=AU",
+    "sort": "popularity DESC",
+    "count": 2353,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1281,
+      592,
+      627
+    ],
+    "avg": 833.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: BR",
+    "filters": "country=BR",
+    "sort": "popularity DESC",
+    "count": 3214,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1474,
+      677,
+      671
+    ],
+    "avg": 940.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: MX",
+    "filters": "country=MX",
+    "sort": "popularity DESC",
+    "count": 4621,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1609,
+      566,
+      558
+    ],
+    "avg": 911,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "movies",
+    "test": "Country: TR",
+    "filters": "country=TR",
+    "sort": "popularity DESC",
+    "count": 2072,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      3990,
+      2663,
+      1750
+    ],
+    "avg": 2801,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: US",
+    "filters": "country=US",
+    "sort": "popularity DESC",
+    "count": 8760,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      10422,
+      2597,
+      3273
+    ],
+    "avg": 5430.666666666667,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: JP",
+    "filters": "country=JP",
+    "sort": "popularity DESC",
+    "count": 6470,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      8705,
+      588,
+      598
+    ],
+    "avg": 3297,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: GB",
+    "filters": "country=GB",
+    "sort": "popularity DESC",
+    "count": 4795,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      5698,
+      646,
+      558
+    ],
+    "avg": 2300.6666666666665,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: CN",
+    "filters": "country=CN",
+    "sort": "popularity DESC",
+    "count": 2866,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      3462,
+      565,
+      573
+    ],
+    "avg": 1533.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: KR",
+    "filters": "country=KR",
+    "sort": "popularity DESC",
+    "count": 2267,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      2337,
+      565,
+      582
+    ],
+    "avg": 1161.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: CA",
+    "filters": "country=CA",
+    "sort": "popularity DESC",
+    "count": 1338,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1901,
+      557,
+      567
+    ],
+    "avg": 1008.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: FR",
+    "filters": "country=FR",
+    "sort": "popularity DESC",
+    "count": 1136,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1838,
+      589,
+      589
+    ],
+    "avg": 1005.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: DE",
+    "filters": "country=DE",
+    "sort": "popularity DESC",
+    "count": 1030,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1675,
+      620,
+      559
+    ],
+    "avg": 951.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: IN",
+    "filters": "country=IN",
+    "sort": "popularity DESC",
+    "count": 984,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1766,
+      611,
+      559
+    ],
+    "avg": 978.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: TH",
+    "filters": "country=TH",
+    "sort": "popularity DESC",
+    "count": 825,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1325,
+      629,
+      564
+    ],
+    "avg": 839.3333333333334,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: RU",
+    "filters": "country=RU",
+    "sort": "popularity DESC",
+    "count": 762,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1429,
+      627,
+      622
+    ],
+    "avg": 892.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: AU",
+    "filters": "country=AU",
+    "sort": "popularity DESC",
+    "count": 751,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1301,
+      586,
+      569
+    ],
+    "avg": 818.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: BR",
+    "filters": "country=BR",
+    "sort": "popularity DESC",
+    "count": 728,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1249,
+      629,
+      668
+    ],
+    "avg": 848.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: MX",
+    "filters": "country=MX",
+    "sort": "popularity DESC",
+    "count": 647,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1075,
+      691,
+      651
+    ],
+    "avg": 805.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "countries",
+    "type": "series",
+    "test": "Country: TR",
+    "filters": "country=TR",
+    "sort": "popularity DESC",
+    "count": 574,
+    "explain": "5 | 0 | 61 | SEARCH tv_series USING INDEX idx_series_country (country_of_origin=?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      989,
+      647,
+      704
+    ],
+    "avg": 780,
+    "severity": "FAST"
+  },
+  {
+    "phase": "ratings",
+    "type": "movies",
+    "test": "Rating: 9.1-10",
+    "filters": "rating=9.1-10",
+    "sort": "popularity DESC",
+    "count": 3329,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      3624,
+      4316,
+      3950
+    ],
+    "avg": 3963.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "ratings",
+    "type": "movies",
+    "test": "Rating: 8.1-9",
+    "filters": "rating=8.1-9",
+    "sort": "popularity DESC",
+    "count": 21377,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      852,
+      848,
+      799
+    ],
+    "avg": 833,
+    "severity": "FAST"
+  },
+  {
+    "phase": "ratings",
+    "type": "movies",
+    "test": "Rating: 7.1-8",
+    "filters": "rating=7.1-8",
+    "sort": "popularity DESC",
+    "count": 50046,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      651,
+      544,
+      566
+    ],
+    "avg": 587,
+    "severity": "FAST"
+  },
+  {
+    "phase": "ratings",
+    "type": "movies",
+    "test": "Rating: 6.1-7",
+    "filters": "rating=6.1-7",
+    "sort": "popularity DESC",
+    "count": 84682,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      611,
+      550,
+      549
+    ],
+    "avg": 570,
+    "severity": "FAST"
+  },
+  {
+    "phase": "ratings",
+    "type": "movies",
+    "test": "Rating: 5.1-6",
+    "filters": "rating=5.1-6",
+    "sort": "popularity DESC",
+    "count": 63311,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      897,
+      911,
+      775
+    ],
+    "avg": 861,
+    "severity": "FAST"
+  },
+  {
+    "phase": "ratings",
+    "type": "movies",
+    "test": "Rating: 4.1-5",
+    "filters": "rating=4.1-5",
+    "sort": "popularity DESC",
+    "count": 11138,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1777,
+      1332,
+      1839
+    ],
+    "avg": 1649.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "ratings",
+    "type": "series",
+    "test": "Rating: 9.1-10",
+    "filters": "rating=9.1-10",
+    "sort": "popularity DESC",
+    "count": 1762,
+    "explain": "5 | 0 | 162 | SEARCH tv_series USING INDEX idx_series_vote_average (vote_average>? AND vote_average<?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      5055,
+      2359,
+      2544
+    ],
+    "avg": 3319.3333333333335,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "ratings",
+    "type": "series",
+    "test": "Rating: 8.1-9",
+    "filters": "rating=8.1-9",
+    "sort": "popularity DESC",
+    "count": 7107,
+    "explain": "5 | 0 | 162 | SEARCH tv_series USING INDEX idx_series_vote_average (vote_average>? AND vote_average<?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      11824,
+      2493,
+      2476
+    ],
+    "avg": 5597.666666666667,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "ratings",
+    "type": "series",
+    "test": "Rating: 7.1-8",
+    "filters": "rating=7.1-8",
+    "sort": "popularity DESC",
+    "count": 16344,
+    "explain": "5 | 0 | 162 | SEARCH tv_series USING INDEX idx_series_vote_average (vote_average>? AND vote_average<?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      19530,
+      6184,
+      4969
+    ],
+    "avg": 10227.666666666666,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "ratings",
+    "type": "series",
+    "test": "Rating: 6.1-7",
+    "filters": "rating=6.1-7",
+    "sort": "popularity DESC",
+    "count": 14822,
+    "explain": "5 | 0 | 162 | SEARCH tv_series USING INDEX idx_series_vote_average (vote_average>? AND vote_average<?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      18989,
+      8031,
+      6517
+    ],
+    "avg": 11179,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "ratings",
+    "type": "series",
+    "test": "Rating: 5.1-6",
+    "filters": "rating=5.1-6",
+    "sort": "popularity DESC",
+    "count": 7549,
+    "explain": "5 | 0 | 162 | SEARCH tv_series USING INDEX idx_series_vote_average (vote_average>? AND vote_average<?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      14111,
+      3780,
+      5260
+    ],
+    "avg": 7717,
+    "severity": "SLOW"
+  },
+  {
+    "phase": "ratings",
+    "type": "series",
+    "test": "Rating: 4.1-5",
+    "filters": "rating=4.1-5",
+    "sort": "popularity DESC",
+    "count": 1585,
+    "explain": "5 | 0 | 162 | SEARCH tv_series USING INDEX idx_series_vote_average (vote_average>? AND vote_average<?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      3456,
+      563,
+      583
+    ],
+    "avg": 1534,
+    "severity": "FAST"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "action + 2023 + popularity",
+    "filters": "genre=action, year=2023",
+    "sort": "popularity DESC",
+    "count": 650,
+    "explain": "5 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      1997,
+      1807,
+      1129
+    ],
+    "avg": 1644.3333333333333,
+    "severity": "FAST"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "drama + 2024 + popularity",
+    "filters": "genre=drama, year=2024",
+    "sort": "popularity DESC",
+    "count": 2303,
+    "explain": "5 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      806,
+      571,
+      624
+    ],
+    "avg": 667,
+    "severity": "FAST"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "action + 1990-1999 + popularity",
+    "filters": "genre=action, year=1990-1999",
+    "sort": "popularity DESC",
+    "count": 3041,
+    "explain": "5 | 0 | 162 | SEARCH movies USING INDEX idx_movies_year_rating (release_year>? AND release_year<?)\n25 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      13653,
+      27130,
+      25616
+    ],
+    "avg": 22133,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "KR + 2023 + popularity",
+    "filters": "country=KR, year=2023",
+    "sort": "popularity DESC",
+    "count": 148,
+    "explain": "5 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      757,
+      590,
+      584
+    ],
+    "avg": 643.6666666666666,
+    "severity": "FAST"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "US + 2024 + popularity",
+    "filters": "country=US, year=2024",
+    "sort": "popularity DESC",
+    "count": 1187,
+    "explain": "5 | 0 | 61 | SEARCH movies USING INDEX idx_movies_year_rating (release_year=?)\n24 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      710,
+      586,
+      594
+    ],
+    "avg": 630,
+    "severity": "FAST"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "action + US",
+    "filters": "genre=action, country=US",
+    "sort": "popularity DESC",
+    "count": 6455,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      920,
+      580,
+      555
+    ],
+    "avg": 685,
+    "severity": "FAST"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "drama + KR",
+    "filters": "genre=drama, country=KR",
+    "sort": "vote_average DESC",
+    "count": 1898,
+    "explain": "4 | 0 | 216 | SCAN movies\n23 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      94822,
+      51111,
+      27775
+    ],
+    "avg": 57902.666666666664,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "rating 8.1-9 + popularity",
+    "filters": "rating=8.1-9",
+    "sort": "popularity DESC",
+    "count": 21377,
+    "explain": "5 | 0 | 222 | SCAN movies USING INDEX idx_movies_popularity",
+    "timings": [
+      1034,
+      1502,
+      769
+    ],
+    "avg": 1101.6666666666667,
+    "severity": "FAST"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "rating 8.1-9 + vote_count",
+    "filters": "rating=8.1-9",
+    "sort": "vote_count DESC",
+    "count": 21377,
+    "explain": "4 | 0 | 216 | SCAN movies\n20 | 0 | 0 | USE TEMP B-TREE FOR ORDER BY",
+    "timings": [
+      22681,
+      21993,
+      33829
+    ],
+    "avg": 26167.666666666668,
+    "severity": "CRITICAL"
+  },
+  {
+    "phase": "combinations",
+    "type": "movies",
+    "test": "rating 8.1-9 + release_year",
+    "filters": "rating=8.1-9",
+    "sort": "release_year DESC",
+    "count": 21377,
+    "explain": "4 | 0 | 207 | SCAN movies USING COVERING INDEX idx_movies_year_rating",
+    "timings": [
+      585,
+      549,
+      552
+    ],
+    "avg": 562,
+    "severity": "FAST"
+  }
+]

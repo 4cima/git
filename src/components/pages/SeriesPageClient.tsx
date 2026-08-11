@@ -507,6 +507,15 @@ export function SeriesPageClient() {
                         <img src={`/tmdb/w185${item.poster_path}`} alt={item.name_ar}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy"/>
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
+                        
+                        {/* Media Type Badge */}
+                        <div className="absolute top-2 right-2 z-20">
+                          <span className="flex items-center gap-1 bg-blue-600/90 text-white border border-blue-500/60 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                            <Tv className="w-[10px] h-[10px] shrink-0" />
+                            <span className="text-[9px] font-bold">مسلسل</span>
+                          </span>
+                        </div>
+                        
                         {item.vote_average>0 && (
                           <div className="absolute top-2 left-2 z-20">
                             <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">

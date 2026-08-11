@@ -1,99 +1,19 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
   Film,
   Tv,
-  Search,
   Star,
   Play,
-  Database,
-  ChevronRight,
-  ExternalLink,
   AlertTriangle,
-  Info,
-  ShieldCheck,
-  BadgeCheck,
-  Heart,
+  ArrowLeft,
 } from 'lucide-react'
 import { Loading } from '@/components/common/Loading'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
-
-// Genres constant - خارج الكومبوننت لتحسين الأداء
-const GENRES = [
-  { name: 'دراما', emoji: '🎭', color: 'purple' },
-  { name: 'كوميديا', emoji: '😂', color: 'yellow' },
-  { name: 'أكشن', emoji: '🔥', color: 'red' },
-  { name: 'إثارة', emoji: '⚡', color: 'orange' },
-  { name: 'رومانسي', emoji: '💕', color: 'pink' },
-  { name: 'خيال علمي', emoji: '🚀', color: 'cyan' },
-  { name: 'رعب', emoji: '👻', color: 'gray' },
-  { name: 'جريمة', emoji: '🕵️', color: 'rose' },
-  { name: 'مغامرة', emoji: '🗡️', color: 'emerald' },
-  { name: 'رسوم متحركة', emoji: '🎨', color: 'blue' },
-  { name: 'عائلي', emoji: '🎪', color: 'green' },
-  { name: 'فانتازيا', emoji: '🧙', color: 'indigo' },
-  { name: 'حرب', emoji: '⚔️', color: 'slate' }
-] as const
-
-// Color classes mapping - لتجنب dynamic class generation
-const COLOR_CLASSES: Record<string, { active: string; inactive: string }> = {
-  purple: {
-    active: 'bg-purple-600 text-white border-2 border-purple-500',
-    inactive: 'bg-purple-600/10 hover:bg-purple-600/20 border border-purple-600/30 hover:border-purple-600/50 text-purple-400 hover:text-purple-300'
-  },
-  yellow: {
-    active: 'bg-yellow-600 text-white border-2 border-yellow-500',
-    inactive: 'bg-yellow-600/10 hover:bg-yellow-600/20 border border-yellow-600/30 hover:border-yellow-600/50 text-yellow-400 hover:text-yellow-300'
-  },
-  red: {
-    active: 'bg-red-600 text-white border-2 border-red-500',
-    inactive: 'bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 hover:border-red-600/50 text-red-400 hover:text-red-300'
-  },
-  orange: {
-    active: 'bg-orange-600 text-white border-2 border-orange-500',
-    inactive: 'bg-orange-600/10 hover:bg-orange-600/20 border border-orange-600/30 hover:border-orange-600/50 text-orange-400 hover:text-orange-300'
-  },
-  pink: {
-    active: 'bg-pink-600 text-white border-2 border-pink-500',
-    inactive: 'bg-pink-600/10 hover:bg-pink-600/20 border border-pink-600/30 hover:border-pink-600/50 text-pink-400 hover:text-pink-300'
-  },
-  cyan: {
-    active: 'bg-cyan-600 text-white border-2 border-cyan-500',
-    inactive: 'bg-cyan-600/10 hover:bg-cyan-600/20 border border-cyan-600/30 hover:border-cyan-600/50 text-cyan-400 hover:text-cyan-300'
-  },
-  gray: {
-    active: 'bg-gray-600 text-white border-2 border-gray-500',
-    inactive: 'bg-gray-600/10 hover:bg-gray-600/20 border border-gray-600/30 hover:border-gray-600/50 text-gray-400 hover:text-gray-300'
-  },
-  rose: {
-    active: 'bg-rose-900 text-white border-2 border-rose-800',
-    inactive: 'bg-rose-900/10 hover:bg-rose-900/20 border border-rose-900/30 hover:border-rose-900/50 text-rose-400 hover:text-rose-300'
-  },
-  emerald: {
-    active: 'bg-emerald-600 text-white border-2 border-emerald-500',
-    inactive: 'bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-600/30 hover:border-emerald-600/50 text-emerald-400 hover:text-emerald-300'
-  },
-  blue: {
-    active: 'bg-blue-600 text-white border-2 border-blue-500',
-    inactive: 'bg-blue-600/10 hover:bg-blue-600/20 border border-blue-600/30 hover:border-blue-600/50 text-blue-400 hover:text-blue-300'
-  },
-  green: {
-    active: 'bg-green-600 text-white border-2 border-green-500',
-    inactive: 'bg-green-600/10 hover:bg-green-600/20 border border-green-600/30 hover:border-green-600/50 text-green-400 hover:text-green-300'
-  },
-  indigo: {
-    active: 'bg-indigo-600 text-white border-2 border-indigo-500',
-    inactive: 'bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-600/30 hover:border-indigo-600/50 text-indigo-400 hover:text-indigo-300'
-  },
-  slate: {
-    active: 'bg-slate-600 text-white border-2 border-slate-500',
-    inactive: 'bg-slate-600/10 hover:bg-slate-600/20 border border-slate-600/30 hover:border-slate-600/50 text-slate-400 hover:text-slate-300'
-  }
-}
 
 interface MediaItem {
   id: number
@@ -143,57 +63,36 @@ function mapItems(items: any[] | undefined, type: 'movie' | 'tv'): MediaItem[] {
 }
 
 export default function Home() {
+  // State management
   const [data, setData] = useState<HomeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState<'all' | 'movie' | 'tv'>('all')
-  const [selectedGenre, setSelectedGenre] = useState<string>('all') // التصنيف المحدد
   const [heroIndex, setHeroIndex] = useState(0)
   const [heroItems, setHeroItems] = useState<MediaItem[]>([])
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right'>('left')
-  const [hoveredItemSlug, setHoveredItemSlug] = useState<string | null>(null)
-  const [itemsToShow, setItemsToShow] = useState(60) // Dynamic based on screen
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Calculate items to show based on screen width
-  // Target: 10 rows on home page
-  useEffect(() => {
-    const calculateItemsToShow = () => {
-      const width = window.innerWidth
-      let columns = 2 // default mobile
-      
-      if (width >= 1536) columns = 8      // 2xl: 8 columns
-      else if (width >= 1280) columns = 7 // xl: 7 columns  
-      else if (width >= 1024) columns = 6 // lg: 6 columns
-      else if (width >= 768) columns = 5  // md: 5 columns
-      else if (width >= 640) columns = 4  // sm: 4 columns
-      else if (width >= 480) columns = 3  // xs: 3 columns
-      else columns = 2                    // mobile: 2 columns
-      
-      const ROWS_ON_HOME = 10
-      setItemsToShow(columns * ROWS_ON_HOME)
-    }
-
-    calculateItemsToShow()
-    
-    // Debounced resize handler
-    const handleResize = () => {
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current)
-      }
-      resizeTimeoutRef.current = setTimeout(calculateItemsToShow, 150)
-    }
-    
-    window.addEventListener('resize', handleResize)
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current)
-      }
-    }
-  }, [])
+  
+  // Lazy loading state
+  const [moviesDisplayCount, setMoviesDisplayCount] = useState(25) // نبدأ بـ 25
+  const [seriesDisplayCount, setSeriesDisplayCount] = useState(25) // نبدأ بـ 25
+  
+  // Simple refs for scroll
+  const moviesScrollRef = useRef<HTMLDivElement>(null)
+  const seriesScrollRef = useRef<HTMLDivElement>(null)
+  const moviesEndRef = useRef<HTMLDivElement>(null)
+  const seriesEndRef = useRef<HTMLDivElement>(null)
+  
+  // Drag to scroll state
+  const [isDragging, setIsDragging] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [scrollLeft, setScrollLeft] = useState(0)
+  const [currentScrollRef, setCurrentScrollRef] = useState<HTMLDivElement | null>(null)
+  
+  // Touch scroll state
+  const [isTouching, setIsTouching] = useState(false)
+  const [touchStartX, setTouchStartX] = useState(0)
+  const [touchScrollLeft, setTouchScrollLeft] = useState(0)
+  const [clickDisabled, setClickDisabled] = useState(false)
 
   // جلب البيانات من API
   useEffect(() => {
@@ -217,15 +116,13 @@ export default function Home() {
           trendingSeries
         })
 
-        // إنشاء قائمة الهيرو: 5 أفلام + 5 مسلسلات بالتناوب
+        // إنشاء قائمة الهيرو من أول 20 عمل فقط
         const heroList: MediaItem[] = []
-        const addedIds = new Set<number>() // لتتبع الأعمال المضافة ومنع التكرار
+        const addedIds = new Set<number>()
         
-        // فلترة الأفلام والمسلسلات لتكون من سنة 2026 فقط
         const movies2026 = trendingMovies.filter(item => item.year === 2026).slice(0, 10)
         const tvShows2026 = trendingSeries.filter(item => item.year === 2026).slice(0, 10)
         
-        // التناوب بين الأفلام والمسلسلات من 2026
         const maxItems = Math.max(movies2026.length, tvShows2026.length)
         for (let i = 0; i < maxItems && heroList.length < 10; i++) {
           if (movies2026[i] && !addedIds.has(movies2026[i].id)) {
@@ -238,7 +135,6 @@ export default function Home() {
           }
         }
         
-        // إذا لم نجد أعمال كافية من 2026، نضيف من باقي الأعمال
         if (heroList.length < 10) {
           const allMovies = trendingMovies.slice(0, 20)
           const allTvShows = trendingSeries.slice(0, 20)
@@ -268,6 +164,52 @@ export default function Home() {
     fetchData()
   }, [])
 
+  // Intersection Observer للـ lazy loading - Movies
+  useEffect(() => {
+    if (!moviesEndRef.current || !data || moviesDisplayCount >= data.trendingMovies.length) return
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          // حمّل 25 عمل إضافية
+          setMoviesDisplayCount(prev => Math.min(prev + 25, data.trendingMovies.length))
+        }
+      },
+      {
+        root: moviesScrollRef.current,
+        rootMargin: '400px',
+        threshold: 0
+      }
+    )
+    
+    observer.observe(moviesEndRef.current)
+    
+    return () => observer.disconnect()
+  }, [moviesDisplayCount, data])
+
+  // Intersection Observer للـ lazy loading - Series
+  useEffect(() => {
+    if (!seriesEndRef.current || !data || seriesDisplayCount >= data.trendingSeries.length) return
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          // حمّل 25 عمل إضافية
+          setSeriesDisplayCount(prev => Math.min(prev + 25, data.trendingSeries.length))
+        }
+      },
+      {
+        root: seriesScrollRef.current,
+        rootMargin: '400px',
+        threshold: 0
+      }
+    )
+    
+    observer.observe(seriesEndRef.current)
+    
+    return () => observer.disconnect()
+  }, [seriesDisplayCount, data])
+
   // دالة لإعادة تشغيل مهلة التبديل التلقائي
   const resetAutoRotate = useCallback(() => {
     if (intervalRef.current) {
@@ -293,17 +235,13 @@ export default function Home() {
     }
   }, [heroItems.length, resetAutoRotate])
 
-  const handleToggleWatchlist = useCallback((e: React.MouseEvent, id: number) => {
-    e.preventDefault()
-    e.stopPropagation()
-    // Removed watchlist functionality
-  }, [])
+
 
   const handleHeroChange = useCallback((newIndex: number, direction: 'left' | 'right') => {
     setSwipeDirection(direction)
     setHeroIndex(newIndex)
     resetAutoRotate() // إعادة تشغيل المهلة
-  }, [])
+  }, [resetAutoRotate])
   
   const retryFetch = useCallback(() => {
     setError(null)
@@ -312,30 +250,202 @@ export default function Home() {
     window.location.reload()
   }, [])
 
-  // دمج البيانات وترتيبها
-  const allContent = useMemo(() => 
-    data ? [...(data.trendingMovies || []), ...(data.trendingSeries || [])] : []
-  , [data])
+  // Scroll helper functions
+  const scrollHorizontal = useCallback((ref: React.RefObject<HTMLDivElement | null>, direction: 'left' | 'right') => {
+    if (!ref.current) return
+    const scrollAmount = 800
+    ref.current.scrollBy({
+      left: direction === 'right' ? scrollAmount : -scrollAmount,
+      behavior: 'smooth'
+    })
+  }, [])
 
-  // تصفية البيانات
-  const filteredContent = useMemo(() => allContent.filter((item) => {
-    // فلتر حسب النوع (أفلام/مسلسلات)
-    if (activeTab !== 'all' && item.media_type !== activeTab) return false
-    
-    // فلتر حسب التصنيف
-    if (selectedGenre !== 'all' && item.primary_genre !== selectedGenre) return false
-    
-    // فلتر حسب البحث
-    if (searchQuery.trim() !== '') {
-      const q = searchQuery.toLowerCase()
-      const matchTitle =
-        (item.title_ar?.toLowerCase() || '').includes(q) ||
-        (item.title_en?.toLowerCase() || '').includes(q)
-      const matchOverview = (item.overview_ar?.toLowerCase() || '').includes(q)
-      if (!matchTitle && !matchOverview) return false
+  // Mouse wheel horizontal scroll
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (moviesScrollRef.current?.contains(e.target as Node)) {
+        e.preventDefault()
+        moviesScrollRef.current.scrollLeft += e.deltaY
+      } else if (seriesScrollRef.current?.contains(e.target as Node)) {
+        e.preventDefault()
+        seriesScrollRef.current.scrollLeft += e.deltaY
+      }
     }
-    return true
-  }), [allContent, activeTab, selectedGenre, searchQuery])
+
+    const moviesEl = moviesScrollRef.current
+    const seriesEl = seriesScrollRef.current
+
+    moviesEl?.addEventListener('wheel', handleWheel, { passive: false })
+    seriesEl?.addEventListener('wheel', handleWheel, { passive: false })
+
+    return () => {
+      moviesEl?.removeEventListener('wheel', handleWheel)
+      seriesEl?.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
+
+  // Drag to scroll functionality
+  useEffect(() => {
+    // منع السلوك الافتراضي لسحب الصور والروابط
+    const preventDefaultDrag = (e: DragEvent) => {
+      e.preventDefault()
+      return false
+    }
+    
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node
+      let scrollContainer: HTMLDivElement | null = null
+      
+      if (moviesScrollRef.current?.contains(target)) {
+        scrollContainer = moviesScrollRef.current
+      } else if (seriesScrollRef.current?.contains(target)) {
+        scrollContainer = seriesScrollRef.current
+      }
+      
+      if (scrollContainer) {
+        e.preventDefault() // منع السلوك الافتراضي
+        setIsDragging(true)
+        setCurrentScrollRef(scrollContainer)
+        setStartX(e.pageX - scrollContainer.offsetLeft)
+        setScrollLeft(scrollContainer.scrollLeft)
+        scrollContainer.style.cursor = 'grabbing'
+        scrollContainer.style.userSelect = 'none'
+      }
+    }
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !currentScrollRef) return
+      e.preventDefault()
+      const x = e.pageX - currentScrollRef.offsetLeft
+      const walk = (x - startX) * 2 // سرعة السحب
+      currentScrollRef.scrollLeft = scrollLeft - walk
+      
+      // منع النقر إذا تم السحب
+      if (Math.abs(walk) > 5) {
+        setClickDisabled(true)
+      }
+      
+      // Trigger scroll event manually
+      const scrollEvent = new Event('scroll', { bubbles: true })
+      currentScrollRef.dispatchEvent(scrollEvent)
+    }
+
+    const handleMouseUp = () => {
+      if (currentScrollRef) {
+        currentScrollRef.style.cursor = 'grab'
+        currentScrollRef.style.userSelect = 'auto'
+        
+        // Trigger final scroll check
+        const scrollEvent = new Event('scroll', { bubbles: true })
+        currentScrollRef.dispatchEvent(scrollEvent)
+      }
+      setIsDragging(false)
+      setCurrentScrollRef(null)
+      
+      // إعادة تفعيل النقر بعد وقت قصير
+      setTimeout(() => setClickDisabled(false), 100)
+    }
+
+    const handleMouseLeave = () => {
+      if (isDragging && currentScrollRef) {
+        currentScrollRef.style.cursor = 'grab'
+        currentScrollRef.style.userSelect = 'auto'
+        setIsDragging(false)
+        setCurrentScrollRef(null)
+      }
+    }
+
+    // إضافة مستمعي الأحداث للـ drag
+    const moviesEl = moviesScrollRef.current
+    const seriesEl = seriesScrollRef.current
+    
+    moviesEl?.addEventListener('dragstart', preventDefaultDrag)
+    seriesEl?.addEventListener('dragstart', preventDefaultDrag)
+    moviesEl?.addEventListener('drop', preventDefaultDrag)
+    seriesEl?.addEventListener('drop', preventDefaultDrag)
+
+    document.addEventListener('mousedown', handleMouseDown)
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener('mouseleave', handleMouseLeave)
+
+    return () => {
+      moviesEl?.removeEventListener('dragstart', preventDefaultDrag)
+      seriesEl?.removeEventListener('dragstart', preventDefaultDrag)
+      moviesEl?.removeEventListener('drop', preventDefaultDrag)
+      seriesEl?.removeEventListener('drop', preventDefaultDrag)
+      
+      document.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.removeEventListener('mouseleave', handleMouseLeave)
+    }
+  }, [isDragging, startX, scrollLeft, currentScrollRef])
+
+  // Touch scroll functionality for mobile
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      const target = e.target as Node
+      let scrollContainer: HTMLDivElement | null = null
+      
+      if (moviesScrollRef.current?.contains(target)) {
+        scrollContainer = moviesScrollRef.current
+      } else if (seriesScrollRef.current?.contains(target)) {
+        scrollContainer = seriesScrollRef.current
+      }
+      
+      if (scrollContainer) {
+        setIsTouching(true)
+        setCurrentScrollRef(scrollContainer)
+        setTouchStartX(e.touches[0].pageX)
+        setTouchScrollLeft(scrollContainer.scrollLeft)
+      }
+    }
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isTouching || !currentScrollRef) return
+      const x = e.touches[0].pageX
+      const walk = (touchStartX - x) * 1.5 // سرعة السحب باللمس
+      currentScrollRef.scrollLeft = touchScrollLeft + walk
+    }
+
+    const handleTouchEnd = () => {
+      setIsTouching(false)
+      setCurrentScrollRef(null)
+    }
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: true })
+    document.addEventListener('touchmove', handleTouchMove, { passive: true })
+    document.addEventListener('touchend', handleTouchEnd)
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart)
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [isTouching, touchStartX, touchScrollLeft, currentScrollRef])
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && moviesScrollRef.current?.contains(document.activeElement)) {
+        e.preventDefault()
+        scrollHorizontal(moviesScrollRef, 'left')
+      } else if (e.key === 'ArrowRight' && moviesScrollRef.current?.contains(document.activeElement)) {
+        e.preventDefault()
+        scrollHorizontal(moviesScrollRef, 'right')
+      } else if (e.key === 'ArrowLeft' && seriesScrollRef.current?.contains(document.activeElement)) {
+        e.preventDefault()
+        scrollHorizontal(seriesScrollRef, 'left')
+      } else if (e.key === 'ArrowRight' && seriesScrollRef.current?.contains(document.activeElement)) {
+        e.preventDefault()
+        scrollHorizontal(seriesScrollRef, 'right')
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [scrollHorizontal])
 
   const heroItem = heroItems.length > 0 ? heroItems[heroIndex] : null
 
@@ -434,7 +544,7 @@ export default function Home() {
       </section>
 
       {/* 2. Hero Banner with Frame and Auto-Rotate - Full Width */}
-      {heroItem && searchQuery === '' && (
+      {heroItem && (
         <section className="w-full bg-slate-950">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
             <div className="relative w-full h-[70vh] md:h-[80vh] flex items-end overflow-hidden rounded-2xl border-2 border-slate-800 bg-slate-950 shadow-2xl">
@@ -630,252 +740,413 @@ export default function Home() {
         </section>
       )}
 
-      {/* 3. Main Catalog Section - Contained Width */}
+      {/* 3. Trending Content Sections */}
       <section className="w-full bg-slate-950">
-        <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 space-y-0">
-        {/* Search and Filters Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-4">
-          {/* Navigation tabs */}
-          <div className="flex space-x-2 space-x-reverse bg-slate-900/60 border border-slate-800 p-1 rounded-xl w-fit">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`px-4 py-2 rounded-lg font-bold text-xs transition ${
-                activeTab === 'all'
-                  ? 'bg-red-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              الكل
-            </button>
-            <button
-              onClick={() => setActiveTab('movie')}
-              className={`px-4 py-2 rounded-lg font-bold text-xs transition flex items-center ${
-                activeTab === 'movie'
-                  ? 'bg-red-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Film className="w-3.5 h-3.5 ml-1.5" /> الأفلام
-            </button>
-            <button
-              onClick={() => setActiveTab('tv')}
-              className={`px-4 py-2 rounded-lg font-bold text-xs transition flex items-center ${
-                activeTab === 'tv'
-                  ? 'bg-red-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Tv className="w-3.5 h-3.5 ml-1.5" /> المسلسلات
-            </button>
-          </div>
-
-          {/* Search Box */}
-          <div className="relative max-w-md w-full">
-            <input
-              type="text"
-              placeholder="ابحث عن الأفلام أو المسلسلات بالاسم..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-3 pr-10 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500 text-xs"
-            />
-            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
-          </div>
-        </div>
-
-        {/* Popular Genres - Quick Access */}
-        <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 mt-0">
-          <div className="flex flex-wrap gap-2 items-center">
-            {/* زر كل التصنيفات */}
-            <button
-              onClick={() => setSelectedGenre('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${
-                selectedGenre === 'all'
-                  ? 'bg-amber-600 text-white border-2 border-amber-500'
-                  : 'bg-amber-600/10 hover:bg-amber-600/20 border border-amber-600/30 hover:border-amber-600/50 text-amber-400 hover:text-amber-300'
-              }`}
-            >
-              الكل
-            </button>
-            
-            {/* أزرار التصنيفات */}
-            {GENRES.map((genre) => (
-              <button
-                key={genre.name}
-                onClick={() => setSelectedGenre(genre.name)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 ${
-                  selectedGenre === genre.name
-                    ? COLOR_CLASSES[genre.color].active
-                    : COLOR_CLASSES[genre.color].inactive
-                }`}
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 space-y-12">
+          
+          {/* Trending Movies Section */}
+          {data && data.trendingMovies.length > 0 && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl md:text-3xl font-black text-slate-100 flex items-center gap-3">
+                  <Film className="w-7 h-7 text-red-500" />
+                  <span>الأفلام الرائجة</span>
+                </h2>
+                <div className="flex items-center gap-2">
+                  {/* Navigation Arrows */}
+                  <div className="hidden md:flex items-center gap-2">
+                    <button
+                      onClick={() => scrollHorizontal(moviesScrollRef, 'right')}
+                      className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all hover:scale-110"
+                      aria-label="Scroll right"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-slate-300 rotate-180" />
+                    </button>
+                    <button
+                      onClick={() => scrollHorizontal(moviesScrollRef, 'left')}
+                      className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all hover:scale-110"
+                      aria-label="Scroll left"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-slate-300" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div 
+                ref={moviesScrollRef}
+                className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing"
+                tabIndex={0}
+                style={{ userSelect: 'none' }}
               >
-                {genre.emoji} {genre.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 4. Grid of Content Cards */}
-        {filteredContent.length > 0 ? (
-          <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-6 mt-6">
-            {filteredContent.slice(0, itemsToShow).map((item) => {
-              return (
-                <Link
-                  href={`${
-                    item.media_type === 'movie'
-                      ? `/movies/${item.slug}`
-                      : `/series/${item.slug}`
-                  }`}
-                  key={`${item.media_type}-${item.id}`}
-                  className="group bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative"
-                  onMouseEnter={() => setHoveredItemSlug(item.slug)}
-                  onMouseLeave={() => setHoveredItemSlug(null)}
-                >
-                  {/* Poster with Overlay Badges */}
-                  <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
-                    {item.poster_path ? (
-                      <img
-                        src={`/tmdb/w185${item.poster_path}`}
-                        alt={item.title_ar}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 p-4 text-center">
-                        <Film className="w-8 h-8 text-slate-700 mb-2" />
-                        <span className="text-[10px] text-slate-500">
-                          {item.title_ar}
-                        </span>
+                <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
+                  {data.trendingMovies.slice(0, moviesDisplayCount).map((item) => (
+                    <Link
+                      href={`/movies/${item.slug}`}
+                      key={`movie-${item.id}`}
+                      className="group flex-shrink-0 w-40 sm:w-48"
+                      onClick={(e) => {
+                        if (clickDisabled) {
+                          e.preventDefault()
+                        }
+                      }}
+                    >
+                      <div className="bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative">
+                        {/* Poster with Overlay Badges */}
+                        <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
+                          {item.poster_path ? (
+                            <img
+                              src={`/tmdb/w185${item.poster_path}`}
+                              alt={item.title_ar}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 p-4 text-center">
+                              <Film className="w-8 h-8 text-slate-700 mb-2" />
+                              <span className="text-[10px] text-slate-500">{item.title_ar}</span>
+                            </div>
+                          )}
+                          
+                          {/* Dark gradient on hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          
+                          {/* Top Right - Media Type Badge */}
+                          {(() => {
+                            const mediaColorScheme = getMediaTypeColor(item.media_type)
+                            return (
+                              <div className="absolute top-2 right-2 z-20">
+                                <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                                  {mediaColorScheme.label}
+                                </span>
+                              </div>
+                            )
+                          })()}
+                          
+                          {/* Top Left - Rating Badge */}
+                          {item.vote_average > 0 && (
+                            <div className="absolute top-2 left-2 z-20">
+                              <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                                <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
+                                <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Bottom Right - Genre Badge */}
+                          {item.primary_genre && (() => {
+                            const genreColorScheme = getGenreColor(item.primary_genre)
+                            return (
+                              <div className="absolute bottom-2 right-2 z-20">
+                                <span className={`${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                                  {item.primary_genre}
+                                </span>
+                              </div>
+                            )
+                          })()}
+                          
+                          {/* Bottom Left - Year Badge */}
+                          {item.year && (() => {
+                            const y = Number(item.year)
+                            const currentYear = new Date().getFullYear()
+                            
+                            let yearStyle = ''
+                            if (y === currentYear) {
+                              yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
+                            } else if (y >= 2020 && y <= 2025) {
+                              yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
+                            } else if (y >= 2010 && y <= 2019) {
+                              yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
+                            } else if (y >= 2000 && y <= 2009) {
+                              yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
+                            } else {
+                              yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
+                            }
+                            
+                            return (
+                              <div className="absolute bottom-2 left-2 z-20">
+                                <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>
+                                  {item.year}
+                                </span>
+                              </div>
+                            )
+                          })()}
+                          
+                          {/* Play Hover Button - Center */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
+                            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                              <Play className="w-5 h-5 text-white fill-white mr-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Title Section - Reduced Height */}
+                        <div className="p-2.5 h-[52px] flex flex-col justify-center relative overflow-hidden">
+                          <h3 className="text-[13px] font-bold text-slate-200 line-clamp-1 group-hover:text-amber-400 transition leading-tight">
+                            {sanitizeTitle(item.title_ar)}
+                          </h3>
+                          {item.title_en && (
+                            <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 leading-tight">
+                              {item.title_en}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    )}
-
-                    {/* Dark gradient on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                    {/* Top Right - Media Type Badge */}
-                    {(() => {
-                      const mediaColorScheme = getMediaTypeColor(item.media_type)
-                      return (
-                        <div className="absolute top-2 right-2 z-20">
-                          <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
-                            {mediaColorScheme.label}
-                          </span>
+                    </Link>
+                  ))}
+                  
+                  {/* Sentinel for lazy loading */}
+                  {moviesDisplayCount < data.trendingMovies.length && (
+                    <div ref={moviesEndRef} className="flex-shrink-0 w-10" />
+                  )}
+                  
+                  {/* CTA Card - اذهب لقسم الأفلام */}
+                  <Link
+                    href="/movies"
+                    className="group flex-shrink-0 w-40 sm:w-48"
+                  >
+                    <div className="bg-gradient-to-br from-red-600/20 to-amber-600/20 border-2 border-red-500/40 hover:border-red-400 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-red-950/50 relative h-full">
+                      <div className="aspect-[2/3] w-full relative overflow-hidden flex items-center justify-center p-6">
+                        <div className="text-center space-y-4">
+                          <Film className="w-16 h-16 text-red-400 mx-auto animate-pulse" />
+                          <div>
+                            <h3 className="text-lg font-black text-red-400 mb-2">اذهب لقسم الأفلام</h3>
+                            <p className="text-xs text-slate-300">اكتشف المزيد من الأفلام الرائعة</p>
+                          </div>
+                          <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-600/30 border border-red-500/50 rounded-lg text-sm font-bold text-red-300 group-hover:bg-red-600/50 transition-colors">
+                            <span>عرض الكل</span>
+                            <ArrowLeft className="w-4 h-4" />
+                          </div>
                         </div>
-                      )
-                    })()}
-
-                    {/* Top Left - Rating Badge */}
-                    {item.vote_average > 0 && (
-                      <div className="absolute top-2 left-2 z-20">
-                        <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
-                          <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
-                          <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Bottom Right - Genre Badge */}
-                    {item.primary_genre && (() => {
-                      const genreColorScheme = getGenreColor(item.primary_genre)
-                      return (
-                        <div className="absolute bottom-2 right-2 z-20">
-                          <span className={`${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
-                            {item.primary_genre}
-                          </span>
-                        </div>
-                      )
-                    })()}
-
-                    {/* Bottom Left - Year Badge */}
-                    {item.year && (() => {
-                      const y = Number(item.year)
-                      const currentYear = new Date().getFullYear()
-                      
-                      let yearStyle = ''
-                      if (y === currentYear) {
-                        // Current year - Purple neon glow
-                        yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
-                      } else if (y >= 2020 && y <= 2025) {
-                        // 2020-2025 - Blue
-                        yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
-                      } else if (y >= 2010 && y <= 2019) {
-                        // 2010-2019 - Cyan
-                        yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
-                      } else if (y >= 2000 && y <= 2009) {
-                        // 2000-2009 - White/Silver
-                        yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
-                      } else {
-                        // Before 2000 - Dim gray (classic)
-                        yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
-                      }
-                      
-                      return (
-                        <div className="absolute bottom-2 left-2 z-20">
-                          <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>
-                            {item.year}
-                          </span>
-                        </div>
-                      )
-                    })()}
-
-                    {/* Play Hover Button - Center */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
-                      <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                        <Play className="w-5 h-5 text-white fill-white mr-0.5" />
                       </div>
                     </div>
-                  </div>
-
-                  {/* Title Section - Reduced Height */}
-                  <div className="p-2.5 h-[52px] flex flex-col justify-center relative overflow-hidden">
-                    {/* Titles - Hidden on hover */}
-                    <div className={`transition-opacity duration-200 ${item.slug === hoveredItemSlug ? 'opacity-0' : 'opacity-100'}`}>
-                      <h3 className="text-[13px] font-bold text-slate-200 line-clamp-1 group-hover:text-amber-400 transition leading-tight">
-                        {sanitizeTitle(item.title_ar)}
-                      </h3>
-                      {item.title_en && (
-                        <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 leading-tight">
-                          {item.title_en}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Overview on hover - replaces titles */}
-                    {item.slug === hoveredItemSlug && (
-                      <div className="absolute inset-0 p-2.5 flex items-center">
-                        <p className="text-[9px] text-slate-300 line-clamp-3 leading-relaxed">
-                          {item.overview_ar || 'لا يوجد وصف متاح'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        ) : (
-          /* Empty State */
-          <div className="text-center py-20 bg-slate-900/20 border border-slate-900 rounded-3xl p-8 max-w-2xl mx-auto space-y-6">
-            <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto border border-amber-500/20">
-              <Database className="w-8 h-8 text-amber-400" />
+                  </Link>
+                </div>
+              </div>
             </div>
+          )}
 
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-slate-200">قاعدة البيانات المحلية فارغة حالياً 🍿</h3>
-              <p className="text-slate-400 text-xs leading-relaxed max-w-md mx-auto">
-                أهلاً بك في موقع <strong className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-amber-500">فور سيما</strong> لمشاهدة الأفلام والمسلسلات. يرجى تهيئة وتعبئة قاعدة البيانات بالبيانات التجريبية أو سحب عمل من TMDB للبدء الفوري!
-              </p>
-            </div>
-
-            <div className="pt-2">
-              <Link
-                href="/admin"
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-amber-500 via-amber-600 to-red-600 hover:from-amber-400 hover:to-red-500 text-slate-950 font-black rounded-xl transition text-xs shadow-lg shadow-amber-950/20"
+          {/* Trending Series Section */}
+          {data && data.trendingSeries.length > 0 && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl md:text-3xl font-black text-slate-100 flex items-center gap-3">
+                  <Tv className="w-7 h-7 text-blue-500" />
+                  <span>المسلسلات الرائجة</span>
+                </h2>
+                <div className="flex items-center gap-2">
+                  {/* Navigation Arrows */}
+                  <div className="hidden md:flex items-center gap-2">
+                    <button
+                      onClick={() => scrollHorizontal(seriesScrollRef, 'right')}
+                      className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all hover:scale-110"
+                      aria-label="Scroll right"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-slate-300 rotate-180" />
+                    </button>
+                    <button
+                      onClick={() => scrollHorizontal(seriesScrollRef, 'left')}
+                      className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all hover:scale-110"
+                      aria-label="Scroll left"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-slate-300" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div 
+                ref={seriesScrollRef}
+                className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing"
+                tabIndex={0}
+                style={{ userSelect: 'none' }}
               >
-                <Database className="w-4 h-4 ml-2" /> اذهب لتعبئة قاعدة البيانات فورياً
-              </Link>
+                <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
+                  {data.trendingSeries.slice(0, seriesDisplayCount).map((item) => (
+                    <Link
+                      href={`/series/${item.slug}`}
+                      key={`series-${item.id}`}
+                      className="group flex-shrink-0 w-40 sm:w-48"
+                      onClick={(e) => {
+                        if (clickDisabled) {
+                          e.preventDefault()
+                        }
+                      }}
+                    >
+                      <div className="bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative">
+                        {/* Poster with Overlay Badges */}
+                        <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
+                          {item.poster_path ? (
+                            <img
+                              src={`/tmdb/w185${item.poster_path}`}
+                              alt={item.title_ar}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 p-4 text-center">
+                              <Tv className="w-8 h-8 text-slate-700 mb-2" />
+                              <span className="text-[10px] text-slate-500">{item.title_ar}</span>
+                            </div>
+                          )}
+                          
+                          {/* Dark gradient on hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          
+                          {/* Top Right - Media Type Badge */}
+                          {(() => {
+                            const mediaColorScheme = getMediaTypeColor(item.media_type)
+                            return (
+                              <div className="absolute top-2 right-2 z-20">
+                                <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                                  {mediaColorScheme.label}
+                                </span>
+                              </div>
+                            )
+                          })()}
+                          
+                          {/* Top Left - Rating Badge */}
+                          {item.vote_average > 0 && (
+                            <div className="absolute top-2 left-2 z-20">
+                              <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                                <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
+                                <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Bottom Right - Genre Badge */}
+                          {item.primary_genre && (() => {
+                            const genreColorScheme = getGenreColor(item.primary_genre)
+                            return (
+                              <div className="absolute bottom-2 right-2 z-20">
+                                <span className={`${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                                  {item.primary_genre}
+                                </span>
+                              </div>
+                            )
+                          })()}
+                          
+                          {/* Bottom Left - Year Badge */}
+                          {item.year && (() => {
+                            const y = Number(item.year)
+                            const currentYear = new Date().getFullYear()
+                            
+                            let yearStyle = ''
+                            if (y === currentYear) {
+                              yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
+                            } else if (y >= 2020 && y <= 2025) {
+                              yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
+                            } else if (y >= 2010 && y <= 2019) {
+                              yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
+                            } else if (y >= 2000 && y <= 2009) {
+                              yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
+                            } else {
+                              yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
+                            }
+                            
+                            return (
+                              <div className="absolute bottom-2 left-2 z-20">
+                                <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>
+                                  {item.year}
+                                </span>
+                              </div>
+                            )
+                          })()}
+                          
+                          {/* Play Hover Button - Center */}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
+                            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                              <Play className="w-5 h-5 text-white fill-white mr-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Title Section - Reduced Height */}
+                        <div className="p-2.5 h-[52px] flex flex-col justify-center relative overflow-hidden">
+                          <h3 className="text-[13px] font-bold text-slate-200 line-clamp-1 group-hover:text-amber-400 transition leading-tight">
+                            {sanitizeTitle(item.title_ar)}
+                          </h3>
+                          {item.title_en && (
+                            <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 leading-tight">
+                              {item.title_en}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                  
+                  {/* Sentinel for lazy loading */}
+                  {seriesDisplayCount < data.trendingSeries.length && (
+                    <div ref={seriesEndRef} className="flex-shrink-0 w-10" />
+                  )}
+                  
+                  {/* CTA Card - اذهب لقسم المسلسلات */}
+                  <Link
+                    href="/series"
+                    className="group flex-shrink-0 w-40 sm:w-48"
+                  >
+                    <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-2 border-blue-500/40 hover:border-blue-400 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-blue-950/50 relative h-full">
+                      <div className="aspect-[2/3] w-full relative overflow-hidden flex items-center justify-center p-6">
+                        <div className="text-center space-y-4">
+                          <Tv className="w-16 h-16 text-blue-400 mx-auto animate-pulse" />
+                          <div>
+                            <h3 className="text-lg font-black text-blue-400 mb-2">اذهب لقسم المسلسلات</h3>
+                            <p className="text-xs text-slate-300">اكتشف المزيد من المسلسلات الرائعة</p>
+                          </div>
+                          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/30 border border-blue-500/50 rounded-lg text-sm font-bold text-blue-300 group-hover:bg-blue-600/50 transition-colors">
+                            <span>عرض الكل</span>
+                            <ArrowLeft className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              </div>
             </div>
+          )}
+
+          {/* CTA Buttons Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
+            {/* Movies CTA */}
+            <Link
+              href="/movies"
+              className="group relative overflow-hidden bg-gradient-to-br from-red-600/20 to-amber-600/20 border-2 border-red-500/30 hover:border-red-500/60 rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-950/50"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="w-14 h-14 rounded-xl bg-red-600/20 border border-red-500/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <Film className="w-7 h-7 text-red-400" />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-100">شاهد كل الأفلام</h3>
+                  <p className="text-sm text-slate-400">استكشف مكتبة الأفلام الكاملة</p>
+                </div>
+                <ArrowLeft className="w-8 h-8 text-red-400 group-hover:translate-x-[-8px] transition-transform" />
+              </div>
+            </Link>
+
+            {/* Series CTA */}
+            <Link
+              href="/series"
+              className="group relative overflow-hidden bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border-2 border-blue-500/30 hover:border-blue-500/60 rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-950/50"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="w-14 h-14 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <Tv className="w-7 h-7 text-blue-400" />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-100">شاهد كل المسلسلات</h3>
+                  <p className="text-sm text-slate-400">استكشف مكتبة المسلسلات الكاملة</p>
+                </div>
+                <ArrowLeft className="w-8 h-8 text-blue-400 group-hover:translate-x-[-8px] transition-transform" />
+              </div>
+            </Link>
           </div>
-        )}
+
         </div>
       </section>
 

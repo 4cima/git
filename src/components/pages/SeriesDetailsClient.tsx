@@ -662,12 +662,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
             {/* Season Selector with Container */}
             {seasons.length > 0 && (
               <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
-                <div className="flex items-start gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
-                  <h3 className="flex-shrink-0 text-lg font-bold text-purple-500 flex items-center gap-2 pt-1">
-                    <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-                    المواسم
-                    <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-                  </h3>
+                <h3 className="text-lg font-bold text-purple-500 flex items-center gap-2 mb-3">
+                  <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+                  المواسم
+                  <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
                   {seasons
                     .filter((s: any) => s.season_number > 0)
                     .map((season: any, idx: number) => (
@@ -675,54 +675,52 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                         key={season.id || `season-${season.season_number}-${idx}`}
                         onClick={() => setSelectedSeason(season.season_number)}
                         className={clsx(
-                          'flex-shrink-0 px-2 py-1 rounded-xl transition-all duration-300 font-medium whitespace-nowrap',
+                          'px-2.5 py-1.5 rounded-lg transition-all duration-300 font-medium',
                           selectedSeason === season.season_number
                             ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105'
                             : 'bg-white/10 hover:bg-white/20 text-white'
                         )}
                       >
-                        <div className="text-[10px] font-bold">الموسم</div>
-                        <div className="text-base font-black">{season.season_number}</div>
-                        <div className="text-[9px] font-semibold opacity-90">{season.episode_count} حلقة</div>
+                        <div className="text-[9px] font-bold leading-tight">الموسم</div>
+                        <div className="text-sm font-black leading-tight">{season.season_number}</div>
+                        <div className="text-[8px] font-semibold opacity-90 leading-tight">{season.episode_count} حلقة</div>
                       </button>
                     ))}
                 </div>
               </div>
             )}
 
-            {/* Episodes with Container - merged with seasons */}
-            <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl -mt-8">
-              <div className="flex items-start gap-3">
-                <h3 className="flex-shrink-0 text-lg font-bold text-cyan-400 flex items-center gap-2 pt-[5px]">
-                  <span className="w-1 h-6 bg-cyan-400 rounded-full"></span>
-                  الحلقات
-                  <span className="w-1 h-6 bg-cyan-400 rounded-full"></span>
-                </h3>
-                <div className="flex-1 grid grid-cols-15 gap-2">
-                  {episodes.map((ep) => (
-                    <button
-                      key={ep}
-                      onClick={() => setSelectedEpisode(ep)}
-                      className={clsx(
-                        'w-[43px] h-[43px] rounded-xl transition-all duration-300 flex flex-col items-center justify-center gap-1',
-                        selectedEpisode === ep
-                          ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-110'
-                          : 'bg-white/10 hover:bg-white/20 hover:scale-105'
-                      )}
-                    >
-                      <div className="text-[13px] opacity-90 font-medium leading-none">حلقة</div>
-                      <div className="text-base font-black leading-none">{ep}</div>
-                    </button>
-                  ))}
-                </div>
+            {/* Episodes with Container */}
+            <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
+              <h3 className="text-lg font-bold text-cyan-400 flex items-center gap-2 mb-3">
+                <span className="w-1 h-6 bg-cyan-400 rounded-full"></span>
+                الحلقات
+                <span className="w-1 h-6 bg-cyan-400 rounded-full"></span>
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {episodes.map((ep) => (
+                  <button
+                    key={ep}
+                    onClick={() => setSelectedEpisode(ep)}
+                    className={clsx(
+                      'min-w-[50px] px-2.5 py-1.5 rounded-lg transition-all duration-300 flex flex-col items-center justify-center',
+                      selectedEpisode === ep
+                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105'
+                        : 'bg-white/10 hover:bg-white/20 hover:scale-105'
+                    )}
+                  >
+                    <div className="text-[9px] opacity-90 font-medium leading-tight">حلقة</div>
+                    <div className="text-sm font-black leading-tight">{ep}</div>
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Player with Side Servers */}
             <div className="flex gap-4">
               {/* Servers Sidebar */}
-              <div className="flex-shrink-0 w-16">
-                <h3 className="text-sm font-black mb-2 text-center text-white">السيرفرات</h3>
+              <div className="flex-shrink-0 w-14">
+                <h3 className="text-xs font-black mb-2 text-center text-white">السيرفرات</h3>
                 <div className="flex flex-col gap-2 sticky top-4">
                   {servers.map((s, idx) => {
                     const isActive = idx === active
@@ -735,7 +733,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                         title={`${s.name} - ${isServerOffline ? 'Offline' : isActive ? 'Active' : 'Available'}`}
                         disabled={isServerOffline}
                         className={clsx(
-                          "flex items-center justify-center w-16 h-12 rounded-xl border transition-all duration-300 font-black text-lg leading-none",
+                          "flex items-center justify-center w-14 h-10 rounded-lg border transition-all duration-300 font-black text-base leading-none",
                           isActive
                             ? "bg-green-700 border-green-700 text-white shadow-lg shadow-green-700/30"
                             : isServerOffline

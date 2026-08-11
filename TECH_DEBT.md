@@ -2,13 +2,57 @@
 
 **Purpose:** Centralized tracking of all temporary solutions, workarounds, and deferred optimizations that need attention before scaling.
 
-**Last Updated:** 2026-07-31 (Added Item #3: genre_counts maintenance requirement)
+**Last Updated:** 2026-08-02 (Fixed critical search performance issue - moved from Low Priority to Completed)
 
 ---
 
 ## 🔴 High Priority (Before 10K+ Items)
 
-### 1. Genre Filtering Performance - Unindexed JSON Scan
+### 1. Series Genre Filter - Sequential Scan Issue (Specific Genres Slow)
+
+**Current Implementation:** `genres_json LIKE '%"name_ar":"genre"%'` sequential scan  
+**Date Discovered:** 2026-08-02  
+**Affected Files:**
+- `src/app/api/series/route.ts` (line ~36)
+
+**Problem:**
+- Some genres load instantly (دراما: 2.3s, كوميديا: 1.2s)
+- Other genres are very slow (رومانسي: 924ms, تاريخي: 1.1s)
+- Root cause: **data distribution** not query complexity
+  - Fast genres appear at start of table (ID 1-2)
+  - Slow genres appear late in table (ID 1321-18398)
+  - SQLite sequential scan from ID 1 → must scan thousands of rows before finding first match
+
+**Evidence:**
+```
+Genre Location Analysis (52,775 total series):
+- دراما: First match at ID 1 (row 1) → Fast ✅
+- كوميديا: First match at ID 2 (row 2) → Fast ✅
+- رومانسي: First match at ID 1,321 → Slow ❌
+- تاريخي: First match at ID 18,398 → Very Slow ❌
+```
+
+**Why This Matters:**
+- User perceives inconsistent performance between genres
+- No amount of code optimization will fix this - it's a data layout issue
+- Only solutions: indexed column OR reorder table data
+
+**Proper Solution (Part of Genre Index Project):**
+- Implement `genre_ids_csv` indexed column (see item #2 below)
+- Index eliminates sequential scan entirely
+- All genres will have consistent performance
+
+**Workaround (If Not Implementing Index Soon):**
+- Increase cache time for slow genres specifically
+- Or: periodic VACUUM to reorganize table (risky, requires maintenance window)
+
+**Estimated Effort:** Part of Item #2 (1 day total)  
+**Trigger:** User complaints about inconsistent genre filter speed  
+**Status:** Deferred - will be resolved by Item #2 implementation
+
+---
+
+### 2. Genre Filtering Performance - Unindexed JSON Scan
 
 **Current Implementation:** `json_each()` on `genres_json` column  
 **Date Introduced:** 2026-07-28  
@@ -188,6 +232,8 @@ await updateGenreCounts()
 
 ---
 
+
+
 ## 🟡 Medium Priority (Before Major Feature Launch)
 
 ### 2. Series Seasons Fallback - Default Season 1
@@ -225,32 +271,72 @@ await updateGenreCounts()
 
 ## 🟢 Low Priority (Future Optimization)
 
-### 3. Full-Text Search on Content
-
-**Current Implementation:** `LIKE '%search%'` on title/overview columns  
-**Date Introduced:** Original implementation  
-**Affected Files:**
-- `src/app/api/search/route.ts`
-
-**Problem:**
-- Simple LIKE search without ranking or relevance
-- No support for Arabic word stems, typos, or fuzzy matching
-- Full table scan on large datasets
-
-**Proper Solution:**
-- Implement SQLite FTS5 (Full-Text Search) virtual tables
-- Separate index for Arabic content with proper tokenization
-- Ranking by relevance instead of just popularity
-
-**Estimated Effort:** 2-3 days  
-**Trigger:** When search quality complaints increase OR dataset > 50K items  
-**Priority:** Low - current search works acceptably for target audience
+*(No items currently)*
 
 ---
 
 ## 📝 Completed Technical Debt
 
 *(Items resolved - kept for historical reference)*
+
+### ✅ Genre Page type='all' Redesign - Fixed 2026-08-03
+
+**Problem:** type='all' fetched ALL movies + ALL series (70K+ rows) into memory, causing timeouts  
+**Original Approach Considered:** Dual-cursor merge-sort pagination with separate offsets  
+**Final Solution Implemented:** Two separate preview sections instead of merged sorted feed  
+- "أفلام [genre]" section: fetches one batch (12-24 items) using type='movie', no infinite scroll
+- "مسلسلات [genre]" section: fetches one batch (12-24 items) using type='tv', no infinite scroll
+- "شوف كل الأفلام" / "شوف كل المسلسلات" buttons switch to dedicated tabs with full infinite scroll
+- Eliminates need for complex merge logic entirely
+- Both sections use same limit+1/hasMore pattern as type='movie' and type='tv' tabs (no COUNT)
+
+**Performance:** Each section loads independently in <2s, no memory issues  
+**Files Changed:** 
+- `src/components/pages/GenrePageClient.tsx` (two-section layout for "الكل" view)
+- `TECH_DEBT.md` (item closed)
+
+**Date Fixed:** 2026-08-03  
+**Reference:** Conversation 2026-08-03
+
+### ✅ Search Performance Crisis - Fixed 2026-08-02
+
+**Problem:** Single search consuming 50,000-100,000 Turso reads, burning through 500M monthly free tier  
+**Root Cause:** 
+- `/api/movies/route.ts` and `/api/series/route.ts` used `LIKE '%term%'` with wildcards on both sides
+- This defeats all B-tree indexes and forces full table scan of 320K+ rows
+- `/api/search/route.ts` had FTS5 but browse/filter pages didn't
+
+**Solution Implemented:**
+1. Created FTS5 virtual tables with trigram tokenizer:
+   - `movies_fts` (268,755 movies indexed)
+   - `series_fts` (52,775 series indexed)
+2. Added auto-sync triggers (INSERT/UPDATE/DELETE) to keep FTS5 tables current
+3. Replaced LIKE queries in movies/route.ts and series/route.ts with FTS5 joins
+4. Created search sanitization utility to handle FTS5 operator characters
+5. Query now uses: `JOIN movies_fts ON movies.id = movies_fts.rowid WHERE movies_fts MATCH sanitizeSearchInput(?)`
+
+**Performance Improvement:**
+- **Speed:** 12.4x faster (6969ms → 564ms)
+- **Reads:** ~99% reduction (50-100K → <500 per search)
+- **Scalability:** Monthly search capacity increased from ~5K to ~1M searches on free tier
+
+**Files Changed:**
+- `src/app/api/movies/route.ts` (search logic with FTS5 + sanitization)
+- `src/app/api/series/route.ts` (search logic with FTS5 + sanitization)
+- `src/app/api/search/route.ts` (added sanitization to existing FTS5)
+- `src/lib/search-utils.ts` (NEW - search input sanitization utility)
+- `scripts/setup-fts5-search.js` (FTS5 table creation)
+- `add-fts5-triggers.js` (auto-sync triggers)
+
+**Verification:**
+- Test script: `verify-search-fix.js`
+- Query plan changed from `SCAN movies` to `SCAN movies_fts VIRTUAL TABLE INDEX`
+- Special character handling tested: "Spider-Man", "It's", "9-1-1" (all pass)
+- Search sanitization verified: operators escaped, FTS5 index still used
+- Real-world titles confirmed: "Spider-Man" (3 results), "It's a Wonderful Life" (3 results)
+
+**Date Fixed:** 2026-08-02  
+**Reference:** `verify-search-fix.js`, `diagnose-fts5-search.js`, conversation 2026-08-02
 
 ### ✅ Sync Script JSON Columns - Fixed 2026-07-23
 

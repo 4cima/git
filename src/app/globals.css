@@ -1039,6 +1039,57 @@ select option {
   scrollbar-width: none;
 }
 
+/* Horizontal scroll sections - visible scrollbar */
+.horizontal-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.horizontal-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.horizontal-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 15, 20, 0.5);
+  border-radius: 4px;
+}
+
+.horizontal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.8);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.horizontal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 1);
+}
+
+@media (max-width: 768px) {
+  .horizontal-scroll::-webkit-scrollbar {
+    height: 4px;
+  }
+}
+
+/* Prevent default drag behavior on images and links in scroll containers */
+.horizontal-scroll img,
+.horizontal-scroll a {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.horizontal-scroll a::selection {
+  background: transparent;
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Meteor Shower Effect - Realistic Falling Meteors with Fire               */
 /* -------------------------------------------------------------------------- */

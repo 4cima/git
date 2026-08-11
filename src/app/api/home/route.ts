@@ -17,7 +17,7 @@ export async function GET() {
                 AND backdrop_path IS NOT NULL 
                 AND vote_average > 0
               ORDER BY popularity DESC 
-              LIMIT 50`,
+              LIMIT 100`,
         args: []
       }),
       turso.execute({
@@ -27,7 +27,7 @@ export async function GET() {
                 AND backdrop_path IS NOT NULL 
                 AND vote_average > 0
               ORDER BY popularity DESC 
-              LIMIT 50`,
+              LIMIT 100`,
         args: []
       })
     ])

@@ -45,63 +45,78 @@ export async function GET(
     
     // Build query based on type
     let contentQuery = ''
-    let countQuery = ''
     
     if (type === 'movie') {
-      // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
+      // Use limit+1 trick instead of COUNT for performance
       contentQuery = `
         SELECT m.*, 'movie' as media_type
         FROM movies m
-        WHERE EXISTS (
-          SELECT 1 FROM json_each(m.genres_json)
-          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
-        )
+        WHERE genres_json LIKE ?
         ORDER BY m.${sort} ${order.toUpperCase()}
         LIMIT ? OFFSET ?
       `
-      countQuery = `
-        SELECT COUNT(*) as total
-        FROM movies m
-        WHERE EXISTS (
-          SELECT 1 FROM json_each(m.genres_json)
-          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
-        )
-      `
+      
+      const contentResult = await turso.execute({
+        sql: contentQuery,
+        args: [`%"name_ar":"${genre.name_ar}"%`, limit + 1, offset]
+      })
+      
+      const rows = contentResult.rows || []
+      const hasMore = rows.length > limit
+      if (hasMore) rows.pop()
+      
+      return NextResponse.json({
+        genre,
+        content: rows,
+        pagination: {
+          page,
+          limit,
+          hasMore,
+          totalPages: hasMore ? page + 1 : page
+        }
+      })
     } else if (type === 'tv') {
-      // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
+      // Use limit+1 trick instead of COUNT for performance
       contentQuery = `
         SELECT s.*, 'tv' as media_type
         FROM tv_series s
-        WHERE EXISTS (
-          SELECT 1 FROM json_each(s.genres_json)
-          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
-        )
+        WHERE genres_json LIKE ?
         ORDER BY s.${sort} ${order.toUpperCase()}
         LIMIT ? OFFSET ?
       `
-      countQuery = `
-        SELECT COUNT(*) as total
-        FROM tv_series s
-        WHERE EXISTS (
-          SELECT 1 FROM json_each(s.genres_json)
-          WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
-        )
-      `
+      
+      const contentResult = await turso.execute({
+        sql: contentQuery,
+        args: [`%"name_ar":"${genre.name_ar}"%`, limit + 1, offset]
+      })
+      
+      const rows = contentResult.rows || []
+      const hasMore = rows.length > limit
+      if (hasMore) rows.pop()
+      
+      return NextResponse.json({
+        genre,
+        content: rows,
+        pagination: {
+          page,
+          limit,
+          hasMore,
+          totalPages: hasMore ? page + 1 : page
+        }
+      })
     } else {
-      // All content - fetch separately and combine in code (movies/series have different column counts)
-      // TODO: Replace with genre_ids_csv + index when scaling beyond 10K items (see TECH_DEBT.md #1)
+      // type === 'all' - Combined movies + series
+      // TODO: For production, implement merge-sort with separate offsets (see Part B report in context)
+      // Current approach: fetch all, sort in memory (acceptable for <10K results per genre)
       
       // Get movies
       const moviesResult = await turso.execute({
         sql: `
           SELECT m.*, 'movie' as media_type
           FROM movies m
-          WHERE EXISTS (
-            SELECT 1 FROM json_each(m.genres_json)
-            WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
-          )
+          WHERE genres_json LIKE ?
         `,
-        args: [genreTmdbId]
+        args: [`%"name_ar":"${genre.name_ar}"%`]
       })
       
       // Get series
@@ -109,24 +124,23 @@ export async function GET(
         sql: `
           SELECT s.*, 'tv' as media_type
           FROM tv_series s
-          WHERE EXISTS (
-            SELECT 1 FROM json_each(s.genres_json)
-            WHERE CAST(json_extract(value, '$.id') AS INTEGER) = ?
-          )
+          WHERE genres_json LIKE ?
         `,
-        args: [genreTmdbId]
+        args: [`%"name_ar":"${genre.name_ar}"%`]
       })
       
-      // Combine and sort by popularity
+      // Combine and sort
       const combined = [...(moviesResult.rows || []), ...(seriesResult.rows || [])]
         .sort((a: any, b: any) => {
-          const aVal = Number(a.popularity || 0)
-          const bVal = Number(b.popularity || 0)
+          const aVal = Number(a[sort] || 0)
+          const bVal = Number(b[sort] || 0)
           return order.toLowerCase() === 'asc' ? aVal - bVal : bVal - aVal
         })
       
-      const total = combined.length
-      const paginatedContent = combined.slice(offset, offset + limit)
+      // Paginate
+      const paginatedContent = combined.slice(offset, offset + limit + 1)
+      const hasMore = paginatedContent.length > limit
+      if (hasMore) paginatedContent.pop()
       
       return NextResponse.json({
         genre,
@@ -134,37 +148,8 @@ export async function GET(
         pagination: {
           page,
           limit,
-          total,
-          totalPages: Math.ceil(total / limit)
-        }
-      })
-    }
-    
-    // Get total count (only for movie and tv types, 'all' is handled above)
-    if (type === 'movie' || type === 'tv') {
-      const countArgs = [genreTmdbId]
-      const countResult = await turso.execute({
-        sql: countQuery,
-        args: countArgs
-      })
-      const total = Number(countResult.rows[0]?.total || 0)
-      
-      // Get content
-      const contentArgs = [genreTmdbId, limit, offset]
-      
-      const contentResult = await turso.execute({
-        sql: contentQuery,
-        args: contentArgs
-      })
-      
-      return NextResponse.json({
-        genre,
-        content: contentResult.rows || [],
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit)
+          hasMore,
+          totalPages: hasMore ? page + 1 : page
         }
       })
     }
