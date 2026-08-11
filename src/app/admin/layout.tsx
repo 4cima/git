@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   LogOut,
-  ShieldAlert
+  ShieldAlert,
+  Terminal
 } from 'lucide-react'
 
 const navItems = [
@@ -23,6 +24,7 @@ const navItems = [
   { name: 'Movies', href: '/admin/movies', icon: Film },
   { name: 'Series', href: '/admin/series', icon: Tv },
   { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Operations', href: '/admin/operations', icon: Terminal },
   { name: 'System Health', href: '/admin/system', icon: Activity },
   { name: 'Database', href: '/admin/database', icon: Database },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
