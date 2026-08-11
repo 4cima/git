@@ -130,9 +130,9 @@ export const QuantumNavbar = memo(() => {
             </Link>
           </div>
 
-          {/* Left: User Menu */}
+          {/* Empty space for alignment */}
           <div className="flex items-center gap-3">
-            <UserMenu />
+            {/* User menu is now in sidebar only */}
           </div>
         </div>
             </nav>
