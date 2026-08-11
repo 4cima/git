@@ -254,7 +254,7 @@ export async function ensureProfile(userId: string, email?: string | null) {
   const username = email?.split('@')[0] || 'user'
   const { data, error } = await supabase
     .from('profiles')
-    .insert({ id: userId, username, role: 'user', is_public: true })
+    .insert({ id: userId, username, role: 'user' })
     .select('*')
     .single()
 
