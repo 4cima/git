@@ -4,14 +4,16 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useMemo, memo, useEffect } from 'react'
-import { Home, Film, Tv, Zap, Rocket, Sparkles, Drama, Smile, Eye, Heart, Skull, Menu, X, LogIn } from 'lucide-react'
+import { Home, Film, Tv, Zap, Rocket, Sparkles, Drama, Smile, Eye, Heart, Skull, Menu, X, LogIn, User, LogOut } from 'lucide-react'
 import { UserMenu } from './UserMenu'
+import { useAuth } from '@/hooks/useAuth'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [logoScrolled, setLogoScrolled] = useState(false)
+  const { user, profile, signOut } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -169,16 +171,37 @@ export const QuantumNavbar = memo(() => {
                     <Home size={16} className="group-hover:scale-110 transition-transform" />
                     <span className="text-sm font-bold">الرئيسية</span>
                   </Link>
-                  <Link
-                    href="/login"
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors group ${
-                      pathname?.startsWith('/login') ? 'bg-emerald-500/20 text-emerald-400' : 'text-white hover:text-emerald-400'
-                    }`}
-                  >
-                    <LogIn size={16} className="group-hover:scale-110 transition-transform" />
-                    <span className="text-sm font-bold">الدخول</span>
-                  </Link>
+                  
+                  {/* User Profile or Login Button */}
+                  {user ? (
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-800/50">
+                      {profile?.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt={profile.username || 'User'}
+                          className="w-6 h-6 rounded-full object-cover border border-zinc-700"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-red-600 to-cyan-400 flex items-center justify-center text-white text-xs font-bold">
+                          {(profile?.username || user.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="text-sm font-semibold text-white truncate max-w-[100px]">
+                        {profile?.username || user.email?.split('@')[0] || 'User'}
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/login"
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors group ${
+                        pathname?.startsWith('/login') ? 'bg-emerald-500/20 text-emerald-400' : 'text-white hover:text-emerald-400'
+                      }`}
+                    >
+                      <LogIn size={16} className="group-hover:scale-110 transition-transform" />
+                      <span className="text-sm font-bold">الدخول</span>
+                    </Link>
+                  )}
                 </div>
                 <button
                   onClick={() => setSidebarOpen(false)}
@@ -284,6 +307,37 @@ export const QuantumNavbar = memo(() => {
                     )
                   })}
                 </div>
+
+                {/* User Actions - Profile & Logout */}
+                {user && (
+                  <div className="px-3 pb-3 pt-2 border-t border-white/10 mt-2">
+                    <Link
+                      href="/profile"
+                      onClick={() => setSidebarOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors mb-2"
+                    >
+                      <User size={16} className="text-cyan-400" />
+                      <span className="text-sm font-semibold text-white">الملف الشخصي</span>
+                    </Link>
+                    
+                    <button
+                      onClick={async () => {
+                        try {
+                          await signOut()
+                          setSidebarOpen(false)
+                          router.push('/')
+                          router.refresh()
+                        } catch (error) {
+                          console.error('Sign out error:', error)
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                    >
+                      <LogOut size={16} className="text-red-400" />
+                      <span className="text-sm font-semibold text-red-400">تسجيل الخروج</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </>
