@@ -8,14 +8,19 @@
 import { useState } from 'react'
 import { Mail, Lock } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { AuthCard } from '@/components/auth/AuthCard'
 import { InputField } from '@/components/auth/InputField'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
+  const { refreshProfile } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,13 +34,42 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    // TODO: Wire up supabase.auth.signInWithPassword in next commit
-    console.log('Login attempt:', { email, password })
-    
-    setTimeout(() => {
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
+
+      if (signInError) throw signInError
+
+      if (data.user) {
+        // Refresh profile to load user data
+        await refreshProfile()
+        
+        // Redirect to home
+        router.push('/')
+        router.refresh()
+      }
+    } catch (err: any) {
+      console.error('Login error:', err)
+      
+      // User-friendly error messages in Arabic
+      let message = 'حدث خطأ أثناء تسجيل الدخول'
+      
+      if (err.message?.includes('Invalid login credentials')) {
+        message = 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+      } else if (err.message?.includes('Email not confirmed')) {
+        message = 'البريد الإلكتروني غير مفعل. يرجى التحقق من بريدك الوارد.'
+      } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
+        message = 'خطأ في الاتصال بالشبكة. يرجى المحاولة مرة أخرى.'
+      } else if (err.message) {
+        message = err.message
+      }
+      
+      setError(message)
+    } finally {
       setLoading(false)
-      setError('سيتم توصيل تسجيل الدخول في الخطوة التالية')
-    }, 1000)
+    }
   }
 
   return (
