@@ -13,7 +13,7 @@ const cairo = Cairo({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://4cima.com'),
+  metadataBase: new URL('https://4cima.com'),
   title: {
     default: '4cima - مشاهدة افلام ومسلسلات مترجمة اون لاين بجودة عالية',
     template: '%s | 4cima',
