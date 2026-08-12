@@ -9,7 +9,7 @@ export const revalidate = 0
 async function getTopMovies() {
   try {
     const result = await turso.execute({
-      sql: 'SELECT slug, updated_at, vote_average FROM movies WHERE filter_status IN (?, ?) ORDER BY popularity DESC LIMIT 10000',
+      sql: 'SELECT slug, updated_at, vote_average FROM movies INDEXED BY idx_movies_filter_popularity WHERE filter_status IN (?, ?) ORDER BY popularity DESC LIMIT 10000',
       args: ['clean', 'reviewed_approved']
     })
     return result.rows || []
@@ -23,7 +23,7 @@ async function getTopMovies() {
 async function getTopSeries() {
   try {
     const result = await turso.execute({
-      sql: 'SELECT slug, updated_at, vote_average FROM tv_series WHERE filter_status IN (?, ?) ORDER BY popularity DESC LIMIT 5000',
+      sql: 'SELECT slug, updated_at, vote_average FROM tv_series INDEXED BY idx_series_filter_popularity WHERE filter_status IN (?, ?) ORDER BY popularity DESC LIMIT 5000',
       args: ['clean', 'reviewed_approved']
     })
     return result.rows || []
