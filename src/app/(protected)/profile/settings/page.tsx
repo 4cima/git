@@ -23,6 +23,8 @@ export default function ProfileSettingsPage() {
   const [usernameError, setUsernameError] = useState<string | null>(null)
   const [canChangeUsernameNow, setCanChangeUsernameNow] = useState(true)
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '')
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [bio, setBio] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
@@ -255,10 +257,17 @@ export default function ProfileSettingsPage() {
       return
     }
 
+    // Show preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+
     const formData = new FormData()
     formData.append('avatar', file)
 
-    setSavingProfile(true)
+    setUploadingAvatar(true)
     try {
       const res = await fetch('/api/profile/upload-avatar', {
         method: 'POST',
@@ -269,12 +278,18 @@ export default function ProfileSettingsPage() {
       if (!res.ok) throw new Error(data.error || 'فشل رفع الصورة')
 
       setAvatarUrl(data.avatar_url)
+      setAvatarPreview(null)
       flashFeedback(setProfileFeedback, 'success', 'تم رفع الصورة بنجاح')
       await refreshProfile()
     } catch (error: any) {
+      setAvatarPreview(null)
       flashFeedback(setProfileFeedback, 'error', error.message)
     } finally {
-      setSavingProfile(false)
+      setUploadingAvatar(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -368,35 +383,44 @@ export default function ProfileSettingsPage() {
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-zinc-300 mb-3">الصورة الشخصية</label>
                   <div className="flex items-center gap-6">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt={username}
-                        className="w-24 h-24 rounded-2xl object-cover border-4 border-zinc-800"
-                      />
-                    ) : (
-                      <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-red-600 to-cyan-400 flex items-center justify-center text-white text-3xl font-black">
-                        {username.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <div className="relative">
+                      {avatarPreview || avatarUrl ? (
+                        <img
+                          src={avatarPreview || avatarUrl}
+                          alt={username}
+                          className="w-24 h-24 rounded-2xl object-cover border-4 border-zinc-800"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-red-600 to-cyan-400 flex items-center justify-center text-white text-3xl font-black">
+                          {username.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {uploadingAvatar && (
+                        <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center">
+                          <Loader size={24} className="text-white animate-spin" />
+                        </div>
+                      )}
+                    </div>
                     
                     <div>
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
                         onChange={handleAvatarUpload}
+                        disabled={uploadingAvatar}
                         className="hidden"
                       />
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        disabled={savingProfile}
+                        disabled={uploadingAvatar}
                         className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl transition-colors text-sm font-medium disabled:opacity-50"
                       >
                         <Camera size={16} />
-                        تغيير الصورة
+                        {uploadingAvatar ? 'جاري الرفع...' : 'تغيير الصورة'}
                       </button>
-                      <p className="text-xs text-zinc-500 mt-2">JPG, PNG أو GIF (حد أقصى 2MB)</p>
+                      <p className="text-xs text-zinc-500 mt-2">JPG, PNG أو WebP (حد أقصى 2MB)</p>
+                      <p className="text-xs text-emerald-400 mt-1">✓ سيتم تحسين الصورة تلقائياً لـ 400×400</p>
                     </div>
                   </div>
                 </div>
