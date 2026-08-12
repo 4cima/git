@@ -5,22 +5,34 @@
 
 'use client'
 
-import { useState } from 'react'
-import { Mail, Lock, User } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Mail, Lock, User, AlertCircle, Check } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AuthCard } from '@/components/auth/AuthCard'
 import { InputField } from '@/components/auth/InputField'
 import { supabase, ensureProfile } from '@/lib/supabase'
+import { validateUsername } from '@/lib/usernameValidator'
 
 export default function RegisterPage() {
   const [username, setUsername] = useState('')
+  const [usernameError, setUsernameError] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+
+  // Validate username on change
+  useEffect(() => {
+    if (username) {
+      const validation = validateUsername(username)
+      setUsernameError(validation.valid ? null : validation.error || null)
+    } else {
+      setUsernameError(null)
+    }
+  }, [username])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,10 +46,10 @@ export default function RegisterPage() {
       return
     }
 
-    // Username validation (alphanumeric and underscore only, 3-20 chars)
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/
-    if (!usernameRegex.test(username.trim())) {
-      setError('اسم المستخدم يجب أن يكون من 3-20 حرف (أحرف وأرقام و _ فقط)')
+    // Username validation using smart validator
+    const usernameValidation = validateUsername(username.trim())
+    if (!usernameValidation.valid) {
+      setError(usernameValidation.error)
       return
     }
 

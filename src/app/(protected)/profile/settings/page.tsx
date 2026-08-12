@@ -5,10 +5,11 @@
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useState, useRef } from 'react'
-import { User, Mail, Lock, Bell, Eye, Trash2, Save, Loader, Camera, Check, X } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { User, Mail, Lock, Bell, Eye, Trash2, Save, Loader, Camera, Check, X, AlertCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { validateUsername, canChangeUsername } from '@/lib/usernameValidator'
 
 export default function ProfileSettingsPage() {
   const { user, profile, refreshProfile } = useAuth()
@@ -19,6 +20,8 @@ export default function ProfileSettingsPage() {
   
   // Profile settings
   const [username, setUsername] = useState(profile?.username || '')
+  const [usernameError, setUsernameError] = useState<string | null>(null)
+  const [canChangeUsernameNow, setCanChangeUsernameNow] = useState(true)
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '')
   const [bio, setBio] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
@@ -52,6 +55,27 @@ export default function ProfileSettingsPage() {
     return null
   }
 
+  // Check username change cooldown on mount
+  useEffect(() => {
+    if (profile?.username_last_changed) {
+      const check = canChangeUsername(profile.username_last_changed)
+      setCanChangeUsernameNow(check.canChange)
+      if (!check.canChange) {
+        setUsernameError(check.error || null)
+      }
+    }
+  }, [profile?.username_last_changed])
+
+  // Validate username on change
+  useEffect(() => {
+    if (username && username !== profile?.username) {
+      const validation = validateUsername(username)
+      setUsernameError(validation.valid ? null : validation.error || null)
+    } else {
+      setUsernameError(null)
+    }
+  }, [username, profile?.username])
+
   const flashFeedback = (
     setter: (value: any) => void,
     type: 'success' | 'error',
@@ -67,6 +91,27 @@ export default function ProfileSettingsPage() {
       return
     }
 
+    // Check if username is changing
+    const isUsernameChanging = username.trim() !== profile?.username
+
+    if (isUsernameChanging) {
+      // Validate username
+      const validation = validateUsername(username)
+      if (!validation.valid) {
+        flashFeedback(setProfileFeedback, 'error', validation.error || 'اسم المستخدم غير صالح')
+        return
+      }
+
+      // Check cooldown
+      if (profile?.username_last_changed) {
+        const check = canChangeUsername(profile.username_last_changed)
+        if (!check.canChange) {
+          flashFeedback(setProfileFeedback, 'error', check.error || 'لا يمكن تغيير الاسم الآن')
+          return
+        }
+      }
+    }
+
     setSavingProfile(true)
     try {
       const res = await fetch('/api/profile/update', {
@@ -80,6 +125,12 @@ export default function ProfileSettingsPage() {
 
       flashFeedback(setProfileFeedback, 'success', 'تم حفظ التغييرات بنجاح')
       await refreshProfile()
+      
+      // Update cooldown status if username changed
+      if (isUsernameChanging) {
+        setCanChangeUsernameNow(false)
+        setUsernameError('يمكنك تغيير اسم المستخدم مرة أخرى بعد 24 ساعة')
+      }
     } catch (error: any) {
       flashFeedback(setProfileFeedback, 'error', error.message)
     } finally {
@@ -236,7 +287,7 @@ export default function ProfileSettingsPage() {
           <Link href="/profile" className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors mb-3 inline-block">
             ← العودة للملف الشخصي
           </Link>
-          <h1 className="text-3xl font-black text-zinc-100 mb-2">إعدادات الحساب</h1>
+          <h1 className="text-3xl font-black text-zinc-100 mb-2 mt-4">إعدادات الحساب</h1>
           <p className="text-zinc-400">إدارة حسابك وإعداداتك الشخصية</p>
         </div>
 
@@ -352,14 +403,40 @@ export default function ProfileSettingsPage() {
 
                 {/* Username */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-zinc-300 mb-2">اسم المستخدم</label>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    اسم المستخدم
+                    {username !== profile?.username && !canChangeUsernameNow && (
+                      <span className="text-orange-400 text-xs mr-2">(24 ساعة قبل التغيير التالي)</span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-colors"
+                    className={`w-full bg-zinc-950 border rounded-xl px-4 py-3 text-zinc-100 focus:ring-2 outline-none transition-colors ${
+                      usernameError 
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                        : 'border-zinc-800 focus:border-cyan-500 focus:ring-cyan-500/20'
+                    }`}
                     placeholder="اسم المستخدم"
+                    minLength={5}
+                    maxLength={30}
                   />
+                  {usernameError && (
+                    <div className="mt-2 flex items-start gap-2 text-xs text-red-400">
+                      <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                      <span>{usernameError}</span>
+                    </div>
+                  )}
+                  {!usernameError && username && username !== profile?.username && (
+                    <div className="mt-2 flex items-start gap-2 text-xs text-emerald-400">
+                      <Check size={14} className="mt-0.5 shrink-0" />
+                      <span>اسم المستخدم متاح</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-zinc-500 mt-2">
+                    • الحد الأدنى 5 أحرف • لا يحتوي على كلمات غير لائقة • يمكن التغيير مرة كل 24 ساعة
+                  </p>
                 </div>
 
                 {/* Email (read-only) */}
@@ -377,7 +454,7 @@ export default function ProfileSettingsPage() {
                 {/* Save Button */}
                 <button
                   onClick={handleSaveProfile}
-                  disabled={savingProfile}
+                  disabled={savingProfile || (!!usernameError && username !== profile?.username)}
                   className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-cyan-600 hover:from-red-500 hover:to-cyan-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {savingProfile ? (
