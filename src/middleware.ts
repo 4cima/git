@@ -1,7 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
+// Build SHA will be injected at build time
+const BUILD_SHA = process.env.NEXT_PUBLIC_BUILD_SHA || 'unknown'
+
 export async function middleware(request: NextRequest) {
+  // Create base response with build SHA header for all requests
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+  response.headers.set('x-build-sha', BUILD_SHA)
+
+  // Only apply admin auth checks for admin routes
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') || 
+                       request.nextUrl.pathname.startsWith('/api/admin')
+  
+  if (!isAdminRoute) {
+    return response
+  }
+
   // Check HTTP Basic Auth first (keeps existing admin access working)
   const username = process.env.ADMIN_USERNAME
   const password = process.env.ADMIN_PASSWORD
@@ -17,18 +36,13 @@ export async function middleware(request: NextRequest) {
         const incomingUser = decoded.slice(0, colonIndex)
         const incomingPass = decoded.slice(colonIndex + 1)
         if (incomingUser === username && incomingPass === password) {
-          return NextResponse.next()
+          return response
         }
       }
     }
   }
 
-  // Try Supabase session + role check with timeout
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+  // Try Supabase session + role check with timeout for admin routes
 
   try {
     const supabase = createServerClient(
@@ -87,9 +101,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/admin',
-    '/admin/(.*)',
-    '/api/admin',
-    '/api/admin/(.*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
