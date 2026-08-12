@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Search, X, Film, Tv, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { Search, X, Film, Tv, Loader2, Star, Calendar, TrendingUp, Sparkles, Filter, SlidersHorizontal, ChevronDown, Clock, Award } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -11,17 +11,28 @@ interface SearchResult {
   title_ar: string
   title_en: string
   poster_path: string
+  backdrop_path?: string
   vote_average: number
   media_type: 'movie' | 'tv'
   release_year?: number
   first_air_year?: number
+  overview_ar?: string
+  genres_json?: string
+  popularity?: number
 }
+
+type SortOption = 'relevance' | 'rating' | 'year' | 'popularity'
+type FilterOption = 'all' | 'movie' | 'tv'
 
 export function SearchBox() {
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
+  const [sortBy, setSortBy] = useState<SortOption>('relevance')
+  const [filterBy, setFilterBy] = useState<FilterOption>('all')
+  const [showFilters, setShowFilters] = useState(false)
+  const [hoveredResult, setHoveredResult] = useState<number | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -30,6 +41,7 @@ export function SearchBox() {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false)
+        setShowFilters(false)
       }
     }
 
@@ -42,6 +54,25 @@ export function SearchBox() {
     if (isOpen && inputRef.current) {
       inputRef.current.focus()
     }
+  }, [isOpen])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + K to open search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setIsOpen(true)
+      }
+      // Escape to close
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false)
+        setShowFilters(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
 
   // Search with debounce
@@ -64,10 +95,37 @@ export function SearchBox() {
       } finally {
         setLoading(false)
       }
-    }, 300)
+    }, 200)
 
     return () => clearTimeout(timeoutId)
   }, [query])
+
+  // Sort and filter results
+  const filteredAndSortedResults = useMemo(() => {
+    let filtered = results
+
+    // Apply filter
+    if (filterBy !== 'all') {
+      filtered = results.filter(r => r.media_type === filterBy)
+    }
+
+    // Apply sort
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'rating':
+          return (b.vote_average || 0) - (a.vote_average || 0)
+        case 'year':
+          return (b.release_year || b.first_air_year || 0) - (a.release_year || a.first_air_year || 0)
+        case 'popularity':
+          return (b.popularity || 0) - (a.popularity || 0)
+        case 'relevance':
+        default:
+          return 0
+      }
+    })
+
+    return sorted
+  }, [results, sortBy, filterBy])
 
   const handleClear = () => {
     setQuery('')
@@ -79,143 +137,463 @@ export function SearchBox() {
     setIsOpen(false)
     setQuery('')
     setResults([])
+    setShowFilters(false)
   }
+
+  const getGenres = (genresJson?: string) => {
+    try {
+      const genres = JSON.parse(genresJson || '[]')
+      return genres.slice(0, 2).map((g: any) => g.name_ar || g.name).filter(Boolean)
+    } catch {
+      return []
+    }
+  }
+
+  const stats = useMemo(() => {
+    const movies = results.filter(r => r.media_type === 'movie').length
+    const series = results.filter(r => r.media_type === 'tv').length
+    return { movies, series, total: results.length }
+  }, [results])
 
   return (
     <div ref={searchRef} className="relative">
-      {/* Search Button */}
+      {/* Search Button with Glow Effect */}
       {!isOpen && (
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded-lg transition-all duration-200"
+          className="relative flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-slate-800/80 to-slate-900/80 hover:from-cyan-900/40 hover:to-blue-900/40 border border-slate-700 hover:border-cyan-500/50 rounded-xl transition-all duration-300 group overflow-hidden"
           aria-label="بحث"
         >
-          <Search size={18} className="text-slate-400" />
-          <span className="hidden sm:inline text-sm text-slate-400">بحث...</span>
-        </button>
+          {/* Animated Background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          {/* Sparkle Effect */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-1/2 left-1/4 w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
+            <div className="absolute top-1/4 right-1/3 w-1 h-1 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '0.2s' }} />
+          </div>
+          
+          <Search size={18} className="text-cyan-400 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
+          <span className="hidden sm:inline text-sm text-slate-300 font-medium relative z-10">بحث متقدم</span>
+          <kbd className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 bg-slate-950/50 border border-slate-700 rounded relative z-10">
+            <span>⌘</span>
+            <span>K</span>
+          </kbd>
+        </motion.button>
       )}
 
-      {/* Expanded Search Box */}
+      {/* Expanded Advanced Search Box */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-0 top-0 w-64 sm:w-80 md:w-96 z-50"
-          >
-            <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-lg shadow-2xl overflow-hidden">
-              {/* Search Input */}
-              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-slate-700">
-                <Search size={18} className="text-cyan-400 flex-shrink-0" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="ابحث عن أفلام أو مسلسلات..."
-                  className="flex-1 bg-transparent text-white placeholder-slate-400 outline-none text-sm"
-                  autoComplete="off"
-                />
-                {query && (
-                  <button
-                    onClick={handleClear}
-                    className="text-slate-400 hover:text-white transition-colors"
-                    aria-label="مسح"
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-                {loading && (
-                  <Loader2 size={16} className="text-cyan-400 animate-spin" />
-                )}
-              </div>
+          <>
+            {/* Backdrop Blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[998]"
+              onClick={() => {
+                setIsOpen(false)
+                setShowFilters(false)
+              }}
+            />
 
-              {/* Search Results */}
-              {query.length >= 2 && (
-                <div className="max-h-96 overflow-y-auto">
-                  {results.length > 0 ? (
-                    <div className="py-2">
-                      {results.slice(0, 8).map((result) => (
-                        <Link
-                          key={`${result.media_type}-${result.id}`}
-                          href={`/${result.media_type === 'movie' ? 'movies' : 'series'}/${result.slug}`}
-                          onClick={handleResultClick}
-                          className="flex items-center gap-3 px-3 py-2 hover:bg-slate-800/50 transition-colors"
-                        >
-                          {/* Poster */}
-                          <div className="w-10 h-14 rounded overflow-hidden bg-slate-800 flex-shrink-0">
-                            {result.poster_path ? (
-                              <img
-                                src={`/tmdb/w92${result.poster_path}`}
-                                alt={result.title_ar}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-600">
-                                {result.media_type === 'movie' ? <Film size={16} /> : <Tv size={16} />}
-                              </div>
-                            )}
-                          </div>
+            {/* Search Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: -20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed left-1/2 top-20 -translate-x-1/2 w-[95vw] sm:w-[600px] md:w-[700px] lg:w-[800px] max-h-[85vh] z-[999] flex flex-col"
+            >
+              {/* Main Search Container */}
+              <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 backdrop-blur-2xl border-2 border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+                {/* Animated Border Glow */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 opacity-0 blur-xl animate-pulse pointer-events-none" style={{ animationDuration: '3s' }} />
+                
+                {/* Header with Search Input */}
+                <div className="relative bg-gradient-to-r from-slate-800/50 to-slate-900/50 border-b border-slate-700/50">
+                  <div className="flex items-center gap-3 px-4 py-4">
+                    <div className="relative flex-shrink-0">
+                      <Search size={22} className="text-cyan-400 animate-pulse" />
+                      <div className="absolute inset-0 blur-md bg-cyan-400/30 animate-pulse" />
+                    </div>
+                    
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="ابحث في آلاف الأفلام والمسلسلات..."
+                      className="flex-1 bg-transparent text-white placeholder-slate-400 outline-none text-lg font-medium"
+                      autoComplete="off"
+                    />
+                    
+                    {loading && (
+                      <Loader2 size={20} className="text-cyan-400 animate-spin flex-shrink-0" />
+                    )}
+                    
+                    {query && !loading && (
+                      <motion.button
+                        whileHover={{ scale: 1.1, rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleClear}
+                        className="text-slate-400 hover:text-red-400 transition-colors flex-shrink-0"
+                        aria-label="مسح"
+                      >
+                        <X size={20} />
+                      </motion.button>
+                    )}
+                  </div>
 
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-semibold text-white truncate">
-                              {result.title_ar}
-                            </h4>
-                            <p className="text-xs text-slate-400 truncate">
-                              {result.title_en}
-                            </p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-xs text-slate-500">
-                                {result.release_year || result.first_air_year}
-                              </span>
-                              {result.vote_average > 0 && (
-                                <span className="text-xs text-amber-400">
-                                  ⭐ {result.vote_average.toFixed(1)}
-                                </span>
-                              )}
+                  {/* Stats Bar */}
+                  {results.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center justify-between px-4 py-2 bg-slate-950/50 border-t border-slate-700/30 text-xs"
+                    >
+                      <div className="flex items-center gap-4">
+                        <span className="text-slate-400 flex items-center gap-1">
+                          <Sparkles size={12} className="text-cyan-400" />
+                          {stats.total} نتيجة
+                        </span>
+                        {stats.movies > 0 && (
+                          <span className="text-red-400 flex items-center gap-1">
+                            <Film size={12} />
+                            {stats.movies} فيلم
+                          </span>
+                        )}
+                        {stats.series > 0 && (
+                          <span className="text-blue-400 flex items-center gap-1">
+                            <Tv size={12} />
+                            {stats.series} مسلسل
+                          </span>
+                        )}
+                      </div>
+                      
+                      <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-md transition-colors"
+                      >
+                        <SlidersHorizontal size={12} />
+                        <span>فلاتر</span>
+                        <ChevronDown size={12} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {/* Filters Panel */}
+                  <AnimatePresence>
+                    {showFilters && results.length > 0 && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden bg-slate-950/80 border-t border-slate-700/30"
+                      >
+                        <div className="px-4 py-3 space-y-3">
+                          {/* Sort Options */}
+                          <div className="space-y-2">
+                            <label className="text-xs text-slate-400 font-semibold flex items-center gap-1">
+                              <TrendingUp size={12} />
+                              ترتيب حسب
+                            </label>
+                            <div className="flex gap-2 flex-wrap">
+                              {[
+                                { value: 'relevance', label: 'الأكثر صلة', icon: Sparkles },
+                                { value: 'rating', label: 'الأعلى تقييماً', icon: Star },
+                                { value: 'year', label: 'الأحدث', icon: Calendar },
+                                { value: 'popularity', label: 'الأكثر شعبية', icon: TrendingUp },
+                              ].map((option) => (
+                                <button
+                                  key={option.value}
+                                  onClick={() => setSortBy(option.value as SortOption)}
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                    sortBy === option.value
+                                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                                      : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:bg-slate-800 hover:text-slate-300'
+                                  }`}
+                                >
+                                  <option.icon size={12} />
+                                  {option.label}
+                                </button>
+                              ))}
                             </div>
                           </div>
 
-                          {/* Media Type Badge */}
-                          <div className={`px-2 py-0.5 rounded text-xs font-bold flex-shrink-0 ${
-                            result.media_type === 'movie'
-                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                              : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                          }`}>
-                            {result.media_type === 'movie' ? 'فيلم' : 'مسلسل'}
+                          {/* Filter Options */}
+                          <div className="space-y-2">
+                            <label className="text-xs text-slate-400 font-semibold flex items-center gap-1">
+                              <Filter size={12} />
+                              النوع
+                            </label>
+                            <div className="flex gap-2">
+                              {[
+                                { value: 'all', label: 'الكل', icon: Sparkles },
+                                { value: 'movie', label: 'أفلام فقط', icon: Film },
+                                { value: 'tv', label: 'مسلسلات فقط', icon: Tv },
+                              ].map((option) => (
+                                <button
+                                  key={option.value}
+                                  onClick={() => setFilterBy(option.value as FilterOption)}
+                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                    filterBy === option.value
+                                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
+                                      : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:bg-slate-800 hover:text-slate-300'
+                                  }`}
+                                >
+                                  <option.icon size={12} />
+                                  {option.label}
+                                </button>
+                              ))}
+                            </div>
                           </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    !loading && (
-                      <div className="py-8 text-center text-slate-400 text-sm">
-                        لا توجد نتائج
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Results Area */}
+                <div className="overflow-y-auto max-h-[calc(85vh-180px)] custom-scrollbar">
+                  {query.length >= 2 && (
+                    <>
+                      {filteredAndSortedResults.length > 0 ? (
+                        <div className="p-2 space-y-2">
+                          {filteredAndSortedResults.slice(0, 12).map((result, index) => {
+                            const genres = getGenres(result.genres_json)
+                            const isHovered = hoveredResult === result.id
+
+                            return (
+                              <motion.div
+                                key={`${result.media_type}-${result.id}`}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.03 }}
+                                onMouseEnter={() => setHoveredResult(result.id)}
+                                onMouseLeave={() => setHoveredResult(null)}
+                              >
+                                <Link
+                                  href={`/${result.media_type === 'movie' ? 'movies' : 'series'}/${result.slug}`}
+                                  onClick={handleResultClick}
+                                  className="block relative overflow-hidden rounded-xl border border-slate-700/50 hover:border-cyan-500/50 transition-all duration-300 group bg-slate-900/50 hover:bg-slate-800/50"
+                                >
+                                  {/* Background Gradient on Hover */}
+                                  <div className={`absolute inset-0 bg-gradient-to-r ${
+                                    result.media_type === 'movie' 
+                                      ? 'from-red-500/5 to-orange-500/5' 
+                                      : 'from-blue-500/5 to-cyan-500/5'
+                                  } opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+
+                                  <div className="relative flex gap-3 p-3">
+                                    {/* Poster with Overlay */}
+                                    <div className="relative w-16 h-24 sm:w-20 sm:h-28 rounded-lg overflow-hidden flex-shrink-0 bg-slate-800 shadow-lg">
+                                      {result.poster_path ? (
+                                        <>
+                                          <img
+                                            src={`/tmdb/w154${result.poster_path}`}
+                                            alt={result.title_ar}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                            loading="lazy"
+                                          />
+                                          {/* Play Overlay on Hover */}
+                                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                              <div className="w-0 h-0 border-t-8 border-t-transparent border-l-12 border-l-white border-b-8 border-b-transparent ml-1" />
+                                            </div>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-slate-600">
+                                          {result.media_type === 'movie' ? <Film size={24} /> : <Tv size={24} />}
+                                        </div>
+                                      )}
+                                      
+                                      {/* Rating Badge */}
+                                      {result.vote_average > 0 && (
+                                        <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/80 backdrop-blur-sm rounded text-xs font-bold text-amber-400 flex items-center gap-0.5">
+                                          <Star size={10} className="fill-amber-400" />
+                                          {result.vote_average.toFixed(1)}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                      {/* Title Section */}
+                                      <div>
+                                        <div className="flex items-start justify-between gap-2 mb-1">
+                                          <h4 className="text-base font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
+                                            {result.title_ar}
+                                          </h4>
+                                          
+                                          {/* Media Type Badge */}
+                                          <div className={`flex-shrink-0 px-2 py-0.5 rounded-md text-xs font-bold border ${
+                                            result.media_type === 'movie'
+                                              ? 'bg-red-500/10 text-red-400 border-red-500/30'
+                                              : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                                          }`}>
+                                            {result.media_type === 'movie' ? (
+                                              <span className="flex items-center gap-1">
+                                                <Film size={10} />
+                                                فيلم
+                                              </span>
+                                            ) : (
+                                              <span className="flex items-center gap-1">
+                                                <Tv size={10} />
+                                                مسلسل
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        <p className="text-sm text-slate-400 line-clamp-1 mb-2">
+                                          {result.title_en}
+                                        </p>
+
+                                        {/* Metadata */}
+                                        <div className="flex items-center gap-3 text-xs text-slate-500 mb-2">
+                                          {(result.release_year || result.first_air_year) && (
+                                            <span className="flex items-center gap-1">
+                                              <Calendar size={11} />
+                                              {result.release_year || result.first_air_year}
+                                            </span>
+                                          )}
+                                          {result.vote_average >= 7 && (
+                                            <span className="flex items-center gap-1 text-amber-400">
+                                              <Award size={11} />
+                                              تقييم عالي
+                                            </span>
+                                          )}
+                                        </div>
+
+                                        {/* Genres */}
+                                        {genres.length > 0 && (
+                                          <div className="flex gap-1.5 flex-wrap">
+                                            {genres.map((genre, idx) => (
+                                              <span
+                                                key={idx}
+                                                className="px-2 py-0.5 bg-slate-800/50 border border-slate-700 rounded text-xs text-slate-400"
+                                              >
+                                                {genre}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Description on Hover */}
+                                      <AnimatePresence>
+                                        {isHovered && result.overview_ar && (
+                                          <motion.p
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            className="text-xs text-slate-400 line-clamp-2 mt-2 pt-2 border-t border-slate-700/50"
+                                          >
+                                            {result.overview_ar}
+                                          </motion.p>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
+                                  </div>
+
+                                  {/* Bottom Glow Effect */}
+                                  <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${
+                                    result.media_type === 'movie'
+                                      ? 'from-red-500 to-orange-500'
+                                      : 'from-blue-500 to-cyan-500'
+                                  } opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                                </Link>
+                              </motion.div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        !loading && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="py-16 text-center"
+                          >
+                            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800/50 border-2 border-slate-700 flex items-center justify-center">
+                              <Search size={32} className="text-slate-600" />
+                            </div>
+                            <p className="text-slate-400 text-base font-medium mb-1">لا توجد نتائج</p>
+                            <p className="text-slate-500 text-sm">جرب كلمات بحث مختلفة</p>
+                          </motion.div>
+                        )
+                      )}
+                    </>
+                  )}
+
+                  {/* Initial State */}
+                  {query.length === 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="py-12 px-6 text-center space-y-6"
+                    >
+                      <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-2 border-cyan-500/20 flex items-center justify-center">
+                        <Sparkles size={40} className="text-cyan-400 animate-pulse" />
                       </div>
-                    )
+                      <div>
+                        <h3 className="text-lg font-bold text-white mb-2">اكتشف عالم السينما</h3>
+                        <p className="text-slate-400 text-sm mb-4">ابحث في مكتبة ضخمة من الأفلام والمسلسلات</p>
+                        
+                        {/* Quick suggestions */}
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          {['Spider', 'Inception', 'Breaking', 'Stranger'].map((suggestion) => (
+                            <button
+                              key={suggestion}
+                              onClick={() => setQuery(suggestion)}
+                              className="px-3 py-1.5 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded-lg text-xs text-slate-400 hover:text-cyan-400 transition-all"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {query.length === 1 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="py-12 text-center"
+                    >
+                      <Clock size={32} className="mx-auto mb-3 text-slate-600 animate-pulse" />
+                      <p className="text-slate-400 text-sm">اكتب حرف آخر للبدء...</p>
+                    </motion.div>
                   )}
                 </div>
-              )}
-
-              {/* Helper Text */}
-              {query.length === 0 && (
-                <div className="py-4 px-3 text-center text-slate-500 text-xs">
-                  ابدأ بكتابة اسم الفيلم أو المسلسل
-                </div>
-              )}
-              {query.length === 1 && (
-                <div className="py-4 px-3 text-center text-slate-500 text-xs">
-                  اكتب حرفين على الأقل للبحث
-                </div>
-              )}
-            </div>
-          </motion.div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
+
+      {/* Custom Scrollbar Styles */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(15, 23, 42, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(100, 116, 139, 0.5);
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(148, 163, 184, 0.7);
+        }
+      `}</style>
     </div>
   )
 }

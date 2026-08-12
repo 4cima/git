@@ -592,8 +592,12 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                       {sanitizeTitle(heroItem.title_ar)}
                     </h1>
                     
-                    {/* English Title - 25% larger and more visible */}
-                    <p className="text-base md:text-lg text-slate-300 font-semibold italic animate-slideInRight" style={{ animationDelay: '0.1s' }} key={`title-en-${heroItem.id}`}>
+                    {/* English Title - 25% larger with color based on media type */}
+                    <p className={`text-base md:text-lg font-semibold italic animate-slideInRight ${
+                      heroItem.media_type === 'movie' 
+                        ? 'text-red-400' 
+                        : 'text-blue-400'
+                    }`} style={{ animationDelay: '0.1s' }} key={`title-en-${heroItem.id}`}>
                       {sanitizeTitle(heroItem.title_en)}
                     </p>
 
