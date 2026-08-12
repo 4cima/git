@@ -34,6 +34,7 @@ async function getTopSeries() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Hardcoded fallback ensures we never default to wrong domain
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://4cima.com'
   
   // Static pages
