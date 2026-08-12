@@ -42,7 +42,7 @@ export default async function HomePage() {
   
   return (
     <div className="min-h-screen bg-black text-white p-8">
-      <h1 className="text-4xl font-bold mb-8">فور سيما</h1>
+      <h1 className="text-4xl font-bold mb-8">فور سيما v2.0 - DEPLOYMENT TEST VERIFIED</h1>
       
       <section className="mb-12">
         <h2 className="text-2xl font-bold mb-4">أفلام رائجة</h2>
