@@ -85,10 +85,10 @@ const SORT_OPTIONS = [
   { value: 'release_year', order: 'asc',  label: 'الأقدم',          icon: '🕰️' },
 ]
 
-export function MoviesPageClient() {
+export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[] }) {
   const searchParams = useSearchParams()
-  const [movies, setMovies]                   = useState<any[]>([])
-  const [loading, setLoading]                 = useState(true)
+  const [movies, setMovies]                   = useState<any[]>(initialMovies)
+  const [loading, setLoading]                 = useState(initialMovies.length === 0)
   const [loadingMore, setLoadingMore]         = useState(false)
   const [error, setError]                     = useState<string | null>(null)
   const [searchQuery, setSearchQuery]         = useState('')

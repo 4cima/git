@@ -13,7 +13,7 @@ async function getInitialSeries() {
   const result = await turso.execute({
     sql: `SELECT id, slug, name_ar, name_en, poster_path, vote_average, first_air_year, genres_json 
           FROM tv_series 
-          WHERE filter_status = 'approved' 
+          WHERE filter_status IN ('clean', 'reviewed_approved')
           ORDER BY popularity DESC 
           LIMIT 50`,
     args: []

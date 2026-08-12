@@ -91,10 +91,10 @@ const SORT_OPTIONS = [
   { value: 'first_air_year', order: 'asc',  label: 'الأقدم',          icon: '🕰️' },
 ]
 
-export function SeriesPageClient() {
+export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[] }) {
   const searchParams = useSearchParams()
-  const [series, setSeries]                   = useState<any[]>([])
-  const [loading, setLoading]                 = useState(true)
+  const [series, setSeries]                   = useState<any[]>(initialSeries)
+  const [loading, setLoading]                 = useState(initialSeries.length === 0)
   const [loadingMore, setLoadingMore]         = useState(false)
   const [error, setError]                     = useState<string | null>(null)
   const [searchQuery, setSearchQuery]         = useState('')

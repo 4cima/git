@@ -8,8 +8,8 @@ export const revalidate = 86400
 async function getAllMovies() {
   try {
     const result = await turso.execute({
-      sql: 'SELECT slug, updated_at, vote_average FROM movies WHERE filter_status = ? ORDER BY popularity DESC',
-      args: ['approved']
+      sql: 'SELECT slug, updated_at, vote_average FROM movies WHERE filter_status IN (?, ?) ORDER BY popularity DESC',
+      args: ['clean', 'reviewed_approved']
     })
     return result.rows || []
   } catch (error) {
@@ -22,8 +22,8 @@ async function getAllMovies() {
 async function getAllSeries() {
   try {
     const result = await turso.execute({
-      sql: 'SELECT slug, updated_at, vote_average FROM tv_series WHERE filter_status = ? ORDER BY popularity DESC',
-      args: ['approved']
+      sql: 'SELECT slug, updated_at, vote_average FROM tv_series WHERE filter_status IN (?, ?) ORDER BY popularity DESC',
+      args: ['clean', 'reviewed_approved']
     })
     return result.rows || []
   } catch (error) {
