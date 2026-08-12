@@ -1,6 +1,5 @@
 import { Metadata } from 'next'
 import { turso } from '@/lib/turso'
-import { HomePageClient } from '@/components/pages/HomePageClient'
 
 export const metadata: Metadata = {
   title: 'فور سيما | شاهد أحدث الأفلام والمسلسلات المترجمة',
@@ -32,14 +31,42 @@ async function getHomeData() {
     args: []
   })
   
-  return {
-    trendingMovies: moviesResult.rows.map(row => JSON.parse(JSON.stringify(row))),
-    trendingSeries: seriesResult.rows.map(row => JSON.parse(JSON.stringify(row))),
-  }
+  const movies = moviesResult.rows.map(row => JSON.parse(JSON.stringify(row)))
+  const series = seriesResult.rows.map(row => JSON.parse(JSON.stringify(row)))
+  
+  return { movies, series }
 }
 
 export default async function HomePage() {
-  const homeData = await getHomeData()
+  const { movies, series } = await getHomeData()
   
-  return <HomePageClient initialData={homeData} />
+  return (
+    <div className="min-h-screen bg-black text-white p-8">
+      <h1 className="text-4xl font-bold mb-8">فور سيما</h1>
+      
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold mb-4">أفلام رائجة</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {movies.slice(0, 12).map((movie: any) => (
+            <div key={movie.id} className="bg-gray-800 rounded-lg p-4">
+              <h3 className="text-sm font-semibold">{movie.title_ar || movie.title_en}</h3>
+              <p className="text-xs text-gray-400">{movie.release_year}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      
+      <section>
+        <h2 className="text-2xl font-bold mb-4">مسلسلات رائجة</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {series.slice(0, 12).map((s: any) => (
+            <div key={s.id} className="bg-gray-800 rounded-lg p-4">
+              <h3 className="text-sm font-semibold">{s.title_ar || s.title_en}</h3>
+              <p className="text-xs text-gray-400">{s.release_year}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
 }
