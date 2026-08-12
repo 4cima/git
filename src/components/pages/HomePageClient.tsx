@@ -592,14 +592,35 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                       {sanitizeTitle(heroItem.title_ar)}
                     </h1>
                     
-                    {/* English Title - 25% larger with color based on media type */}
-                    <p className={`text-base md:text-lg font-semibold italic animate-slideInRight ${
-                      heroItem.media_type === 'movie' 
-                        ? 'text-red-400' 
-                        : 'text-blue-400'
-                    }`} style={{ animationDelay: '0.1s' }} key={`title-en-${heroItem.id}`}>
-                      {sanitizeTitle(heroItem.title_en)}
-                    </p>
+                    {/* English Title - 35% larger with professional effects and color based on media type */}
+                    <div className="relative inline-block" key={`title-en-wrapper-${heroItem.id}`}>
+                      <p 
+                        className={`text-lg md:text-xl font-bold italic animate-slideInRight relative z-10 ${
+                          heroItem.media_type === 'movie' 
+                            ? 'text-red-400' 
+                            : 'text-blue-400'
+                        }`} 
+                        style={{ 
+                          animationDelay: '0.1s',
+                          textShadow: heroItem.media_type === 'movie'
+                            ? '0 0 20px rgba(248, 113, 113, 0.6), 0 0 40px rgba(248, 113, 113, 0.3), 0 2px 4px rgba(0, 0, 0, 0.8)'
+                            : '0 0 20px rgba(96, 165, 250, 0.6), 0 0 40px rgba(96, 165, 250, 0.3), 0 2px 4px rgba(0, 0, 0, 0.8)',
+                          letterSpacing: '0.02em'
+                        }}
+                        key={`title-en-${heroItem.id}`}
+                      >
+                        {sanitizeTitle(heroItem.title_en)}
+                      </p>
+                      {/* Glow effect background */}
+                      <div 
+                        className={`absolute inset-0 blur-xl opacity-30 ${
+                          heroItem.media_type === 'movie' 
+                            ? 'bg-red-500' 
+                            : 'bg-blue-500'
+                        }`}
+                        style={{ zIndex: 0 }}
+                      />
+                    </div>
 
                     {/* Description with Limited Width */}
                     <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-sm line-clamp-7 animate-fadeIn" style={{ animationDelay: '0.2s' }}>

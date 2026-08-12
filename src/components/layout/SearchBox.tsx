@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { Search, X, Film, Tv, Loader2, Star, Calendar, TrendingUp, Sparkles, Filter, SlidersHorizontal, ChevronDown, Clock, Award } from 'lucide-react'
+import { Search, X, Film, Tv, Loader2, Star, Calendar, TrendingUp, Filter, SlidersHorizontal, ChevronDown, Clock, Award } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -163,20 +163,19 @@ export function SearchBox() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(true)}
-          className="relative flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-slate-800/80 to-slate-900/80 hover:from-cyan-900/40 hover:to-blue-900/40 border border-slate-700 hover:border-cyan-500/50 rounded-xl transition-all duration-300 group overflow-hidden"
+          className="relative flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-slate-800/80 to-slate-900/80 hover:from-cyan-900/40 hover:to-blue-900/40 border border-slate-700 hover:border-cyan-500/50 rounded-xl transition-all duration-300 group overflow-hidden shadow-lg hover:shadow-cyan-500/20"
           aria-label="بحث"
         >
-          {/* Animated Background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/10 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          {/* Animated Background Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
-          {/* Sparkle Effect */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="absolute top-1/2 left-1/4 w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
-            <div className="absolute top-1/4 right-1/3 w-1 h-1 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '0.2s' }} />
+          {/* Animated Border Glow */}
+          <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 blur-sm" />
           </div>
           
-          <Search size={18} className="text-cyan-400 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
-          <span className="hidden sm:inline text-sm text-slate-300 font-medium relative z-10">بحث متقدم</span>
+          <Search size={18} className="text-cyan-400 relative z-10 group-hover:scale-110 transition-transform duration-300" />
+          <span className="hidden sm:inline text-sm text-slate-300 font-semibold relative z-10 group-hover:text-cyan-300 transition-colors">بحث متقدم</span>
           <kbd className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 bg-slate-950/50 border border-slate-700 rounded relative z-10">
             <span>⌘</span>
             <span>K</span>
@@ -206,7 +205,7 @@ export function SearchBox() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: -20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed left-1/2 top-20 -translate-x-1/2 w-[95vw] sm:w-[600px] md:w-[700px] lg:w-[800px] max-h-[85vh] z-[999] flex flex-col"
+              className="fixed left-1/2 top-20 -translate-x-1/2 w-[95vw] sm:w-[650px] md:w-[750px] lg:w-[850px] max-h-[85vh] z-[999] flex flex-col"
             >
               {/* Main Search Container */}
               <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 backdrop-blur-2xl border-2 border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
@@ -256,8 +255,8 @@ export function SearchBox() {
                       className="flex items-center justify-between px-4 py-2 bg-slate-950/50 border-t border-slate-700/30 text-xs"
                     >
                       <div className="flex items-center gap-4">
-                        <span className="text-slate-400 flex items-center gap-1">
-                          <Sparkles size={12} className="text-cyan-400" />
+                        <span className="text-slate-400 flex items-center gap-1.5 font-medium">
+                          <Search size={13} className="text-cyan-400" />
                           {stats.total} نتيجة
                         </span>
                         {stats.movies > 0 && (
@@ -304,10 +303,10 @@ export function SearchBox() {
                             </label>
                             <div className="flex gap-2 flex-wrap">
                               {[
-                                { value: 'relevance', label: 'الأكثر صلة', icon: Sparkles },
+                                { value: 'relevance', label: 'الأكثر صلة', icon: TrendingUp },
                                 { value: 'rating', label: 'الأعلى تقييماً', icon: Star },
                                 { value: 'year', label: 'الأحدث', icon: Calendar },
-                                { value: 'popularity', label: 'الأكثر شعبية', icon: TrendingUp },
+                                { value: 'popularity', label: 'الأكثر شعبية', icon: Award },
                               ].map((option) => (
                                 <button
                                   key={option.value}
@@ -333,7 +332,7 @@ export function SearchBox() {
                             </label>
                             <div className="flex gap-2">
                               {[
-                                { value: 'all', label: 'الكل', icon: Sparkles },
+                                { value: 'all', label: 'الكل', icon: Filter },
                                 { value: 'movie', label: 'أفلام فقط', icon: Film },
                                 { value: 'tv', label: 'مسلسلات فقط', icon: Tv },
                               ].map((option) => (
@@ -364,7 +363,7 @@ export function SearchBox() {
                     <>
                       {filteredAndSortedResults.length > 0 ? (
                         <div className="p-2 space-y-2">
-                          {filteredAndSortedResults.slice(0, 12).map((result, index) => {
+                          {filteredAndSortedResults.slice(0, 15).map((result, index) => {
                             const genres = getGenres(result.genres_json)
                             const isHovered = hoveredResult === result.id
 
@@ -380,7 +379,7 @@ export function SearchBox() {
                                 <Link
                                   href={`/${result.media_type === 'movie' ? 'movies' : 'series'}/${result.slug}`}
                                   onClick={handleResultClick}
-                                  className="block relative overflow-hidden rounded-xl border border-slate-700/50 hover:border-cyan-500/50 transition-all duration-300 group bg-slate-900/50 hover:bg-slate-800/50"
+                                  className="block relative overflow-hidden rounded-xl border-2 border-slate-700/50 hover:border-cyan-500/60 transition-all duration-300 group bg-gradient-to-br from-slate-900/50 to-slate-900/30 hover:from-slate-800/60 hover:to-slate-800/40 hover:shadow-xl hover:shadow-cyan-500/10"
                                 >
                                   {/* Background Gradient on Hover */}
                                   <div className={`absolute inset-0 bg-gradient-to-r ${
@@ -391,32 +390,32 @@ export function SearchBox() {
 
                                   <div className="relative flex gap-3 p-3">
                                     {/* Poster with Overlay */}
-                                    <div className="relative w-16 h-24 sm:w-20 sm:h-28 rounded-lg overflow-hidden flex-shrink-0 bg-slate-800 shadow-lg">
+                                    <div className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden flex-shrink-0 bg-slate-800 shadow-xl ring-1 ring-slate-700/50 group-hover:ring-cyan-500/30 transition-all">
                                       {result.poster_path ? (
                                         <>
                                           <img
                                             src={`/tmdb/w154${result.poster_path}`}
                                             alt={result.title_ar}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
                                             loading="lazy"
                                           />
                                           {/* Play Overlay on Hover */}
-                                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                                              <div className="w-0 h-0 border-t-8 border-t-transparent border-l-12 border-l-white border-b-8 border-b-transparent ml-1" />
+                                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                            <div className="w-12 h-12 rounded-full bg-cyan-500/20 backdrop-blur-sm border-2 border-cyan-400/50 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
+                                              <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[16px] border-l-cyan-400 border-b-[10px] border-b-transparent ml-1" />
                                             </div>
                                           </div>
                                         </>
                                       ) : (
                                         <div className="w-full h-full flex items-center justify-center text-slate-600">
-                                          {result.media_type === 'movie' ? <Film size={24} /> : <Tv size={24} />}
+                                          {result.media_type === 'movie' ? <Film size={28} /> : <Tv size={28} />}
                                         </div>
                                       )}
                                       
                                       {/* Rating Badge */}
                                       {result.vote_average > 0 && (
-                                        <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/80 backdrop-blur-sm rounded text-xs font-bold text-amber-400 flex items-center gap-0.5">
-                                          <Star size={10} className="fill-amber-400" />
+                                        <div className="absolute bottom-1.5 left-1.5 px-2 py-1 bg-black/90 backdrop-blur-sm rounded-md text-xs font-bold text-amber-400 flex items-center gap-1 shadow-lg">
+                                          <Star size={11} className="fill-amber-400" />
                                           {result.vote_average.toFixed(1)}
                                         </div>
                                       )}
@@ -427,31 +426,31 @@ export function SearchBox() {
                                       {/* Title Section */}
                                       <div>
                                         <div className="flex items-start justify-between gap-2 mb-1">
-                                          <h4 className="text-base font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
+                                          <h4 className="text-base sm:text-lg font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
                                             {result.title_ar}
                                           </h4>
                                           
                                           {/* Media Type Badge */}
-                                          <div className={`flex-shrink-0 px-2 py-0.5 rounded-md text-xs font-bold border ${
+                                          <div className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold border shadow-sm ${
                                             result.media_type === 'movie'
-                                              ? 'bg-red-500/10 text-red-400 border-red-500/30'
-                                              : 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+                                              ? 'bg-gradient-to-br from-red-500/15 to-orange-500/10 text-red-400 border-red-500/40'
+                                              : 'bg-gradient-to-br from-blue-500/15 to-cyan-500/10 text-blue-400 border-blue-500/40'
                                           }`}>
                                             {result.media_type === 'movie' ? (
                                               <span className="flex items-center gap-1">
-                                                <Film size={10} />
+                                                <Film size={11} />
                                                 فيلم
                                               </span>
                                             ) : (
                                               <span className="flex items-center gap-1">
-                                                <Tv size={10} />
+                                                <Tv size={11} />
                                                 مسلسل
                                               </span>
                                             )}
                                           </div>
                                         </div>
 
-                                        <p className="text-sm text-slate-400 line-clamp-1 mb-2">
+                                        <p className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors line-clamp-1 mb-2 font-medium">
                                           {result.title_en}
                                         </p>
 
@@ -538,8 +537,10 @@ export function SearchBox() {
                       animate={{ opacity: 1 }}
                       className="py-12 px-6 text-center space-y-6"
                     >
-                      <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-2 border-cyan-500/20 flex items-center justify-center">
-                        <Sparkles size={40} className="text-cyan-400 animate-pulse" />
+                      <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-2 border-cyan-500/20 flex items-center justify-center relative overflow-hidden">
+                        {/* Animated Ring */}
+                        <div className="absolute inset-0 rounded-full border-2 border-cyan-400/30 animate-ping" />
+                        <Search size={40} className="text-cyan-400 relative z-10" />
                       </div>
                       <div>
                         <h3 className="text-lg font-bold text-white mb-2">اكتشف عالم السينما</h3>

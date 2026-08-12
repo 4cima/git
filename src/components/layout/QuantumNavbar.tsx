@@ -131,8 +131,8 @@ export const QuantumNavbar = memo(() => {
             </Link>
           </div>
 
-          {/* Empty space for alignment */}
-          <div className="flex items-center gap-3">
+          {/* Search and actions */}
+          <div className="flex items-center gap-3 ml-8">
             {/* Search Box */}
             <SearchBox />
           </div>
