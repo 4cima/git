@@ -54,6 +54,34 @@ export default async function MovieDetails({ params }: PageProps) {
   // Convert to plain object
   const movie = JSON.parse(JSON.stringify(movieData))
   
-  return <MovieDetailsClient movie={movie} />
+  // Build JSON-LD structured data for Movie schema
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Movie',
+    name: movie.title_ar || movie.title_en || 'فيلم',
+    alternateName: movie.title_en || undefined,
+    description: movie.overview_ar || movie.overview || undefined,
+    image: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : undefined,
+    datePublished: movie.release_date || undefined,
+    genre: movie.genres_json ? JSON.parse(String(movie.genres_json)).map((g: any) => g.name_ar || g.name_en) : undefined,
+    inLanguage: movie.original_language || 'ar',
+    aggregateRating: movie.vote_average ? {
+      '@type': 'AggregateRating',
+      ratingValue: movie.vote_average,
+      ratingCount: movie.vote_count || 0,
+      bestRating: 10,
+      worstRating: 0
+    } : undefined
+  }
+  
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <MovieDetailsClient movie={movie} />
+    </>
+  )
 }
 

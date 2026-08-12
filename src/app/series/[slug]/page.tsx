@@ -77,6 +77,36 @@ export default async function SeriesDetails({ params }: PageProps) {
   // Convert to plain objects
   const series = JSON.parse(JSON.stringify(seriesData))
   
-  return <SeriesDetailsClient series={series} seasons={seasons} />
+  // Build JSON-LD structured data for TVSeries schema
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TVSeries',
+    name: series.name_ar || series.name_en || 'مسلسل',
+    alternateName: series.name_en || undefined,
+    description: series.overview_ar || series.overview || undefined,
+    image: series.poster_path ? `https://image.tmdb.org/t/p/w500${series.poster_path}` : undefined,
+    datePublished: series.first_air_date || undefined,
+    genre: series.genres_json ? JSON.parse(String(series.genres_json)).map((g: any) => g.name_ar || g.name_en) : undefined,
+    inLanguage: series.original_language || 'ar',
+    numberOfSeasons: series.number_of_seasons || seasons.length,
+    numberOfEpisodes: series.number_of_episodes || undefined,
+    aggregateRating: series.vote_average ? {
+      '@type': 'AggregateRating',
+      ratingValue: series.vote_average,
+      ratingCount: series.vote_count || 0,
+      bestRating: 10,
+      worstRating: 0
+    } : undefined
+  }
+  
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <SeriesDetailsClient series={series} seasons={seasons} />
+    </>
+  )
 }
 
