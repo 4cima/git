@@ -29,6 +29,8 @@ export function SearchBox() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
+  const [totalFound, setTotalFound] = useState(0)
+  const [searchStrategy, setSearchStrategy] = useState<string>('')
   const [sortBy, setSortBy] = useState<SortOption>('relevance')
   const [filterBy, setFilterBy] = useState<FilterOption>('all')
   const [showFilters, setShowFilters] = useState(false)
@@ -89,6 +91,8 @@ export function SearchBox() {
         if (response.ok) {
           const data = await response.json()
           setResults(data.results || [])
+          setTotalFound(data.totalFound || 0)
+          setSearchStrategy(data.searchStrategy || '')
         }
       } catch (error) {
         console.error('Search error:', error)
@@ -130,6 +134,8 @@ export function SearchBox() {
   const handleClear = () => {
     setQuery('')
     setResults([])
+    setTotalFound(0)
+    setSearchStrategy('')
     inputRef.current?.focus()
   }
 
@@ -137,6 +143,8 @@ export function SearchBox() {
     setIsOpen(false)
     setQuery('')
     setResults([])
+    setTotalFound(0)
+    setSearchStrategy('')
     setShowFilters(false)
   }
 
@@ -363,17 +371,29 @@ export function SearchBox() {
                     <>
                       {filteredAndSortedResults.length > 0 ? (
                         <div className="p-2 space-y-2">
-                          {/* Smart Search Hint */}
-                          {query.length <= 2 && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="px-3 py-2 bg-cyan-500/5 border border-cyan-500/20 rounded-lg text-xs text-cyan-400 mb-2 flex items-center gap-2"
-                            >
-                              <Search size={12} />
-                              <span><span className="font-semibold">بحث ذكي:</span> البحث في الأعمال ذات {query.length} {query.length === 1 ? 'حرف فقط' : 'حرفين فقط'}</span>
-                            </motion.div>
-                          )}
+                          {/* Smart Search Hint with total results */}
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="px-3 py-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30 rounded-lg text-xs flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Search size={12} className="text-cyan-400" />
+                              <span className="text-cyan-400">
+                                <span className="font-bold">{totalFound} نتيجة</span>
+                                {query.length <= 2 && (
+                                  <span className="text-slate-400 mr-1">
+                                    • بحث ذكي متعدد المستويات
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            {searchStrategy === 'smart-cascading' && (
+                              <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 rounded text-[10px] font-bold">
+                                🧠 SMART
+                              </span>
+                            )}
+                          </motion.div>
                           
                           {filteredAndSortedResults.slice(0, 15).map((result, index) => {
                             const genres = getGenres(result.genres_json)
@@ -531,11 +551,17 @@ export function SearchBox() {
                             animate={{ opacity: 1, scale: 1 }}
                             className="py-16 text-center"
                           >
-                            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-800/50 border-2 border-slate-700 flex items-center justify-center">
-                              <Search size={32} className="text-slate-600" />
+                            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-2 border-cyan-500/20 flex items-center justify-center relative overflow-hidden">
+                              {/* Animated scanning ring */}
+                              <div className="absolute inset-0 rounded-full border-2 border-cyan-400/30 animate-ping" />
+                              <Search size={32} className="text-cyan-400 relative z-10" />
                             </div>
-                            <p className="text-slate-400 text-base font-medium mb-1">لا توجد نتائج</p>
-                            <p className="text-slate-500 text-sm">جرب كلمات بحث مختلفة</p>
+                            <p className="text-slate-300 text-base font-semibold mb-1">البحث الذكي لم يجد نتائج مطابقة</p>
+                            <p className="text-slate-500 text-sm mb-4">جرب كلمات بحث مختلفة أو أقصر</p>
+                            <div className="text-xs text-slate-600">
+                              <p>💡 البحث الذكي فحص 6 مستويات مختلفة</p>
+                              <p className="mt-1">تم البحث في: المطابقات التامة، البداية، الاحتواء، والبحث الضبابي</p>
+                            </div>
                           </motion.div>
                         )
                       )}
