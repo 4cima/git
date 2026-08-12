@@ -21,3 +21,17 @@
 10. Keep replies concise. No filler, no restating the plan before doing it.
 
 11. **NEVER leave placeholders, "قريباً", "coming soon", or mock data**. Build features complete and functional from the first time, with real database queries and actual working functionality. If real data doesn't exist yet, create the necessary tables/APIs first, then build the UI. Never ship half-done features with "TODO" comments or placeholder text.
+
+12. **DO EVERYTHING YOURSELF - NEVER ask the user to do something you can do**. This includes:
+    - Creating database tables/buckets/policies
+    - Running migrations
+    - Setting up configurations
+    - Installing packages
+    - Making API calls
+    - Testing features
+    - Verifying deployments
+    If you CAN execute it, DO execute it. Only ask the user when something genuinely requires their decision (e.g., "which design?", "approve this approach?").
+
+13. **ALWAYS do things properly, never take shortcuts or temporary solutions**. Don't use placeholders, don't skip validation, don't assume things work without testing. Build it right the first time with best practices, full error handling, and production-ready code.
+
+14. **SEARCH and VERIFY before acting**. Read actual files, check actual schemas, run actual tests. Don't infer from names or assume from context. Get real evidence for every claim.

@@ -3,9 +3,9 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import sharp from 'sharp'
 
-const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
-const AVATAR_SIZE = 400 // 400x400 pixels
-const AVATAR_QUALITY = 85 // JPEG quality
+const MAX_FILE_SIZE = 1 * 1024 * 1024 // 1MB
+const AVATAR_SIZE = 200 // 200x200 pixels
+const AVATAR_QUALITY = 80 // JPEG quality
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'حجم الملف كبير جداً. الحد الأقصى 2MB' }, { status: 400 })
+      return NextResponse.json({ error: 'حجم الملف كبير جداً. الحد الأقصى 1MB' }, { status: 400 })
     }
 
     // Convert file to buffer

@@ -245,9 +245,9 @@ export default function ProfileSettingsPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Check file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      flashFeedback(setProfileFeedback, 'error', 'حجم الصورة يجب أن يكون أقل من 2 ميجابايت')
+    // Check file size (max 1MB)
+    if (file.size > 1 * 1024 * 1024) {
+      flashFeedback(setProfileFeedback, 'error', 'حجم الصورة يجب أن يكون أقل من 1 ميجابايت')
       return
     }
 
@@ -419,8 +419,8 @@ export default function ProfileSettingsPage() {
                         <Camera size={16} />
                         {uploadingAvatar ? 'جاري الرفع...' : 'تغيير الصورة'}
                       </button>
-                      <p className="text-xs text-zinc-500 mt-2">JPG, PNG أو WebP (حد أقصى 2MB)</p>
-                      <p className="text-xs text-emerald-400 mt-1">✓ سيتم تحسين الصورة تلقائياً لـ 400×400</p>
+                      <p className="text-xs text-zinc-500 mt-2">JPG, PNG أو WebP (حد أقصى 1MB)</p>
+                      <p className="text-xs text-emerald-400 mt-1">✓ سيتم تحسين الصورة تلقائياً لـ 200×200</p>
                     </div>
                   </div>
                 </div>
