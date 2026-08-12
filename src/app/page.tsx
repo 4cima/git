@@ -7,7 +7,9 @@ export const metadata: Metadata = {
   description: 'موقع فور سيما لمشاهدة أحدث الأفلام والمسلسلات المترجمة بجودة عالية - أكشن، دراما، كوميديا، رعب، وأكثر',
 }
 
-export const revalidate = false // Will use cache tags instead
+// Force dynamic rendering - never static generation
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 async function getHomeData() {
   // Fetch trending movies

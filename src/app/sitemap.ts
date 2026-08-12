@@ -1,14 +1,15 @@
 import { MetadataRoute } from 'next'
 import { turso } from '@/lib/turso'
 
-export const dynamic = 'force-static'
-export const revalidate = 86400
+// Force dynamic generation - sitemap should be generated on-demand, not at build time
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-// Fetch all movies from Turso
-async function getAllMovies() {
+// Fetch top movies from Turso (limited to reduce build/generation time)
+async function getTopMovies() {
   try {
     const result = await turso.execute({
-      sql: 'SELECT slug, updated_at, vote_average FROM movies WHERE filter_status IN (?, ?) ORDER BY popularity DESC',
+      sql: 'SELECT slug, updated_at, vote_average FROM movies WHERE filter_status IN (?, ?) ORDER BY popularity DESC LIMIT 10000',
       args: ['clean', 'reviewed_approved']
     })
     return result.rows || []
@@ -18,11 +19,11 @@ async function getAllMovies() {
   }
 }
 
-// Fetch all series from Turso
-async function getAllSeries() {
+// Fetch top series from Turso (limited to reduce build/generation time)
+async function getTopSeries() {
   try {
     const result = await turso.execute({
-      sql: 'SELECT slug, updated_at, vote_average FROM tv_series WHERE filter_status IN (?, ?) ORDER BY popularity DESC',
+      sql: 'SELECT slug, updated_at, vote_average FROM tv_series WHERE filter_status IN (?, ?) ORDER BY popularity DESC LIMIT 5000',
       args: ['clean', 'reviewed_approved']
     })
     return result.rows || []
@@ -33,7 +34,7 @@ async function getAllSeries() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://4cima.online'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://4cima.com'
   
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
@@ -57,10 +58,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // Fetch movies and series
+  // Fetch movies and series (limited set for sitemap)
   const [movies, series] = await Promise.all([
-    getAllMovies(),
-    getAllSeries(),
+    getTopMovies(),
+    getTopSeries(),
   ])
 
   // Movie pages
