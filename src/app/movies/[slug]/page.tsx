@@ -30,7 +30,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   
   return {
     title: `${title} | فور سيما`,
-    description: description.slice(0, 160)
+    description: description.slice(0, 160),
+    alternates: {
+      canonical: `https://4cima.com/movies/${slug}`
+    }
   }
 }
 

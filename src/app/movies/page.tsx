@@ -5,6 +5,9 @@ import { MoviesPageClient } from '@/components/pages/MoviesPageClient'
 export const metadata: Metadata = {
   title: 'أفلام | فور سيما',
   description: 'استكشف آلاف الأفلام المترجمة بجودة عالية - أفلام أكشن، كوميديا، دراما، رعب، وأكثر',
+  alternates: {
+    canonical: 'https://4cima.com/movies'
+  }
 }
 
 // Force dynamic rendering - never static generation
