@@ -7,6 +7,7 @@ import { useState, useRef, useMemo, memo, useEffect } from 'react'
 import { Home, Film, Tv, Zap, Rocket, Sparkles, Drama, Smile, Eye, Heart, Skull, Menu, X, LogIn, User, LogOut, ChevronDown, Settings } from 'lucide-react'
 import { UserMenu } from './UserMenu'
 import { useAuth } from '@/hooks/useAuth'
+import { SearchBox } from './SearchBox'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
@@ -132,7 +133,8 @@ export const QuantumNavbar = memo(() => {
 
           {/* Empty space for alignment */}
           <div className="flex items-center gap-3">
-            {/* User menu is now in sidebar only */}
+            {/* Search Box */}
+            <SearchBox />
           </div>
         </div>
             </nav>
