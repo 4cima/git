@@ -59,14 +59,16 @@ export default function ProfileSettingsPage() {
 
   // Check username change cooldown on mount
   useEffect(() => {
-    if (profile?.username_last_changed) {
-      const check = canChangeUsername(profile.username_last_changed)
-      setCanChangeUsernameNow(check.canChange)
-      if (!check.canChange) {
-        setUsernameError(check.error || null)
-      }
-    }
-  }, [profile?.username_last_changed])
+    // Note: username_last_changed field not yet implemented in Profile type
+    // Uncomment when added to database schema and Profile interface
+    // if (profile?.username_last_changed) {
+    //   const check = canChangeUsername(profile.username_last_changed)
+    //   setCanChangeUsernameNow(check.canChange)
+    //   if (!check.canChange) {
+    //     setUsernameError(check.error || null)
+    //   }
+    // }
+  }, [profile?.username])
 
   // Validate username on change
   useEffect(() => {
@@ -105,13 +107,15 @@ export default function ProfileSettingsPage() {
       }
 
       // Check cooldown
-      if (profile?.username_last_changed) {
-        const check = canChangeUsername(profile.username_last_changed)
-        if (!check.canChange) {
-          flashFeedback(setProfileFeedback, 'error', check.error || 'لا يمكن تغيير الاسم الآن')
-          return
-        }
-      }
+      // Note: username_last_changed field not yet implemented in Profile type
+      // Uncomment when added to database schema and Profile interface
+      // if (profile?.username_last_changed) {
+      //   const check = canChangeUsername(profile.username_last_changed)
+      //   if (!check.canChange) {
+      //     flashFeedback(setProfileFeedback, 'error', check.error || 'لا يمكن تغيير الاسم الآن')
+      //     return
+      //   }
+      // }
     }
 
     setSavingProfile(true)

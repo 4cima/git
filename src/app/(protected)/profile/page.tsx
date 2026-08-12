@@ -34,7 +34,7 @@ interface Activity {
 }
 
 export default function ProfilePage() {
-  const { user, profile, logout } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'stats'>('overview')
   const [stats, setStats] = useState<Stats>({
     moviesWatched: 0,
@@ -183,7 +183,7 @@ export default function ProfilePage() {
                       <span className="hidden sm:inline">الإعدادات</span>
                     </Link>
                     <button 
-                      onClick={logout}
+                      onClick={signOut}
                       className="flex items-center gap-2 px-4 py-2 bg-red-600/10 hover:bg-red-600/20 text-red-400 rounded-xl transition-colors text-sm font-medium border border-red-600/20"
                     >
                       <LogOut size={14} />

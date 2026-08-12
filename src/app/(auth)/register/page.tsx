@@ -49,7 +49,7 @@ export default function RegisterPage() {
     // Username validation using smart validator
     const usernameValidation = validateUsername(username.trim())
     if (!usernameValidation.valid) {
-      setError(usernameValidation.error)
+      setError(usernameValidation.error || 'اسم المستخدم غير صحيح')
       return
     }
 
