@@ -202,10 +202,10 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
     intervalRef.current = setInterval(() => {
       setSwipeDirection('left')
       setHeroIndex((prev) => (prev + 1) % heroItems.length)
-    }, 5000)
+    }, 7000)
   }, [heroItems.length])
 
-  // تبديل الهيرو تلقائياً كل 5 ثوانٍ (يرمى لليسار)
+  // تبديل الهيرو تلقائياً كل 7 ثوانٍ (يرمى لليسار)
   useEffect(() => {
     if (heroItems.length === 0) return
     

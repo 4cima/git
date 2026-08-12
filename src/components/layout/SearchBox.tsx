@@ -77,7 +77,7 @@ export function SearchBox() {
 
   // Search with debounce
   useEffect(() => {
-    if (!query.trim() || query.length < 2) {
+    if (!query.trim() || query.length < 1) {
       setResults([])
       return
     }
@@ -205,7 +205,7 @@ export function SearchBox() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: -20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed left-1/2 top-20 -translate-x-1/2 w-[95vw] sm:w-[650px] md:w-[750px] lg:w-[850px] max-h-[85vh] z-[999] flex flex-col"
+              className="fixed left-1/2 top-20 -translate-x-1/2 w-[95vw] sm:w-[450px] md:w-[500px] lg:w-[550px] max-h-[85vh] z-[999] flex flex-col"
             >
               {/* Main Search Container */}
               <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 backdrop-blur-2xl border-2 border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
@@ -225,7 +225,7 @@ export function SearchBox() {
                       type="text"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder="ابحث في آلاف الأفلام والمسلسلات..."
+                      placeholder="ابحث بأي عدد حروف... حتى حرف واحد!"
                       className="flex-1 bg-transparent text-white placeholder-slate-400 outline-none text-lg font-medium"
                       autoComplete="off"
                     />
@@ -359,10 +359,22 @@ export function SearchBox() {
 
                 {/* Results Area */}
                 <div className="overflow-y-auto max-h-[calc(85vh-180px)] custom-scrollbar">
-                  {query.length >= 2 && (
+                  {query.length >= 1 && (
                     <>
                       {filteredAndSortedResults.length > 0 ? (
                         <div className="p-2 space-y-2">
+                          {/* Smart Search Hint */}
+                          {query.length <= 2 && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="px-3 py-2 bg-cyan-500/5 border border-cyan-500/20 rounded-lg text-xs text-cyan-400 mb-2 flex items-center gap-2"
+                            >
+                              <Search size={12} />
+                              <span><span className="font-semibold">بحث ذكي:</span> البحث في الأعمال ذات {query.length} {query.length === 1 ? 'حرف فقط' : 'حرفين فقط'}</span>
+                            </motion.div>
+                          )}
+                          
                           {filteredAndSortedResults.slice(0, 15).map((result, index) => {
                             const genres = getGenres(result.genres_json)
                             const isHovered = hoveredResult === result.id
@@ -544,34 +556,28 @@ export function SearchBox() {
                       </div>
                       <div>
                         <h3 className="text-lg font-bold text-white mb-2">اكتشف عالم السينما</h3>
-                        <p className="text-slate-400 text-sm mb-4">ابحث في مكتبة ضخمة من الأفلام والمسلسلات</p>
+                        <p className="text-slate-400 text-sm mb-4">ابحث بأي عدد من الحروف - حتى حرف واحد!</p>
                         
                         {/* Quick suggestions */}
-                        <div className="flex flex-wrap gap-2 justify-center">
-                          {['Spider', 'Inception', 'Breaking', 'Stranger'].map((suggestion) => (
-                            <button
-                              key={suggestion}
-                              onClick={() => setQuery(suggestion)}
-                              className="px-3 py-1.5 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded-lg text-xs text-slate-400 hover:text-cyan-400 transition-all"
-                            >
-                              {suggestion}
-                            </button>
-                          ))}
+                        <div className="space-y-2">
+                          <p className="text-xs text-slate-500 mb-1">اقتراحات سريعة:</p>
+                          <div className="flex flex-wrap gap-2 justify-center">
+                            {['V', 'X', 'Up', 'It', 'Her', 'Ted', 'Inception'].map((suggestion) => (
+                              <button
+                                key={suggestion}
+                                onClick={() => setQuery(suggestion)}
+                                className="px-3 py-1.5 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded-lg text-xs text-slate-400 hover:text-cyan-400 transition-all"
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </motion.div>
                   )}
 
-                  {query.length === 1 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="py-12 text-center"
-                    >
-                      <Clock size={32} className="mx-auto mb-3 text-slate-600 animate-pulse" />
-                      <p className="text-slate-400 text-sm">اكتب حرف آخر للبدء...</p>
-                    </motion.div>
-                  )}
+                  {/* No more "write 2 chars" message - now supports 1 char search! */}
                 </div>
               </div>
             </motion.div>
