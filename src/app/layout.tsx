@@ -13,7 +13,7 @@ const cairo = Cairo({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://4cima.online'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://4cima.com'),
   title: {
     default: '4cima - مشاهدة افلام ومسلسلات مترجمة اون لاين بجودة عالية',
     template: '%s | 4cima',
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ar_EG',
-    url: process.env.NEXT_PUBLIC_BASE_URL || 'https://4cima.online',
+    url: process.env.NEXT_PUBLIC_BASE_URL || 'https://4cima.com',
     siteName: '4cima',
     title: '4cima - مشاهدة افلام ومسلسلات مترجمة',
     description: 'مشاهدة وتحميل احدث الافلام والمسلسلات المترجمة بجودة عالية HD مجاناً',
