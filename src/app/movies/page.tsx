@@ -15,7 +15,7 @@ async function getInitialMovies() {
   const result = await turso.execute({
     sql: `SELECT id, slug, title_ar, title_en, poster_path, vote_average, release_year, genres_json 
           FROM movies 
-          WHERE filter_status IN ('clean', 'reviewed_approved')
+          WHERE filter_status = 'clean'
           ORDER BY popularity DESC 
           LIMIT 50`,
     args: []

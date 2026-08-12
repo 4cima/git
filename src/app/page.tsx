@@ -15,7 +15,7 @@ async function getHomeData() {
   const moviesResult = await turso.execute({
     sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, vote_average, release_year, overview_ar, genres_json 
           FROM movies 
-          WHERE filter_status IN ('clean', 'reviewed_approved')
+          WHERE filter_status = 'clean'
           ORDER BY popularity DESC 
           LIMIT 100`,
     args: []
@@ -25,7 +25,7 @@ async function getHomeData() {
   const seriesResult = await turso.execute({
     sql: `SELECT id, slug, name_ar AS title_ar, name_en AS title_en, poster_path, backdrop_path, vote_average, first_air_year AS release_year, overview_ar, genres_json 
           FROM tv_series 
-          WHERE filter_status IN ('clean', 'reviewed_approved')
+          WHERE filter_status = 'clean'
           ORDER BY popularity DESC 
           LIMIT 100`,
     args: []
