@@ -438,7 +438,12 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
 
             {/* Search */}
             <div className="relative flex-1 order-1 md:order-2">
-              <input type="text" placeholder="ابحث عن فيلم..." value={searchQuery}
+              <input 
+                type="text" 
+                id="movies-search"
+                name="search"
+                placeholder="ابحث عن فيلم..." 
+                value={searchQuery}
                 onChange={e=>setSearchQuery(e.target.value)}
                 className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 pr-10 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/50 text-sm"
                 aria-label="البحث عن فيلم"

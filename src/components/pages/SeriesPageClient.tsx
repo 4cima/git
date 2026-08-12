@@ -444,9 +444,15 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
 
             {/* Search */}
             <div className="relative flex-1 order-1 md:order-2">
-              <input type="text" placeholder="ابحث عن مسلسل..." value={searchQuery}
+              <input 
+                type="text" 
+                id="series-search"
+                name="search"
+                placeholder="ابحث عن مسلسل..." 
+                value={searchQuery}
                 onChange={e=>setSearchQuery(e.target.value)}
                 className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 pr-10 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/50 text-sm"
+                aria-label="البحث عن مسلسل"
               />
               <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-3.5"/>
             </div>
