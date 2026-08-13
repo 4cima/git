@@ -485,14 +485,14 @@ export function SearchBox() {
           exit={{ opacity: 0, x: -20 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="relative h-11 px-5 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-xl shadow-lg transition-all duration-300 group overflow-hidden"
+          className="relative h-9 px-3 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-lg shadow-lg transition-all duration-300 group overflow-hidden"
           aria-label="التطبيق قريباً"
         >
-          <div className="flex items-center gap-2.5 relative z-10">
-            <svg className="w-5 h-5 text-slate-300 group-hover:text-slate-200 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+          <div className="flex items-center gap-2 relative z-10">
+            <svg className="w-4 h-4 text-slate-300 group-hover:text-slate-200 transition-colors" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5"/>
             </svg>
-            <span className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">قريباً</span>
+            <span className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors">قريباً</span>
           </div>
           
           {/* Subtle hover glow */}
@@ -505,9 +505,9 @@ export function SearchBox() {
         <motion.button
           ref={buttonRef}
           animate={{
-            width: isCollapsed ? '44px' : 'auto',
-            paddingLeft: isCollapsed ? '11px' : '20px',
-            paddingRight: isCollapsed ? '11px' : '20px',
+            width: isCollapsed ? '36px' : 'auto',
+            paddingLeft: isCollapsed ? '9px' : '12px',
+            paddingRight: isCollapsed ? '9px' : '12px',
           }}
           transition={{ type: 'spring', damping: 20, stiffness: 300 }}
           whileHover={{ scale: 1.02 }}
@@ -516,11 +516,11 @@ export function SearchBox() {
             setIsOpen(true)
             setIsCollapsed(false)
           }}
-          className="relative h-11 py-2 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-blue-400/50 rounded-xl shadow-lg hover:shadow-blue-500/20 transition-all duration-300 group overflow-hidden"
+          className="relative h-9 py-1.5 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-blue-400/50 rounded-lg shadow-lg hover:shadow-blue-500/20 transition-all duration-300 group overflow-hidden"
           aria-label="بحث"
         >
-          <div className="flex items-center gap-2.5 relative z-10">
-            <svg className="w-5 h-5 text-slate-300 group-hover:text-blue-400 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+          <div className="flex items-center gap-2 relative z-10">
+            <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
               <circle cx="11" cy="11" r="8"/>
               <path d="m21 21-4.35-4.35" strokeLinecap="round"/>
             </svg>
@@ -530,7 +530,7 @@ export function SearchBox() {
                 width: isCollapsed ? 0 : 'auto',
               }}
               transition={{ duration: 0.2 }}
-              className="text-sm font-semibold text-slate-200 group-hover:text-white whitespace-nowrap overflow-hidden"
+              className="text-xs font-semibold text-slate-200 group-hover:text-white whitespace-nowrap overflow-hidden"
             >
               بحث متقدم
             </motion.span>
