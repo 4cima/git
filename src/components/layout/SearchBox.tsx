@@ -507,7 +507,6 @@ export function SearchBox() {
             <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 blur-sm" />
           </div>
           
-          <Search size={18} className="text-cyan-400 relative z-10 group-hover:scale-110 transition-transform duration-300 flex-shrink-0" />
           <motion.span 
             animate={{ 
               opacity: isCollapsed ? 0 : 1,
@@ -519,7 +518,7 @@ export function SearchBox() {
             }}
             className="hidden sm:inline text-sm text-slate-300 font-semibold relative z-10 group-hover:text-cyan-300 transition-colors whitespace-nowrap overflow-hidden"
           >
-            بحث متقدم
+            بحث
           </motion.span>
           <motion.kbd 
             animate={{ 
