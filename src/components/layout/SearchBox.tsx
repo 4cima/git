@@ -477,89 +477,6 @@ export function SearchBox() {
 
   return (
     <div ref={searchRef} className="relative flex items-center gap-3">
-      {/* TEMP: Search Icon Selector - اختر رقم أيقونة العدسة */}
-      {!isOpen && (
-        <div className="fixed top-20 right-4 bg-slate-900/95 border border-cyan-500 rounded-lg p-4 z-[9999] max-w-md">
-          <h3 className="text-cyan-400 text-sm font-bold mb-3">اختر أيقونة العدسة (اكتب الرقم في الكود):</h3>
-          <div className="grid grid-cols-4 gap-3">
-            {/* Icon 1: Current Search (circle + line) */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">1</span>
-              <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35" strokeLinecap="round"/>
-              </svg>
-            </div>
-            
-            {/* Icon 2: Search with thicker stroke */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">2</span>
-              <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-            </div>
-            
-            {/* Icon 3: Filled Search */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">3</span>
-              <svg className="w-8 h-8 text-cyan-400" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
-              </svg>
-            </div>
-            
-            {/* Icon 4: Magnifier with handle */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">4</span>
-              <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <circle cx="10" cy="10" r="7"/>
-                <path d="M21 21l-6-6"/>
-              </svg>
-            </div>
-            
-            {/* Icon 5: Search Plus */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">5</span>
-              <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-                <line x1="11" y1="8" x2="11" y2="14"/>
-                <line x1="8" y1="11" x2="14" y2="11"/>
-              </svg>
-            </div>
-            
-            {/* Icon 6: Zoom In */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">6</span>
-              <svg className="w-8 h-8 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-                <path d="M11 8v6m-3-3h6"/>
-              </svg>
-            </div>
-            
-            {/* Icon 7: Rounded Search */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">7</span>
-              <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-              </svg>
-            </div>
-            
-            {/* Icon 8: Minimalist Search */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">8</span>
-              <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                <circle cx="10.5" cy="10.5" r="7.5"/>
-                <line x1="21" y1="21" x2="15.8" y2="15.8"/>
-              </svg>
-            </div>
-          </div>
-          <p className="text-cyan-400 text-xs mt-3">💡 شيل الشريط ده من الكود بعد الاختيار</p>
-        </div>
-      )}
-      
       {/* Android App Button - Coming Soon (يظهر فقط عند عدم التمرير) */}
       {!isOpen && !isCollapsed && (
         <motion.button
@@ -613,9 +530,9 @@ export function SearchBox() {
             >
               بحث متقدم
             </motion.span>
-            <svg className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35" strokeLinecap="round"/>
+            <svg className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <circle cx="10" cy="10" r="7"/>
+              <path d="M21 21l-6-6"/>
             </svg>
           </div>
           
