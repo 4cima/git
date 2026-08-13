@@ -543,32 +543,30 @@ export function SearchBox() {
           <>
             {/* Search Modal */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: -20 }}
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: -20 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               style={{
                 position: 'fixed',
-                top: buttonRef.current ? `${buttonRef.current.getBoundingClientRect().bottom + 8}px` : '80px',
+                top: '70px',
                 left: '20px',
               }}
-              className="w-[280px] sm:w-[320px] max-h-[85vh] z-[999] flex flex-col"
+              className="w-[280px] sm:w-[320px] max-h-[calc(100vh-80px)] z-[999] flex flex-col"
             >
               {/* Main Search Container */}
-              <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 backdrop-blur-2xl border-2 border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
-                {/* Animated Border Glow */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 opacity-0 blur-xl animate-pulse pointer-events-none" style={{ animationDuration: '3s' }} />
+              <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl overflow-hidden">
                 
                 {/* Header with Search Input */}
-                <div className="relative bg-gradient-to-r from-slate-800/50 to-slate-900/50 border-b border-slate-700/50">
-                  <div className="flex items-center gap-3 px-4 py-4">
+                <div className="relative bg-slate-800/80 border-b border-slate-700">
+                  <div className="flex items-center gap-2 px-3 py-2.5">
                     <input
                       ref={inputRef}
                       type="text"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder="ابحث عن فيلم أو مسلسل..."
-                      className="flex-1 bg-transparent text-white placeholder-slate-400 outline-none text-lg font-medium"
+                      className="flex-1 bg-slate-900/50 text-white placeholder-slate-500 outline-none text-sm font-medium px-3 py-2 rounded border border-slate-700 focus:border-slate-600"
                       autoComplete="off"
                     />
                     
@@ -660,7 +658,7 @@ export function SearchBox() {
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="px-4 py-2 bg-slate-950/50 border-t border-slate-700/30 space-y-2"
+                      className="px-3 py-2 bg-slate-950/50 border-t border-slate-700/30 space-y-1.5"
                     >
                       {/* Type Filter - Row 1 */}
                       <div className="flex items-center gap-1.5">
@@ -732,7 +730,7 @@ export function SearchBox() {
                 </div>
 
                 {/* Results Area - 2 Columns Grid */}
-                <div className="overflow-y-auto max-h-[calc(85vh-180px)] custom-scrollbar">
+                <div className="overflow-y-auto max-h-[calc(100vh-220px)] custom-scrollbar">
                   {query.length >= 1 && (
                     <>
                       {filteredAndSortedResults.length > 0 ? (
@@ -844,19 +842,10 @@ export function SearchBox() {
                           <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="py-16 text-center"
+                            className="py-8 text-center px-3"
                           >
-                            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-2 border-cyan-500/20 flex items-center justify-center relative overflow-hidden">
-                              {/* Animated scanning ring */}
-                              <div className="absolute inset-0 rounded-full border-2 border-cyan-400/30 animate-ping" />
-                              <Search size={32} className="text-cyan-400 relative z-10" />
-                            </div>
-                            <p className="text-slate-300 text-base font-semibold mb-1">البحث الذكي لم يجد نتائج مطابقة</p>
-                            <p className="text-slate-500 text-sm mb-4">جرب كلمات بحث مختلفة أو أقصر</p>
-                            <div className="text-xs text-slate-600">
-                              <p>💡 البحث الذكي فحص 6 مستويات مختلفة</p>
-                              <p className="mt-1">تم البحث في: المطابقات التامة، البداية، الاحتواء، والبحث الضبابي</p>
-                            </div>
+                            <p className="text-slate-300 text-sm font-semibold mb-1">لا توجد نتائج</p>
+                            <p className="text-slate-500 text-xs">جرب كلمات بحث مختلفة</p>
                           </motion.div>
                         )
                       )}
@@ -868,9 +857,9 @@ export function SearchBox() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="py-8 px-4 text-center"
+                      className="py-6 px-3 text-center"
                     >
-                      <p className="text-slate-400 text-sm mb-3">ابدأ البحث للعثور على أفلام ومسلسلات</p>
+                      <p className="text-slate-400 text-xs">ابدأ البحث للعثور على أفلام ومسلسلات</p>
                     </motion.div>
                   )}
 
