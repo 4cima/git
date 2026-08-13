@@ -24,6 +24,92 @@ interface SearchResult {
 type SortOption = 'relevance' | 'rating' | 'year' | 'popularity'
 type FilterOption = 'all' | 'movie' | 'tv'
 
+// YouTube-Style Keyboard Component
+function YouTubeKeyboard({ onKeyPress, onClose }: { onKeyPress: (key: string) => void; onClose: () => void }) {
+  const [layout, setLayout] = useState<'arabic' | 'english' | 'numbers'>('arabic')
+  
+  const layouts = {
+    arabic: [
+      ['ض', 'ص', 'ث', 'ق', 'ف', 'غ', 'ع', 'ه', 'خ', 'ح', 'ج'],
+      ['ش', 'س', 'ي', 'ب', 'ل', 'ا', 'ت', 'ن', 'م', 'ك', 'ط'],
+      ['ئ', 'ء', 'ؤ', 'ر', 'ى', 'ة', 'و', 'ز', 'ظ', 'د', 'ذ']
+    ],
+    english: [
+      ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+      ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+      ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+    ],
+    numbers: [
+      ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+      ['-', '/', ':', ';', '(', ')', '$', '&', '@', '"'],
+      ['.', ',', '?', '!', "'", '#', '%', '*', '+', '=']
+    ]
+  }
+  
+  const currentLayout = layouts[layout]
+  
+  return (
+    <div className="space-y-2">
+      {currentLayout.map((row, rowIndex) => (
+        <div key={rowIndex} className="flex gap-1 justify-center">
+          {row.map((key) => (
+            <button
+              key={key}
+              onClick={() => onKeyPress(key)}
+              className="px-3 py-2.5 min-w-[32px] bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-700 rounded text-sm text-white font-medium transition-all active:scale-95"
+            >
+              {key}
+            </button>
+          ))}
+        </div>
+      ))}
+      
+      {/* Bottom Row - Control Keys */}
+      <div className="flex gap-1 justify-center items-center pt-1">
+        {/* Language Toggle */}
+        <button
+          onClick={() => setLayout(layout === 'arabic' ? 'english' : 'arabic')}
+          className="px-4 py-2.5 bg-blue-900/30 hover:bg-blue-900/50 border border-blue-700/50 rounded text-xs text-blue-400 font-semibold transition-all active:scale-95"
+        >
+          {layout === 'arabic' ? 'EN' : 'عر'}
+        </button>
+        
+        {/* Numbers Toggle */}
+        <button
+          onClick={() => setLayout(layout === 'numbers' ? 'arabic' : 'numbers')}
+          className="px-4 py-2.5 bg-purple-900/30 hover:bg-purple-900/50 border border-purple-700/50 rounded text-xs text-purple-400 font-semibold transition-all active:scale-95"
+        >
+          123
+        </button>
+        
+        {/* Space */}
+        <button
+          onClick={() => onKeyPress('space')}
+          className="flex-1 px-8 py-2.5 bg-slate-700 hover:bg-slate-600 active:bg-slate-500 border border-slate-600 rounded text-sm text-white font-medium transition-all active:scale-95"
+        >
+          مسافة
+        </button>
+        
+        {/* Backspace */}
+        <button
+          onClick={() => onKeyPress('backspace')}
+          className="px-4 py-2.5 bg-red-900/30 hover:bg-red-900/50 border border-red-700/50 rounded text-sm text-red-400 font-semibold transition-all active:scale-95"
+        >
+          ⌫
+        </button>
+        
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded text-sm text-slate-300 font-semibold transition-all active:scale-95"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function SearchBox() {
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -474,11 +560,6 @@ export function SearchBox() {
                 {/* Header with Search Input */}
                 <div className="relative bg-gradient-to-r from-slate-800/50 to-slate-900/50 border-b border-slate-700/50">
                   <div className="flex items-center gap-3 px-4 py-4">
-                    <div className="relative flex-shrink-0">
-                      <Search size={22} className="text-cyan-400 animate-pulse" />
-                      <div className="absolute inset-0 blur-md bg-cyan-400/30 animate-pulse" />
-                    </div>
-                    
                     <input
                       ref={inputRef}
                       type="text"
@@ -554,7 +635,7 @@ export function SearchBox() {
                     )}
                   </div>
 
-                  {/* Virtual Keyboard */}
+                  {/* Virtual Keyboard - YouTube Style */}
                   <AnimatePresence>
                     {showKeyboard && (
                       <motion.div
@@ -562,110 +643,12 @@ export function SearchBox() {
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="overflow-hidden bg-slate-950/90 border-t border-slate-700/30 px-2 py-3"
+                        className="overflow-hidden bg-slate-950/95 border-t border-slate-700/30 px-3 py-3"
                       >
-                        {/* Arabic & English Keyboard */}
-                        <div className="space-y-1.5">
-                          {/* Row 1 - Numbers */}
-                          <div className="flex gap-1 justify-center">
-                            {['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((key) => (
-                              <button
-                                key={key}
-                                onClick={() => handleKeyPress(key)}
-                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded text-xs text-white font-medium transition-all active:scale-95"
-                              >
-                                {key}
-                              </button>
-                            ))}
-                          </div>
-                          
-                          {/* Row 2 - Arabic Common Letters */}
-                          <div className="flex gap-1 justify-center flex-wrap">
-                            {['ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش'].map((key) => (
-                              <button
-                                key={key}
-                                onClick={() => handleKeyPress(key)}
-                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-cyan-900/50 border border-slate-600 hover:border-cyan-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
-                              >
-                                {key}
-                              </button>
-                            ))}
-                          </div>
-                          
-                          {/* Row 3 - More Arabic Letters */}
-                          <div className="flex gap-1 justify-center flex-wrap">
-                            {['ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه'].map((key) => (
-                              <button
-                                key={key}
-                                onClick={() => handleKeyPress(key)}
-                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-cyan-900/50 border border-slate-600 hover:border-cyan-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
-                              >
-                                {key}
-                              </button>
-                            ))}
-                          </div>
-                          
-                          {/* Row 4 - Final Arabic + English */}
-                          <div className="flex gap-1 justify-center flex-wrap">
-                            {['و', 'ي', 'ة', 'ى', 'ء', 'أ', 'إ', 'آ'].map((key) => (
-                              <button
-                                key={key}
-                                onClick={() => handleKeyPress(key)}
-                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-cyan-900/50 border border-slate-600 hover:border-cyan-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
-                              >
-                                {key}
-                              </button>
-                            ))}
-                          </div>
-                          
-                          {/* Row 5 - English Letters (Common) */}
-                          <div className="flex gap-1 justify-center flex-wrap">
-                            {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm'].map((key) => (
-                              <button
-                                key={key}
-                                onClick={() => handleKeyPress(key)}
-                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-purple-900/50 border border-slate-600 hover:border-purple-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
-                              >
-                                {key}
-                              </button>
-                            ))}
-                          </div>
-                          
-                          {/* Row 6 - More English */}
-                          <div className="flex gap-1 justify-center flex-wrap">
-                            {['n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'].map((key) => (
-                              <button
-                                key={key}
-                                onClick={() => handleKeyPress(key)}
-                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-purple-900/50 border border-slate-600 hover:border-purple-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
-                              >
-                                {key}
-                              </button>
-                            ))}
-                          </div>
-                          
-                          {/* Row 7 - Special Keys */}
-                          <div className="flex gap-1 justify-center">
-                            <button
-                              onClick={() => handleKeyPress('space')}
-                              className="px-6 py-1.5 bg-slate-700/80 hover:bg-slate-600 border border-slate-600 rounded text-xs text-white font-medium transition-all active:scale-95"
-                            >
-                              مسافة
-                            </button>
-                            <button
-                              onClick={() => handleKeyPress('backspace')}
-                              className="px-4 py-1.5 bg-red-900/30 hover:bg-red-900/50 border border-red-700/50 rounded text-xs text-red-400 font-medium transition-all active:scale-95"
-                            >
-                              ⌫ حذف
-                            </button>
-                            <button
-                              onClick={() => handleKeyPress('clear')}
-                              className="px-4 py-1.5 bg-orange-900/30 hover:bg-orange-900/50 border border-orange-700/50 rounded text-xs text-orange-400 font-medium transition-all active:scale-95"
-                            >
-                              🗑 مسح الكل
-                            </button>
-                          </div>
-                        </div>
+                        <YouTubeKeyboard 
+                          onKeyPress={handleKeyPress}
+                          onClose={() => setShowKeyboard(false)}
+                        />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -1006,65 +989,14 @@ export function SearchBox() {
                     </>
                   )}
 
-                  {/* Initial State */}
+                  {/* Initial State - Clean and Simple */}
                   {query.length === 0 && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="py-12 px-6 text-center space-y-6"
+                      className="py-8 px-4 text-center"
                     >
-                      <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-2 border-cyan-500/20 flex items-center justify-center relative overflow-hidden">
-                        {/* Animated Ring */}
-                        <div className="absolute inset-0 rounded-full border-2 border-cyan-400/30 animate-ping" />
-                        <Search size={40} className="text-cyan-400 relative z-10" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-white mb-2">اكتشف عالم السينما</h3>
-                        <p className="text-slate-400 text-sm mb-3">ابحث بأي عدد من الحروف - حتى حرف واحد!</p>
-                        
-                        {/* New Features Info */}
-                        <div className="mb-4 space-y-2">
-                          <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-400">
-                              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-                              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                              <line x1="12" y1="19" x2="12" y2="22"/>
-                            </svg>
-                            <span>بحث صوتي بالميكروفون</span>
-                          </div>
-                          <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400">
-                              <rect x="2" y="4" width="20" height="16" rx="2"/>
-                              <path d="M6 8h.01"/>
-                              <path d="M10 8h.01"/>
-                            </svg>
-                            <span>لوحة مفاتيح افتراضية (عربي + English)</span>
-                          </div>
-                          <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-400">
-                              <path d="M7 10v12"/>
-                              <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>
-                            </svg>
-                            <span>دعم Touch / Mouse / Remote</span>
-                          </div>
-                        </div>
-                        
-                        {/* Quick suggestions */}
-                        <div className="space-y-2">
-                          <p className="text-xs text-slate-500 mb-1">اقتراحات سريعة:</p>
-                          <div className="flex flex-wrap gap-2 justify-center">
-                            {['V', 'X', 'Up', 'It', 'Her', 'Ted', 'Inception'].map((suggestion) => (
-                              <button
-                                key={suggestion}
-                                onClick={() => setQuery(suggestion)}
-                                className="px-3 py-1.5 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded-lg text-xs text-slate-400 hover:text-cyan-400 transition-all"
-                              >
-                                {suggestion}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
+                      <p className="text-slate-400 text-sm mb-3">ابدأ البحث للعثور على أفلام ومسلسلات</p>
                     </motion.div>
                   )}
 
