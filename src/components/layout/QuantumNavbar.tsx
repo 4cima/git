@@ -64,10 +64,10 @@ export const QuantumNavbar = memo(() => {
     <>
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 bg-transparent border-b border-transparent">
-        <div className="max-w-[1920px] mx-auto px-2 sm:px-3 md:px-4 lg:px-6 flex items-center justify-between h-16">
+        <div className="max-w-[1920px] mx-auto px-1 sm:px-2 md:px-3 lg:px-4 flex items-center justify-between h-16">
 
           {/* Right: Menu + Logo */}
-          <div className="flex items-center gap-3 mr-2">
+          <div className="flex items-center gap-3 mr-1">
             {/* Menu Button */}
             <button
               type="button"
@@ -132,7 +132,7 @@ export const QuantumNavbar = memo(() => {
           </div>
 
           {/* Search and actions */}
-          <div className="flex items-center gap-3 ml-2">
+          <div className="flex items-center gap-3 ml-1">
             {/* Search Box */}
             <SearchBox />
           </div>
