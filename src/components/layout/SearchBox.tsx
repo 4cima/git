@@ -38,12 +38,9 @@ export function SearchBox() {
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   
-  // Auto-hide states
+  // Auto-collapse on scroll down
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [hasScrolledDown, setHasScrolledDown] = useState(false)
   const lastScrollY = useRef(0)
-  const lastActivityTime = useRef(Date.now())
-  const inactivityTimer = useRef<NodeJS.Timeout | null>(null)
 
   // Close on click outside
   useEffect(() => {
@@ -58,81 +55,26 @@ export function SearchBox() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Auto-hide on scroll down + inactivity
+  // Simple auto-collapse on scroll down
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       
-      // Detect scroll direction
+      // Collapse when scrolling down past 100px
       if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
-        setHasScrolledDown(true)
-      } else if (currentScrollY < 50) {
-        // Reset when near top
-        setHasScrolledDown(false)
+        setIsCollapsed(true)
+      } 
+      // Expand when scrolling back to top
+      else if (currentScrollY < 50) {
         setIsCollapsed(false)
       }
       
       lastScrollY.current = currentScrollY
-      
-      // Reset activity timer on scroll
-      lastActivityTime.current = Date.now()
-      setIsCollapsed(false)
-      
-      // Clear existing timer
-      if (inactivityTimer.current) {
-        clearTimeout(inactivityTimer.current)
-      }
-      
-      // Start new inactivity timer only if scrolled down
-      if (hasScrolledDown && !isOpen) {
-        inactivityTimer.current = setTimeout(() => {
-          setIsCollapsed(true)
-        }, 10000) // 10 seconds
-      }
-    }
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!searchRef.current) return
-      
-      // Get search box position
-      const rect = searchRef.current.getBoundingClientRect()
-      const proximityThreshold = 150 // pixels
-      
-      // Calculate distance from mouse to search box
-      const distanceX = Math.max(0, Math.max(rect.left - e.clientX, e.clientX - rect.right))
-      const distanceY = Math.max(0, Math.max(rect.top - e.clientY, e.clientY - rect.bottom))
-      const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY)
-      
-      // Show if mouse is near
-      if (distance < proximityThreshold && isCollapsed) {
-        setIsCollapsed(false)
-      }
-      
-      // Reset activity
-      lastActivityTime.current = Date.now()
-      
-      // Clear and restart timer if scrolled down and not open
-      if (hasScrolledDown && !isOpen) {
-        if (inactivityTimer.current) {
-          clearTimeout(inactivityTimer.current)
-        }
-        inactivityTimer.current = setTimeout(() => {
-          setIsCollapsed(true)
-        }, 10000)
-      }
     }
     
     window.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('mousemove', handleMouseMove, { passive: true })
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('mousemove', handleMouseMove)
-      if (inactivityTimer.current) {
-        clearTimeout(inactivityTimer.current)
-      }
-    }
-  }, [hasScrolledDown, isCollapsed, isOpen])
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Focus input when opened
   useEffect(() => {
@@ -248,16 +190,17 @@ export function SearchBox() {
 
   return (
     <div ref={searchRef} className="relative">
-      {/* Search Button with Glow Effect + Auto-Collapse */}
+      {/* Search Button with Auto-Collapse on Hover */}
       {!isOpen && (
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onMouseEnter={() => setIsCollapsed(false)}
           animate={{ 
             width: isCollapsed ? '48px' : 'auto',
-            opacity: isCollapsed ? 0.6 : 1
+            opacity: isCollapsed ? 0.7 : 1
           }}
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          transition={{ duration: 0.5, ease: 'easeInOut' }}
           onClick={() => {
             setIsOpen(true)
             setIsCollapsed(false)
@@ -274,15 +217,27 @@ export function SearchBox() {
           </div>
           
           <Search size={18} className="text-cyan-400 relative z-10 group-hover:scale-110 transition-transform duration-300 flex-shrink-0" />
-          {!isCollapsed && (
-            <>
-              <span className="hidden sm:inline text-sm text-slate-300 font-semibold relative z-10 group-hover:text-cyan-300 transition-colors whitespace-nowrap">بحث متقدم</span>
-              <kbd className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 bg-slate-950/50 border border-slate-700 rounded relative z-10">
-                <span>⌘</span>
-                <span>K</span>
-              </kbd>
-            </>
-          )}
+          <motion.span 
+            animate={{ 
+              opacity: isCollapsed ? 0 : 1,
+              width: isCollapsed ? 0 : 'auto'
+            }}
+            transition={{ duration: 0.5, ease: 'easeInOut' }}
+            className="hidden sm:inline text-sm text-slate-300 font-semibold relative z-10 group-hover:text-cyan-300 transition-colors whitespace-nowrap overflow-hidden"
+          >
+            بحث متقدم
+          </motion.span>
+          <motion.kbd 
+            animate={{ 
+              opacity: isCollapsed ? 0 : 1,
+              width: isCollapsed ? 0 : 'auto'
+            }}
+            transition={{ duration: 0.5, ease: 'easeInOut' }}
+            className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 bg-slate-950/50 border border-slate-700 rounded relative z-10 overflow-hidden"
+          >
+            <span>⌘</span>
+            <span>K</span>
+          </motion.kbd>
         </motion.button>
       )}
 
