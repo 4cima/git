@@ -530,7 +530,7 @@ export function SearchBox() {
             >
               بحث متقدم
             </motion.span>
-            <svg className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+            <svg className="w-5 h-5 text-cyan-400 group-hover:text-cyan-300 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
               <circle cx="10" cy="10" r="7"/>
               <path d="M21 21l-6-6"/>
             </svg>
