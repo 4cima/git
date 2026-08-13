@@ -8,8 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 interface SearchResult {
   id: number
   slug: string
-  title_ar: string
-  title_en: string
+  title_ar?: string
+  title_en?: string
+  name_ar?: string
+  name_en?: string
   poster_path: string
   backdrop_path?: string
   vote_average: number
@@ -658,114 +660,82 @@ export function SearchBox() {
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="px-4 py-2 bg-slate-950/50 border-t border-slate-700/30"
+                      className="px-4 py-2 bg-slate-950/50 border-t border-slate-700/30 space-y-2"
                     >
-                      {/* Type Filter - External and Clickable */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {/* All Button */}
+                      {/* Type Filter - Row 1 */}
+                      <div className="flex items-center gap-2">
+                        {/* All Button */}
+                        <button
+                          onClick={() => setFilterBy('all')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            filterBy === 'all'
+                              ? 'bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-white border-2 border-purple-400/50 shadow-lg shadow-purple-500/20'
+                              : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:bg-slate-800 hover:text-slate-300'
+                          }`}
+                        >
+                          <Filter size={13} />
+                          <span>الكل {stats.total}</span>
+                        </button>
+                        
+                        {/* Movies Button */}
+                        {stats.movies > 0 && (
                           <button
-                            onClick={() => setFilterBy('all')}
+                            onClick={() => setFilterBy('movie')}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                              filterBy === 'all'
-                                ? 'bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-white border-2 border-purple-400/50 shadow-lg shadow-purple-500/20'
+                              filterBy === 'movie'
+                                ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-400 border-2 border-red-400/50 shadow-lg shadow-red-500/20'
+                                : 'bg-slate-800/50 text-red-400/60 border border-slate-700 hover:bg-slate-800 hover:text-red-400'
+                            }`}
+                          >
+                            <Film size={13} />
+                            <span>أفلام {stats.movies}</span>
+                          </button>
+                        )}
+                        
+                        {/* Series Button */}
+                        {stats.series > 0 && (
+                          <button
+                            onClick={() => setFilterBy('tv')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                              filterBy === 'tv'
+                                ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-400 border-2 border-blue-400/50 shadow-lg shadow-blue-500/20'
+                                : 'bg-slate-800/50 text-blue-400/60 border border-slate-700 hover:bg-slate-800 hover:text-blue-400'
+                            }`}
+                          >
+                            <Tv size={13} />
+                            <span>مسلسلات {stats.series}</span>
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Sort Options - Row 2 */}
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[
+                          { value: 'relevance', label: 'الأكثر صلة', icon: TrendingUp },
+                          { value: 'rating', label: 'الأعلى تقييماً', icon: Star },
+                          { value: 'year', label: 'الأحدث', icon: Calendar },
+                          { value: 'popularity', label: 'الأكثر شعبية', icon: Award },
+                        ].map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => setSortBy(option.value as SortOption)}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                              sortBy === option.value
+                                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
                                 : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:bg-slate-800 hover:text-slate-300'
                             }`}
                           >
-                            <Filter size={13} />
-                            <span>الكل {stats.total}</span>
+                            <option.icon size={11} />
+                            {option.label}
                           </button>
-                          
-                          {/* Movies Button */}
-                          {stats.movies > 0 && (
-                            <button
-                              onClick={() => setFilterBy('movie')}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                filterBy === 'movie'
-                                  ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-400 border-2 border-red-400/50 shadow-lg shadow-red-500/20'
-                                  : 'bg-slate-800/50 text-red-400/60 border border-slate-700 hover:bg-slate-800 hover:text-red-400'
-                              }`}
-                            >
-                              <Film size={13} />
-                              <span>أفلام {stats.movies}</span>
-                            </button>
-                          )}
-                          
-                          {/* Series Button */}
-                          {stats.series > 0 && (
-                            <button
-                              onClick={() => setFilterBy('tv')}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                filterBy === 'tv'
-                                  ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-400 border-2 border-blue-400/50 shadow-lg shadow-blue-500/20'
-                                  : 'bg-slate-800/50 text-blue-400/60 border border-slate-700 hover:bg-slate-800 hover:text-blue-400'
-                              }`}
-                            >
-                              <Tv size={13} />
-                              <span>مسلسلات {stats.series}</span>
-                            </button>
-                          )}
-                        </div>
-                        
-                        {/* Sort Filters Button */}
-                        <button
-                          onClick={() => setShowFilters(!showFilters)}
-                          className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-md transition-colors text-xs"
-                        >
-                          <SlidersHorizontal size={12} />
-                          <span>ترتيب</span>
-                          <ChevronDown size={12} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-                        </button>
+                        ))}
                       </div>
                     </motion.div>
                   )}
 
-                  {/* Filters Panel - Sort Only */}
-                  <AnimatePresence>
-                    {showFilters && results.length > 0 && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden bg-slate-950/80 border-t border-slate-700/30"
-                      >
-                        <div className="px-4 py-3">
-                          {/* Sort Options Only */}
-                          <div className="space-y-2">
-                            <label className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                              <TrendingUp size={12} />
-                              ترتيب حسب
-                            </label>
-                            <div className="flex gap-2 flex-wrap">
-                              {[
-                                { value: 'relevance', label: 'الأكثر صلة', icon: TrendingUp },
-                                { value: 'rating', label: 'الأعلى تقييماً', icon: Star },
-                                { value: 'year', label: 'الأحدث', icon: Calendar },
-                                { value: 'popularity', label: 'الأكثر شعبية', icon: Award },
-                              ].map((option) => (
-                                <button
-                                  key={option.value}
-                                  onClick={() => setSortBy(option.value as SortOption)}
-                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                    sortBy === option.value
-                                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
-                                      : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:bg-slate-800 hover:text-slate-300'
-                                  }`}
-                                >
-                                  <option.icon size={12} />
-                                  {option.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
 
-                {/* Results Area */}
+                {/* Results Area - 2 Columns Grid */}
                 <div className="overflow-y-auto max-h-[calc(85vh-180px)] custom-scrollbar">
                   {query.length >= 1 && (
                     <>
@@ -795,155 +765,90 @@ export function SearchBox() {
                             )}
                           </motion.div>
                           
+                          {/* 2-Column Grid Layout */}
+                          <div className="grid grid-cols-2 gap-2">
                           {filteredAndSortedResults.slice(0, displayLimit).map((result, index) => {
+                            const year = result.release_year || result.first_air_year
+                            const titleAr = result.title_ar || result.name_ar || ''
+                            const titleEn = result.title_en || result.name_en || ''
                             const genres = getGenres(result.genres_json)
-                            const isHovered = hoveredResult === result.id
+                            const mainGenre = genres[0] || ''
 
                             return (
                               <motion.div
                                 key={`${result.media_type}-${result.id}`}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.03 }}
-                                onMouseEnter={() => setHoveredResult(result.id)}
-                                onMouseLeave={() => setHoveredResult(null)}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: index * 0.02 }}
                               >
                                 <Link
                                   href={`/${result.media_type === 'movie' ? 'movies' : 'series'}/${result.slug}`}
                                   onClick={handleResultClick}
-                                  className="block relative overflow-hidden rounded-xl border-2 border-slate-700/50 hover:border-cyan-500/60 transition-all duration-300 group bg-gradient-to-br from-slate-900/50 to-slate-900/30 hover:from-slate-800/60 hover:to-slate-800/40 hover:shadow-xl hover:shadow-cyan-500/10"
+                                  className="block relative rounded-lg overflow-hidden border border-slate-700/50 hover:border-cyan-500/50 bg-slate-900/50 hover:bg-slate-800/70 transition-all duration-200 group"
                                 >
-                                  {/* Background Gradient on Hover */}
-                                  <div className={`absolute inset-0 bg-gradient-to-r ${
-                                    result.media_type === 'movie' 
-                                      ? 'from-red-500/5 to-orange-500/5' 
-                                      : 'from-blue-500/5 to-cyan-500/5'
-                                  } opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
-
-                                  <div className="relative flex gap-3 p-3">
-                                    {/* Poster with Overlay */}
-                                    <div className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-lg overflow-hidden flex-shrink-0 bg-slate-800 shadow-xl ring-1 ring-slate-700/50 group-hover:ring-cyan-500/30 transition-all">
-                                      {result.poster_path ? (
-                                        <>
-                                          <img
-                                            src={`/tmdb/w154${result.poster_path}`}
-                                            alt={result.title_ar}
-                                            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-110"
-                                            loading="lazy"
-                                          />
-                                          {/* Play Overlay on Hover */}
-                                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                            <div className="w-12 h-12 rounded-full bg-cyan-500/20 backdrop-blur-sm border-2 border-cyan-400/50 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform duration-300">
-                                              <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[16px] border-l-cyan-400 border-b-[10px] border-b-transparent ml-1" />
-                                            </div>
-                                          </div>
-                                        </>
-                                      ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-slate-600">
-                                          {result.media_type === 'movie' ? <Film size={28} /> : <Tv size={28} />}
-                                        </div>
-                                      )}
-                                      
-                                      {/* Rating Badge */}
-                                      {result.vote_average > 0 && (
-                                        <div className="absolute bottom-1.5 left-1.5 px-2 py-1 bg-black/90 backdrop-blur-sm rounded-md text-xs font-bold text-amber-400 flex items-center gap-1 shadow-lg">
-                                          <Star size={11} className="fill-amber-400" />
-                                          {result.vote_average.toFixed(1)}
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                                      {/* Title Section */}
-                                      <div>
-                                        <div className="flex items-start justify-between gap-2 mb-1">
-                                          <h4 className="text-base sm:text-lg font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
-                                            {result.title_ar}
-                                          </h4>
-                                          
-                                          {/* Media Type Badge */}
-                                          <div className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold border shadow-sm ${
-                                            result.media_type === 'movie'
-                                              ? 'bg-gradient-to-br from-red-500/15 to-orange-500/10 text-red-400 border-red-500/40'
-                                              : 'bg-gradient-to-br from-blue-500/15 to-cyan-500/10 text-blue-400 border-blue-500/40'
-                                          }`}>
-                                            {result.media_type === 'movie' ? (
-                                              <span className="flex items-center gap-1">
-                                                <Film size={11} />
-                                                فيلم
-                                              </span>
-                                            ) : (
-                                              <span className="flex items-center gap-1">
-                                                <Tv size={11} />
-                                                مسلسل
-                                              </span>
-                                            )}
-                                          </div>
-                                        </div>
-
-                                        <p className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors line-clamp-1 mb-2 font-medium">
-                                          {result.title_en}
-                                        </p>
-
-                                        {/* Metadata */}
-                                        <div className="flex items-center gap-3 text-xs text-slate-500 mb-2">
-                                          {(result.release_year || result.first_air_year) && (
-                                            <span className="flex items-center gap-1">
-                                              <Calendar size={11} />
-                                              {result.release_year || result.first_air_year}
-                                            </span>
-                                          )}
-                                          {result.vote_average >= 7 && (
-                                            <span className="flex items-center gap-1 text-amber-400">
-                                              <Award size={11} />
-                                              تقييم عالي
-                                            </span>
-                                          )}
-                                        </div>
-
-                                        {/* Genres */}
-                                        {genres.length > 0 && (
-                                          <div className="flex gap-1.5 flex-wrap">
-                                            {genres.map((genre: string, idx: number) => (
-                                              <span
-                                                key={idx}
-                                                className="px-2 py-0.5 bg-slate-800/50 border border-slate-700 rounded text-xs text-slate-400"
-                                              >
-                                                {genre}
-                                              </span>
-                                            ))}
-                                          </div>
+                                  {/* Poster with Badges */}
+                                  <div className="relative aspect-[2/3] bg-slate-800">
+                                    {result.poster_path ? (
+                                      <img
+                                        src={`/tmdb/w154${result.poster_path}`}
+                                        alt={titleAr}
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        loading="lazy"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-slate-600">
+                                        {result.media_type === 'movie' ? <Film size={24} /> : <Tv size={24} />}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Rating Badge - Top Left */}
+                                    {result.vote_average > 0 && (
+                                      <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/80 backdrop-blur-sm rounded text-[10px] font-bold text-amber-400 flex items-center gap-0.5">
+                                        <Star size={9} className="fill-amber-400" />
+                                        {result.vote_average.toFixed(1)}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Year Badge - Top Right */}
+                                    {year && (
+                                      <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-black/80 backdrop-blur-sm rounded text-[10px] font-bold text-slate-300">
+                                        {year}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Type Badge - Bottom */}
+                                    <div className={`absolute bottom-0 left-0 right-0 px-2 py-1 ${
+                                      result.media_type === 'movie'
+                                        ? 'bg-gradient-to-t from-red-900/90 to-transparent'
+                                        : 'bg-gradient-to-t from-blue-900/90 to-transparent'
+                                    }`}>
+                                      <div className="flex items-center justify-between text-[10px]">
+                                        <span className={`font-bold ${
+                                          result.media_type === 'movie' ? 'text-red-400' : 'text-blue-400'
+                                        }`}>
+                                          {result.media_type === 'movie' ? 'فيلم' : 'مسلسل'}
+                                        </span>
+                                        {mainGenre && (
+                                          <span className="text-slate-300 truncate max-w-[60px]">{mainGenre}</span>
                                         )}
                                       </div>
-
-                                      {/* Description on Hover */}
-                                      <AnimatePresence>
-                                        {isHovered && result.overview_ar && (
-                                          <motion.p
-                                            initial={{ opacity: 0, height: 0 }}
-                                            animate={{ opacity: 1, height: 'auto' }}
-                                            exit={{ opacity: 0, height: 0 }}
-                                            className="text-xs text-slate-400 line-clamp-2 mt-2 pt-2 border-t border-slate-700/50"
-                                          >
-                                            {result.overview_ar}
-                                          </motion.p>
-                                        )}
-                                      </AnimatePresence>
                                     </div>
                                   </div>
-
-                                  {/* Bottom Glow Effect */}
-                                  <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${
-                                    result.media_type === 'movie'
-                                      ? 'from-red-500 to-orange-500'
-                                      : 'from-blue-500 to-cyan-500'
-                                  } opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                                  
+                                  {/* Title Below Poster */}
+                                  <div className="p-1.5 space-y-0.5">
+                                    <h4 className="text-[11px] font-bold text-white line-clamp-1 leading-tight">
+                                      {titleAr}
+                                    </h4>
+                                    <p className="text-[9px] text-slate-400 line-clamp-1 leading-tight">
+                                      {titleEn}
+                                    </p>
+                                  </div>
                                 </Link>
                               </motion.div>
                             )
                           })}
-                          
+                          </div>
                           {/* Load More Button */}
                           {displayLimit < filteredAndSortedResults.length && (
                             <motion.button
@@ -952,15 +857,12 @@ export function SearchBox() {
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
                               onClick={handleLoadMore}
-                              className="w-full mt-3 px-4 py-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl transition-all duration-300 group"
+                              className="col-span-2 mt-3 px-4 py-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl transition-all duration-300"
                             >
                               <div className="flex items-center justify-center gap-2 text-cyan-400 font-semibold text-sm">
-                                <ChevronDown size={18} className="group-hover:animate-bounce" />
-                                <span>تحميل المزيد ({Math.min(50, filteredAndSortedResults.length - displayLimit)} إضافية)</span>
-                                <ChevronDown size={18} className="group-hover:animate-bounce" />
-                              </div>
-                              <div className="text-xs text-slate-500 mt-1">
-                                المتبقي: {filteredAndSortedResults.length - displayLimit} نتيجة
+                                <ChevronDown size={18} />
+                                <span>تحميل المزيد ({Math.min(50, filteredAndSortedResults.length - displayLimit)})</span>
+                                <ChevronDown size={18} />
                               </div>
                             </motion.button>
                           )}

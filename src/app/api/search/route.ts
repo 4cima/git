@@ -66,8 +66,8 @@ async function cascadingSearch(query: string, queryLength: number) {
   // Level 1-3: LENGTH-based search DISABLED for production (too slow without computed indexes)
   // Short queries (1-2 chars) skip to Level 5 (broad partial match)
   
-  // Level 4: Full FTS5 search (only for query >= 3 chars)
-  if (queryLength >= 3) {
+  // Level 4: Full FTS5 search (for all queries >= 1 char)
+  if (queryLength >= 1) {
     try {
       const searchTerm = sanitizeSearchInput(query)
       
@@ -214,8 +214,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const q = searchParams.get('q')
     
-    if (!q || q.length < 3) {
-      return NextResponse.json({ results: [], searchStrategy: 'min-3-chars' })
+    if (!q || q.length < 1) {
+      return NextResponse.json({ results: [], searchStrategy: 'min-1-char' })
     }
     
     const queryLength = q.length
