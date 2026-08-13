@@ -75,7 +75,7 @@ export const QuantumNavbar = memo(() => {
               className="h-9 px-2.5 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 text-cyan-400 hover:text-cyan-300"
               aria-label="القائمة"
             >
-              <Menu size={22} />
+              <Menu size={26} />
             </button>
 
             {/* Logo with Rope */}
