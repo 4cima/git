@@ -200,7 +200,10 @@ export function SearchBox() {
             width: isCollapsed ? '48px' : 'auto',
             opacity: isCollapsed ? 0.7 : 1
           }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          transition={{ 
+            duration: isCollapsed ? 0.25 : 1,
+            ease: 'easeInOut'
+          }}
           onClick={() => {
             setIsOpen(true)
             setIsCollapsed(false)
@@ -222,7 +225,10 @@ export function SearchBox() {
               opacity: isCollapsed ? 0 : 1,
               width: isCollapsed ? 0 : 'auto'
             }}
-            transition={{ duration: 0.5, ease: 'easeInOut' }}
+            transition={{ 
+              duration: isCollapsed ? 0.25 : 1,
+              ease: 'easeInOut'
+            }}
             className="hidden sm:inline text-sm text-slate-300 font-semibold relative z-10 group-hover:text-cyan-300 transition-colors whitespace-nowrap overflow-hidden"
           >
             بحث متقدم
@@ -232,7 +238,10 @@ export function SearchBox() {
               opacity: isCollapsed ? 0 : 1,
               width: isCollapsed ? 0 : 'auto'
             }}
-            transition={{ duration: 0.5, ease: 'easeInOut' }}
+            transition={{ 
+              duration: isCollapsed ? 0.25 : 1,
+              ease: 'easeInOut'
+            }}
             className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 bg-slate-950/50 border border-slate-700 rounded relative z-10 overflow-hidden"
           >
             <span>⌘</span>
