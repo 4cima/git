@@ -485,7 +485,7 @@ export function SearchBox() {
           exit={{ opacity: 0, x: -20 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="relative h-9 px-8 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 group overflow-hidden"
+          className="relative h-9 px-3 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 group overflow-hidden"
           aria-label="التطبيق قريباً"
         >
           <div className="flex items-center gap-1.5 relative z-10">
@@ -506,8 +506,8 @@ export function SearchBox() {
           ref={buttonRef}
           animate={{
             width: isCollapsed ? '36px' : 'auto',
-            paddingLeft: isCollapsed ? '9px' : '32px',
-            paddingRight: isCollapsed ? '9px' : '32px',
+            paddingLeft: isCollapsed ? '9px' : '10px',
+            paddingRight: isCollapsed ? '9px' : '10px',
           }}
           transition={{ type: 'spring', damping: 20, stiffness: 300 }}
           whileHover={{ scale: 1.02 }}
