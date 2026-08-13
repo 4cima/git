@@ -72,10 +72,10 @@ export const QuantumNavbar = memo(() => {
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 text-white hover:text-cyan-400 transition-colors cursor-pointer"
+              className="h-11 px-3 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-xl shadow-lg transition-all duration-300 text-slate-300 hover:text-white"
               aria-label="القائمة"
             >
-              <Menu size={28} />
+              <Menu size={24} />
             </button>
 
             {/* Logo with Rope */}
