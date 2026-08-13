@@ -476,65 +476,52 @@ export function SearchBox() {
   }, [results])
 
   return (
-    <div ref={searchRef} className="relative">
-      {/* Search Button with Auto-Collapse on Hover */}
+    <div ref={searchRef} className="relative flex items-center gap-3">
+      {/* Premium Search Button */}
       {!isOpen && (
         <motion.button
           ref={buttonRef}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onMouseEnter={() => setIsCollapsed(false)}
-          animate={{ 
-            width: isCollapsed ? '48px' : 'auto',
-            opacity: isCollapsed ? 0.7 : 1
-          }}
-          transition={{ 
-            duration: isCollapsed ? 1 : 0.25,
-            ease: 'easeInOut'
-          }}
+          whileHover={{ scale: 1.03, y: -2 }}
+          whileTap={{ scale: 0.97 }}
           onClick={() => {
             setIsOpen(true)
             setIsCollapsed(false)
           }}
-          className="relative flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-slate-800/80 to-slate-900/80 hover:from-cyan-900/40 hover:to-blue-900/40 border border-slate-700 hover:border-cyan-500/50 rounded-xl transition-all duration-300 group overflow-hidden shadow-lg hover:shadow-cyan-500/20"
+          className="relative px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 rounded-full shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 group"
           aria-label="بحث"
         >
-          {/* Animated Background Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-blue-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
-          {/* Animated Border Glow */}
-          <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 blur-sm" />
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" strokeWidth="2"/>
+              <path d="m21 21-4.35-4.35" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <span className="text-sm font-bold text-white">بحث متقدم</span>
           </div>
           
-          <motion.span 
-            animate={{ 
-              opacity: isCollapsed ? 0 : 1,
-              width: isCollapsed ? 0 : 'auto'
-            }}
-            transition={{ 
-              duration: isCollapsed ? 1 : 0.25,
-              ease: 'easeInOut'
-            }}
-            className="hidden sm:inline text-sm text-slate-300 font-semibold relative z-10 group-hover:text-cyan-300 transition-colors whitespace-nowrap overflow-hidden"
-          >
-            بحث
-          </motion.span>
-          <motion.kbd 
-            animate={{ 
-              opacity: isCollapsed ? 0 : 1,
-              width: isCollapsed ? 0 : 'auto'
-            }}
-            transition={{ 
-              duration: isCollapsed ? 1 : 0.25,
-              ease: 'easeInOut'
-            }}
-            className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-slate-400 bg-slate-950/50 border border-slate-700 rounded relative z-10 overflow-hidden"
-          >
-            <span>⌘</span>
-            <span>K</span>
-          </motion.kbd>
+          {/* Shine effect */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
         </motion.button>
+      )}
+      
+      {/* Android Download Button */}
+      {!isOpen && (
+        <motion.a
+          href="/android-app.apk"
+          whileHover={{ scale: 1.03, y: -2 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 rounded-full shadow-lg hover:shadow-green-500/50 transition-all duration-300 group"
+          aria-label="تحميل التطبيق"
+        >
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5"/>
+            </svg>
+            <span className="text-sm font-bold text-white hidden sm:inline">التطبيق</span>
+          </div>
+          
+          {/* Shine effect */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+        </motion.a>
       )}
 
       <AnimatePresence>
