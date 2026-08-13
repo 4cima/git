@@ -711,10 +711,10 @@ export function SearchBox() {
                       {/* Sort Options - Row 2 */}
                       <div className="flex gap-1.5 flex-wrap">
                         {[
-                          { value: 'relevance', label: 'الأكثر صلة', icon: TrendingUp },
+                          { value: 'relevance', label: 'الأفضل', icon: TrendingUp },
                           { value: 'rating', label: 'الأعلى تقييماً', icon: Star },
                           { value: 'year', label: 'الأحدث', icon: Calendar },
-                          { value: 'popularity', label: 'الأكثر شعبية', icon: Award },
+                          { value: 'popularity', label: 'الأشهر', icon: Award },
                         ].map((option) => (
                           <button
                             key={option.value}
