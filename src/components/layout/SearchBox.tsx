@@ -35,6 +35,7 @@ export function SearchBox() {
   const [filterBy, setFilterBy] = useState<FilterOption>('all')
   const [showFilters, setShowFilters] = useState(false)
   const [hoveredResult, setHoveredResult] = useState<number | null>(null)
+  const [displayLimit, setDisplayLimit] = useState(50) // عرض 50 في البداية
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -107,6 +108,7 @@ export function SearchBox() {
   useEffect(() => {
     if (!query.trim() || query.length < 1) {
       setResults([])
+      setDisplayLimit(50) // إعادة تعيين الحد عند مسح البحث
       return
     }
 
@@ -119,6 +121,7 @@ export function SearchBox() {
           setResults(data.results || [])
           setTotalFound(data.totalFound || 0)
           setSearchStrategy(data.searchStrategy || '')
+          setDisplayLimit(50) // إعادة تعيين الحد عند بحث جديد
         }
       } catch (error) {
         console.error('Search error:', error)
@@ -130,16 +133,11 @@ export function SearchBox() {
     return () => clearTimeout(timeoutId)
   }, [query])
 
-  // Sort and filter results
+  // Sort and filter results with interleaving for 'all' mode
   const filteredAndSortedResults = useMemo(() => {
     let filtered = results
 
-    // Apply filter
-    if (filterBy !== 'all') {
-      filtered = results.filter(r => r.media_type === filterBy)
-    }
-
-    // Apply sort
+    // Apply sort first
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'rating':
@@ -154,7 +152,24 @@ export function SearchBox() {
       }
     })
 
-    return sorted
+    // Apply filter with special handling for 'all' mode
+    if (filterBy === 'all') {
+      // التداخل: فيلم → مسلسل → فيلم → مسلسل
+      const movies = sorted.filter(r => r.media_type === 'movie')
+      const series = sorted.filter(r => r.media_type === 'tv')
+      const interleaved: SearchResult[] = []
+      
+      const maxLength = Math.max(movies.length, series.length)
+      for (let i = 0; i < maxLength; i++) {
+        if (i < movies.length) interleaved.push(movies[i])
+        if (i < series.length) interleaved.push(series[i])
+      }
+      
+      return interleaved
+    } else {
+      // فلترة حسب النوع المحدد
+      return sorted.filter(r => r.media_type === filterBy)
+    }
   }, [results, sortBy, filterBy])
 
   const handleClear = () => {
@@ -162,6 +177,7 @@ export function SearchBox() {
     setResults([])
     setTotalFound(0)
     setSearchStrategy('')
+    setDisplayLimit(50)
     inputRef.current?.focus()
   }
 
@@ -172,6 +188,11 @@ export function SearchBox() {
     setTotalFound(0)
     setSearchStrategy('')
     setShowFilters(false)
+    setDisplayLimit(50)
+  }
+  
+  const handleLoadMore = () => {
+    setDisplayLimit(prev => prev + 50)
   }
 
   const getGenres = (genresJson?: string): string[] => {
@@ -308,44 +329,74 @@ export function SearchBox() {
                     )}
                   </div>
 
-                  {/* Stats Bar */}
+                  {/* Stats Bar with External Type Filter */}
                   {results.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center justify-between px-4 py-2 bg-slate-950/50 border-t border-slate-700/30 text-xs"
+                      className="px-4 py-2 bg-slate-950/50 border-t border-slate-700/30"
                     >
-                      <div className="flex items-center gap-4">
-                        <span className="text-slate-400 flex items-center gap-1.5 font-medium">
-                          <Search size={13} className="text-cyan-400" />
-                          {stats.total} نتيجة
-                        </span>
-                        {stats.movies > 0 && (
-                          <span className="text-red-400 flex items-center gap-1">
-                            <Film size={12} />
-                            {stats.movies} فيلم
-                          </span>
-                        )}
-                        {stats.series > 0 && (
-                          <span className="text-blue-400 flex items-center gap-1">
-                            <Tv size={12} />
-                            {stats.series} مسلسل
-                          </span>
-                        )}
+                      {/* Type Filter - External and Clickable */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {/* All Button */}
+                          <button
+                            onClick={() => setFilterBy('all')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                              filterBy === 'all'
+                                ? 'bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-white border-2 border-purple-400/50 shadow-lg shadow-purple-500/20'
+                                : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:bg-slate-800 hover:text-slate-300'
+                            }`}
+                          >
+                            <Filter size={13} />
+                            <span>الكل {stats.total}</span>
+                          </button>
+                          
+                          {/* Movies Button */}
+                          {stats.movies > 0 && (
+                            <button
+                              onClick={() => setFilterBy('movie')}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                filterBy === 'movie'
+                                  ? 'bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-400 border-2 border-red-400/50 shadow-lg shadow-red-500/20'
+                                  : 'bg-slate-800/50 text-red-400/60 border border-slate-700 hover:bg-slate-800 hover:text-red-400'
+                              }`}
+                            >
+                              <Film size={13} />
+                              <span>أفلام {stats.movies}</span>
+                            </button>
+                          )}
+                          
+                          {/* Series Button */}
+                          {stats.series > 0 && (
+                            <button
+                              onClick={() => setFilterBy('tv')}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                filterBy === 'tv'
+                                  ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-400 border-2 border-blue-400/50 shadow-lg shadow-blue-500/20'
+                                  : 'bg-slate-800/50 text-blue-400/60 border border-slate-700 hover:bg-slate-800 hover:text-blue-400'
+                              }`}
+                            >
+                              <Tv size={13} />
+                              <span>مسلسلات {stats.series}</span>
+                            </button>
+                          )}
+                        </div>
+                        
+                        {/* Sort Filters Button */}
+                        <button
+                          onClick={() => setShowFilters(!showFilters)}
+                          className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-md transition-colors text-xs"
+                        >
+                          <SlidersHorizontal size={12} />
+                          <span>ترتيب</span>
+                          <ChevronDown size={12} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                        </button>
                       </div>
-                      
-                      <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-1.5 px-2 py-1 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-md transition-colors"
-                      >
-                        <SlidersHorizontal size={12} />
-                        <span>فلاتر</span>
-                        <ChevronDown size={12} className={`transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-                      </button>
                     </motion.div>
                   )}
 
-                  {/* Filters Panel */}
+                  {/* Filters Panel - Sort Only */}
                   <AnimatePresence>
                     {showFilters && results.length > 0 && (
                       <motion.div
@@ -355,8 +406,8 @@ export function SearchBox() {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden bg-slate-950/80 border-t border-slate-700/30"
                       >
-                        <div className="px-4 py-3 space-y-3">
-                          {/* Sort Options */}
+                        <div className="px-4 py-3">
+                          {/* Sort Options Only */}
                           <div className="space-y-2">
                             <label className="text-xs text-slate-400 font-semibold flex items-center gap-1">
                               <TrendingUp size={12} />
@@ -375,34 +426,6 @@ export function SearchBox() {
                                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                                     sortBy === option.value
                                       ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
-                                      : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:bg-slate-800 hover:text-slate-300'
-                                  }`}
-                                >
-                                  <option.icon size={12} />
-                                  {option.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Filter Options */}
-                          <div className="space-y-2">
-                            <label className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                              <Filter size={12} />
-                              النوع
-                            </label>
-                            <div className="flex gap-2">
-                              {[
-                                { value: 'all', label: 'الكل', icon: Filter },
-                                { value: 'movie', label: 'أفلام فقط', icon: Film },
-                                { value: 'tv', label: 'مسلسلات فقط', icon: Tv },
-                              ].map((option) => (
-                                <button
-                                  key={option.value}
-                                  onClick={() => setFilterBy(option.value as FilterOption)}
-                                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                    filterBy === option.value
-                                      ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50'
                                       : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:bg-slate-800 hover:text-slate-300'
                                   }`}
                                 >
@@ -433,10 +456,10 @@ export function SearchBox() {
                             <div className="flex items-center gap-2">
                               <Search size={12} className="text-cyan-400" />
                               <span className="text-cyan-400">
-                                <span className="font-bold">{totalFound} نتيجة</span>
+                                <span className="font-bold">عرض {Math.min(displayLimit, filteredAndSortedResults.length)} من {filteredAndSortedResults.length}</span>
                                 {query.length <= 2 && (
                                   <span className="text-slate-400 mr-1">
-                                    • بحث ذكي متعدد المستويات
+                                    • بحث ذكي
                                   </span>
                                 )}
                               </span>
@@ -448,7 +471,7 @@ export function SearchBox() {
                             )}
                           </motion.div>
                           
-                          {filteredAndSortedResults.slice(0, 15).map((result, index) => {
+                          {filteredAndSortedResults.slice(0, displayLimit).map((result, index) => {
                             const genres = getGenres(result.genres_json)
                             const isHovered = hoveredResult === result.id
 
@@ -596,6 +619,27 @@ export function SearchBox() {
                               </motion.div>
                             )
                           })}
+                          
+                          {/* Load More Button */}
+                          {displayLimit < filteredAndSortedResults.length && (
+                            <motion.button
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={handleLoadMore}
+                              className="w-full mt-3 px-4 py-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl transition-all duration-300 group"
+                            >
+                              <div className="flex items-center justify-center gap-2 text-cyan-400 font-semibold text-sm">
+                                <ChevronDown size={18} className="group-hover:animate-bounce" />
+                                <span>تحميل المزيد ({Math.min(50, filteredAndSortedResults.length - displayLimit)} إضافية)</span>
+                                <ChevronDown size={18} className="group-hover:animate-bounce" />
+                              </div>
+                              <div className="text-xs text-slate-500 mt-1">
+                                المتبقي: {filteredAndSortedResults.length - displayLimit} نتيجة
+                              </div>
+                            </motion.button>
+                          )}
                         </div>
                       ) : (
                         !loading && (
