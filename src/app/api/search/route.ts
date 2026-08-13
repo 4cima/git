@@ -63,173 +63,11 @@ function getMatchType(title: string, query: string): 'exact' | 'startsWith' | 'c
 async function cascadingSearch(query: string, queryLength: number) {
   let allResults: any[] = []
   
-  // Level 1: Exact length match (length AND pattern must match on same field)
-  if (queryLength <= 2) {
-    const moviesExact = await turso.execute({
-      sql: `
-        SELECT 
-          id, slug, title_en, title_ar, poster_path, release_year, 
-          vote_average, popularity, filter_status, 'movie' as media_type, ${queryLength} as search_level
-        FROM movies
-        WHERE (
-            (LENGTH(title_ar) = ? AND (
-              LOWER(title_ar) = LOWER(?) 
-              OR LOWER(title_ar) LIKE LOWER(?) || '%'
-              OR LOWER(title_ar) LIKE '%' || LOWER(?) || '%'
-            ))
-            OR
-            (LENGTH(title_en) = ? AND (
-              LOWER(title_en) = LOWER(?)
-              OR LOWER(title_en) LIKE LOWER(?) || '%'
-              OR LOWER(title_en) LIKE '%' || LOWER(?) || '%'
-            ))
-          )
-          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-        ORDER BY popularity DESC
-        LIMIT 20
-      `,
-      args: [queryLength, query, query, query, queryLength, query, query, query]
-    })
-    
-    const seriesExact = await turso.execute({
-      sql: `
-        SELECT 
-          id, slug, name_en, name_ar, poster_path, first_air_year, 
-          vote_average, popularity, filter_status, 'tv' as media_type, ${queryLength} as search_level
-        FROM tv_series
-        WHERE (
-            (LENGTH(name_ar) = ? AND (
-              LOWER(name_ar) = LOWER(?) 
-              OR LOWER(name_ar) LIKE LOWER(?) || '%'
-              OR LOWER(name_ar) LIKE '%' || LOWER(?) || '%'
-            ))
-            OR
-            (LENGTH(name_en) = ? AND (
-              LOWER(name_en) = LOWER(?)
-              OR LOWER(name_en) LIKE LOWER(?) || '%'
-              OR LOWER(name_en) LIKE '%' || LOWER(?) || '%'
-            ))
-          )
-          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-        ORDER BY popularity DESC
-        LIMIT 20
-      `,
-      args: [queryLength, query, query, query, queryLength, query, query, query]
-    })
-    
-    allResults.push(...moviesExact.rows, ...seriesExact.rows)
-  }
+  // Level 1-3: LENGTH-based search DISABLED for production (too slow without computed indexes)
+  // Short queries (1-2 chars) skip to Level 5 (broad partial match)
   
-  // Level 2: +1 character fallback (only if level 1 returned ZERO results)
-  if (allResults.length === 0 && queryLength <= 2) {
-    const nextLength = queryLength + 1
-    const moviesNext = await turso.execute({
-      sql: `
-        SELECT 
-          id, slug, title_en, title_ar, poster_path, release_year, 
-          vote_average, popularity, filter_status, 'movie' as media_type, ${nextLength} as search_level
-        FROM movies
-        WHERE (
-            (LENGTH(title_ar) = ? AND (
-              LOWER(title_ar) LIKE LOWER(?) || '%'
-              OR LOWER(title_ar) LIKE '%' || LOWER(?) || '%'
-            ))
-            OR
-            (LENGTH(title_en) = ? AND (
-              LOWER(title_en) LIKE LOWER(?) || '%'
-              OR LOWER(title_en) LIKE '%' || LOWER(?) || '%'
-            ))
-          )
-          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-        ORDER BY popularity DESC
-        LIMIT 15
-      `,
-      args: [nextLength, query, query, nextLength, query, query]
-    })
-    
-    const seriesNext = await turso.execute({
-      sql: `
-        SELECT 
-          id, slug, name_en, name_ar, poster_path, first_air_year, 
-          vote_average, popularity, filter_status, 'tv' as media_type, ${nextLength} as search_level
-        FROM tv_series
-        WHERE (
-            (LENGTH(name_ar) = ? AND (
-              LOWER(name_ar) LIKE LOWER(?) || '%'
-              OR LOWER(name_ar) LIKE '%' || LOWER(?) || '%'
-            ))
-            OR
-            (LENGTH(name_en) = ? AND (
-              LOWER(name_en) LIKE LOWER(?) || '%'
-              OR LOWER(name_en) LIKE '%' || LOWER(?) || '%'
-            ))
-          )
-          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-        ORDER BY popularity DESC
-        LIMIT 15
-      `,
-      args: [nextLength, query, query, nextLength, query, query]
-    })
-    
-    allResults.push(...moviesNext.rows, ...seriesNext.rows)
-  }
-  
-  // Level 3: +2 characters fallback (only if levels 1+2 returned ZERO results)
-  if (allResults.length === 0 && queryLength <= 2) {
-    const nextLength = queryLength + 2
-    const moviesNext2 = await turso.execute({
-      sql: `
-        SELECT 
-          id, slug, title_en, title_ar, poster_path, release_year, 
-          vote_average, popularity, filter_status, 'movie' as media_type, ${nextLength} as search_level
-        FROM movies
-        WHERE (
-            (LENGTH(title_ar) = ? AND (
-              LOWER(title_ar) LIKE LOWER(?) || '%'
-              OR LOWER(title_ar) LIKE '%' || LOWER(?) || '%'
-            ))
-            OR
-            (LENGTH(title_en) = ? AND (
-              LOWER(title_en) LIKE LOWER(?) || '%'
-              OR LOWER(title_en) LIKE '%' || LOWER(?) || '%'
-            ))
-          )
-          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-        ORDER BY popularity DESC
-        LIMIT 10
-      `,
-      args: [nextLength, query, query, nextLength, query, query]
-    })
-    
-    const seriesNext2 = await turso.execute({
-      sql: `
-        SELECT 
-          id, slug, name_en, name_ar, poster_path, first_air_year, 
-          vote_average, popularity, filter_status, 'tv' as media_type, ${nextLength} as search_level
-        FROM tv_series
-        WHERE (
-            (LENGTH(name_ar) = ? AND (
-              LOWER(name_ar) LIKE LOWER(?) || '%'
-              OR LOWER(name_ar) LIKE '%' || LOWER(?) || '%'
-            ))
-            OR
-            (LENGTH(name_en) = ? AND (
-              LOWER(name_en) LIKE LOWER(?) || '%'
-              OR LOWER(name_en) LIKE '%' || LOWER(?) || '%'
-            ))
-          )
-          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-        ORDER BY popularity DESC
-        LIMIT 10
-      `,
-      args: [nextLength, query, query, nextLength, query, query]
-    })
-    
-    allResults.push(...moviesNext2.rows, ...seriesNext2.rows)
-  }
-  
-  // Level 4: Full FTS5 search (only if all length-based levels returned ZERO, or query >= 3 chars)
-  if (allResults.length === 0 || queryLength >= 3) {
+  // Level 4: Full FTS5 search (only for query >= 3 chars)
+  if (queryLength >= 3) {
     try {
       const searchTerm = sanitizeSearchInput(query)
       
@@ -269,7 +107,9 @@ async function cascadingSearch(query: string, queryLength: number) {
     }
   }
   
-  // Level 5: Broad partial match (only if still ZERO results)
+  // Level 5: Broad partial match DISABLED for production (too slow without indexes)
+  // Without computed indexes on LOWER(title_*), LIKE '%q%' forces full table scan
+  /*
   if (allResults.length === 0) {
     const moviesPartial = await turso.execute({
       sql: `
@@ -289,7 +129,7 @@ async function cascadingSearch(query: string, queryLength: number) {
           END,
           popularity DESC,
           vote_average DESC
-        LIMIT 20
+        LIMIT 10
       `,
       args: [query, query, query, query]
     })
@@ -312,15 +152,18 @@ async function cascadingSearch(query: string, queryLength: number) {
           END,
           popularity DESC,
           vote_average DESC
-        LIMIT 20
+        LIMIT 10
       `,
       args: [query, query, query, query]
     })
     
     allResults.push(...moviesPartial.rows, ...seriesPartial.rows)
   }
+  */
   
-  // Level 6: Character-by-character fuzzy (last resort, only if still ZERO results)
+  // Level 6: Character-by-character fuzzy DISABLED - too slow for production
+  // Uncomment only for development/testing with small datasets
+  /*
   if (allResults.length === 0 && queryLength >= 2) {
     // Search for each character in query
     const chars = query.split('').slice(0, 3).join('%')
@@ -361,6 +204,7 @@ async function cascadingSearch(query: string, queryLength: number) {
     
     allResults.push(...moviesFuzzy.rows, ...seriesFuzzy.rows)
   }
+  */
   
   return allResults
 }
@@ -370,8 +214,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const q = searchParams.get('q')
     
-    if (!q || q.length < 1) {
-      return NextResponse.json({ results: [] })
+    if (!q || q.length < 3) {
+      return NextResponse.json({ results: [], searchStrategy: 'min-3-chars' })
     }
     
     const queryLength = q.length
