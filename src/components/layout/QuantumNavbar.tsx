@@ -64,15 +64,15 @@ export const QuantumNavbar = memo(() => {
     <>
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 bg-transparent border-b border-transparent">
-        <div className="max-w-[1920px] mx-auto px-5 sm:px-7 md:px-10 lg:px-14 flex items-center justify-between h-16">
+        <div className="max-w-[1920px] mx-auto px-6 sm:px-8 md:px-12 lg:px-16 flex items-center justify-between h-16">
 
           {/* Right: Menu + Logo */}
-          <div className="flex items-center gap-8 mr-1">
+          <div className="flex items-center gap-3 mr-1">
             {/* Menu Button */}
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="h-9 px-0 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 text-slate-300 hover:text-white"
+              className="h-9 px-2.5 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 text-slate-300 hover:text-white"
               aria-label="القائمة"
             >
               <Menu size={22} />
