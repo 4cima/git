@@ -37,6 +37,7 @@ export function SearchBox() {
   const [hoveredResult, setHoveredResult] = useState<number | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   
   // Auto-collapse on scroll down
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -193,6 +194,7 @@ export function SearchBox() {
       {/* Search Button with Auto-Collapse on Hover */}
       {!isOpen && (
         <motion.button
+          ref={buttonRef}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onMouseEnter={() => setIsCollapsed(false)}
@@ -250,29 +252,21 @@ export function SearchBox() {
         </motion.button>
       )}
 
-      {/* Expanded Advanced Search Box */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop Blur */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[998]"
-              onClick={() => {
-                setIsOpen(false)
-                setShowFilters(false)
-              }}
-            />
-
             {/* Search Modal */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: -20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed left-1/2 top-20 -translate-x-1/2 w-[95vw] sm:w-[450px] md:w-[500px] lg:w-[550px] max-h-[85vh] z-[999] flex flex-col"
+              style={{
+                position: 'fixed',
+                top: buttonRef.current ? `${buttonRef.current.getBoundingClientRect().bottom + 8}px` : '80px',
+                left: '20px',
+              }}
+              className="w-[280px] sm:w-[320px] max-h-[85vh] z-[999] flex flex-col"
             >
               {/* Main Search Container */}
               <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 backdrop-blur-2xl border-2 border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
@@ -292,7 +286,7 @@ export function SearchBox() {
                       type="text"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder="ابحث بأي عدد حروف... حتى حرف واحد!"
+                      placeholder="ابحث عن فيلم أو مسلسل..."
                       className="flex-1 bg-transparent text-white placeholder-slate-400 outline-none text-lg font-medium"
                       autoComplete="off"
                     />

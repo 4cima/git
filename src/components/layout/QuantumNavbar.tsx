@@ -143,13 +143,13 @@ export const QuantumNavbar = memo(() => {
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop - NO backdrop blur */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
-              className="fixed inset-0 z-[1100] bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 z-[1100] bg-black/60"
             />
 
             {/* Sidebar Panel */}

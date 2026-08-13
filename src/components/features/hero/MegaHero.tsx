@@ -23,7 +23,7 @@ interface MegaHeroProps {
   items: MediaItem[]
 }
 
-const AUTOPLAY_MS = 6000
+const AUTOPLAY_MS = 5000
 const BACKDROP_LARGE = 'https://image.tmdb.org/t/p/w780'
 const POSTER_MEDIUM = 'https://image.tmdb.org/t/p/w185'
 
