@@ -711,21 +711,20 @@ export function SearchBox() {
                       {/* Sort Options - Row 2 */}
                       <div className="flex gap-1.5 flex-wrap">
                         {[
-                          { value: 'relevance', label: 'الأفضل', icon: TrendingUp },
-                          { value: 'rating', label: 'الأعلى تقييماً', icon: Star },
-                          { value: 'year', label: 'الأحدث', icon: Calendar },
-                          { value: 'popularity', label: 'الأشهر', icon: Award },
+                          { value: 'relevance', label: 'الأفضل' },
+                          { value: 'rating', label: 'الأعلى تقييماً' },
+                          { value: 'year', label: 'الأحدث' },
+                          { value: 'popularity', label: 'الأشهر' },
                         ].map((option) => (
                           <button
                             key={option.value}
                             onClick={() => setSortBy(option.value as SortOption)}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
                               sortBy === option.value
                                 ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
                                 : 'bg-slate-800/50 text-slate-400 border border-slate-700 hover:bg-slate-800 hover:text-slate-300'
                             }`}
                           >
-                            <option.icon size={11} />
                             {option.label}
                           </button>
                         ))}
