@@ -559,14 +559,14 @@ export function SearchBox() {
                 
                 {/* Header with Search Input */}
                 <div className="relative bg-slate-800/80 border-b border-slate-700">
-                  <div className="flex items-center gap-2 px-3 py-2.5">
+                  <div className="flex items-center gap-2 px-2 py-1">
                     <input
                       ref={inputRef}
                       type="text"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder="ابحث عن فيلم أو مسلسل..."
-                      className="flex-1 bg-slate-900/50 text-white placeholder-slate-500 outline-none text-sm font-medium px-3 py-2 rounded border border-slate-700 focus:border-slate-600"
+                      placeholder="ابحث..."
+                      className="flex-1 bg-slate-900/50 text-white placeholder-slate-500 outline-none text-xs font-medium px-2 py-0.5 rounded border border-slate-700 focus:border-slate-600"
                       autoComplete="off"
                     />
                     
