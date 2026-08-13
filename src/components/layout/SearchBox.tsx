@@ -477,90 +477,6 @@ export function SearchBox() {
 
   return (
     <div ref={searchRef} className="relative flex items-center gap-3">
-      {/* TEMP: Android Icon Selector - اختر رقم الأيقونة */}
-      {!isOpen && (
-        <div className="fixed top-20 left-4 bg-slate-900/95 border border-cyan-500 rounded-lg p-4 z-[9999] max-w-md">
-          <h3 className="text-cyan-400 text-sm font-bold mb-3">اختر أيقونة الأندرويد (اكتب الرقم في الكود):</h3>
-          <div className="grid grid-cols-4 gap-3">
-            {/* Icon 1: Current Android Robot */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">1</span>
-              <svg className="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5"/>
-              </svg>
-            </div>
-            
-            {/* Icon 2: Download Arrow */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">2</span>
-              <svg className="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-            </div>
-            
-            {/* Icon 3: Mobile Phone */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">3</span>
-              <svg className="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                <line x1="12" y1="18" x2="12.01" y2="18"/>
-              </svg>
-            </div>
-            
-            {/* Icon 4: Download Cloud */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">4</span>
-              <svg className="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M8 17l4 4 4-4"/>
-                <line x1="12" y1="12" x2="12" y2="21"/>
-                <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>
-              </svg>
-            </div>
-            
-            {/* Icon 5: Package */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">5</span>
-              <svg className="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M16.5 9.4l-9-5.19"/>
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                <line x1="12" y1="22.08" x2="12" y2="12"/>
-              </svg>
-            </div>
-            
-            {/* Icon 6: Smartphone with Arrow */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">6</span>
-              <svg className="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14zm-1-6h-3V8h-2v5H8l4 4 4-4z"/>
-              </svg>
-            </div>
-            
-            {/* Icon 7: APK File */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">7</span>
-              <svg className="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                <polyline points="13 2 13 9 20 9"/>
-                <path d="M12 18v-6"/>
-                <path d="M9 15l3 3 3-3"/>
-              </svg>
-            </div>
-            
-            {/* Icon 8: Play Store Badge */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-cyan-400 text-xs font-bold">8</span>
-              <svg className="w-8 h-8 text-green-400" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 20.5v-17c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.24-.84-.76-.84-1.35zm10.84-10.34l2.58-2.58 3.45 3.45c.48.48.48 1.28 0 1.76l-3.45 3.45-2.58-2.58 2.23-2.23-2.23-2.27zM5.5 3.21l8.93 8.93-2.58 2.58L5.5 3.21zm8.93 9.36L5.5 21.5l6.35-11.43 2.58 2.58z"/>
-              </svg>
-            </div>
-          </div>
-          <p className="text-cyan-400 text-xs mt-3">💡 شيل الشريط ده من الكود بعد الاختيار</p>
-        </div>
-      )}
-      
       {/* Android App Button - Coming Soon (يظهر فقط عند عدم التمرير) */}
       {!isOpen && !isCollapsed && (
         <motion.button
@@ -573,7 +489,7 @@ export function SearchBox() {
           aria-label="التطبيق قريباً"
         >
           <div className="flex items-center gap-1.5 relative z-10">
-            <svg className="w-4 h-4 text-slate-300 group-hover:text-slate-200 transition-colors" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-4 h-4 text-green-400 group-hover:text-green-300 transition-colors" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5"/>
             </svg>
             <span className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">قريباً</span>
