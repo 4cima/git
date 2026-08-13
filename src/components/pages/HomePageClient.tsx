@@ -530,7 +530,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
       {heroItem && (
         <section className="w-full bg-slate-950">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
-            <div className="relative w-full h-[70vh] md:h-[80vh] flex items-end overflow-hidden rounded-2xl border-2 border-slate-800 bg-slate-950 shadow-2xl">
+            <div className="relative w-full h-[70vh] md:h-[80vh] flex items-end overflow-hidden rounded-2xl border-2 border-amber-400/50 bg-slate-950 shadow-2xl shadow-amber-500/30" style={{ boxShadow: '0 0 30px rgba(251, 191, 36, 0.4), inset 0 0 20px rgba(251, 191, 36, 0.1)' }}>
               {/* Meteor Shower Effect - مطر الشهب الملتهب */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-50">
                 <div className="meteor-shower">
