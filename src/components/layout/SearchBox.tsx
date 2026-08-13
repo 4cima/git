@@ -506,8 +506,8 @@ export function SearchBox() {
           ref={buttonRef}
           animate={{
             width: isCollapsed ? '36px' : 'auto',
-            paddingLeft: isCollapsed ? '9px' : '10px',
-            paddingRight: isCollapsed ? '9px' : '10px',
+            paddingLeft: isCollapsed ? '6px' : '10px',
+            paddingRight: isCollapsed ? '6px' : '10px',
           }}
           transition={{ type: 'spring', damping: 20, stiffness: 300 }}
           whileHover={{ scale: 1.02 }}
