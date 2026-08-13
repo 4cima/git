@@ -318,7 +318,7 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
 
       {/* Cinema Banner */}
       <section className="w-full bg-slate-950">
-        <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 mb-6">
+        <div className="max-w-[1920px] mx-auto px-6 sm:px-10 md:px-16 lg:px-24 mb-6">
           <div className="relative bg-slate-950/80 backdrop-blur-sm rounded-lg border-2 border-slate-800 shadow-2xl overflow-hidden h-14 md:h-16">
             <div className="absolute inset-0 overflow-hidden">
               <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'url(/banner.png)', backgroundSize: '2000px 100%', backgroundRepeat: 'repeat-x', backgroundPosition: '0 center', animation: 'banner-scroll 40s linear infinite' }} />
