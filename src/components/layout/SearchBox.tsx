@@ -173,7 +173,7 @@ export function SearchBox() {
     setShowFilters(false)
   }
 
-  const getGenres = (genresJson?: string) => {
+  const getGenres = (genresJson?: string): string[] => {
     try {
       const genres = JSON.parse(genresJson || '[]')
       return genres.slice(0, 2).map((g: any) => g.name_ar || g.name).filter(Boolean)
@@ -564,7 +564,7 @@ export function SearchBox() {
                                         {/* Genres */}
                                         {genres.length > 0 && (
                                           <div className="flex gap-1.5 flex-wrap">
-                                            {genres.map((genre, idx) => (
+                                            {genres.map((genre: string, idx: number) => (
                                               <span
                                                 key={idx}
                                                 className="px-2 py-0.5 bg-slate-800/50 border border-slate-700 rounded text-xs text-slate-400"
