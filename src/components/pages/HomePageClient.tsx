@@ -460,7 +460,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
 
       {/* 1. Cinema Banner - Full Width Edge-to-Edge */}
       <section className="w-full bg-slate-950">
-        <div className="max-w-[1920px] mx-auto px-6 sm:px-10 md:px-16 lg:px-24">
+        <div className="max-w-[1920px] mx-auto px-3 sm:px-5 md:px-8 lg:px-12">
           {/* Cinema Banner Board */}
           <div className="relative bg-slate-950/80 backdrop-blur-sm rounded-lg border-2 border-slate-800 shadow-2xl overflow-hidden h-14 md:h-16">
             {/* Animated Background Image with Film Strip Effect */}
