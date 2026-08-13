@@ -520,10 +520,6 @@ export function SearchBox() {
           aria-label="بحث"
         >
           <div className="flex items-center gap-1.5 relative z-10">
-            <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-400 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35" strokeLinecap="round"/>
-            </svg>
             <motion.span
               animate={{
                 opacity: isCollapsed ? 0 : 1,
@@ -534,6 +530,10 @@ export function SearchBox() {
             >
               بحث متقدم
             </motion.span>
+            <svg className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35" strokeLinecap="round"/>
+            </svg>
           </div>
           
           {/* Subtle accent line */}
