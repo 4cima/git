@@ -36,9 +36,12 @@ export function SearchBox() {
   const [showFilters, setShowFilters] = useState(false)
   const [hoveredResult, setHoveredResult] = useState<number | null>(null)
   const [displayLimit, setDisplayLimit] = useState(50) // عرض 50 في البداية
+  const [isListening, setIsListening] = useState(false) // البحث الصوتي
+  const [showKeyboard, setShowKeyboard] = useState(false) // الكيبورد الافتراضي
   const searchRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const recognitionRef = useRef<any>(null)
   
   // Auto-collapse on scroll down
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -97,12 +100,172 @@ export function SearchBox() {
       if (e.key === 'Escape' && isOpen) {
         setIsOpen(false)
         setShowFilters(false)
+        setShowKeyboard(false)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
+
+  // Voice Search Setup
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition()
+        recognitionRef.current.continuous = false
+        recognitionRef.current.interimResults = false
+        recognitionRef.current.lang = 'ar-SA' // Arabic by default
+        
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript
+          setQuery(transcript)
+          setIsListening(false)
+        }
+        
+        recognitionRef.current.onerror = () => {
+          setIsListening(false)
+        }
+        
+        recognitionRef.current.onend = () => {
+          setIsListening(false)
+        }
+      }
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop()
+      }
+    }
+  }, [])
+  
+  // Remote Control & Gamepad Support
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return
+      
+      // Remote Control Keys
+      switch(e.key) {
+        case 'Enter':
+          // Open keyboard or close search
+          if (showKeyboard) {
+            setShowKeyboard(false)
+          }
+          break
+        case 'ArrowUp':
+          e.preventDefault()
+          // Navigate results up
+          break
+        case 'ArrowDown':
+          e.preventDefault()
+          // Navigate results down
+          break
+        case 'Back':
+        case 'Backspace':
+          if (!query) {
+            e.preventDefault()
+            setIsOpen(false)
+          }
+          break
+      }
+    }
+    
+    // Gamepad support for TV remotes
+    let gamepadInterval: NodeJS.Timeout | null = null
+    if (isOpen && typeof window !== 'undefined' && 'getGamepads' in navigator) {
+      gamepadInterval = setInterval(() => {
+        const gamepads = navigator.getGamepads()
+        const gamepad = gamepads[0]
+        
+        if (gamepad) {
+          // D-pad up (button 12)
+          if (gamepad.buttons[12]?.pressed) {
+            // Navigate up
+          }
+          // D-pad down (button 13)
+          if (gamepad.buttons[13]?.pressed) {
+            // Navigate down
+          }
+          // A button (button 0) or Enter
+          if (gamepad.buttons[0]?.pressed) {
+            // Select result
+          }
+          // B button (button 1) or Back
+          if (gamepad.buttons[1]?.pressed) {
+            setIsOpen(false)
+          }
+        }
+      }, 100)
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      if (gamepadInterval) clearInterval(gamepadInterval)
+    }
+  }, [isOpen, showKeyboard, query])
+  
+  // Touch Gestures Support
+  useEffect(() => {
+    if (!isOpen || !searchRef.current) return
+    
+    let touchStartY = 0
+    let touchStartX = 0
+    
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY
+      touchStartX = e.touches[0].clientX
+    }
+    
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndY = e.changedTouches[0].clientY
+      const touchEndX = e.changedTouches[0].clientX
+      const deltaY = touchStartY - touchEndY
+      const deltaX = touchStartX - touchEndX
+      
+      // Swipe down to close search
+      if (deltaY < -100 && Math.abs(deltaX) < 50) {
+        setIsOpen(false)
+      }
+      
+      // Swipe right to open keyboard
+      if (deltaX < -100 && Math.abs(deltaY) < 50) {
+        setShowKeyboard(true)
+      }
+      
+      // Swipe left to close keyboard
+      if (deltaX > 100 && Math.abs(deltaY) < 50 && showKeyboard) {
+        setShowKeyboard(false)
+      }
+    }
+    
+    const element = searchRef.current
+    element.addEventListener('touchstart', handleTouchStart, { passive: true })
+    element.addEventListener('touchend', handleTouchEnd, { passive: true })
+    
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart)
+      element.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [isOpen, showKeyboard])
+  
+  // Start/Stop Voice Search
+  const toggleVoiceSearch = () => {
+    if (!recognitionRef.current) {
+      alert('البحث الصوتي غير مدعوم في هذا المتصفح')
+      return
+    }
+    
+    if (isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+    } else {
+      recognitionRef.current.start()
+      setIsListening(true)
+    }
+  }
 
   // Search with debounce
   useEffect(() => {
@@ -193,6 +356,20 @@ export function SearchBox() {
   
   const handleLoadMore = () => {
     setDisplayLimit(prev => prev + 50)
+  }
+  
+  // Virtual Keyboard - Handle key press
+  const handleKeyPress = (key: string) => {
+    if (key === 'backspace') {
+      setQuery(prev => prev.slice(0, -1))
+    } else if (key === 'space') {
+      setQuery(prev => prev + ' ')
+    } else if (key === 'clear') {
+      setQuery('')
+    } else {
+      setQuery(prev => prev + key)
+    }
+    inputRef.current?.focus()
   }
 
   const getGenres = (genresJson?: string): string[] => {
@@ -316,6 +493,54 @@ export function SearchBox() {
                       <Loader2 size={20} className="text-cyan-400 animate-spin flex-shrink-0" />
                     )}
                     
+                    {/* Voice Search Button */}
+                    {!loading && (
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={toggleVoiceSearch}
+                        className={`flex-shrink-0 transition-colors ${
+                          isListening 
+                            ? 'text-red-500 animate-pulse' 
+                            : 'text-slate-400 hover:text-cyan-400'
+                        }`}
+                        aria-label="بحث صوتي"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                          <line x1="12" y1="19" x2="12" y2="22"/>
+                        </svg>
+                      </motion.button>
+                    )}
+                    
+                    {/* Virtual Keyboard Toggle Button */}
+                    {!loading && (
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setShowKeyboard(!showKeyboard)}
+                        className={`flex-shrink-0 transition-colors ${
+                          showKeyboard 
+                            ? 'text-cyan-400' 
+                            : 'text-slate-400 hover:text-cyan-400'
+                        }`}
+                        aria-label="لوحة مفاتيح"
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="2" y="4" width="20" height="16" rx="2"/>
+                          <path d="M6 8h.01"/>
+                          <path d="M10 8h.01"/>
+                          <path d="M14 8h.01"/>
+                          <path d="M18 8h.01"/>
+                          <path d="M8 12h.01"/>
+                          <path d="M12 12h.01"/>
+                          <path d="M16 12h.01"/>
+                          <path d="M7 16h10"/>
+                        </svg>
+                      </motion.button>
+                    )}
+                    
                     {query && !loading && (
                       <motion.button
                         whileHover={{ scale: 1.1, rotate: 90 }}
@@ -328,6 +553,122 @@ export function SearchBox() {
                       </motion.button>
                     )}
                   </div>
+
+                  {/* Virtual Keyboard */}
+                  <AnimatePresence>
+                    {showKeyboard && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden bg-slate-950/90 border-t border-slate-700/30 px-2 py-3"
+                      >
+                        {/* Arabic & English Keyboard */}
+                        <div className="space-y-1.5">
+                          {/* Row 1 - Numbers */}
+                          <div className="flex gap-1 justify-center">
+                            {['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((key) => (
+                              <button
+                                key={key}
+                                onClick={() => handleKeyPress(key)}
+                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-slate-700 border border-slate-600 rounded text-xs text-white font-medium transition-all active:scale-95"
+                              >
+                                {key}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {/* Row 2 - Arabic Common Letters */}
+                          <div className="flex gap-1 justify-center flex-wrap">
+                            {['ا', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش'].map((key) => (
+                              <button
+                                key={key}
+                                onClick={() => handleKeyPress(key)}
+                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-cyan-900/50 border border-slate-600 hover:border-cyan-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
+                              >
+                                {key}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {/* Row 3 - More Arabic Letters */}
+                          <div className="flex gap-1 justify-center flex-wrap">
+                            {['ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه'].map((key) => (
+                              <button
+                                key={key}
+                                onClick={() => handleKeyPress(key)}
+                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-cyan-900/50 border border-slate-600 hover:border-cyan-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
+                              >
+                                {key}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {/* Row 4 - Final Arabic + English */}
+                          <div className="flex gap-1 justify-center flex-wrap">
+                            {['و', 'ي', 'ة', 'ى', 'ء', 'أ', 'إ', 'آ'].map((key) => (
+                              <button
+                                key={key}
+                                onClick={() => handleKeyPress(key)}
+                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-cyan-900/50 border border-slate-600 hover:border-cyan-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
+                              >
+                                {key}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {/* Row 5 - English Letters (Common) */}
+                          <div className="flex gap-1 justify-center flex-wrap">
+                            {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm'].map((key) => (
+                              <button
+                                key={key}
+                                onClick={() => handleKeyPress(key)}
+                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-purple-900/50 border border-slate-600 hover:border-purple-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
+                              >
+                                {key}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {/* Row 6 - More English */}
+                          <div className="flex gap-1 justify-center flex-wrap">
+                            {['n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'].map((key) => (
+                              <button
+                                key={key}
+                                onClick={() => handleKeyPress(key)}
+                                className="px-2 py-1.5 min-w-[28px] bg-slate-800/80 hover:bg-purple-900/50 border border-slate-600 hover:border-purple-500/50 rounded text-xs text-white font-medium transition-all active:scale-95"
+                              >
+                                {key}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {/* Row 7 - Special Keys */}
+                          <div className="flex gap-1 justify-center">
+                            <button
+                              onClick={() => handleKeyPress('space')}
+                              className="px-6 py-1.5 bg-slate-700/80 hover:bg-slate-600 border border-slate-600 rounded text-xs text-white font-medium transition-all active:scale-95"
+                            >
+                              مسافة
+                            </button>
+                            <button
+                              onClick={() => handleKeyPress('backspace')}
+                              className="px-4 py-1.5 bg-red-900/30 hover:bg-red-900/50 border border-red-700/50 rounded text-xs text-red-400 font-medium transition-all active:scale-95"
+                            >
+                              ⌫ حذف
+                            </button>
+                            <button
+                              onClick={() => handleKeyPress('clear')}
+                              className="px-4 py-1.5 bg-orange-900/30 hover:bg-orange-900/50 border border-orange-700/50 rounded text-xs text-orange-400 font-medium transition-all active:scale-95"
+                            >
+                              🗑 مسح الكل
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Stats Bar with External Type Filter */}
                   {results.length > 0 && (
@@ -679,7 +1020,34 @@ export function SearchBox() {
                       </div>
                       <div>
                         <h3 className="text-lg font-bold text-white mb-2">اكتشف عالم السينما</h3>
-                        <p className="text-slate-400 text-sm mb-4">ابحث بأي عدد من الحروف - حتى حرف واحد!</p>
+                        <p className="text-slate-400 text-sm mb-3">ابحث بأي عدد من الحروف - حتى حرف واحد!</p>
+                        
+                        {/* New Features Info */}
+                        <div className="mb-4 space-y-2">
+                          <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-cyan-400">
+                              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                              <line x1="12" y1="19" x2="12" y2="22"/>
+                            </svg>
+                            <span>بحث صوتي بالميكروفون</span>
+                          </div>
+                          <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-400">
+                              <rect x="2" y="4" width="20" height="16" rx="2"/>
+                              <path d="M6 8h.01"/>
+                              <path d="M10 8h.01"/>
+                            </svg>
+                            <span>لوحة مفاتيح افتراضية (عربي + English)</span>
+                          </div>
+                          <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-green-400">
+                              <path d="M7 10v12"/>
+                              <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/>
+                            </svg>
+                            <span>دعم Touch / Mouse / Remote</span>
+                          </div>
+                        </div>
                         
                         {/* Quick suggestions */}
                         <div className="space-y-2">
