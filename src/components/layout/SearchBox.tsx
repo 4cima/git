@@ -552,7 +552,7 @@ export function SearchBox() {
                 top: '0',
                 left: '20px',
               }}
-              className="w-[280px] sm:w-[320px] h-screen z-[999] flex flex-col"
+              className="w-[280px] sm:w-[320px] max-h-screen z-[999] flex flex-col"
             >
               {/* Main Search Container */}
               <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl overflow-hidden">
@@ -730,7 +730,7 @@ export function SearchBox() {
                 </div>
 
                 {/* Results Area - 2 Columns Grid */}
-                <div className="overflow-y-auto h-[calc(100vh-120px)] custom-scrollbar">
+                <div className="overflow-y-auto max-h-[calc(100vh-120px)] custom-scrollbar">
                   {query.length >= 1 && (
                     <>
                       {filteredAndSortedResults.length > 0 ? (
