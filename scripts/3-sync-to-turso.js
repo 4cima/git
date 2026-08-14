@@ -165,10 +165,19 @@ async function syncMoviesBatch(movieIds) {
 // ============================================================
 async function syncSeriesBatch(seriesIds) {
   const statements = []
+  const skipped = []
   
   for (const tmdb_id of seriesIds) {
     const series = db.prepare('SELECT * FROM tv_series WHERE tmdb_id = ?').get(tmdb_id)
     if (!series) continue
+    
+    // Skip series with NULL slug - cannot sync
+    if (!series.slug) {
+      skipped.push({ tmdb_id, reason: 'NULL slug', name: series.name_en })
+      // Mark as synced to avoid infinite retry loop
+      db.prepare('UPDATE tv_series SET synced_to_turso = 1 WHERE tmdb_id = ?').run(tmdb_id)
+      continue
+    }
     
     const genres = db.prepare(`
       SELECT g.tmdb_id, g.name_en, g.name_ar, g.slug
@@ -267,7 +276,12 @@ async function syncSeriesBatch(seriesIds) {
     })
   }
   
-  if (statements.length === 0) return 0
+  if (statements.length === 0) {
+    if (skipped.length > 0) {
+      skipped.forEach(s => console.log(`  ⚠️  Skipped tmdb_id ${s.tmdb_id} (${s.reason}): ${s.name}`))
+    }
+    return 0
+  }
   
   try {
     await turso.batch(statements, 'write')
