@@ -220,7 +220,37 @@ export async function GET(request: NextRequest) {
     
     const queryLength = q.length
     
-    // Execute cascading search with multiple fallback levels
+    // Short title lookup for 1-2 char queries
+    if (queryLength <= 2) {
+      const shortResults = await turso.execute({
+        sql: `
+          SELECT 
+            source_id as id, media_type, slug,
+            title_ar, title_en, name_ar, name_en,
+            poster_path, release_year, first_air_year,
+            vote_average, popularity, filter_status
+          FROM short_titles_lookup
+          WHERE (
+            LOWER(title_ar) LIKE LOWER(?) || '%' 
+            OR LOWER(title_en) LIKE LOWER(?) || '%'
+            OR LOWER(name_ar) LIKE LOWER(?) || '%'
+            OR LOWER(name_en) LIKE LOWER(?) || '%'
+          )
+          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+          ORDER BY popularity DESC
+          LIMIT 50
+        `,
+        args: [q, q, q, q]
+      })
+      
+      return NextResponse.json({ 
+        results: shortResults.rows,
+        totalFound: shortResults.rows.length,
+        searchStrategy: 'short-title-lookup'
+      })
+    }
+    
+    // queryLength >= 3: cascading search with FTS5 trigram (unchanged)
     const allResults = await cascadingSearch(q, queryLength)
     
     // Remove duplicates and calculate smart scores
@@ -258,7 +288,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       results: uniqueResults,
       totalFound: uniqueResults.length,
-      searchStrategy: queryLength <= 2 ? 'smart-cascading' : 'fts5-enhanced'
+      searchStrategy: 'fts5-enhanced'
     })
   } catch (error) {
     console.error('Error searching:', error)
