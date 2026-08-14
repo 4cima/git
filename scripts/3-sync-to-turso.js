@@ -337,6 +337,63 @@ async function main() {
   console.log(`\n✅ اكتملت المزامنة!`)
   console.log(`   أفلام: ${stats.movies}`)
   console.log(`   مسلسلات: ${stats.series}`)
+  
+  // Rebuild short_titles_lookup after catalog sync
+  await rebuildShortTitles()
+}
+
+// ============================================================
+// Rebuild short_titles_lookup
+// ============================================================
+async function rebuildShortTitles() {
+  console.log('\n🔄 إعادة بناء جدول short_titles_lookup...')
+  try {
+    await turso.execute('DELETE FROM short_titles_lookup')
+    
+    const moviesResult = await turso.execute(`
+      INSERT INTO short_titles_lookup (
+        source_id, media_type, title_ar, title_en, name_ar, name_en,
+        poster_path, release_year, first_air_year, vote_average, 
+        popularity, filter_status, slug, title_length
+      )
+      SELECT 
+        id, 'movie', title_ar, title_en, NULL, NULL,
+        poster_path, release_year, NULL, vote_average,
+        popularity, filter_status, slug,
+        CASE 
+          WHEN LENGTH(title_ar) IN (1,2) THEN LENGTH(title_ar)
+          ELSE LENGTH(title_en)
+        END as title_length
+      FROM movies
+      WHERE LENGTH(title_ar) IN (1,2) OR LENGTH(title_en) IN (1,2)
+    `)
+    
+    const seriesResult = await turso.execute(`
+      INSERT INTO short_titles_lookup (
+        source_id, media_type, title_ar, title_en, name_ar, name_en,
+        poster_path, release_year, first_air_year, vote_average,
+        popularity, filter_status, slug, title_length
+      )
+      SELECT 
+        id, 'tv', NULL, NULL, name_ar, name_en,
+        poster_path, NULL, first_air_year, vote_average,
+        popularity, filter_status, slug,
+        CASE 
+          WHEN LENGTH(name_ar) IN (1,2) THEN LENGTH(name_ar)
+          ELSE LENGTH(name_en)
+        END as title_length
+      FROM tv_series
+      WHERE LENGTH(name_ar) IN (1,2) OR LENGTH(name_en) IN (1,2)
+    `)
+    
+    const countResult = await turso.execute('SELECT COUNT(*) as cnt FROM short_titles_lookup')
+    const totalCount = countResult.rows[0].cnt
+    
+    console.log(`   ✅ ${moviesResult.rowsAffected} أفلام + ${seriesResult.rowsAffected} مسلسلات`)
+    console.log(`   📊 إجمالي: ${totalCount} عنوان قصير`)
+  } catch (err) {
+    console.error(`   ❌ خطأ في إعادة بناء short_titles_lookup:`, err.message)
+  }
 }
 
 main().catch(console.error)
