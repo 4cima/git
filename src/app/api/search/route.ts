@@ -64,10 +64,9 @@ async function cascadingSearch(query: string, queryLength: number) {
   let allResults: any[] = []
   
   // Level 1-3: LENGTH-based search DISABLED for production (too slow without computed indexes)
-  // Short queries (1-2 chars) skip to Level 5 (broad partial match)
   
-  // Level 4: Full FTS5 search (for all queries >= 1 char)
-  if (queryLength >= 1) {
+  // Level 4: Full FTS5 search (for queries >= 3 chars, trigram requirement)
+  if (queryLength >= 3) {
     try {
       const searchTerm = sanitizeSearchInput(query)
       
@@ -104,6 +103,49 @@ async function cascadingSearch(query: string, queryLength: number) {
       allResults.push(...moviesFTS.rows, ...seriesFTS.rows)
     } catch (error) {
       console.log('FTS5 search failed, continuing with fallback')
+    }
+  }
+  
+  // Level 4.5: Prefix search for 2-char queries (FTS5 trigram can't match <3 chars)
+  if (queryLength === 2 && allResults.length === 0) {
+    try {
+      const moviesPrefix = await turso.execute({
+        sql: `
+          SELECT 
+            id, slug, title_en, title_ar, poster_path, release_year, 
+            vote_average, popularity, filter_status, 'movie' as media_type, 998 as search_level
+          FROM movies
+          WHERE (
+            LOWER(title_ar) LIKE LOWER(?) || '%' 
+            OR LOWER(title_en) LIKE LOWER(?) || '%'
+          )
+          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+          ORDER BY popularity DESC, vote_average DESC
+          LIMIT 30
+        `,
+        args: [query, query]
+      })
+      
+      const seriesPrefix = await turso.execute({
+        sql: `
+          SELECT 
+            id, slug, name_en, name_ar, poster_path, first_air_year, 
+            vote_average, popularity, filter_status, 'tv' as media_type, 998 as search_level
+          FROM tv_series
+          WHERE (
+            LOWER(name_ar) LIKE LOWER(?) || '%' 
+            OR LOWER(name_en) LIKE LOWER(?) || '%'
+          )
+          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+          ORDER BY popularity DESC, vote_average DESC
+          LIMIT 30
+        `,
+        args: [query, query]
+      })
+      
+      allResults.push(...moviesPrefix.rows, ...seriesPrefix.rows)
+    } catch (error) {
+      console.log('2-char prefix search failed')
     }
   }
   
@@ -220,8 +262,8 @@ export async function GET(request: NextRequest) {
     
     const queryLength = q.length
     
-    // Short title lookup for 1-2 char queries
-    if (queryLength <= 2) {
+    // Short title lookup for 1-char queries only
+    if (queryLength === 1) {
       const shortResults = await turso.execute({
         sql: `
           SELECT 
@@ -237,10 +279,16 @@ export async function GET(request: NextRequest) {
             OR LOWER(name_en) LIKE LOWER(?) || '%'
           )
           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-          ORDER BY popularity DESC
+          ORDER BY 
+            CASE
+              WHEN LOWER(title_ar) = LOWER(?) OR LOWER(title_en) = LOWER(?) 
+                   OR LOWER(name_ar) = LOWER(?) OR LOWER(name_en) = LOWER(?) THEN 1
+              ELSE 2
+            END,
+            popularity DESC
           LIMIT 50
         `,
-        args: [q, q, q, q]
+        args: [q, q, q, q, q, q, q, q]
       })
       
       return NextResponse.json({ 
@@ -250,7 +298,7 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // queryLength >= 3: cascading search with FTS5 trigram (unchanged)
+    // queryLength >= 2: cascading search with FTS5 trigram
     const allResults = await cascadingSearch(q, queryLength)
     
     // Remove duplicates and calculate smart scores
