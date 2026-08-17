@@ -54,8 +54,73 @@ export default async function MovieGenrePage({ params }: PageProps) {
     
     const genre = genreResult.rows[0]
     
-    return <MovieGenrePageClient genre={genre} slug={slug} />
+    // Server-render initial batch of movies (first 20 by popularity)
+    const initialMoviesResult = await turso.execute({
+      sql: `
+        SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, vote_average, release_year, overview_ar, genres_json
+        FROM movies
+        WHERE genres_json LIKE ?
+        ORDER BY popularity DESC
+        LIMIT 21
+      `,
+      args: [`%"name_ar":"${genre.name_ar}"%`]
+    })
+    
+    const initialMovies = initialMoviesResult.rows || []
+    const hasMore = initialMovies.length > 20
+    if (hasMore) initialMovies.pop() // Remove the 21st item
+    
+    return (
+      <>
+        {/* Hidden data for crawlers - actual HTML content */}
+        <div className="hidden" aria-hidden="true" data-ssr-content="movies">
+          {initialMovies.map((movie: any) => (
+            <div key={movie.id} data-movie-title={movie.title_ar || movie.title_en} />
+          ))}
+        </div>
+        
+        <MovieGenrePageClient genre={genre} slug={slug} initialMovies={initialMovies} initialHasMore={hasMore} />
+      </>
+    )
   } catch (error) {
     notFound()
   }
+}
+
+// Server-rendered initial content for SEO (visible in HTML before JS loads)
+function ServerRenderedMovies({ movies }: { movies: any[] }) {
+  return (
+    <noscript>
+      <div className="grid-responsive gap-4">
+        {movies.slice(0, 20).map((movie: any) => (
+          <a
+            key={movie.id}
+            href={`/movies/${movie.slug}`}
+            className="block rounded-2xl overflow-hidden bg-zinc-900/20 border border-zinc-800/60 hover:border-zinc-700"
+          >
+            <div className="aspect-[2/3] w-full bg-zinc-800 relative">
+              {movie.poster_path && (
+                <img
+                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  alt={movie.title_ar || movie.title_en || ''}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )}
+            </div>
+            <div className="p-2.5">
+              <h3 className="text-sm font-bold text-white truncate">
+                {movie.title_ar || movie.title_en}
+              </h3>
+              {movie.vote_average > 0 && (
+                <p className="text-xs text-zinc-400 mt-1">
+                  ⭐ {movie.vote_average.toFixed(1)}
+                </p>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </noscript>
+  )
 }

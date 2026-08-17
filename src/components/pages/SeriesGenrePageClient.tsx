@@ -17,14 +17,16 @@ const SORT_OPTIONS = [
 interface SeriesGenrePageClientProps {
   genre: any
   slug: string
+  initialSeries: any[]
+  initialHasMore: boolean
 }
 
-export function SeriesGenrePageClient({ genre, slug }: SeriesGenrePageClientProps) {
-  const [content, setContent] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMore }: SeriesGenrePageClientProps) {
+  const [content, setContent] = useState<any[]>(initialSeries)
+  const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [hasMore, setHasMore] = useState(false)
+  const [hasMore, setHasMore] = useState(initialHasMore)
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState('popularity')
   const [order, setOrder] = useState<'asc' | 'desc'>('desc')
@@ -37,6 +39,11 @@ export function SeriesGenrePageClient({ genre, slug }: SeriesGenrePageClientProp
 
   // Fetch series
   useEffect(() => {
+    // Skip initial fetch if we already have data from SSR
+    if (page === 1 && sort === 'popularity' && order === 'desc' && initialSeries.length > 0) {
+      return
+    }
+    
     let cancelled = false
     
     const params = new URLSearchParams({
@@ -89,7 +96,7 @@ export function SeriesGenrePageClient({ genre, slug }: SeriesGenrePageClientProp
       })
     
     return () => { cancelled = true }
-  }, [slug, sort, order, page, itemsPerPage])
+  }, [slug, sort, order, page, itemsPerPage, initialSeries.length])
 
   // Infinite scroll observer
   useEffect(() => {
@@ -190,7 +197,7 @@ export function SeriesGenrePageClient({ genre, slug }: SeriesGenrePageClientProp
           </div>
         ) : content.length > 0 ? (
           <>
-            <div className="grid-responsive gap-4">
+            <div className="grid-responsive gap-4" suppressHydrationWarning>
               {content.map((item: any, index: number) => (
                 <MovieCard key={item.id} movie={item} index={index} />
               ))}
