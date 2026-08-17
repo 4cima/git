@@ -386,6 +386,32 @@ export const QuantumNavbar = memo(() => {
                   })}
                 </div>
 
+                {/* Language Section - Series */}
+                <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
+                </div>
+
+                {/* Language Links for Series - 2 Columns Grid */}
+                <div className="px-3 pb-1 grid grid-cols-2 gap-1.5">
+                  {countryLinks.map((country) => {
+                    const isActive = pathname?.includes(`language=${country.filter}`)
+                    return (
+                      <Link
+                        key={`series-${country.code}`}
+                        href={`/series?language=${country.filter}`}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
+                          isActive
+                            ? 'bg-white/20 text-white border border-cyan-400/50'
+                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
+                        }`}
+                      >
+                        <span className="text-sm group-hover:scale-110 transition-transform flex-shrink-0">{country.icon}</span>
+                        <span className="font-medium truncate">{country.label}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+
                 {/* Genre Section - Series */}
                 <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
                   <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">مسلسلات</p>
