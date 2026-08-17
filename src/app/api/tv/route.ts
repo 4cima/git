@@ -32,28 +32,25 @@ export async function GET(request: NextRequest) {
     
     const whereClause = `WHERE ${conditions.join(' AND ')}`
 
-    const [result, countResult] = await Promise.all([
-      turso.execute({
-        sql: `SELECT * FROM tv_series ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-        args: [...args, limit, offset]
-      }),
-      turso.execute({
-        sql: `SELECT COUNT(*) as total FROM tv_series ${whereClause}`,
-        args
-      })
-    ])
+    // Use limit+1 trick instead of COUNT(*) - fetch one extra row to check if there's more
+    const result = await turso.execute({
+      sql: `SELECT * FROM tv_series ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      args: [...args, limit + 1, offset]
+    })
 
-    const total = Number(countResult.rows[0]?.total || 0)
+    const rows = result.rows || []
+    const hasMore = rows.length > limit
+    if (hasMore) rows.pop() // Remove the extra row
 
     return NextResponse.json({
-      results:    result.rows || [],
+      results: rows,
       page,
       limit,
-      total,
-      totalPages: Math.ceil(total / limit)
+      hasMore,
+      totalPages: hasMore ? page + 1 : page
     })
   } catch (error) {
     console.error('❌ [API /tv] Error:', error)
-    return NextResponse.json({ results: [], total: 0, page: 1, totalPages: 0 }, { status: 500 })
+    return NextResponse.json({ results: [], hasMore: false, page: 1, totalPages: 0 }, { status: 500 })
   }
 }
