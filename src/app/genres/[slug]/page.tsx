@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     
     if (!response.rows || response.rows.length === 0) {
       return {
-        title: 'تصنيف غير موجود | 4cima'
+        title: 'تصنيف غير موجود'
       }
     }
     
@@ -26,12 +26,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const genreName = genre.name_ar || genre.name_en || 'تصنيف'
     
     return {
-      title: `أفلام ومسلسلات ${genreName} | 4cima`,
+      title: `أفلام ومسلسلات ${genreName}`,
       description: `استكشف أفضل أفلام ومسلسلات ${genreName} - جودة عالية ومترجم`
     }
   } catch (error) {
     return {
-      title: 'تصنيف | 4cima'
+      title: 'تصنيف'
     }
   }
 }
