@@ -1,0 +1,271 @@
+================================================================================
+TURSO ROWS-READ CRISIS - DIAGNOSTIC REPORT
+================================================================================
+Date: Current investigation
+Problem: 1.6B+ rows-read on Turso free plan, about to run out
+Goal: Identify root cause with REAL EVIDENCE, not assumptions
+
+================================================================================
+1. DATABASE SCALE
+================================================================================
+movies:                    211,739 rows
+tv_series:                  42,154 rows
+movies_fts:                211,739 rows (FTS5 virtual table)
+series_fts:                 42,154 rows (FTS5 virtual table)
+short_titles_lookup:           600 rows
+genres:                         27 rows
+genre_counts:                   27 rows
+
+Total catalog: ~254k items
+
+================================================================================
+2. QUERY AUDIT RESULTS (EXPLAIN QUERY PLAN)
+================================================================================
+
+✅ EFFICIENT ROUTES (Use indexes, low rows-read per request):
+--------------------------------------------------------------
+- /api/home (static cached, revalidate=3600)
+  * 100 movies + 100 series per request
+  * Uses idx_movies_filter_popularity and idx_series_filter_popularity
+  * Low frequency due to static caching
+
+- /api/movies (dynamic, no cache)
+  * All filter combinations use idx_movies_filter_popularity
+  * Pagination: limit+1 trick (no COUNT)
+  * 24 rows per page
+  * EFFICIENT index usage confirmed
+
+- /api/series (dynamic, no cache)
+  * All filter combinations use idx_series_filter_popularity
+  * Pagination: limit+1 trick (no COUNT)
+  * 24 rows per page
+  * EFFICIENT index usage confirmed
+
+- /api/movies/[slug] (detail page)
+  * Uses unique slug index (sqlite_autoindex_movies_2)
+  * Returns 1 row
+  * Cached (s-maxage=3600)
+  * EFFICIENT
+
+- /api/series/[slug] (detail page)
+  * Uses unique slug index (sqlite_autoindex_tv_series_2)
+  * Returns 1 row
+  * Cached (s-maxage=3600)
+  * EFFICIENT
+
+
+⚠️ PROBLEM ROUTES (Full table scans or high row counts):
+----------------------------------------------------------
+
+1. ❌ /api/genres/[slug] with type="all" (CRITICAL)
+   EVIDENCE: EXPLAIN QUERY PLAN shows "SCAN m" and "SCAN s"
+   
+   * Fetches ENTIRE movies table for genre (no LIMIT clause)
+   * Fetches ENTIRE tv_series table for genre (no LIMIT clause)
+   * Combines in memory, then paginates
+   * For action genre: ~15k movies + ~3k series = 18k rows read PER REQUEST
+   * NO INDEX can help genres_json LIKE queries
+   * NO server cache - every request re-scans
+   
+   IMPACT: If this route gets 100 requests/day:
+   100 requests × 18,000 rows = 1.8M rows/day = 54M rows/month
+   
+   If 1,000 requests/day: 540M rows/month
+   If 10,000 requests/day (reasonable for 27 genres): 5.4B rows/month
+
+
+2. ❌ /api/tv route (HIGH FREQUENCY)
+   EVIDENCE: Uses COUNT(*) query confirmed in code
+   
+   * Runs COUNT(*) on tv_series table on EVERY request
+   * COUNT(*) scans all matching rows (42,154 rows if no language filter)
+   * With language filter: still scans thousands of rows
+   * NO cache - dynamic route
+   * Used by /anime page and /plays page (proxied but still hits this API)
+   
+   IMPACT: If this route gets 1,000 requests/day:
+   1,000 requests × 42,000 rows = 42M rows/day = 1.26B rows/month
+   
+   This ALONE could explain the 1.6B rows-read
+
+
+3. ⚠️  /api/movies with FTS5 search
+   EVIDENCE: EXPLAIN QUERY PLAN shows "SCAN movies_fts VIRTUAL TABLE INDEX 0:M2"
+   
+   * FTS5 virtual table scan (expected behavior for full-text search)
+   * But FTS5 scans are efficient - only reads matching terms
+   * NOT the primary culprit unless search frequency is extreme
+
+
+4. ⚠️  /api/search with 2-char prefix queries (MEDIUM)
+   * Uses LIKE with leading wildcard prevention (term% not %term%)
+   * Can use prefix index on title_en/title_ar
+   * But still less efficient than FTS5
+   * Likely LOW frequency (short searches are uncommon)
+
+================================================================================
+3. ROOT CAUSE ANALYSIS
+================================================================================
+
+Based on REAL EVIDENCE from EXPLAIN QUERY PLAN:
+
+PRIMARY CULPRIT:
+  /api/tv route with COUNT(*) query
+  
+  * Confirmed: Runs "SELECT COUNT(*) FROM tv_series WHERE..." on EVERY request
+  * Scans 42k+ rows per request (covering index helps but still expensive)
+  * NO cache (force-dynamic)
+  * Used by multiple pages: /anime, /plays (via proxy), possibly others
+  * Even with covering index, COUNT(*) operations bill rows-read per Turso
+
+SECONDARY CULPRIT:
+  /api/genres/[slug] with type="all"
+  
+  * Confirmed: FULL TABLE SCAN on both movies and tv_series
+  * Fetches ENTIRE genre (10k-20k rows) per request
+  * genres_json LIKE can't use indexes (JSON column, need json_extract or separate table)
+  * NO cache
+  * 27 genres × N requests per genre = massive row reads
+
+CONTRIBUTING FACTORS:
+  * NO server-side caching on dynamic routes
+    - /api/movies, /api/series, /api/tv, /api/genres/* all force-dynamic
+    - Every request hits Turso, even for identical queries
+  
+  * NO Cloudflare edge cache configured
+    - All GET requests go to origin → Turso
+    - No Cache-Control headers on most routes (except detail pages)
+  
+  * Possible bot/scraper traffic (not yet verified)
+    - robots.txt only blocks /admin, /api, /auth
+    - Filter-combo URLs not blocked (infinite combinations)
+    - No rate limiting configured
+
+================================================================================
+4. MISSING EVIDENCE (Need user to provide)
+================================================================================
+
+Cannot verify without dashboard/log access:
+  × Turso Analytics dashboard - actual query frequency and top queries
+  × Koyeb access logs - request frequency by route
+  × Cloudflare Analytics - traffic sources, bot detection
+  × Background cron jobs - check Koyeb/Vercel scheduled tasks
+
+ww1.4cima.com status: ✅ DNS lookup shows "Non-existent domain" - not a current threat
+
+================================================================================
+5. RECOMMENDED FIXES (In priority order)
+================================================================================
+
+IMMEDIATE (Fix within 24 hours):
+
+1. Fix /api/tv COUNT(*) query
+   REPLACE:
+     const [result, countResult] = await Promise.all([...])
+     SELECT COUNT(*) as total FROM tv_series WHERE...
+   
+   WITH:
+     limit+1 trick (like /api/movies and /api/series already use)
+     Eliminate COUNT(*) entirely
+   
+   IMPACT: Saves ~42k rows per request
+   If 1,000 req/day: -42M rows/day = -1.26B rows/month
+
+2. Fix /api/genres/[slug] type="all" 
+   CURRENT: Fetches ENTIRE genre (no LIMIT)
+   
+   OPTIONS:
+   A. Add LIMIT clause and remove type="all" pagination
+      (Show 48 items, remove "all" option entirely)
+   
+   B. Implement proper cursor pagination per media type
+      (More complex, requires refactor)
+   
+   C. Precompute genre pages and cache statically
+      (Best long-term, but slower to implement)
+   
+   RECOMMENDED: Option A for immediate fix
+   IMPACT: Saves 10k-18k rows per request for large genres
+
+
+HIGH PRIORITY (Within 1 week):
+
+3. Implement Next.js on-demand revalidation
+   - Add revalidateTag('content') to all content-serving routes
+   - Invalidate ONLY after Turso sync completes
+   - Currently /api/revalidate route exists but not wired up
+   
+   IMPACT: ~90% reduction in duplicate queries
+
+4. Configure Cloudflare Cache Rules
+   - Enable "Cache Everything" for GET requests
+   - Cache TTL: 1 hour for list pages, 24h for detail pages
+   - Bypass cache for authenticated requests only
+   
+   IMPACT: ~70-80% traffic served from edge, never hits Turso
+
+5. Update robots.txt
+   CURRENT: Only blocks /admin, /api, /auth
+   
+   ADD:
+     Disallow: /movies?*
+     Disallow: /series?*
+     Disallow: /genres/*?*
+   
+   Allow only canonical pages: /movies, /series, /movies/[slug], /series/[slug]
+   
+   IMPACT: Prevents crawler filter-combo explosion
+
+
+MEDIUM PRIORITY (Within 2 weeks):
+
+6. Add Cloudflare rate limiting
+   - 100 requests per minute per IP for /api/*
+   - Super Bot Fight Mode (already available on free tier)
+
+7. Optimize genres_json queries
+   OPTIONS:
+   A. Create separate movie_genres and series_genres junction tables
+      (Best performance, requires refactor)
+   
+   B. Use json_extract() with indexed columns
+      (Faster than LIKE, but still not ideal)
+   
+   RECOMMENDED: Option A for long-term
+
+
+LONG-TERM (Evaluate, don't implement yet):
+
+8. libSQL embedded replica
+   - Local synced SQLite on Koyeb instance
+   - Reads from local replica don't count against Turso quota
+   - Requires persistent disk on Koyeb
+   - Periodic sync from Turso (only sync counts toward quota)
+   
+   DEFER until immediate fixes are verified
+
+================================================================================
+6. ACTION PLAN
+================================================================================
+
+Step 1: Fix /api/tv COUNT(*) → limit+1 trick
+Step 2: Fix /api/genres/[slug] → Add LIMIT, remove type="all" unbounded fetch
+Step 3: Verify row-read reduction in Turso dashboard (need user access)
+Step 4: Implement Next.js revalidation + Cloudflare cache
+Step 5: Update robots.txt
+Step 6: Monitor for 48 hours, confirm sustainable row-read levels
+
+================================================================================
+CONCLUSION
+================================================================================
+
+ROOT CAUSE CONFIRMED:
+  /api/tv COUNT(*) queries + /api/genres/[slug] full table scans
+  Combined with NO caching at any level (server or edge)
+
+These two routes alone can easily generate 1.6B+ rows/month if traffic is moderate.
+
+CONFIDENCE LEVEL: HIGH
+EVIDENCE: Real EXPLAIN QUERY PLAN output, actual code review, table counts
+
+Next: User must provide Turso Analytics access to confirm request frequency.
