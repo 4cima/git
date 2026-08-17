@@ -33,6 +33,20 @@ async function getTopSeries() {
   }
 }
 
+// Fetch all genres
+async function getGenres() {
+  try {
+    const result = await turso.execute({
+      sql: 'SELECT slug FROM genres ORDER BY name_ar ASC',
+      args: []
+    })
+    return result.rows || []
+  } catch (error) {
+    console.error('Error fetching genres for sitemap:', error)
+    return []
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Hardcoded to prevent wrong domain regardless of env var
   const baseUrl = 'https://4cima.com'
@@ -57,12 +71,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/genres`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
   ]
 
-  // Fetch movies and series (limited set for sitemap)
-  const [movies, series] = await Promise.all([
+  // Fetch movies, series, and genres
+  const [movies, series, genres] = await Promise.all([
     getTopMovies(),
     getTopSeries(),
+    getGenres(),
   ])
 
   // Movie pages
@@ -81,5 +102,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: s.vote_average >= 7 ? 0.9 : 0.7,
   }))
 
-  return [...staticPages, ...moviePages, ...seriesPages]
+  // Genre pages - three tiers
+  const genrePages: MetadataRoute.Sitemap = []
+  genres.forEach((genre: any) => {
+    // Overview page
+    genrePages.push({
+      url: `${baseUrl}/genres/${genre.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })
+    
+    // Movies genre page
+    genrePages.push({
+      url: `${baseUrl}/movies/genres/${genre.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })
+    
+    // Series genre page
+    genrePages.push({
+      url: `${baseUrl}/series/genres/${genre.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })
+  })
+
+  return [...staticPages, ...moviePages, ...seriesPages, ...genrePages]
 }

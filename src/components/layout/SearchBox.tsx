@@ -485,7 +485,7 @@ export function SearchBox() {
           exit={{ opacity: 0, x: -20 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="relative h-9 px-2.5 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 group overflow-hidden"
+          className="relative h-9 px-2.5 bg-gradient-to-br from-slate-800/95 to-slate-700/95 hover:from-slate-700/95 hover:to-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 group overflow-hidden"
           aria-label="التطبيق قريباً"
         >
           <div className="flex items-center gap-1.5 relative z-10">
@@ -494,9 +494,6 @@ export function SearchBox() {
             </svg>
             <span className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">قريباً</span>
           </div>
-          
-          {/* Subtle hover glow */}
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-500/0 via-slate-400/10 to-slate-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </motion.button>
       )}
       
@@ -516,7 +513,7 @@ export function SearchBox() {
             setIsOpen(true)
             setIsCollapsed(false)
           }}
-          className="relative h-9 py-1.5 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-blue-400/50 rounded-md shadow-lg hover:shadow-blue-500/20 transition-all duration-300 group overflow-hidden"
+          className="relative h-9 py-1.5 bg-gradient-to-br from-slate-800/95 to-slate-700/95 hover:from-slate-700/95 hover:to-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-blue-400/50 rounded-md shadow-lg hover:shadow-blue-500/20 transition-all duration-300 group overflow-hidden"
           aria-label="بحث"
         >
           <div className="flex items-center gap-1.5 relative z-10">

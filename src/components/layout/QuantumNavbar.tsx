@@ -72,10 +72,10 @@ export const QuantumNavbar = memo(() => {
             <button
               type="button"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="h-9 px-2 bg-slate-700/95 hover:bg-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 text-cyan-400 hover:text-cyan-300"
+              className="relative h-9 px-2 bg-gradient-to-br from-slate-800/95 to-slate-700/95 hover:from-slate-700/95 hover:to-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 text-cyan-400 hover:text-cyan-300 overflow-hidden"
               aria-label="القائمة"
             >
-              <Menu size={26} />
+              <Menu size={26} className="relative z-10" />
             </button>
 
             {/* Logo with Rope */}
@@ -343,16 +343,16 @@ export const QuantumNavbar = memo(() => {
                   })}
                 </div>
 
-                {/* Genre Section */}
+                {/* Genre Section - Movies */}
                 <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">أفلام</p>
                 </div>
 
-                {/* Genre Links - 2 Columns Grid */}
-                <div className="px-3 pb-2 grid grid-cols-2 gap-1.5">
+                {/* Movie Genre Links - 2 Columns Grid */}
+                <div className="px-3 pb-1 grid grid-cols-2 gap-1.5">
                   {genreLinks.map((genre) => {
-                    const isActive = pathname?.includes(`/movies?genre=${genre.slug}`) || pathname === `/genres/${genre.slug}`
+                    const isActive = pathname?.includes(`/movies/genres/${genre.slug}`)
                     
-                    // تحديد اللون حسب النوع
                     let iconColorClass = ''
                     switch(genre.color) {
                       case 'red-500': iconColorClass = 'text-red-500'; break;
@@ -370,11 +370,51 @@ export const QuantumNavbar = memo(() => {
                     
                     return (
                       <Link
-                        key={genre.slug}
-                        href={{
-                          pathname: '/movies',
-                          query: { genre: genre.slug }
-                        }}
+                        key={`movie-${genre.slug}`}
+                        href={`/movies/genres/${genre.slug}`}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
+                          isActive
+                            ? 'bg-white/20 text-white border border-purple-400/50'
+                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
+                        }`}
+                      >
+                        <genre.icon size={14} className={`${iconColorClass} group-hover:scale-110 transition-transform flex-shrink-0`} />
+                        <span className="font-medium truncate">{genre.label}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+
+                {/* Genre Section - Series */}
+                <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">مسلسلات</p>
+                </div>
+
+                {/* Series Genre Links - 2 Columns Grid */}
+                <div className="px-3 pb-2 grid grid-cols-2 gap-1.5">
+                  {genreLinks.map((genre) => {
+                    const isActive = pathname?.includes(`/series/genres/${genre.slug}`)
+                    
+                    let iconColorClass = ''
+                    switch(genre.color) {
+                      case 'red-500': iconColorClass = 'text-red-500'; break;
+                      case 'red-700': iconColorClass = 'text-red-700'; break;
+                      case 'yellow-400': iconColorClass = 'text-yellow-400'; break;
+                      case 'slate-400': iconColorClass = 'text-slate-400'; break;
+                      case 'pink-400': iconColorClass = 'text-pink-400'; break;
+                      case 'orange-500': iconColorClass = 'text-orange-500'; break;
+                      case 'gray-400': iconColorClass = 'text-gray-400'; break;
+                      case 'green-400': iconColorClass = 'text-green-400'; break;
+                      case 'purple-400': iconColorClass = 'text-purple-400'; break;
+                      case 'cyan-400': iconColorClass = 'text-cyan-400'; break;
+                      default: iconColorClass = 'text-purple-400';
+                    }
+                    
+                    return (
+                      <Link
+                        key={`series-${genre.slug}`}
+                        href={`/series/genres/${genre.slug}`}
                         onClick={() => setSidebarOpen(false)}
                         className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
                           isActive
