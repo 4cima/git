@@ -3,5 +3,8 @@ Allow: /
 Disallow: /admin
 Disallow: /api
 Disallow: /auth
+Disallow: /movies?*
+Disallow: /series?*
+Disallow: /genres/*?*
 
 Sitemap: https://4cima.com/sitemap.xml
