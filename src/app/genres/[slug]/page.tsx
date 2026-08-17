@@ -37,10 +37,10 @@ export const revalidate = 3600
 export default async function GenrePage({ params }: PageProps) {
   const { slug } = await params
   
-  // Fetch initial data
+  // Fetch initial data - just genre info, client will fetch content
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/genres/${slug}?type=all&limit=20`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/genres/${slug}?type=movie&limit=1`,
       { next: { revalidate: 3600 } }
     )
     
@@ -50,7 +50,8 @@ export default async function GenrePage({ params }: PageProps) {
       notFound()
     }
     
-    return <GenrePageClient initialData={data} slug={slug} />
+    // Pass only genre info, client will fetch content based on selected tab
+    return <GenrePageClient initialData={{ genre: data.genre, content: [], pagination: { hasMore: false } }} slug={slug} />
   } catch (error) {
     notFound()
   }

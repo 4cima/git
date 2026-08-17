@@ -105,28 +105,32 @@ export async function GET(
         }
       })
     } else {
-      // type === 'all' - Combined movies + series
-      // TODO: For production, implement merge-sort with separate offsets (see Part B report in context)
-      // Current approach: fetch all, sort in memory (acceptable for <10K results per genre)
+      // type === 'all' - Combined movies + series WITH PAGINATION
+      // Fetch limited sets from both tables, combine, sort, paginate
+      const fetchLimit = Math.ceil(limit * 1.5) // Fetch extra to ensure enough after sorting
       
-      // Get movies
+      // Get movies (limited)
       const moviesResult = await turso.execute({
         sql: `
           SELECT m.*, 'movie' as media_type
           FROM movies m
           WHERE genres_json LIKE ?
+          ORDER BY m.${sort} ${order.toUpperCase()}
+          LIMIT ?
         `,
-        args: [`%"name_ar":"${genre.name_ar}"%`]
+        args: [`%"name_ar":"${genre.name_ar}"%`, fetchLimit]
       })
       
-      // Get series
+      // Get series (limited)
       const seriesResult = await turso.execute({
         sql: `
           SELECT s.*, 'tv' as media_type
           FROM tv_series s
           WHERE genres_json LIKE ?
+          ORDER BY s.${sort} ${order.toUpperCase()}
+          LIMIT ?
         `,
-        args: [`%"name_ar":"${genre.name_ar}"%`]
+        args: [`%"name_ar":"${genre.name_ar}"%`, fetchLimit]
       })
       
       // Combine and sort
@@ -137,7 +141,7 @@ export async function GET(
           return order.toLowerCase() === 'asc' ? aVal - bVal : bVal - aVal
         })
       
-      // Paginate
+      // Paginate with limit+1 trick
       const paginatedContent = combined.slice(offset, offset + limit + 1)
       const hasMore = paginatedContent.length > limit
       if (hasMore) paginatedContent.pop()
