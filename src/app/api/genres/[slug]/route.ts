@@ -155,6 +155,10 @@ export async function GET(
           hasMore,
           totalPages: hasMore ? page + 1 : page
         }
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+        }
       })
     }
   } catch (error) {

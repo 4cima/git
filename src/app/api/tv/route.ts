@@ -48,6 +48,10 @@ export async function GET(request: NextRequest) {
       limit,
       hasMore,
       totalPages: hasMore ? page + 1 : page
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+      }
     })
   } catch (error) {
     console.error('❌ [API /tv] Error:', error)

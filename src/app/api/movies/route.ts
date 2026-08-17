@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
       movies: rows,
       pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }
     })
-    response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=300')
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
     return response
   } catch (error) {
     console.error('Error fetching movies:', error)

@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
     // Longer cache for rating filters (they're slower)
     // Cache for 5 minutes for rating filters, 60 seconds for others
     const cacheTime = ratingMin ? 300 : 60
-    response.headers.set('Cache-Control', `s-maxage=${cacheTime}, stale-while-revalidate=600`)
+    response.headers.set('Cache-Control', `public, s-maxage=${cacheTime}, stale-while-revalidate=600`)
 
     return response
 
