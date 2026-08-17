@@ -69,27 +69,22 @@ function generateUniqueSlug(titleEn, year, primaryGenre, table) {
   ].filter(Boolean)
 
   for (const slug of checks) {
-    if (!db.prepare(`SELECT id FROM ${table} WHERE slug = ?`).get(slug)) return slug
+    if (!db.prepare(`SELECT tmdb_id FROM ${table} WHERE slug = ?`).get(slug)) return slug
   }
   
   // رقم تسلسلي (نادر)
   const lastAttempt = checks[checks.length - 1] || base
   for (let i = 2; i <= 999; i++) {
     const s = `${lastAttempt}-${i}`
-    if (!db.prepare(`SELECT id FROM ${table} WHERE slug = ?`).get(s)) return s
+    if (!db.prepare(`SELECT tmdb_id FROM ${table} WHERE slug = ?`).get(s)) return s
   }
   
   return `${base}-${Date.now()}`
 }
 
 function generatePersonSlug(nameEn) {
-  const base = toSlug(nameEn)
-  if (!db.prepare(`SELECT id FROM people WHERE slug = ?`).get(base)) return base
-  for (let i = 2; i <= 999; i++) {
-    const s = `${base}-${i}`
-    if (!db.prepare(`SELECT id FROM people WHERE slug = ?`).get(s)) return s
-  }
-  return `${base}-${Date.now()}`
+  // People table doesn't have slug column - just use name
+  return toSlug(nameEn) || `person-${Date.now()}`
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -327,16 +322,16 @@ async function generateBiographyWithGroq(nameAr, nameEn, knownFor, country) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PROCESS PERSON
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function processPerson(personData, contentId, contentType, castOrder, roleType = 'cast') {
-  const id = personData.id
+async function processPerson(personData, contentTmdbId, contentType, castOrder, roleType = 'cast') {
+  const tmdb_id = personData.id
 
-  if (!actorCache.has(id)) {
-    const exists = db.prepare('SELECT id FROM people WHERE id = ?').get(id)
+  if (!actorCache.has(tmdb_id)) {
+    const exists = db.prepare('SELECT tmdb_id FROM people WHERE tmdb_id = ?').get(tmdb_id)
     if (exists) {
-      actorCache.set(id, true)
+      actorCache.set(tmdb_id, true)
     } else {
       let fullPersonData = null
-      try { fullPersonData = await fetchTMDB(`/person/${id}`) } catch {}
+      try { fullPersonData = await fetchTMDB(`/person/${tmdb_id}`) } catch {}
 
       const rawName = personData.name || ''
       const isArabicName = /[\u0600-\u06FF]/.test(rawName)
@@ -349,8 +344,6 @@ async function processPerson(personData, contentId, contentType, castOrder, role
         name_en = rawName
         name_ar = await translateWithCache(rawName, 'ar') || rawName
       }
-
-      const slug = generatePersonSlug(name_en || rawName)
 
       let biography_en = fullPersonData?.biography || null
       let biography_ar = null
@@ -368,25 +361,20 @@ async function processPerson(personData, contentId, contentType, castOrder, role
       try {
         db.prepare(`
           INSERT OR IGNORE INTO people
-          (id, tmdb_id, slug, name_en, name_ar,
-           biography_en, biography_ar,
+          (tmdb_id, name_en, name_ar,
            profile_path, gender, known_for_department,
-           birthday, place_of_birth, popularity, is_active)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+           popularity)
+          VALUES (?,?,?,?,?,?,?)
         `).run(
-          id, id, slug, name_en, name_ar,
-          biography_en, biography_ar,
+          tmdb_id, name_en, name_ar,
           personData.profile_path || null,
           fullPersonData?.gender || null,
           personData.known_for_department || fullPersonData?.known_for_department || 'Acting',
-          fullPersonData?.birthday || null,
-          fullPersonData?.place_of_birth || null,
-          personData.popularity || 0,
-          1
+          personData.popularity || 0
         )
-        actorCache.set(id, true)
+        actorCache.set(tmdb_id, true)
       } catch (e) {
-        console.error(`❌ Person ${id}: ${e.message}`)
+        console.error(`❌ Person ${tmdb_id}: ${e.message}`)
         stats.errors++
       }
     }
@@ -396,19 +384,19 @@ async function processPerson(personData, contentId, contentType, castOrder, role
     if (roleType === 'cast') {
       db.prepare(`
         INSERT OR IGNORE INTO cast_crew
-        (content_id, content_type, person_id, role_type, character_name, cast_order)
+        (content_tmdb_id, content_type, person_tmdb_id, role_type, character_name, cast_order)
         VALUES (?,?,?,'cast',?,?)
-      `).run(contentId, contentType, id, personData.character || null, castOrder)
+      `).run(contentTmdbId, contentType, tmdb_id, personData.character || null, castOrder)
     } else {
       db.prepare(`
         INSERT OR IGNORE INTO cast_crew
-        (content_id, content_type, person_id, role_type, job, department)
+        (content_tmdb_id, content_type, person_tmdb_id, role_type, job, department)
         VALUES (?,?,?,'crew',?,?)
-      `).run(contentId, contentType, id, personData.job || null, personData.department || null)
+      `).run(contentTmdbId, contentType, tmdb_id, personData.job || null, personData.department || null)
     }
     stats.cast++
   } catch (e) {
-    console.error(`❌ Cast/Crew ${id}: ${e.message}`)
+    console.error(`❌ Cast/Crew ${tmdb_id}: ${e.message}`)
     stats.errors++
   }
 }
@@ -416,7 +404,7 @@ async function processPerson(personData, contentId, contentType, castOrder, role
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PROCESS MOVIE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function processMovie(localId, tmdbId) {
+async function processMovie(tmdbId) {
   try {
     // append_to_response بيجيب release_dates (للتصنيف العمري) و keywords
     // (لازم الاتنين عشان الفلتر الجديد يقدر ياخد قراره)
@@ -428,8 +416,8 @@ async function processMovie(localId, tmdbId) {
       db.prepare(`
         UPDATE movies 
         SET is_filtered = 1, filter_reason = 'not_found_in_tmdb', is_complete = 0 
-        WHERE id = ?
-      `).run(localId)
+        WHERE tmdb_id = ?
+      `).run(tmdbId)
       stats.not_found++
       return
     }
@@ -439,8 +427,8 @@ async function processMovie(localId, tmdbId) {
       const reason = getFilterReason(movie)
       db.prepare(`
         UPDATE movies SET is_filtered = 1, filter_reason = ?, is_complete = 0 
-        WHERE id = ?
-      `).run(reason, localId)
+        WHERE tmdb_id = ?
+      `).run(reason, tmdbId)
       stats.filtered++ // ← منفصل عن errors
       return
     }
@@ -466,13 +454,13 @@ async function processMovie(localId, tmdbId) {
 
     // ━━━ حماية الترجمات الموجودة ━━━
     const existing = db.prepare(
-      'SELECT title_ar, overview_ar, has_arabic_title, has_arabic_overview FROM movies WHERE id = ?'
-    ).get(localId)
+      'SELECT title_ar, overview_ar FROM movies WHERE tmdb_id = ?'
+    ).get(tmdbId)
 
-    if (existing?.has_arabic_title === 1 && existing?.title_ar && existing.title_ar !== 'TBD') {
+    if (existing?.title_ar && existing.title_ar !== 'TBD') {
       title_ar = existing.title_ar
     }
-    if (existing?.has_arabic_overview === 1 && existing?.overview_ar) {
+    if (existing?.overview_ar) {
       overview_ar = existing.overview_ar
     }
 
@@ -545,60 +533,48 @@ async function processMovie(localId, tmdbId) {
       UPDATE movies SET
         title_ar = ?, title_en = ?, title_original = ?, slug = ?,
         overview_ar = ?, overview_en = ?,
-        primary_genre = ?, keywords = ?,
+        primary_genre = ?,
         poster_path = ?, backdrop_path = ?,
         trailer_key = ?, imdb_id = ?,
         release_date = ?, release_year = ?, runtime = ?,
         original_language = ?, country_of_origin = ?,
         production_companies = ?,
         vote_average = ?, vote_count = ?, popularity = ?,
-        has_arabic_title = ?, has_arabic_overview = ?,
-        has_trailer = ?, has_keywords = ?,
         age_rating = ?,
-        is_filtered = 0, filter_reason = NULL,
+        is_fetched = 1, is_filtered = 0, filter_reason = NULL,
         is_complete = ?, sync_priority = ?,
-        seo_keywords_json = ?, seo_title_ar = ?, seo_title_en = ?,
+        seo_keywords_json = ?, seo_title_ar = ?,
         seo_description_ar = ?, canonical_url = ?,
         updated_at = datetime('now')
-      WHERE id = ?
+      WHERE tmdb_id = ?
     `).run(
       title_ar, title_en, movie.original_title, slug,
       overview_ar, overview_en,
-      primary_genre, keywords,
+      primary_genre,
       movie.poster_path, movie.backdrop_path,
       trailer_key, movie.imdb_id,
       movie.release_date, release_year, movie.runtime,
       movie.original_language, country_of_origin,
       production_companies,
       movie.vote_average, movie.vote_count, movie.popularity,
-      (title_ar && title_ar !== 'TBD') ? 1 : 0,
-      overview_ar ? 1 : 0,
-      trailer_key ? 1 : 0,
-      keywords ? 1 : 0,
       content_rating || 'PG',
       isComplete, syncPriority,
-      seoData.seo_keywords_json, seoData.seo_title_ar, seoData.seo_title_en,
+      seoData.seo_keywords_json, seoData.seo_title_ar,
       seoData.seo_description_ar, seoData.canonical_url,
-      localId
+      tmdbId
     )
 
     // ── الأنواع ──
     const insertGenre = db.prepare(`
-      INSERT OR IGNORE INTO content_genres (content_id, content_type, genre_id)
-      SELECT ?, 'movie', id FROM genres WHERE tmdb_id = ?
+      INSERT OR IGNORE INTO content_genres (content_tmdb_id, content_type, genre_tmdb_id)
+      SELECT ?, 'movie', tmdb_id FROM genres WHERE tmdb_id = ?
     `)
-    for (const g of movie.genres || []) insertGenre.run(localId, g.id)
-    if (movie.genres?.length > 0) {
-      db.prepare(`UPDATE movies SET has_genres = 1 WHERE id = ?`).run(localId)
-    }
+    for (const g of movie.genres || []) insertGenre.run(tmdbId, g.id)
 
     // ── الممثلين ──
     const castList = (movie.credits?.cast || []).slice(0, 10)
     for (let i = 0; i < castList.length; i++) {
-      await processPerson(castList[i], localId, 'movie', i, 'cast')
-    }
-    if (castList.length > 0) {
-      db.prepare(`UPDATE movies SET has_cast = 1 WHERE id = ?`).run(localId)
+      await processPerson(castList[i], tmdbId, 'movie', i, 'cast')
     }
 
     // ── الطاقم المهم ──
@@ -608,7 +584,7 @@ async function processMovie(localId, tmdbId) {
     const importantCrew = (movie.credits?.crew || [])
       .filter(c => importantJobs.includes(c.job))
     for (const member of importantCrew) {
-      await processPerson(member, localId, 'movie', 0, 'crew')
+      await processPerson(member, tmdbId, 'movie', 0, 'crew')
     }
 
     stats.movies++
@@ -628,8 +604,8 @@ async function processMovie(localId, tmdbId) {
       db.prepare(`
         UPDATE movies 
         SET is_filtered = 1, filter_reason = 'not_found_in_tmdb', is_complete = 0 
-        WHERE id = ?
-      `).run(localId)
+        WHERE tmdb_id = ?
+      `).run(tmdbId)
       stats.not_found++
     } else {
       stats.errors++
@@ -652,11 +628,11 @@ function saveProgress(lastId, status = 'running') {
   if (exists) {
     db.prepare(`
       UPDATE ingestion_progress SET
-        last_processed_id = ?,
+        last_processed_tmdb_id = ?,
         total_fetched = ?,
         total_errors = ?,
         total_filtered = ?,
-        total_404 = ?,
+        total_not_found = ?,
         rate_per_minute = ?,
         last_run = datetime('now'),
         status = ?
@@ -671,8 +647,8 @@ function saveProgress(lastId, status = 'running') {
   } else {
     db.prepare(`
       INSERT INTO ingestion_progress
-      (script_name, last_processed_id, total_fetched, total_errors,
-       total_filtered, total_404, rate_per_minute, last_run, status)
+      (script_name, last_processed_tmdb_id, total_fetched, total_errors,
+       total_filtered, total_not_found, rate_per_minute, last_run, status)
       VALUES (?,?,?,?,?,?,?,datetime('now'),?)
     `).run(
       'INGEST-MOVIES', lastId,
@@ -695,7 +671,7 @@ async function main() {
       (overview_en IS NULL AND is_filtered = 0)
       OR (overview_en IS NOT NULL AND (title_ar = 'TBD' OR title_ar IS NULL))
       OR (overview_en IS NOT NULL
-          AND NOT EXISTS (SELECT 1 FROM cast_crew WHERE content_id = movies.id AND content_type = 'movie'))
+          AND NOT EXISTS (SELECT 1 FROM cast_crew WHERE content_tmdb_id = movies.tmdb_id AND content_type = 'movie'))
     )
   `).get().c
 
@@ -709,14 +685,14 @@ async function main() {
 
   while (true) {
     const chunk = db.prepare(`
-      SELECT id, tmdb_id FROM movies
+      SELECT tmdb_id FROM movies
       WHERE (
         (overview_en IS NULL AND is_filtered = 0)
         OR (overview_en IS NOT NULL AND (title_ar = 'TBD' OR title_ar IS NULL))
         OR (overview_en IS NOT NULL
-            AND NOT EXISTS (SELECT 1 FROM cast_crew WHERE content_id = movies.id AND content_type = 'movie'))
+            AND NOT EXISTS (SELECT 1 FROM cast_crew WHERE content_tmdb_id = movies.tmdb_id AND content_type = 'movie'))
       )
-      ORDER BY vote_count DESC, id ASC
+      ORDER BY vote_count DESC, tmdb_id ASC
       LIMIT ? OFFSET ?
     `).all(CHUNK_SIZE, offset)
 
@@ -724,10 +700,10 @@ async function main() {
 
     for (let i = 0; i < chunk.length; i += BATCH_SIZE) {
       const batch = chunk.slice(i, i + BATCH_SIZE)
-      await Promise.all(batch.map(m => limiter(() => processMovie(m.id, m.tmdb_id))))
+      await Promise.all(batch.map(m => limiter(() => processMovie(m.tmdb_id))))
 
       totalProcessed += batch.length
-      const lastId = batch[batch.length - 1].id
+      const lastId = batch[batch.length - 1].tmdb_id
 
       saveProgress(lastId, 'running')
 

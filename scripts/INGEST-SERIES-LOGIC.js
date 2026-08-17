@@ -71,27 +71,22 @@ function generateUniqueSlug(titleEn, year, primaryGenre, table) {
   ].filter(Boolean)
 
   for (const slug of checks) {
-    if (!db.prepare(`SELECT id FROM ${table} WHERE slug = ?`).get(slug)) return slug
+    if (!db.prepare(`SELECT tmdb_id FROM ${table} WHERE slug = ?`).get(slug)) return slug
   }
   
   // رقم تسلسلي (نادر)
   const lastAttempt = checks[checks.length - 1] || base
   for (let i = 2; i <= 999; i++) {
     const s = `${lastAttempt}-${i}`
-    if (!db.prepare(`SELECT id FROM ${table} WHERE slug = ?`).get(s)) return s
+    if (!db.prepare(`SELECT tmdb_id FROM ${table} WHERE slug = ?`).get(s)) return s
   }
   
   return `${base}-${Date.now()}`
 }
 
 function generatePersonSlug(nameEn) {
-  const base = toSlug(nameEn)
-  if (!db.prepare(`SELECT id FROM people WHERE slug = ?`).get(base)) return base
-  for (let i = 2; i <= 999; i++) {
-    const s = `${base}-${i}`
-    if (!db.prepare(`SELECT id FROM people WHERE slug = ?`).get(s)) return s
-  }
-  return `${base}-${Date.now()}`
+  // People table doesn't have slug column - just use name
+  return toSlug(nameEn) || `person-${Date.now()}`
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -343,13 +338,13 @@ async function generateBiographyWithGroq(nameAr, nameEn, knownFor, country) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PROCESS PERSON
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function processPerson(personData, contentId, contentType, castOrder, roleType = 'cast') {
-  const id = personData.id
+async function processPerson(personData, contentTmdbId, contentType, castOrder, roleType = 'cast') {
+  const tmdb_id = personData.id
 
-  if (!actorCache.has(id)) {
-    const exists = db.prepare('SELECT id FROM people WHERE id = ?').get(id)
+  if (!actorCache.has(tmdb_id)) {
+    const exists = db.prepare('SELECT tmdb_id FROM people WHERE tmdb_id = ?').get(tmdb_id)
     if (exists) {
-      actorCache.set(id, true)
+      actorCache.set(tmdb_id, true)
     } else {
       // سحب التفاصيل الكاملة من TMDB
       let fullPersonData = null
@@ -367,8 +362,6 @@ async function processPerson(personData, contentId, contentType, castOrder, role
         name_ar = await translateWithCache(rawName, 'ar') || rawName
       }
 
-      const slug = generatePersonSlug(name_en || rawName)
-
       let biography_en = fullPersonData?.biography || null
       let biography_ar = null
       if (biography_en) {
@@ -385,25 +378,20 @@ async function processPerson(personData, contentId, contentType, castOrder, role
       try {
         db.prepare(`
           INSERT OR IGNORE INTO people
-          (id, tmdb_id, slug, name_en, name_ar,
-           biography_en, biography_ar,
+          (tmdb_id, name_en, name_ar,
            profile_path, gender, known_for_department,
-           birthday, place_of_birth, popularity, is_active)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+           popularity)
+          VALUES (?,?,?,?,?,?,?)
         `).run(
-          id, id, slug, name_en, name_ar,
-          biography_en, biography_ar,
+          tmdb_id, name_en, name_ar,
           personData.profile_path || null,
           fullPersonData?.gender || null,
           personData.known_for_department || fullPersonData?.known_for_department || 'Acting',
-          fullPersonData?.birthday || null,
-          fullPersonData?.place_of_birth || null,
-          personData.popularity || 0,
-          1
+          personData.popularity || 0
         )
-        actorCache.set(id, true)
+        actorCache.set(tmdb_id, true)
       } catch (e) {
-        console.error(`❌ Person ${id}: ${e.message}`)
+        console.error(`❌ Person ${tmdb_id}: ${e.message}`)
         stats.errors++
       }
     }
@@ -413,19 +401,19 @@ async function processPerson(personData, contentId, contentType, castOrder, role
     if (roleType === 'cast') {
       db.prepare(`
         INSERT OR IGNORE INTO cast_crew
-        (content_id, content_type, person_id, role_type, character_name, cast_order)
+        (content_tmdb_id, content_type, person_tmdb_id, role_type, character_name, cast_order)
         VALUES (?,?,?,'cast',?,?)
-      `).run(contentId, contentType, id, personData.character || null, castOrder)
+      `).run(contentTmdbId, contentType, tmdb_id, personData.character || null, castOrder)
     } else {
       db.prepare(`
         INSERT OR IGNORE INTO cast_crew
-        (content_id, content_type, person_id, role_type, job, department)
+        (content_tmdb_id, content_type, person_tmdb_id, role_type, job, department)
         VALUES (?,?,?,'crew',?,?)
-      `).run(contentId, contentType, id, personData.job || null, personData.department || null)
+      `).run(contentTmdbId, contentType, tmdb_id, personData.job || null, personData.department || null)
     }
     stats.cast++
   } catch (e) {
-    console.error(`❌ Cast/Crew ${id}: ${e.message}`)
+    console.error(`❌ Cast/Crew ${tmdb_id}: ${e.message}`)
     stats.errors++
   }
 }
@@ -433,7 +421,7 @@ async function processPerson(personData, contentId, contentType, castOrder, role
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PROCESS SERIES
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-async function processSeries(localId, tmdbId) {
+async function processSeries(tmdbId) {
   try {
     // append_to_response بيجيب content_ratings (للتصنيف العمري) و keywords
     const series = await fetchTMDB(`/tv/${tmdbId}`, {
@@ -445,8 +433,8 @@ async function processSeries(localId, tmdbId) {
       db.prepare(`
         UPDATE tv_series 
         SET is_filtered = 1, filter_reason = 'not_found_in_tmdb', is_complete = 0 
-        WHERE id = ?
-      `).run(localId)
+        WHERE tmdb_id = ?
+      `).run(tmdbId)
       stats.not_found++
       return
     }
@@ -457,8 +445,8 @@ async function processSeries(localId, tmdbId) {
       db.prepare(`
         UPDATE tv_series 
         SET is_filtered = 1, filter_reason = ?, is_complete = 0 
-        WHERE id = ?
-      `).run(reason, localId)
+        WHERE tmdb_id = ?
+      `).run(reason, tmdbId)
       stats.filtered++ // ← منفصل عن errors
       return
     }
@@ -484,13 +472,13 @@ async function processSeries(localId, tmdbId) {
 
     // ━━━ حماية الترجمات الموجودة ━━━
     const existing = db.prepare(
-      'SELECT name_ar, overview_ar, has_arabic_title, has_arabic_overview FROM tv_series WHERE id = ?'
-    ).get(localId)
+      'SELECT name_ar, overview_ar FROM tv_series WHERE tmdb_id = ?'
+    ).get(tmdbId)
 
-    if (existing?.has_arabic_title === 1 && existing?.name_ar && existing.name_ar !== 'TBD') {
+    if (existing?.name_ar && existing.name_ar !== 'TBD') {
       title_ar = existing.name_ar // لا تكتب فوق ترجمة موجودة
     }
-    if (existing?.has_arabic_overview === 1 && existing?.overview_ar) {
+    if (existing?.overview_ar) {
       overview_ar = existing.overview_ar // لا تكتب فوق ترجمة موجودة
     }
 
@@ -565,65 +553,53 @@ async function processSeries(localId, tmdbId) {
     // ── UPDATE tv_series ──
     db.prepare(`
       UPDATE tv_series SET
-        name_ar = ?, name_en = ?, title_original = ?, slug = ?,
+        name_ar = ?, name_en = ?, name_original = ?, slug = ?,
         overview_ar = ?, overview_en = ?,
-        primary_genre = ?, keywords = ?,
+        primary_genre = ?,
         poster_path = ?, backdrop_path = ?,
-        trailer_key = ?, trailer_key_2 = ?, imdb_id = ?,
+        trailer_key = ?, imdb_id = ?,
         first_air_date = ?, last_air_date = ?, first_air_year = ?,
         number_of_seasons = ?, number_of_episodes = ?, status = ?,
         original_language = ?, country_of_origin = ?,
         production_companies = ?,
         vote_average = ?, vote_count = ?, popularity = ?,
-        has_arabic_title = ?, has_arabic_overview = ?,
-        has_trailer = ?, has_keywords = ?,
         age_rating = ?,
-        is_filtered = 0, filter_reason = NULL,
+        is_fetched = 1, is_filtered = 0, filter_reason = NULL,
         is_complete = ?, sync_priority = ?,
-        seo_keywords_json = ?, seo_title_ar = ?, seo_title_en = ?,
+        seo_keywords_json = ?, seo_title_ar = ?,
         seo_description_ar = ?, canonical_url = ?,
         updated_at = datetime('now')
-      WHERE id = ?
+      WHERE tmdb_id = ?
     `).run(
       title_ar, title_en, series.original_name, slug,
       overview_ar, overview_en,
-      primary_genre, keywords,
+      primary_genre,
       series.poster_path, series.backdrop_path,
-      trailer_key, trailer_key_2, imdb_id,
+      trailer_key, imdb_id,
       series.first_air_date, series.last_air_date, first_air_year,
       series.number_of_seasons, series.number_of_episodes,
       series.status || 'ongoing',
       series.original_language, country_of_origin,
       production_companies,
       series.vote_average, series.vote_count, series.popularity,
-      (title_ar && title_ar !== 'TBD') ? 1 : 0,
-      overview_ar ? 1 : 0,
-      trailer_key ? 1 : 0,
-      keywords ? 1 : 0,
       content_rating || 'PG',
       isComplete, syncPriority,
-      seoData.seo_keywords_json, seoData.seo_title_ar, seoData.seo_title_en,
+      seoData.seo_keywords_json, seoData.seo_title_ar,
       seoData.seo_description_ar, seoData.canonical_url,
-      localId
+      tmdbId
     )
 
     // ── الأنواع ──
     const insertGenre = db.prepare(`
-      INSERT OR IGNORE INTO content_genres (content_id, content_type, genre_id)
-      SELECT ?, 'tv', id FROM genres WHERE tmdb_id = ?
+      INSERT OR IGNORE INTO content_genres (content_tmdb_id, content_type, genre_tmdb_id)
+      SELECT ?, 'tv', tmdb_id FROM genres WHERE tmdb_id = ?
     `)
-    for (const g of series.genres || []) insertGenre.run(localId, g.id)
-    if (series.genres?.length > 0) {
-      db.prepare(`UPDATE tv_series SET has_genres = 1 WHERE id = ?`).run(localId)
-    }
+    for (const g of series.genres || []) insertGenre.run(tmdbId, g.id)
 
     // ── الممثلين ──
     const castList = (series.credits?.cast || []).slice(0, 10)
     for (let i = 0; i < castList.length; i++) {
-      await processPerson(castList[i], localId, 'tv', i, 'cast')
-    }
-    if (castList.length > 0) {
-      db.prepare(`UPDATE tv_series SET has_cast = 1 WHERE id = ?`).run(localId)
+      await processPerson(castList[i], tmdbId, 'tv', i, 'cast')
     }
 
     // ── الطاقم المهم ──
@@ -633,7 +609,7 @@ async function processSeries(localId, tmdbId) {
     const importantCrew = (series.credits?.crew || [])
       .filter(c => importantJobs.includes(c.job))
     for (const member of importantCrew) {
-      await processPerson(member, localId, 'tv', 0, 'crew')
+      await processPerson(member, tmdbId, 'tv', 0, 'crew')
     }
 
     // ── المواسم والحلقات (limiter منفصل) ──
@@ -641,17 +617,9 @@ async function processSeries(localId, tmdbId) {
 
     const insertSeason = db.prepare(`
       INSERT OR IGNORE INTO seasons
-      (series_id, tmdb_id, season_number, title_en, overview_en,
-       poster_path, air_date, air_year, episode_count, is_active)
-      VALUES (?,?,?,?,?,?,?,?,?,1)
-    `)
-
-    const insertEpisode = db.prepare(`
-      INSERT OR IGNORE INTO episodes
-      (series_id, season_id, tmdb_id, episode_number, season_number,
-       title_en, overview_en, still_path, air_date, runtime,
-       vote_average, is_active, source)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,1,'tmdb')
+      (series_tmdb_id, season_number, name_en, overview_en,
+       poster_path, air_date, air_year, episode_count)
+      VALUES (?,?,?,?,?,?,?,?)
     `)
 
     // سحب المواسم بـ limiter منفصل لمنع الـ deadlock
@@ -670,42 +638,25 @@ async function processSeries(localId, tmdbId) {
 
     for (const { season, details } of seasonResults) {
       insertSeason.run(
-        localId, season.id, season.season_number,
+        tmdbId, season.season_number,
         season.name, season.overview,
         season.poster_path, season.air_date,
         season.air_date ? parseInt(season.air_date.split('-')[0]) : null,
         season.episode_count || 0
       )
-
-      const seasonRecord = db.prepare(
-        'SELECT id FROM seasons WHERE series_id = ? AND season_number = ?'
-      ).get(localId, season.season_number)
-
-      if (!seasonRecord) continue
       stats.seasons++
-
-      for (const ep of details?.episodes || []) {
-        insertEpisode.run(
-          localId, seasonRecord.id, ep.id,
-          ep.episode_number, ep.season_number,
-          ep.name, ep.overview,
-          ep.still_path, ep.air_date,
-          ep.runtime, ep.vote_average || 0
-        )
-        stats.episodes++
-      }
     }
 
     // ── تحديث is_complete بعد المواسم ──
     const seasonsCount = db.prepare(
-      'SELECT COUNT(*) as c FROM seasons WHERE series_id = ?'
-    ).get(localId).c
+      'SELECT COUNT(*) as c FROM seasons WHERE series_tmdb_id = ?'
+    ).get(tmdbId).c
 
     db.prepare(`
-      UPDATE tv_series SET is_complete = ? WHERE id = ?
+      UPDATE tv_series SET is_complete = ? WHERE tmdb_id = ?
     `).run(
       (isComplete === 1 && seasonsCount > 0) ? 1 : 0,
-      localId
+      tmdbId
     )
 
     stats.series++
@@ -728,8 +679,8 @@ async function processSeries(localId, tmdbId) {
       db.prepare(`
         UPDATE tv_series 
         SET is_filtered = 1, filter_reason = 'not_found_in_tmdb' 
-        WHERE id = ?
-      `).run(localId)
+        WHERE tmdb_id = ?
+      `).run(tmdbId)
       stats.not_found++
     } else {
       stats.errors++
@@ -753,11 +704,11 @@ function saveProgress(lastId, status = 'running') {
   if (exists) {
     db.prepare(`
       UPDATE ingestion_progress SET
-        last_processed_id = ?,
+        last_processed_tmdb_id = ?,
         total_fetched = ?,
         total_errors = ?,
         total_filtered = ?,
-        total_404 = ?,
+        total_not_found = ?,
         rate_per_minute = ?,
         last_run = datetime('now'),
         status = ?
@@ -772,8 +723,8 @@ function saveProgress(lastId, status = 'running') {
   } else {
     db.prepare(`
       INSERT INTO ingestion_progress
-      (script_name, last_processed_id, total_fetched, total_errors,
-       total_filtered, total_404, rate_per_minute, last_run, status)
+      (script_name, last_processed_tmdb_id, total_fetched, total_errors,
+       total_filtered, total_not_found, rate_per_minute, last_run, status)
       VALUES (?,?,?,?,?,?,?,datetime('now'),?)
     `).run(
       'INGEST-SERIES', lastId,
@@ -797,9 +748,9 @@ async function main() {
       (overview_en IS NULL AND is_filtered = 0)
       OR (overview_en IS NOT NULL AND (name_ar = 'TBD' OR name_ar IS NULL))
       OR (overview_en IS NOT NULL AND number_of_seasons > 0
-          AND NOT EXISTS (SELECT 1 FROM seasons WHERE series_id = tv_series.id))
+          AND NOT EXISTS (SELECT 1 FROM seasons WHERE series_tmdb_id = tv_series.tmdb_id))
       OR (overview_en IS NOT NULL
-          AND NOT EXISTS (SELECT 1 FROM cast_crew WHERE content_id = tv_series.id AND content_type = 'tv'))
+          AND NOT EXISTS (SELECT 1 FROM cast_crew WHERE content_tmdb_id = tv_series.tmdb_id AND content_type = 'tv'))
     )
   `).get().c
 
@@ -816,16 +767,16 @@ async function main() {
   while (true) {
     // سحب CHUNK_SIZE من القاعدة
     const chunk = db.prepare(`
-      SELECT id, tmdb_id FROM tv_series
+      SELECT tmdb_id FROM tv_series
       WHERE (
         (overview_en IS NULL AND is_filtered = 0)
         OR (overview_en IS NOT NULL AND (name_ar = 'TBD' OR name_ar IS NULL))
         OR (overview_en IS NOT NULL AND number_of_seasons > 0
-            AND NOT EXISTS (SELECT 1 FROM seasons WHERE series_id = tv_series.id))
+            AND NOT EXISTS (SELECT 1 FROM seasons WHERE series_tmdb_id = tv_series.tmdb_id))
         OR (overview_en IS NOT NULL
-            AND NOT EXISTS (SELECT 1 FROM cast_crew WHERE content_id = tv_series.id AND content_type = 'tv'))
+            AND NOT EXISTS (SELECT 1 FROM cast_crew WHERE content_tmdb_id = tv_series.tmdb_id AND content_type = 'tv'))
       )
-      ORDER BY vote_count DESC, id ASC
+      ORDER BY vote_count DESC, tmdb_id ASC
       LIMIT ? OFFSET ?
     `).all(CHUNK_SIZE, offset)
 
@@ -834,10 +785,10 @@ async function main() {
     // معالجة الـ chunk في batches
     for (let i = 0; i < chunk.length; i += BATCH_SIZE) {
       const batch = chunk.slice(i, i + BATCH_SIZE)
-      await Promise.all(batch.map(s => seriesLimiter(() => processSeries(s.id, s.tmdb_id))))
+      await Promise.all(batch.map(s => seriesLimiter(() => processSeries(s.tmdb_id))))
 
       totalProcessed += batch.length
-      const lastId = batch[batch.length - 1].id
+      const lastId = batch[batch.length - 1].tmdb_id
 
       // حفظ التقدم بعد كل batch
       saveProgress(lastId, 'running')
