@@ -54,6 +54,15 @@ export default async function MovieGenrePage({ params }: PageProps) {
     
     const genre = genreResult.rows[0]
     
+    // Serialize to plain object for Client Component
+    const plainGenre = {
+      id: genre.id,
+      tmdb_id: genre.tmdb_id,
+      name_en: genre.name_en,
+      name_ar: genre.name_ar,
+      slug: genre.slug
+    }
+    
     // Server-render initial batch of movies (first 20 by popularity)
     const initialMoviesResult = await turso.execute({
       sql: `
@@ -66,7 +75,19 @@ export default async function MovieGenrePage({ params }: PageProps) {
       args: [`%"name_ar":"${genre.name_ar}"%`]
     })
     
-    const initialMovies = initialMoviesResult.rows || []
+    const initialMovies = (initialMoviesResult.rows || []).map(row => ({
+      id: row.id,
+      slug: row.slug,
+      title_ar: row.title_ar,
+      title_en: row.title_en,
+      poster_path: row.poster_path,
+      backdrop_path: row.backdrop_path,
+      vote_average: row.vote_average,
+      release_year: row.release_year,
+      overview_ar: row.overview_ar,
+      genres_json: row.genres_json
+    }))
+    
     const hasMore = initialMovies.length > 20
     if (hasMore) initialMovies.pop() // Remove the 21st item
     
@@ -79,7 +100,7 @@ export default async function MovieGenrePage({ params }: PageProps) {
           ))}
         </div>
         
-        <MovieGenrePageClient genre={genre} slug={slug} initialMovies={initialMovies} initialHasMore={hasMore} />
+        <MovieGenrePageClient genre={plainGenre} slug={slug} initialMovies={initialMovies} initialHasMore={hasMore} />
       </>
     )
   } catch (error) {
