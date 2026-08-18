@@ -314,17 +314,16 @@ export const QuantumNavbar = memo(() => {
                     <span>🌍</span>
                     <span>اللغات</span>
                   </div>
-                  <div className="grid grid-cols-5 gap-1">
+                  <div className="grid grid-cols-2 gap-1.5">
                     {countryLinks.slice(0, 10).map((country) => (
                       <Link
                         key={country.code}
                         href={pathname?.includes('/series') ? `/series?language=${country.filter}` : `/movies?language=${country.filter}`}
                         onClick={() => setSidebarOpen(false)}
-                        className="flex flex-col items-center gap-0.5 p-1.5 rounded-md hover:bg-white/10 transition-all text-center"
+                        className="flex items-center justify-center p-2 rounded-lg hover:bg-white/10 transition-all text-center"
                         title={country.label}
                       >
-                        <span className="text-base">{country.icon}</span>
-                        <span className="text-[9px] text-zinc-400 truncate w-full">{country.label}</span>
+                        <span className="text-xs font-semibold text-zinc-300 hover:text-white">{country.label}</span>
                       </Link>
                     ))}
                   </div>
