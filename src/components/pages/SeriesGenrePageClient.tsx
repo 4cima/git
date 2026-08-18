@@ -40,7 +40,7 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
   // Fetch series
   useEffect(() => {
     // Skip initial fetch if we already have data from SSR
-    if (page === 1 && sort === 'popularity' && order === 'desc' && initialSeries.length > 0) {
+    if (page === 1 && sort === 'popularity' && order === 'desc' && content.length > 0) {
       return
     }
     
