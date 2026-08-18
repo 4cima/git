@@ -293,166 +293,110 @@ export const QuantumNavbar = memo(() => {
                 </button>
               </div>
 
-              {/* Scrollable Content */}
+              {/* Scrollable Content - REDESIGNED: Compact & Organized */}
               <div className="flex-1 overflow-y-auto">
-                {/* Main Links - Grid 2 columns */}
-                <div className="px-3 pt-2 pb-1 grid grid-cols-2 gap-1.5">
-                  {navLinks.slice(1).map((link) => {
-                    const isActive = pathname === link.to || pathname?.startsWith(link.to + '/')
-                    return (
-                      <Link
-                        key={link.to}
-                        href={link.to}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
-                          isActive 
-                            ? 'bg-white/20 text-white border border-cyan-400/50' 
-                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
-                        }`}
-                      >
-                        <link.icon size={14} style={{ color: link.color }} className="group-hover:scale-110 transition-transform flex-shrink-0" />
-                        <span className="font-medium truncate">{link.label}</span>
-                      </Link>
-                    )
-                  })}
+                {/* Main Navigation - Compact Single Row */}
+                <div className="px-3 pt-2 pb-3 border-b border-white/5">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {navLinks.map((link) => {
+                      const isActive = pathname === link.to || pathname?.startsWith(link.to + '/')
+                      return (
+                        <Link
+                          key={link.to}
+                          href={link.to}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                            isActive 
+                              ? 'bg-white/20 text-white' 
+                              : 'hover:bg-white/10 text-zinc-300 hover:text-white'
+                          }`}
+                        >
+                          <link.icon size={18} style={{ color: link.color }} className="flex-shrink-0" />
+                          <span className="text-[10px] font-bold">{link.label}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
                 </div>
 
-                {/* Language Section */}
-                <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
-                </div>
-
-                {/* Language Links - 2 Columns Grid */}
-                <div className="px-3 pb-1 grid grid-cols-2 gap-1.5">
-                  {countryLinks.map((country) => {
-                    const isActive = pathname?.includes(`language=${country.filter}`)
-                    return (
+                {/* COMPACT: Languages in single dropdown-like section */}
+                <div className="px-3 py-2 border-b border-white/5">
+                  <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <span>🌍</span>
+                    <span>اللغات</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {countryLinks.slice(0, 10).map((country) => (
                       <Link
                         key={country.code}
-                        href={`/movies?language=${country.filter}`}
+                        href={pathname?.includes('/series') ? `/series?language=${country.filter}` : `/movies?language=${country.filter}`}
                         onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
-                          isActive
-                            ? 'bg-white/20 text-white border border-cyan-400/50'
-                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
-                        }`}
+                        className="flex flex-col items-center gap-0.5 p-1.5 rounded-md hover:bg-white/10 transition-all text-center"
+                        title={country.label}
                       >
-                        <span className="text-sm group-hover:scale-110 transition-transform flex-shrink-0">{country.icon}</span>
-                        <span className="font-medium truncate">{country.label}</span>
+                        <span className="text-base">{country.icon}</span>
+                        <span className="text-[9px] text-zinc-400 truncate w-full">{country.label}</span>
                       </Link>
-                    )
-                  })}
+                    ))}
+                  </div>
                 </div>
 
-                {/* Genre Section - Movies */}
-                <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">أفلام</p>
-                </div>
-
-                {/* Movie Genre Links - 2 Columns Grid */}
-                <div className="px-3 pb-1 grid grid-cols-2 gap-1.5">
-                  {genreLinks.map((genre) => {
-                    const isActive = pathname?.includes(`/movies/genres/${genre.slug}`)
-                    
-                    let iconColorClass = ''
-                    switch(genre.color) {
-                      case 'red-500': iconColorClass = 'text-red-500'; break;
-                      case 'red-700': iconColorClass = 'text-red-700'; break;
-                      case 'yellow-400': iconColorClass = 'text-yellow-400'; break;
-                      case 'slate-400': iconColorClass = 'text-slate-400'; break;
-                      case 'pink-400': iconColorClass = 'text-pink-400'; break;
-                      case 'orange-500': iconColorClass = 'text-orange-500'; break;
-                      case 'gray-400': iconColorClass = 'text-gray-400'; break;
-                      case 'green-400': iconColorClass = 'text-green-400'; break;
-                      case 'purple-400': iconColorClass = 'text-purple-400'; break;
-                      case 'cyan-400': iconColorClass = 'text-cyan-400'; break;
-                      default: iconColorClass = 'text-purple-400';
-                    }
-                    
-                    return (
-                      <Link
-                        key={`movie-${genre.slug}`}
-                        href={`/movies/genres/${genre.slug}`}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
-                          isActive
-                            ? 'bg-white/20 text-white border border-purple-400/50'
-                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
-                        }`}
-                      >
-                        <genre.icon size={14} className={`${iconColorClass} group-hover:scale-110 transition-transform flex-shrink-0`} />
-                        <span className="font-medium truncate">{genre.label}</span>
-                      </Link>
-                    )
-                  })}
-                </div>
-
-                {/* Language Section - Series */}
-                <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
-                </div>
-
-                {/* Language Links for Series - 2 Columns Grid */}
-                <div className="px-3 pb-1 grid grid-cols-2 gap-1.5">
-                  {countryLinks.map((country) => {
-                    const isActive = pathname?.includes(`language=${country.filter}`)
-                    return (
-                      <Link
-                        key={`series-${country.code}`}
-                        href={`/series?language=${country.filter}`}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
-                          isActive
-                            ? 'bg-white/20 text-white border border-cyan-400/50'
-                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
-                        }`}
-                      >
-                        <span className="text-sm group-hover:scale-110 transition-transform flex-shrink-0">{country.icon}</span>
-                        <span className="font-medium truncate">{country.label}</span>
-                      </Link>
-                    )
-                  })}
-                </div>
-
-                {/* Genre Section - Series */}
-                <div className="px-3 pt-1 pb-0.5 border-t border-white/10">
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">مسلسلات</p>
-                </div>
-
-                {/* Series Genre Links - 2 Columns Grid */}
-                <div className="px-3 pb-2 grid grid-cols-2 gap-1.5">
-                  {genreLinks.map((genre) => {
-                    const isActive = pathname?.includes(`/series/genres/${genre.slug}`)
-                    
-                    let iconColorClass = ''
-                    switch(genre.color) {
-                      case 'red-500': iconColorClass = 'text-red-500'; break;
-                      case 'red-700': iconColorClass = 'text-red-700'; break;
-                      case 'yellow-400': iconColorClass = 'text-yellow-400'; break;
-                      case 'slate-400': iconColorClass = 'text-slate-400'; break;
-                      case 'pink-400': iconColorClass = 'text-pink-400'; break;
-                      case 'orange-500': iconColorClass = 'text-orange-500'; break;
-                      case 'gray-400': iconColorClass = 'text-gray-400'; break;
-                      case 'green-400': iconColorClass = 'text-green-400'; break;
-                      case 'purple-400': iconColorClass = 'text-purple-400'; break;
-                      case 'cyan-400': iconColorClass = 'text-cyan-400'; break;
-                      default: iconColorClass = 'text-purple-400';
-                    }
-                    
-                    return (
-                      <Link
-                        key={`series-${genre.slug}`}
-                        href={`/series/genres/${genre.slug}`}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-1.5 p-2 rounded-lg transition-all group text-xs ${
-                          isActive
-                            ? 'bg-white/20 text-white border border-purple-400/50'
-                            : 'hover:bg-white/10 text-zinc-300 hover:text-white'
-                        }`}
-                      >
-                        <genre.icon size={14} className={`${iconColorClass} group-hover:scale-110 transition-transform flex-shrink-0`} />
-                        <span className="font-medium truncate">{genre.label}</span>
-                      </Link>
-                    )
-                  })}
+                {/* COMPACT: All Genres in one unified section with media type toggle */}
+                <div className="px-3 py-2">
+                  <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <span>🎬</span>
+                    <span>التصنيفات</span>
+                  </div>
+                  
+                  {/* Genres Grid - Works for both movies and series */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {genreLinks.map((genre) => {
+                      const isMoviesActive = pathname?.includes(`/movies/genres/${genre.slug}`)
+                      const isSeriesActive = pathname?.includes(`/series/genres/${genre.slug}`)
+                      const isActive = isMoviesActive || isSeriesActive
+                      
+                      let iconColorClass = ''
+                      switch(genre.color) {
+                        case 'red-500': iconColorClass = 'text-red-500'; break;
+                        case 'red-700': iconColorClass = 'text-red-700'; break;
+                        case 'yellow-400': iconColorClass = 'text-yellow-400'; break;
+                        case 'slate-400': iconColorClass = 'text-slate-400'; break;
+                        case 'pink-400': iconColorClass = 'text-pink-400'; break;
+                        case 'orange-500': iconColorClass = 'text-orange-500'; break;
+                        case 'gray-400': iconColorClass = 'text-gray-400'; break;
+                        case 'green-400': iconColorClass = 'text-green-400'; break;
+                        case 'purple-400': iconColorClass = 'text-purple-400'; break;
+                        case 'cyan-400': iconColorClass = 'text-cyan-400'; break;
+                        default: iconColorClass = 'text-purple-400';
+                      }
+                      
+                      // Smart routing: if on series page, link to series genre, else movies
+                      const targetHref = pathname?.includes('/series') 
+                        ? `/series/genres/${genre.slug}`
+                        : `/movies/genres/${genre.slug}`
+                      
+                      return (
+                        <Link
+                          key={genre.slug}
+                          href={targetHref}
+                          onClick={() => setSidebarOpen(false)}
+                          className={`flex items-center gap-2 p-2 rounded-lg transition-all group text-xs ${
+                            isActive
+                              ? 'bg-white/20 text-white border border-purple-400/50'
+                              : 'hover:bg-white/10 text-zinc-300 hover:text-white'
+                          }`}
+                        >
+                          <genre.icon size={14} className={`${iconColorClass} group-hover:scale-110 transition-transform flex-shrink-0`} />
+                          <span className="font-medium truncate">{genre.label}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                  
+                  {/* Quick toggle hint */}
+                  <div className="mt-2 text-[9px] text-zinc-600 text-center">
+                    💡 التصنيفات تتغير حسب الصفحة (أفلام/مسلسلات)
+                  </div>
                 </div>
               </div>
             </motion.div>
