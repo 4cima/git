@@ -48,8 +48,12 @@ export async function GET(
     
     if (type === 'movie') {
       // Use limit+1 trick instead of COUNT for performance
+      // Select only columns needed for listing (exclude large unused columns if any)
       contentQuery = `
-        SELECT m.*, 'movie' as media_type
+        SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
+               m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
+               m.overview_ar, m.overview_en, m.genres_json, m.original_language,
+               'movie' as media_type
         FROM movies m
         WHERE genres_json LIKE ?
         ORDER BY m.${sort} ${order.toUpperCase()}
@@ -77,8 +81,12 @@ export async function GET(
       })
     } else if (type === 'tv') {
       // Use limit+1 trick instead of COUNT for performance
+      // Select only columns needed for listing (exclude large JSON columns)
       contentQuery = `
-        SELECT s.*, 'tv' as media_type
+        SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
+               s.vote_average, s.vote_count, s.popularity, s.first_air_date, s.first_air_year,
+               s.overview_ar, s.overview_en, s.genres_json, s.original_language,
+               'tv' as media_type
         FROM tv_series s
         WHERE genres_json LIKE ?
         ORDER BY s.${sort} ${order.toUpperCase()}
@@ -109,10 +117,13 @@ export async function GET(
       // Fetch limited sets from both tables, combine, sort, paginate
       const fetchLimit = Math.ceil(limit * 1.5) // Fetch extra to ensure enough after sorting
       
-      // Get movies (limited)
+      // Get movies (limited, only needed columns)
       const moviesResult = await turso.execute({
         sql: `
-          SELECT m.*, 'movie' as media_type
+          SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
+                 m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
+                 m.overview_ar, m.overview_en, m.genres_json, m.original_language,
+                 'movie' as media_type
           FROM movies m
           WHERE genres_json LIKE ?
           ORDER BY m.${sort} ${order.toUpperCase()}
@@ -121,10 +132,13 @@ export async function GET(
         args: [`%"name_ar":"${genre.name_ar}"%`, fetchLimit]
       })
       
-      // Get series (limited)
+      // Get series (limited, only needed columns, exclude large JSON columns)
       const seriesResult = await turso.execute({
         sql: `
-          SELECT s.*, 'tv' as media_type
+          SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
+                 s.vote_average, s.vote_count, s.popularity, s.first_air_date, s.first_air_year,
+                 s.overview_ar, s.overview_en, s.genres_json, s.original_language,
+                 'tv' as media_type
           FROM tv_series s
           WHERE genres_json LIKE ?
           ORDER BY s.${sort} ${order.toUpperCase()}
