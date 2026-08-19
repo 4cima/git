@@ -36,7 +36,7 @@ export const QuantumNavbar = memo(() => {
 
   const countryLinks = useMemo(() => [
     { code: 'ar', label: 'عربي', icon: '🇸🇦', filter: 'ar' },
-    { code: 'en', label: 'إنجليزي', icon: '🇺🇸', filter: 'en' },
+    { code: 'en', label: 'أجنبي', icon: '🇺🇸', filter: 'en' },
     { code: 'tr', label: 'تركي', icon: '🇹🇷', filter: 'tr' },
     { code: 'hi', label: 'هندي', icon: '🇮🇳', filter: 'hi' },
     { code: 'ko', label: 'كوري', icon: '🇰🇷', filter: 'ko' },

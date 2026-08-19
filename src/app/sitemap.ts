@@ -1,9 +1,9 @@
 import { MetadataRoute } from 'next'
 import { turso } from '@/lib/turso'
 
-// Force dynamic generation - sitemap should be generated on-demand, not at build time
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Generate sitemap once daily instead of on every request to save 90% database reads
+export const dynamic = 'force-static'
+export const revalidate = 86400 // 24 hours
 
 // Fetch top movies from Turso (limited to reduce build/generation time)
 async function getTopMovies() {

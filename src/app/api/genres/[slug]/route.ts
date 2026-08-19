@@ -29,7 +29,7 @@ export async function GET(
     
     // Get genre info
     const genreResult = await turso.execute({
-      sql: 'SELECT * FROM genres WHERE slug = ? LIMIT 1',
+      sql: 'SELECT tmdb_id, slug, name_en, name_ar FROM genres WHERE slug = ? LIMIT 1',
       args: [slug]
     })
     
