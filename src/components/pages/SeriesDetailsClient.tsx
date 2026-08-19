@@ -96,6 +96,19 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     }
   }, [series?.cast_json])
 
+  // Parse keywords from seo_keywords_json
+  const keywords = useMemo(() => {
+    if (!series?.seo_keywords_json) return []
+    try {
+      const keywordsData = typeof series.seo_keywords_json === 'string' 
+        ? JSON.parse(series.seo_keywords_json) 
+        : series.seo_keywords_json
+      return keywordsData || []
+    } catch {
+      return []
+    }
+  }, [series?.seo_keywords_json])
+
   const trailerKey = useMemo(() => {
     if (series?.trailer_key) return series.trailer_key
     if (!series?.videos) return null
@@ -440,6 +453,23 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
               )}
             </div>
+
+            {/* Keywords under poster */}
+            {keywords.length > 0 && (
+              <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl mt-4">
+                <h3 className="text-sm font-bold text-purple-400 mb-3">كلمات مفتاحية</h3>
+                <div className="flex flex-wrap gap-2">
+                  {keywords.slice(0, 10).map((keyword: any, index: number) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 rounded bg-white/5 border border-white/10 text-xs text-zinc-400"
+                    >
+                      {keyword.name || keyword}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Right: Info */}

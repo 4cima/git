@@ -61,6 +61,19 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
     }
   }, [movie?.cast_json])
 
+  // Parse keywords from seo_keywords_json
+  const keywords = useMemo(() => {
+    if (!movie?.seo_keywords_json) return []
+    try {
+      const keywordsData = typeof movie.seo_keywords_json === 'string' 
+        ? JSON.parse(movie.seo_keywords_json) 
+        : movie.seo_keywords_json
+      return keywordsData || []
+    } catch {
+      return []
+    }
+  }, [movie?.seo_keywords_json])
+
   const trailerKey = useMemo(() => {
     if (movie?.trailer_key) return movie.trailer_key
     if (!movie?.videos) return null
@@ -232,6 +245,23 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
               )}
             </div>
+
+            {/* Keywords under poster */}
+            {keywords.length > 0 && (
+              <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl mt-4">
+                <h3 className="text-sm font-bold text-purple-400 mb-3">كلمات مفتاحية</h3>
+                <div className="flex flex-wrap gap-2">
+                  {keywords.slice(0, 10).map((keyword: any, index: number) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 rounded bg-white/5 border border-white/10 text-xs text-zinc-400"
+                    >
+                      {keyword.name || keyword}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Right: Info */}
