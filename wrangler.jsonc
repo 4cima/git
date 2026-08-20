@@ -1,0 +1,11 @@
+{
+  "name": "4cima",
+  "compatibility_date": "2025-01-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "4cima-db",
+      "database_id": "b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6"
+    }
+  ]
+}
