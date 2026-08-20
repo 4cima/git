@@ -1,6 +1,9 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  // Required by @opennextjs/cloudflare for standalone bundling
+  output: 'standalone',
+
   // better-sqlite3 is a native addon — must not be bundled by webpack
   serverExternalPackages: ['better-sqlite3'],
 

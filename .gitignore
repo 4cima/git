@@ -57,3 +57,9 @@ measure-*.js
 
 # Kiro IDE workspace files
 .kiro/
+# Cloudflare Secrets
+.dev.vars
+
+# Cloudflare build artifacts
+.open-next/
+.wrangler/
