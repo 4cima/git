@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { turso } from '@/lib/turso'
+import { executeAll } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const page  = parseInt(searchParams.get('page')  || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const offset = (page - 1) * limit
-    
-    // Filters
+    const page     = parseInt(searchParams.get('page')  || '1')
+    const limit    = parseInt(searchParams.get('limit') || '20')
+    const offset   = (page - 1) * limit
     const language = searchParams.get('language')
     
-    // Build WHERE clause
-    const conditions: string[] = ['(filter_status IN (\'clean\', \'reviewed_approved\') OR filter_status IS NULL)']
-    const args: any[] = []
+    const conditions: string[] = ["(filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)"]
+    const args: (string | number)[] = []
     
     if (language) {
-      // Support comma-separated language codes (e.g., "ko" or "hi,ta,ml")
       const languages = language.split(',').map(l => l.trim()).filter(l => l)
       if (languages.length === 1) {
         conditions.push('original_language = ?')
@@ -32,15 +28,17 @@ export async function GET(request: NextRequest) {
     
     const whereClause = `WHERE ${conditions.join(' AND ')}`
 
-    // Use limit+1 trick instead of COUNT(*) - fetch one extra row to check if there's more
-    const result = await turso.execute({
-      sql: `SELECT * FROM tv_series ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      args: [...args, limit + 1, offset]
-    })
+    const rows = await executeAll(
+      `SELECT id, slug, name_ar, name_en,
+              poster_path, backdrop_path, overview_ar,
+              first_air_year, vote_average, vote_count,
+              genres_json, status
+       FROM tv_series ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      [...args, limit + 1, offset]
+    )
 
-    const rows = result.rows || []
     const hasMore = rows.length > limit
-    if (hasMore) rows.pop() // Remove the extra row
+    if (hasMore) rows.pop()
 
     return NextResponse.json({
       results: rows,
@@ -49,9 +47,7 @@ export async function GET(request: NextRequest) {
       hasMore,
       totalPages: hasMore ? page + 1 : page
     }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
-      }
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' }
     })
   } catch (error) {
     console.error('❌ [API /tv] Error:', error)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { turso } from '@/lib/turso'
+import { executeFirst } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,21 +10,18 @@ export async function GET(
   try {
     const { slug } = await params
 
-    const result = await turso.execute({
-      sql: `SELECT * FROM tv_series
+    const series = await executeFirst(
+      `SELECT * FROM tv_series
             WHERE slug = ?
               AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
             LIMIT 1`,
-      args: [slug]
-    })
+      [slug]
+    )
 
-    if (!result.rows || result.rows.length === 0) {
+    if (!series) {
       return NextResponse.json({ error: 'Series not found' }, { status: 404 })
     }
 
-    const series = result.rows[0]
-
-    // seasons_json is stored as embedded JSON in tv_series (no separate tv_seasons table)
     let seasons: unknown[] = []
     try {
       seasons = series.seasons_json

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { turso } from '@/lib/turso'
+import { executeFirst } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 3600
@@ -17,28 +17,23 @@ export async function GET(
     
     console.log('🔄 [API /series/:slug] Fetching series:', slug)
     
-    const result = await turso.execute({
-      sql: 'SELECT * FROM tv_series WHERE slug = ? LIMIT 1',
-      args: [slug]
-    })
+    const series = await executeFirst(
+      'SELECT * FROM tv_series WHERE slug = ? LIMIT 1',
+      [slug]
+    )
     
-    if (!result.rows || result.rows.length === 0) {
+    if (!series) {
       return NextResponse.json({ error: 'Series not found' }, { status: 404 })
     }
     
-    const series = result.rows[0]
-    
-    // Fetch seasons for this series (if seasons table exists)
+    // seasons_json is stored in tv_series — no separate tv_seasons table
     let seasons: unknown[] = []
     try {
-      const seasonsResult = await turso.execute({
-        sql: 'SELECT * FROM tv_seasons WHERE tv_series_id = ? ORDER BY season_number ASC',
-        args: [series.id]
-      })
-      seasons = seasonsResult.rows || []
-    } catch (e) {
-      // Table might not exist or be named differently
-      console.log('Seasons table not found or different structure')
+      seasons = series.seasons_json
+        ? JSON.parse(series.seasons_json as string)
+        : []
+    } catch {
+      console.log('seasons_json parse failed')
     }
     
     console.log('✅ [API /series/:slug] Series found:', series.name_ar || series.name_en)

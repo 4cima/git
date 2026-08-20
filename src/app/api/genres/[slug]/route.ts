@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { turso } from '@/lib/turso'
+import { executeFirst, executeAll } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,174 +12,104 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const { slug } = await params
-    const searchParams = request.nextUrl.searchParams
+    const { slug }       = await params
+    const searchParams   = request.nextUrl.searchParams
     
-    // Pagination
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const page   = parseInt(searchParams.get('page')  || '1')
+    const limit  = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
+    const type   = searchParams.get('type')
+    const sort   = searchParams.get('sort')  || 'popularity'
+    const order  = searchParams.get('order') || 'desc'
     
-    // Content type filter
-    const type = searchParams.get('type') // 'movie' | 'tv' | 'all'
+    const genre = await executeFirst(
+      'SELECT tmdb_id, slug, name_en, name_ar FROM genres WHERE slug = ? LIMIT 1',
+      [slug]
+    )
     
-    // Sort
-    const sort = searchParams.get('sort') || 'popularity'
-    const order = searchParams.get('order') || 'desc'
-    
-    // Get genre info
-    const genreResult = await turso.execute({
-      sql: 'SELECT tmdb_id, slug, name_en, name_ar FROM genres WHERE slug = ? LIMIT 1',
-      args: [slug]
-    })
-    
-    if (!genreResult.rows || genreResult.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Genre not found' },
-        { status: 404 }
-      )
+    if (!genre) {
+      return NextResponse.json({ error: 'Genre not found' }, { status: 404 })
     }
     
-    const genre = genreResult.rows[0]
-    const genreTmdbId = genre.tmdb_id
-    
-    // Build query based on type
-    let contentQuery = ''
-    
+    const validSorts = ['popularity', 'vote_average', 'vote_count', 'release_year', 'first_air_year']
+    const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
+    const sortOrder  = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
+    const likeParam  = `%"name_ar":"${genre.name_ar}"%`
+
     if (type === 'movie') {
-      // Use limit+1 trick instead of COUNT for performance
-      // Select only columns needed for listing (exclude large unused columns if any)
-      contentQuery = `
-        SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
-               m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
-               m.overview_ar, m.overview_en, m.genres_json, m.original_language,
-               'movie' as media_type
-        FROM movies m
-        WHERE genres_json LIKE ?
-        ORDER BY m.${sort} ${order.toUpperCase()}
-        LIMIT ? OFFSET ?
-      `
-      
-      const contentResult = await turso.execute({
-        sql: contentQuery,
-        args: [`%"name_ar":"${genre.name_ar}"%`, limit + 1, offset]
-      })
-      
-      const rows = contentResult.rows || []
+      const rows = await executeAll(
+        `SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
+                m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
+                m.overview_ar, m.overview_en, m.genres_json, m.original_language,
+                'movie' as media_type
+         FROM movies m
+         WHERE genres_json LIKE ?
+         ORDER BY m.${sortColumn} ${sortOrder}
+         LIMIT ? OFFSET ?`,
+        [likeParam, limit + 1, offset]
+      )
       const hasMore = rows.length > limit
       if (hasMore) rows.pop()
-      
-      return NextResponse.json({
-        genre,
-        content: rows,
-        pagination: {
-          page,
-          limit,
-          hasMore,
-          totalPages: hasMore ? page + 1 : page
-        }
-      })
+      return NextResponse.json({ genre, content: rows, pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page } })
+
     } else if (type === 'tv') {
-      // Use limit+1 trick instead of COUNT for performance
-      // Select only columns needed for listing (exclude large JSON columns)
-      contentQuery = `
-        SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
-               s.vote_average, s.vote_count, s.popularity, s.first_air_date, s.first_air_year,
-               s.overview_ar, s.overview_en, s.genres_json, s.original_language,
-               'tv' as media_type
-        FROM tv_series s
-        WHERE genres_json LIKE ?
-        ORDER BY s.${sort} ${order.toUpperCase()}
-        LIMIT ? OFFSET ?
-      `
-      
-      const contentResult = await turso.execute({
-        sql: contentQuery,
-        args: [`%"name_ar":"${genre.name_ar}"%`, limit + 1, offset]
-      })
-      
-      const rows = contentResult.rows || []
+      const rows = await executeAll(
+        `SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
+                s.vote_average, s.vote_count, s.popularity, s.first_air_date, s.first_air_year,
+                s.overview_ar, s.overview_en, s.genres_json, s.original_language,
+                'tv' as media_type
+         FROM tv_series s
+         WHERE genres_json LIKE ?
+         ORDER BY s.${sortColumn} ${sortOrder}
+         LIMIT ? OFFSET ?`,
+        [likeParam, limit + 1, offset]
+      )
       const hasMore = rows.length > limit
       if (hasMore) rows.pop()
-      
-      return NextResponse.json({
-        genre,
-        content: rows,
-        pagination: {
-          page,
-          limit,
-          hasMore,
-          totalPages: hasMore ? page + 1 : page
-        }
-      })
+      return NextResponse.json({ genre, content: rows, pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page } })
+
     } else {
-      // type === 'all' - Combined movies + series WITH PAGINATION
-      // Fetch limited sets from both tables, combine, sort, paginate
-      const fetchLimit = Math.ceil(limit * 1.5) // Fetch extra to ensure enough after sorting
+      // type === 'all'
+      const fetchLimit = Math.ceil(limit * 1.5)
+      const [moviesRows, seriesRows] = await Promise.all([
+        executeAll(
+          `SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
+                  m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
+                  m.overview_ar, m.overview_en, m.genres_json, m.original_language,
+                  'movie' as media_type
+           FROM movies m WHERE genres_json LIKE ?
+           ORDER BY m.${sortColumn} ${sortOrder} LIMIT ?`,
+          [likeParam, fetchLimit]
+        ),
+        executeAll(
+          `SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
+                  s.vote_average, s.vote_count, s.popularity, s.first_air_date, s.first_air_year,
+                  s.overview_ar, s.overview_en, s.genres_json, s.original_language,
+                  'tv' as media_type
+           FROM tv_series s WHERE genres_json LIKE ?
+           ORDER BY s.${sortColumn} ${sortOrder} LIMIT ?`,
+          [likeParam, fetchLimit]
+        )
+      ])
       
-      // Get movies (limited, only needed columns)
-      const moviesResult = await turso.execute({
-        sql: `
-          SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
-                 m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
-                 m.overview_ar, m.overview_en, m.genres_json, m.original_language,
-                 'movie' as media_type
-          FROM movies m
-          WHERE genres_json LIKE ?
-          ORDER BY m.${sort} ${order.toUpperCase()}
-          LIMIT ?
-        `,
-        args: [`%"name_ar":"${genre.name_ar}"%`, fetchLimit]
+      const combined = [...moviesRows, ...seriesRows].sort((a: any, b: any) => {
+        const aVal = Number(a[sortColumn] || 0)
+        const bVal = Number(b[sortColumn] || 0)
+        return order.toLowerCase() === 'asc' ? aVal - bVal : bVal - aVal
       })
       
-      // Get series (limited, only needed columns, exclude large JSON columns)
-      const seriesResult = await turso.execute({
-        sql: `
-          SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
-                 s.vote_average, s.vote_count, s.popularity, s.first_air_date, s.first_air_year,
-                 s.overview_ar, s.overview_en, s.genres_json, s.original_language,
-                 'tv' as media_type
-          FROM tv_series s
-          WHERE genres_json LIKE ?
-          ORDER BY s.${sort} ${order.toUpperCase()}
-          LIMIT ?
-        `,
-        args: [`%"name_ar":"${genre.name_ar}"%`, fetchLimit]
-      })
-      
-      // Combine and sort
-      const combined = [...(moviesResult.rows || []), ...(seriesResult.rows || [])]
-        .sort((a: any, b: any) => {
-          const aVal = Number(a[sort] || 0)
-          const bVal = Number(b[sort] || 0)
-          return order.toLowerCase() === 'asc' ? aVal - bVal : bVal - aVal
-        })
-      
-      // Paginate with limit+1 trick
-      const paginatedContent = combined.slice(offset, offset + limit + 1)
-      const hasMore = paginatedContent.length > limit
-      if (hasMore) paginatedContent.pop()
+      const paged   = combined.slice(offset, offset + limit + 1)
+      const hasMore = paged.length > limit
+      if (hasMore) paged.pop()
       
       return NextResponse.json({
         genre,
-        content: paginatedContent,
-        pagination: {
-          page,
-          limit,
-          hasMore,
-          totalPages: hasMore ? page + 1 : page
-        }
-      }, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
-        }
-      })
+        content:    paged,
+        pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }
+      }, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } })
     }
   } catch (error) {
     console.error('Error fetching genre content:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch genre content' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch genre content' }, { status: 500 })
   }
 }

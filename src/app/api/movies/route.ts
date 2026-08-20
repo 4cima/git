@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { turso } from '@/lib/turso'
+import { executeAll } from '@/lib/db'
 import { sanitizeSearchInput } from '@/lib/search-utils'
 
 export const dynamic = 'force-dynamic'
@@ -8,31 +8,25 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     
-    // Pagination
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
     
-    // Filters
-    const genre = searchParams.get('genre') // slug
-    const year = searchParams.get('year')
-    const country = searchParams.get('country')
+    const genre    = searchParams.get('genre')
+    const year     = searchParams.get('year')
+    const country  = searchParams.get('country')
     const language = searchParams.get('language')
     const ratingMin = searchParams.get('rating_min')
     const ratingMax = searchParams.get('rating_max')
     const runtimeMin = searchParams.get('runtime_min')
     const runtimeMax = searchParams.get('runtime_max')
-    const search = searchParams.get('search')
+    const search   = searchParams.get('search')
+    const sort     = searchParams.get('sort') || 'popularity'
+    const order    = searchParams.get('order') || 'desc'
     
-    // Sort
-    const sort = searchParams.get('sort') || 'popularity'
-    const order = searchParams.get('order') || 'desc'
-    
-    // Build WHERE clause
     const conditions: string[] = []
-    const args: any[] = []
+    const args: (string | number)[] = []
     
-    // FTS5 search join (if search parameter provided)
     let ftsJoin = ''
     if (search) {
       const sanitized = sanitizeSearchInput(search)
@@ -44,8 +38,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (genre) {
-      // Temporary: use LIKE on slug until genre_ids_csv index is implemented
-      // This is faster than json_each() without index (see TECH_DEBT.md #2)
       conditions.push(`genres_json LIKE ?`)
       args.push(`%"slug":"${genre}"%`)
     }
@@ -69,7 +61,6 @@ export async function GET(request: NextRequest) {
     }
     
     if (language) {
-      // Support comma-separated language codes (e.g., "hi,ta,ml" or "zh,cn")
       const languages = language.split(',').map(l => l.trim()).filter(l => l)
       if (languages.length === 1) {
         conditions.push('original_language = ?')
@@ -82,13 +73,11 @@ export async function GET(request: NextRequest) {
     }
     
     if (ratingMin) {
-      // Handle range format (e.g., "7.1-8" means 7.1 to 8.0, "9.1-10" means 9.1 to 10.0)
       if (ratingMin.includes('-')) {
         const [min, max] = ratingMin.split('-').map(parseFloat)
         conditions.push('vote_average BETWEEN ? AND ?')
         args.push(min, max)
       } else {
-        // Fallback for old format
         conditions.push('vote_average >= ?')
         args.push(parseFloat(ratingMin))
       }
@@ -109,33 +98,23 @@ export async function GET(request: NextRequest) {
       args.push(parseInt(runtimeMax))
     }
     
-    const whereClause = conditions.length > 0 
-      ? `WHERE ${conditions.join(' AND ')}`
-      : ''
-    
-    // Valid sort columns
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
     const validSorts = ['popularity', 'vote_average', 'vote_count', 'release_year']
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
-    const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
+    const sortOrder  = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
-    // Get total count - removed, use limit+1 trick instead
-    
-    // Get movies
-    const moviesResult = await turso.execute({
-      sql: `
-        SELECT movies.id, movies.slug, movies.title_ar, movies.title_en, movies.poster_path,
-               movies.vote_average, movies.release_year,
-               movies.genres_json, movies.overview_ar, movies.original_language
-        FROM movies
-        ${ftsJoin}
-        ${whereClause}
-        ORDER BY ${search ? 'rank,' : ''} ${sortColumn} ${sortOrder}
-        LIMIT ? OFFSET ?
-      `,
-      args: [...args, limit + 1, offset]
-    })
+    const rows = await executeAll(
+      `SELECT movies.id, movies.slug, movies.title_ar, movies.title_en, movies.poster_path,
+              movies.vote_average, movies.release_year,
+              movies.genres_json, movies.overview_ar, movies.original_language
+       FROM movies
+       ${ftsJoin}
+       ${whereClause}
+       ORDER BY ${search ? 'rank,' : ''} ${sortColumn} ${sortOrder}
+       LIMIT ? OFFSET ?`,
+      [...args, limit + 1, offset]
+    )
 
-    const rows = moviesResult.rows || []
     const hasMore = rows.length > limit
     if (hasMore) rows.pop()
 
@@ -147,9 +126,6 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Error fetching movies:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch movies' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch movies' }, { status: 500 })
   }
 }
