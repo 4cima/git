@@ -29,8 +29,9 @@ export async function middleware(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
 
     if (authHeader && authHeader.startsWith('Basic ')) {
-      const base64 = authHeader.slice('Basic '.length)
-      const decoded = Buffer.from(base64, 'base64').toString('utf-8')
+      const base64  = authHeader.slice('Basic '.length)
+      // atob is available in Edge runtime (no Buffer needed)
+      const decoded = atob(base64)
       const colonIndex = decoded.indexOf(':')
       if (colonIndex !== -1) {
         const incomingUser = decoded.slice(0, colonIndex)
