@@ -55,6 +55,7 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.20.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.6",
@@ -64,6 +65,7 @@
     "postcss": "^8.5.1",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.65.0"
+    "typescript-eslint": "^8.65.0",
+    "wrangler": "^4.124.0"
   }
 }

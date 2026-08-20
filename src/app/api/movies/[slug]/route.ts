@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { turso } from '@/lib/turso'
+import { executeFirst } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 3600
@@ -13,19 +13,17 @@ export async function GET(
     
     console.log('🔄 [API /movies/:slug] Fetching movie:', slug)
     
-    const result = await turso.execute({
-      sql: `SELECT * FROM movies 
+    const movie = await executeFirst(
+      `SELECT * FROM movies 
             WHERE slug = ? 
               AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
             LIMIT 1`,
-      args: [slug]
-    })
+      [slug]
+    )
     
-    if (!result.rows || result.rows.length === 0) {
+    if (!movie) {
       return NextResponse.json({ error: 'Movie not found' }, { status: 404 })
     }
-    
-    const movie = result.rows[0]
     
     console.log('✅ [API /movies/:slug] Movie found:', movie.title_ar || movie.title_en)
     
