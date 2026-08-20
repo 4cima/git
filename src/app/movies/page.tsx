@@ -1,34 +1,29 @@
 import { Metadata } from 'next'
-import { turso } from '@/lib/turso'
+import { executeAll } from '@/lib/db'
 import { MoviesPageClient } from '@/components/pages/MoviesPageClient'
 
 export const metadata: Metadata = {
   title: 'أفلام | فور سيما',
   description: 'استكشف آلاف الأفلام المترجمة بجودة عالية - أفلام أكشن، كوميديا، دراما، رعب، وأكثر',
-  alternates: {
-    canonical: 'https://4cima.com/movies'
-  }
+  alternates: { canonical: 'https://4cima.com/movies' }
 }
 
-// Force dynamic rendering - never static generation
-export const dynamic = 'force-dynamic'
+export const dynamic   = 'force-dynamic'
 export const revalidate = 0
 
 async function getInitialMovies() {
-  const result = await turso.execute({
-    sql: `SELECT id, slug, title_ar, title_en, poster_path, vote_average, release_year, genres_json 
-          FROM movies 
-          WHERE filter_status = 'clean'
-          ORDER BY popularity DESC 
-          LIMIT 50`,
-    args: []
-  })
-  
-  return result.rows.map(row => JSON.parse(JSON.stringify(row)))
+  const rows = await executeAll(
+    `SELECT id, slug, title_ar, title_en, poster_path, vote_average, release_year, genres_json
+     FROM movies
+     WHERE filter_status = 'clean'
+     ORDER BY popularity DESC
+     LIMIT 50`,
+    []
+  )
+  return rows.map(row => JSON.parse(JSON.stringify(row)))
 }
 
 export default async function MoviesPage() {
   const initialMovies = await getInitialMovies()
-  
   return <MoviesPageClient initialMovies={initialMovies} />
 }

@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { turso } from '@/lib/turso'
+import { executeAll } from '@/lib/db'
 import { HomePageClient } from '@/components/pages/HomePageClient'
 
 export const metadata: Metadata = {
@@ -7,42 +7,37 @@ export const metadata: Metadata = {
   description: 'موقع فور سيما لمشاهدة أحدث الأفلام والمسلسلات المترجمة بجودة عالية - أكشن، دراما، كوميديا، رعب، وأكثر',
 }
 
-// Force dynamic rendering - never static generation
-export const dynamic = 'force-dynamic'
+export const dynamic    = 'force-dynamic'
 export const revalidate = 0
 
 async function getHomeData() {
-  // Fetch trending movies
-  const moviesResult = await turso.execute({
-    sql: `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path, vote_average, release_year, overview_ar, genres_json 
-          FROM movies 
-          WHERE filter_status = 'clean'
-          ORDER BY popularity DESC 
-          LIMIT 100`,
-    args: []
-  })
-  
-  // Fetch trending series
-  const seriesResult = await turso.execute({
-    sql: `SELECT id, slug, name_ar AS title_ar, name_en AS title_en, poster_path, backdrop_path, vote_average, first_air_year AS release_year, overview_ar, genres_json 
-          FROM tv_series 
-          WHERE filter_status = 'clean'
-          ORDER BY popularity DESC 
-          LIMIT 100`,
-    args: []
-  })
-  
-  const movies = moviesResult.rows.map(row => JSON.parse(JSON.stringify(row)))
-  const series = seriesResult.rows.map(row => JSON.parse(JSON.stringify(row)))
-  
-  return { 
-    trendingMovies: movies,
-    trendingSeries: series
+  const [movies, series] = await Promise.all([
+    executeAll(
+      `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path,
+              vote_average, release_year, overview_ar, genres_json
+       FROM movies
+       WHERE filter_status = 'clean'
+       ORDER BY popularity DESC
+       LIMIT 100`,
+      []
+    ),
+    executeAll(
+      `SELECT id, slug, name_ar AS title_ar, name_en AS title_en, poster_path, backdrop_path,
+              vote_average, first_air_year AS release_year, overview_ar, genres_json
+       FROM tv_series
+       WHERE filter_status = 'clean'
+       ORDER BY popularity DESC
+       LIMIT 100`,
+      []
+    )
+  ])
+  return {
+    trendingMovies: movies.map(r => JSON.parse(JSON.stringify(r))),
+    trendingSeries: series.map(r => JSON.parse(JSON.stringify(r)))
   }
 }
 
 export default async function HomePage() {
   const homeData = await getHomeData()
-  
   return <HomePageClient initialData={homeData} />
 }
