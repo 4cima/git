@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { turso } from '@/lib/turso'
+import { executeAll } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
     const rating = searchParams.get('rating')
     const limit  = 48
 
-    // filter_status guard — always the first condition
     const conditions: string[] = [
       "(filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)"
     ]
@@ -24,8 +23,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (genre) {
-      // genres_json structure: [{"id":...,"name":"...","name_ar":"..."}]
-      // filter by name (English) case-insensitive
       conditions.push(`genres_json LIKE ?`)
       args.push(`%"name":"${genre}"%`)
     }
@@ -46,16 +43,21 @@ export async function GET(request: NextRequest) {
       args.push(parseFloat(rating))
     }
 
-    const sql = `SELECT * FROM movies WHERE ${conditions.join(' AND ')} ORDER BY id DESC LIMIT ?`
     args.push(limit)
-
-    const result = await turso.execute({ sql, args })
-    const movies = result.rows || []
+    const movies = await executeAll(
+      `SELECT id, slug, title_ar, title_en,
+              poster_path, backdrop_path,
+              overview_ar, release_year,
+              vote_average, vote_count,
+              genres_json
+       FROM movies WHERE ${conditions.join(' AND ')} ORDER BY id DESC LIMIT ?`,
+      args
+    )
 
     return NextResponse.json({
       movies,
       results:    movies,
-      nextCursor: movies.length === limit ? movies[movies.length - 1]?.id : null
+      nextCursor: movies.length === limit ? (movies[movies.length - 1] as any)?.id : null
     })
   } catch (error) {
     console.error('❌ [API /movies/explore] Error:', error)
