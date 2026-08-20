@@ -6,7 +6,7 @@ import { useLang } from '../../../state/useLang'
 import { Zap, Tv, Smile, Film, Drama, FileText, Play, BookOpen, Baby, Languages } from 'lucide-react'
 import { SectionHeader } from '../../common/SectionHeader'
 import { sanitizeMediaItems, type TmdbMedia } from '../../../lib/mediaUtils'
-import { getTrendingDailyMotionDB } from '../../../lib/db'
+// getTrendingDailyMotionDB removed — function does not exist in db.ts
 import { useTranslatedContent } from '../../../hooks/useTranslatedContent'
 import { SkeletonGrid } from '../../common/Skeletons'
 import { MovieCard } from '../../features/media/MovieCard'

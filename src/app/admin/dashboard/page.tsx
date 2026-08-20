@@ -1,55 +1,29 @@
 import { Metadata } from 'next'
-import { Activity, Film, Tv, Users, Database, AlertTriangle } from 'lucide-react'
-import { turso } from '@/lib/turso'
+import { Activity, Film, Tv, Users, Database, AlertTriangle, Zap } from 'lucide-react'
+import { executeFirst } from '@/lib/db'
 
 export const metadata: Metadata = {
   title: 'Dashboard | 4CIMA Admin',
 }
 
-export const revalidate = 0 // Always fetch fresh data for admin
+export const revalidate = 0
 
 export default async function DashboardPage() {
-  // Fetch basic stats
-  const [moviesCount, seriesCount, seasonsCount] = await Promise.all([
-    turso.execute('SELECT COUNT(*) as count FROM movies'),
-    turso.execute('SELECT COUNT(*) as count FROM tv_series'),
-    turso.execute("SELECT SUM(number_of_seasons) as count FROM tv_series WHERE number_of_seasons > 0"),
+  const [moviesRow, seriesRow, seasonsRow] = await Promise.all([
+    executeFirst('SELECT COUNT(*) as count FROM movies'),
+    executeFirst('SELECT COUNT(*) as count FROM tv_series'),
+    executeFirst('SELECT SUM(number_of_seasons) as count FROM tv_series WHERE number_of_seasons > 0'),
   ])
 
   const stats = [
-    { 
-      name: 'Total Movies', 
-      value: String(moviesCount.rows[0].count ?? 0),
-      icon: Film, 
-      color: 'text-blue-400',
-      bg: 'bg-blue-400/10'
-    },
-    { 
-      name: 'Total Series', 
-      value: String(seriesCount.rows[0].count ?? 0),
-      icon: Tv, 
-      color: 'text-purple-400',
-      bg: 'bg-purple-400/10'
-    },
-    { 
-      name: 'Total Seasons', 
-      value: String(seasonsCount.rows[0].count ?? 0),
-      icon: Activity, 
-      color: 'text-green-400',
-      bg: 'bg-green-400/10'
-    },
-    { 
-      name: 'Registered Users', 
-      value: '---', 
-      icon: Users, 
-      color: 'text-orange-400',
-      bg: 'bg-orange-400/10'
-    },
+    { name: 'Total Movies',   value: String(moviesRow?.count  ?? 0), icon: Film,     color: 'text-blue-400',   bg: 'bg-blue-400/10'   },
+    { name: 'Total Series',   value: String(seriesRow?.count  ?? 0), icon: Tv,       color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    { name: 'Total Seasons',  value: String(seasonsRow?.count ?? 0), icon: Activity, color: 'text-green-400',  bg: 'bg-green-400/10'  },
+    { name: 'Registered Users', value: '---',                        icon: Users,    color: 'text-orange-400', bg: 'bg-orange-400/10' },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <div key={stat.name} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex items-center gap-4">
@@ -65,7 +39,6 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
             <Zap className="w-5 h-5 text-cyan-400" />
@@ -91,40 +64,24 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* System Status */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-green-400" />
             System Status
           </h2>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg border border-zinc-800/50">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm text-zinc-300">Turso Database</span>
+            {['D1 Database', 'TMDB API', 'Next.js Cache'].map(name => (
+              <div key={name} className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg border border-zinc-800/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-sm text-zinc-300">{name}</span>
+                </div>
+                <span className="text-xs font-medium text-green-400 bg-green-400/10 px-2 py-1 rounded">Connected</span>
               </div>
-              <span className="text-xs font-medium text-green-400 bg-green-400/10 px-2 py-1 rounded">Connected</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg border border-zinc-800/50">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm text-zinc-300">TMDB API</span>
-              </div>
-              <span className="text-xs font-medium text-green-400 bg-green-400/10 px-2 py-1 rounded">Operational</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg border border-zinc-800/50">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-sm text-zinc-300">Next.js Cache</span>
-              </div>
-              <span className="text-xs font-medium text-green-400 bg-green-400/10 px-2 py-1 rounded">Healthy</span>
-            </div>
+            ))}
           </div>
         </div>
       </div>
     </div>
   )
 }
-
-// Need to import Zap for the Quick Actions icon
-import { Zap } from 'lucide-react'

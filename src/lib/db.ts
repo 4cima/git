@@ -24,6 +24,12 @@ const D1_HTTP_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}
 
 type SqlValue = string | number | boolean | null;
 
+// D1Database is a Cloudflare Workers runtime type — not available in Node.js types.
+// We use `any` here because this code path only runs inside Workers runtime,
+// where the binding is guaranteed to have the correct shape.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type D1Binding = any;
+
 // ── Runtime detection ─────────────────────────────────────────────────────────
 
 /**
@@ -39,11 +45,11 @@ function isCloudflareRuntime(): boolean {
  * Only called when isCloudflareRuntime() is true.
  * Uses dynamic import() — works in Workers, not bundled at build time.
  */
-async function getD1Binding(): Promise<D1Database | null> {
+async function getD1Binding(): Promise<D1Binding | null> {
   try {
     const { getCloudflareContext } = await import('@opennextjs/cloudflare');
     const ctx = getCloudflareContext();
-    return (ctx?.env as { DB?: D1Database })?.DB ?? null;
+    return (ctx?.env as { DB?: D1Binding })?.DB ?? null;
   } catch {
     // @opennextjs/cloudflare not available or context not set up
     return null;
@@ -53,17 +59,17 @@ async function getD1Binding(): Promise<D1Database | null> {
 // ── D1 Binding executor ───────────────────────────────────────────────────────
 
 async function execViaBinding<T>(
-  db: D1Database,
+  db: D1Binding,
   sql: string,
   args: SqlValue[]
 ): Promise<T[]> {
   const stmt   = db.prepare(sql);
   const bound  = args.length > 0 ? stmt.bind(...args) : stmt;
-  const result = await bound.all<T>();
+  const result = await bound.all();
   if (result.error) {
     throw new Error(`D1 binding error: ${result.error}`);
   }
-  return result.results ?? [];
+  return (result.results ?? []) as T[];
 }
 
 // ── D1 HTTP API executor (local dev / Node.js fallback) ───────────────────────
