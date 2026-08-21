@@ -16,6 +16,7 @@
     "enrich": "node scripts/2-enrich-incomplete.js",
     "sync": "node scripts/3-sync-to-d1.js",
     "full-workflow": "npm run download-ids && npm run fetch && npm run sync",
+    "deploy:production": "node -e \"const {execSync}=require('child_process');execSync('npx wrangler deploy',{cwd:process.cwd(),stdio:'inherit',env:{...process.env,OPEN_NEXT_DEPLOY:'true'}})\"",
     "build:cloudflare": "opennextjs-cloudflare build",
     "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --name 4cima-staging",
     "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
