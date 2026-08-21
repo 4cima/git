@@ -1,39 +1,23 @@
-/**
- * Auth Callback Route
- * Handles Supabase auth callbacks (email confirmation, password reset, etc.)
- */
+import { NextRequest, NextResponse } from 'next/server';
+import { handleAuthCallback, SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/auth-server';
 
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { NextRequest, NextResponse } from 'next/server'
+export async function GET(req: NextRequest) {
+  const result = await handleAuthCallback(req);
 
-export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
-
-  if (code) {
-    const cookieStore = await cookies()
-    
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          },
-        },
-      }
-    )
-    
-    await supabase.auth.exchangeCodeForSession(code)
+  if (!result?.sessionId) {
+    const res = NextResponse.redirect(new URL('/login?error=google', req.url));
+    res.cookies.delete('oauth_state');
+    return res;
   }
 
-  // Redirect to home page after successful auth
-  return NextResponse.redirect(new URL('/', request.url))
+  const res = NextResponse.redirect(new URL('/', req.url));
+  res.cookies.set(SESSION_COOKIE, result.sessionId, {
+    httpOnly: true,
+    secure:   true,
+    sameSite: 'lax',
+    path:     '/',
+    maxAge:   SESSION_MAX_AGE,
+  });
+  res.cookies.delete('oauth_state');
+  return res;
 }

@@ -63,3 +63,6 @@ measure-*.js
 # Cloudflare build artifacts
 .open-next/
 .wrangler/
+
+# OAuth credentials file
+4cima-oauth.txt
