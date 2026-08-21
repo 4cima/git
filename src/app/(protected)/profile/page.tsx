@@ -142,12 +142,12 @@ export default function ProfilePage() {
                 {profile.avatar_url ? (
                   <img
                     src={profile.avatar_url}
-                    alt={profile.username}
+                    alt={profile.username ?? ''}
                     className="w-32 h-32 rounded-2xl object-cover border-4 border-zinc-900 shadow-2xl"
                   />
                 ) : (
                   <div className={`w-32 h-32 rounded-2xl bg-gradient-to-br ${roleInfo.color} flex items-center justify-center text-white text-4xl font-black shadow-2xl border-4 border-zinc-900`}>
-                    {profile.username.charAt(0).toUpperCase()}
+                    {(profile.username ?? '?').charAt(0).toUpperCase()}
                   </div>
                 )}
                 

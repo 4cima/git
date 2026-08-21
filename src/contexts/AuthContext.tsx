@@ -1,20 +1,21 @@
-'use client'
+'use client';
 
-// src/contexts/AuthContext.tsx
-// Thin wrapper around useAuth (Zustand) for React Context compatibility
-// The actual auth logic lives in src/hooks/useAuth.ts
+/**
+ * src/contexts/AuthContext.tsx
+ *
+ * Thin wrapper around useAuth (Zustand) for React Context compatibility.
+ * Interface kept identical to the previous Supabase-based version.
+ */
 import { createContext, useContext, type ReactNode } from 'react';
-import { useAuth, type Role } from '../hooks/useAuth';
-import type { Session, User } from '@supabase/supabase-js';
-import type { Profile } from '../lib/supabase';
+import { useAuth, type Role, type User, type Session, type Profile } from '../hooks/useAuth';
 
 interface AuthContextValue {
-  user: User | null;
-  session: Session | null;
-  profile: any;
-  role: any | null;
-  loading: boolean;
-  signOut: () => Promise<void>;
+  user:           User | null;
+  session:        Session | null;
+  profile:        Profile | null;
+  role:           Role | null;
+  loading:        boolean;
+  signOut:        () => Promise<void>;
   refreshProfile: (silent?: boolean) => Promise<void>;
 }
 
@@ -22,7 +23,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, session, profile, loading, signOut, refreshProfile } = useAuth();
-  const role = (profile?.role as any) ?? null;
+  const role = (profile?.role as Role) ?? null;
 
   return (
     <AuthContext.Provider
@@ -35,8 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuthContext(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuthContext must be used within AuthProvider');
-  }
+  if (!ctx) throw new Error('useAuthContext must be used within AuthProvider');
   return ctx;
 }
