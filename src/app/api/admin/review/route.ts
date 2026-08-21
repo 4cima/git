@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     ok: true, tmdb_id, type, action,
     previous_status: currentStatus, new_status: newStatus,
-    turso_synced: true, local_db_synced: localDbSynced,
+    d1_synced: true, local_db_synced: localDbSynced,
     ...(localDbWarning ? { local_db_warning: localDbWarning } : {})
   })
 }

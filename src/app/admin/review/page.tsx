@@ -3,11 +3,11 @@
 /**
  * src/app/admin/review/page.tsx
  *
- * Content Review Dashboard — shows all needs_review items from Turso
+ * Content Review Dashboard — shows all needs_review items from D1
  * and allows approve / reject per item via /api/admin/review (POST).
  *
  * NOTE ON local.db SYNC:
- *   This page updates Turso only (Next.js API routes cannot write to the
+ *   This page updates D1 only (Next.js API routes cannot write to the
  *   server-side SQLite file in production). After approving / rejecting
  *   here, run the CLI to keep local.db in sync:
  *     node scripts/review-content.js --approve <tmdb_id>
@@ -36,7 +36,7 @@ interface ReviewItem {
 }
 
 type ActionState = 'idle' | 'loading' | 'done' | 'error'
-type SyncResult = { turso_synced: boolean; local_db_synced: boolean; local_db_warning?: string }
+type SyncResult = { d1_synced: boolean; local_db_synced: boolean; local_db_warning?: string }
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -95,7 +95,7 @@ function ReviewRow({
             </div>
             <div className="flex items-center gap-3 text-xs">
               <span className="flex items-center gap-1 text-emerald-500">
-                <CheckCircle size={11} /> Turso ✓
+                <CheckCircle size={11} /> D1 ✓
               </span>
               {syncResult?.local_db_synced ? (
                 <span className="flex items-center gap-1 text-emerald-500">
@@ -251,7 +251,7 @@ export default function ReviewPage() {
       const data = await res.json()
       if (!data.ok) throw new Error(data.error || 'Update failed')
       // Return sync info so ReviewRow can show it
-      return data as { turso_synced: boolean; local_db_synced: boolean; local_db_warning?: string }
+      return data as { d1_synced: boolean; local_db_synced: boolean; local_db_warning?: string }
     },
     [],
   )
@@ -309,7 +309,7 @@ export default function ReviewPage() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8">
-            <AdminLoadingState type="spinner" message="جاري جلب المحتوى من Turso..." />
+            <AdminLoadingState type="spinner" message="جاري جلب المحتوى من D1..." />
           </div>
         ) : error ? (
           <div className="p-8 text-center text-rose-400 text-sm">

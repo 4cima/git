@@ -1,8 +1,8 @@
 /**
- * Admin Content API - Turso Integration
+ * Admin Content API
  *
  * Operations route directly to /api/admin/movies and /api/admin/series
- * which call turso.execute() — no phantom /api/db/query endpoint.
+ * which use the D1 database client (@/lib/db).
  *
  * All routes are protected by HTTP Basic Auth middleware.
  */

@@ -12,8 +12,6 @@ const ALLOWED_COMMANDS: Record<string, { cmd: string; args: string[]; risk: 'low
   'npm run full-workflow':                       { cmd: 'npm',  args: ['run', 'full-workflow'],                      risk: 'medium' },
   'npm run setup':                               { cmd: 'npm',  args: ['run', 'setup'],                              risk: 'medium' },
   'node scripts/check-local-data.js':            { cmd: 'node', args: ['scripts/check-local-data.js'],               risk: 'low'    },
-  'node scripts/check-turso-data.js':            { cmd: 'node', args: ['scripts/check-turso-data.js'],               risk: 'low'    },
-  'node scripts/verify-sync-quality.js':         { cmd: 'node', args: ['scripts/verify-sync-quality.js'],            risk: 'low'    },
   'node scripts/health-check.js':                { cmd: 'node', args: ['scripts/health-check.js'],                   risk: 'low'    },
   'node scripts/check-schema.js':                { cmd: 'node', args: ['scripts/check-schema.js'],                   risk: 'low'    },
   'node scripts/check-tables.js':                { cmd: 'node', args: ['scripts/check-tables.js'],                   risk: 'low'    },

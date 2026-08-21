@@ -5,9 +5,6 @@
  * @description استعلامات موحدة 100% بين الموقع والتطبيق
  * @author 4Cima Team
  * @version 2.0.0
- * 
- * ⚠️ CRITICAL: This file uses Turso API endpoints for ALL content queries
- * ⚠️ Supabase is ONLY used for auth and user data (profiles, watchlist, etc.)
  */
 
 import type { Movie, TVSeries } from '../types/database';

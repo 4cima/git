@@ -2,11 +2,11 @@
  * src/lib/local-db-server.ts
  *
  * Server-only wrapper for better-sqlite3.
- * Returns null when local.db is not present (e.g. on Koyeb/production)
+ * Returns null when local.db is not present (e.g. in Cloudflare Workers/production)
  * so API routes degrade gracefully instead of crashing.
  *
  * local.db only exists on the developer machine — it is the ingestion
- * staging database, excluded from git and from Koyeb intentionally.
+ * staging database, excluded from git and from production intentionally.
  */
 import path from 'path'
 import fs   from 'fs'

@@ -1,11 +1,8 @@
 /**
- * 🎬 Content API - Turso Integration
+ * 🎬 Content API
  * 
- * @description Helper functions for content management using Turso via Worker API
+ * @description Helper functions for content management via Admin API
  * @author 4Cima Team
- * 
- * ⚠️ CRITICAL: ALL content operations go through Turso via Worker API
- * ⚠️ Supabase is ONLY for auth and user data
  */
 
 import { CONFIG } from '../lib/constants'

@@ -1,11 +1,8 @@
 /**
- * 🔧 Ingestion API Service - 4Cima Complete Rebuild
+ * 🔧 Ingestion API Service - 4Cima
  * 
  * @description Admin operations for ingestion pipeline management
  * @author 4Cima Team
- * 
- * ⚠️ CRITICAL: Connects to new Express server on Koyeb
- * ⚠️ All ingestion operations use Turso via Express API
  */
 
 import { CONFIG } from '../lib/constants';

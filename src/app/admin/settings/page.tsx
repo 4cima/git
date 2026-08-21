@@ -146,16 +146,16 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1.5">Turso Database URL</label>
+                <label className="block text-sm font-medium text-zinc-400 mb-1.5">Cloudflare D1 Database</label>
                 <div className="relative">
                   <input
                     type="text"
-                    value="libsql://******.turso.io"
+                    value="b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6"
                     disabled
                     className="w-full bg-zinc-950/50 border border-zinc-800/50 rounded-lg py-2 px-3 text-sm text-zinc-500 cursor-not-allowed"
                   />
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-600">
-                    يُدار من .env
+                    يُدار من wrangler.jsonc
                   </span>
                 </div>
               </div>
