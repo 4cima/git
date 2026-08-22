@@ -6,45 +6,38 @@
 
 import { useAuth } from '@/hooks/useAuth'
 import { useState, useRef, useEffect } from 'react'
-import { User, Mail, Lock, Bell, Eye, Trash2, Save, Loader, Camera, Check, X, AlertCircle } from 'lucide-react'
+import { User, Lock, Bell, Eye, Trash2, Save, Loader, Camera, Check, AlertCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { validateUsername, canChangeUsername } from '@/lib/usernameValidator'
+import { validateUsername } from '@/lib/usernameValidator'
 
 export default function ProfileSettingsPage() {
   const { user, profile, refreshProfile } = useAuth()
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [activeSection, setActiveSection] = useState<'profile' | 'account' | 'privacy' | 'notifications'>('profile')
+  const [activeSection, setActiveSection] = useState<'profile' | 'privacy' | 'notifications'>('profile')
   
   // Profile settings
   const [username, setUsername] = useState(profile?.username || '')
   const [usernameError, setUsernameError] = useState<string | null>(null)
-  const [canChangeUsernameNow, setCanChangeUsernameNow] = useState(true)
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || '')
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
-  const [bio, setBio] = useState('')
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
-  // Account settings
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [savingPassword, setSavingPassword] = useState(false)
-  const [passwordFeedback, setPasswordFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
-
-  // Privacy settings
+  // Privacy settings — loaded from API
   const [showWatchHistory, setShowWatchHistory] = useState(true)
   const [showFavorites, setShowFavorites] = useState(true)
+  const [privacyLoaded, setPrivacyLoaded] = useState(false)
   const [savingPrivacy, setSavingPrivacy] = useState(false)
   const [privacyFeedback, setPrivacyFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
-  // Notification settings
+  // Notification settings — loaded from API
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [newContentNotif, setNewContentNotif] = useState(true)
+  const [notifLoaded, setNotifLoaded] = useState(false)
   const [savingNotifications, setSavingNotifications] = useState(false)
   const [notificationsFeedback, setNotificationsFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
@@ -53,26 +46,35 @@ export default function ProfileSettingsPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
 
-  if (!user || !profile) {
-    return null
-  }
-
-  // Check username change cooldown on mount
+  // Load privacy settings from D1 on mount
   useEffect(() => {
-    // Note: username_last_changed field not yet implemented in Profile type
-    // Uncomment when added to database schema and Profile interface
-    // if (profile?.username_last_changed) {
-    //   const check = canChangeUsername(profile.username_last_changed)
-    //   setCanChangeUsernameNow(check.canChange)
-    //   if (!check.canChange) {
-    //     setUsernameError(check.error || null)
-    //   }
-    // }
-  }, [profile?.username])
+    fetch('/api/profile/privacy')
+      .then(r => r.json())
+      .then(d => {
+        if (d.showWatchHistory !== undefined) setShowWatchHistory(d.showWatchHistory)
+        if (d.showFavorites   !== undefined) setShowFavorites(d.showFavorites)
+        setPrivacyLoaded(true)
+      })
+      .catch(() => setPrivacyLoaded(true))
+  }, [])
+
+  // Load notification settings from D1 on mount
+  useEffect(() => {
+    fetch('/api/profile/notifications')
+      .then(r => r.json())
+      .then(d => {
+        if (d.emailNotifications !== undefined) setEmailNotifications(d.emailNotifications)
+        if (d.newContentNotif    !== undefined) setNewContentNotif(d.newContentNotif)
+        setNotifLoaded(true)
+      })
+      .catch(() => setNotifLoaded(true))
+  }, [])
+
+  if (!user || !profile) return null
 
   // Validate username on change
   useEffect(() => {
-    if (username && username !== profile?.username) {
+    if (username && username !== (profile?.username ?? '')) {
       const validation = validateUsername(username)
       setUsernameError(validation.valid ? null : validation.error || null)
     } else {
@@ -94,30 +96,10 @@ export default function ProfileSettingsPage() {
       flashFeedback(setProfileFeedback, 'error', 'اسم المستخدم مطلوب')
       return
     }
-
-    // Check if username is changing
-    const isUsernameChanging = username.trim() !== profile?.username
-
-    if (isUsernameChanging) {
-      // Validate username
-      const validation = validateUsername(username)
-      if (!validation.valid) {
-        flashFeedback(setProfileFeedback, 'error', validation.error || 'اسم المستخدم غير صالح')
-        return
-      }
-
-      // Check cooldown
-      // Note: username_last_changed field not yet implemented in Profile type
-      // Uncomment when added to database schema and Profile interface
-      // if (profile?.username_last_changed) {
-      //   const check = canChangeUsername(profile.username_last_changed)
-      //   if (!check.canChange) {
-      //     flashFeedback(setProfileFeedback, 'error', check.error || 'لا يمكن تغيير الاسم الآن')
-      //     return
-      //   }
-      // }
+    if (usernameError) {
+      flashFeedback(setProfileFeedback, 'error', usernameError)
+      return
     }
-
     setSavingProfile(true)
     try {
       const res = await fetch('/api/profile/update', {
@@ -125,60 +107,14 @@ export default function ProfileSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.trim(), avatar_url: avatarUrl }),
       })
-
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'فشل التحديث')
-
       flashFeedback(setProfileFeedback, 'success', 'تم حفظ التغييرات بنجاح')
       await refreshProfile()
-      
-      // Update cooldown status if username changed
-      if (isUsernameChanging) {
-        setCanChangeUsernameNow(false)
-        setUsernameError('يمكنك تغيير اسم المستخدم مرة أخرى بعد 24 ساعة')
-      }
     } catch (error: any) {
       flashFeedback(setProfileFeedback, 'error', error.message)
     } finally {
       setSavingProfile(false)
-    }
-  }
-
-  const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      flashFeedback(setPasswordFeedback, 'error', 'جميع الحقول مطلوبة')
-      return
-    }
-
-    if (newPassword.length < 6) {
-      flashFeedback(setPasswordFeedback, 'error', 'كلمة المرور يجب أن تكون 6 أحرف على الأقل')
-      return
-    }
-
-    if (newPassword !== confirmPassword) {
-      flashFeedback(setPasswordFeedback, 'error', 'كلمة المرور غير متطابقة')
-      return
-    }
-
-    setSavingPassword(true)
-    try {
-      const res = await fetch('/api/profile/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      })
-
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'فشل تغيير كلمة المرور')
-
-      flashFeedback(setPasswordFeedback, 'success', 'تم تغيير كلمة المرور بنجاح')
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
-    } catch (error: any) {
-      flashFeedback(setPasswordFeedback, 'error', error.message)
-    } finally {
-      setSavingPassword(false)
     }
   }
 
@@ -190,10 +126,8 @@ export default function ProfileSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ showWatchHistory, showFavorites }),
       })
-
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'فشل التحديث')
-
       flashFeedback(setPrivacyFeedback, 'success', 'تم حفظ إعدادات الخصوصية')
     } catch (error: any) {
       flashFeedback(setPrivacyFeedback, 'error', error.message)
@@ -328,18 +262,6 @@ export default function ProfileSettingsPage() {
               </button>
 
               <button
-                onClick={() => setActiveSection('account')}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-right ${
-                  activeSection === 'account'
-                    ? 'bg-gradient-to-r from-red-600 to-cyan-600 text-white font-bold'
-                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50'
-                }`}
-              >
-                <Lock size={18} />
-                <span className="text-sm">الأمان</span>
-              </button>
-
-              <button
                 onClick={() => setActiveSection('privacy')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-right ${
                   activeSection === 'privacy'
@@ -433,9 +355,6 @@ export default function ProfileSettingsPage() {
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
                     اسم المستخدم
-                    {username !== profile?.username && !canChangeUsernameNow && (
-                      <span className="text-orange-400 text-xs mr-2">(24 ساعة قبل التغيير التالي)</span>
-                    )}
                   </label>
                   <input
                     type="text"
@@ -494,136 +413,11 @@ export default function ProfileSettingsPage() {
               </div>
             )}
 
-            {/* Account Security Section */}
-            {activeSection === 'account' && (
-              <div className="space-y-6">
-                {/* Change Password */}
-                <div className="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-2xl p-8">
-                  <h2 className="text-xl font-bold text-zinc-100 mb-6">تغيير كلمة المرور</h2>
-
-                  {passwordFeedback && (
-                    <div className={`mb-6 px-4 py-3 rounded-lg text-sm font-medium ${
-                      passwordFeedback.type === 'success'
-                        ? 'bg-emerald-950/40 border border-emerald-700/40 text-emerald-300'
-                        : 'bg-rose-950/40 border border-rose-700/40 text-rose-300'
-                    }`}>
-                      {passwordFeedback.msg}
-                    </div>
-                  )}
-
-                  <div className="space-y-4 mb-6">
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">كلمة المرور الحالية</label>
-                      <input
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-colors"
-                        placeholder="••••••••"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">كلمة المرور الجديدة</label>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-colors"
-                        placeholder="••••••••"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-300 mb-2">تأكيد كلمة المرور</label>
-                      <input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-100 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-colors"
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleChangePassword}
-                    disabled={savingPassword}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-cyan-600 hover:from-red-500 hover:to-cyan-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {savingPassword ? (
-                      <><Loader size={18} className="animate-spin" /> جاري التغيير...</>
-                    ) : (
-                      <><Lock size={18} /> تغيير كلمة المرور</>
-                    )}
-                  </button>
-                </div>
-
-                {/* Delete Account */}
-                <div className="bg-zinc-900/80 backdrop-blur-xl border border-red-600/20 rounded-2xl p-8">
-                  <h2 className="text-xl font-bold text-red-400 mb-2">حذف الحساب</h2>
-                  <p className="text-sm text-zinc-400 mb-6">
-                    هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع بياناتك بشكل دائم.
-                  </p>
-
-                  {!showDeleteConfirm ? (
-                    <button
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="flex items-center gap-2 px-6 py-3 bg-red-600/10 hover:bg-red-600/20 border border-red-600/20 text-red-400 rounded-xl font-bold transition-all"
-                    >
-                      <Trash2 size={18} />
-                      حذف الحساب
-                    </button>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="p-4 rounded-xl bg-red-600/10 border border-red-600/20">
-                        <p className="text-sm text-red-300 mb-3">
-                          للتأكيد، اكتب اسم المستخدم: <span className="font-bold">{profile.username}</span>
-                        </p>
-                        <input
-                          type="text"
-                          value={deleteConfirmText}
-                          onChange={(e) => setDeleteConfirmText(e.target.value)}
-                          className="w-full bg-zinc-950 border border-red-600/30 rounded-xl px-4 py-3 text-zinc-100 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-colors"
-                          placeholder="اسم المستخدم"
-                        />
-                      </div>
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={handleDeleteAccount}
-                          disabled={deleting || deleteConfirmText !== profile.username}
-                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {deleting ? (
-                            <><Loader size={18} className="animate-spin" /> جاري الحذف...</>
-                          ) : (
-                            <><Trash2 size={18} /> تأكيد الحذف</>
-                          )}
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setShowDeleteConfirm(false)
-                            setDeleteConfirmText('')
-                          }}
-                          disabled={deleting}
-                          className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl font-bold transition-all disabled:opacity-50"
-                        >
-                          إلغاء
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Privacy Section */}
             {activeSection === 'privacy' && (
               <div className="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-2xl p-8">
                 <h2 className="text-xl font-bold text-zinc-100 mb-2">إعدادات الخصوصية</h2>
-                <p className="text-sm text-zinc-400 mb-6">تحكم في من يمكنه رؤية نشاطك</p>
+                <p className="text-sm text-zinc-400 mb-6">تحكم في من يمكنه رؤية نشاطك • يمكن التعديل مرة كل 24 ساعة</p>
 
                 {privacyFeedback && (
                   <div className={`mb-6 px-4 py-3 rounded-lg text-sm font-medium ${
@@ -635,51 +429,71 @@ export default function ProfileSettingsPage() {
                   </div>
                 )}
 
-                <div className="space-y-6 mb-6">
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
-                    <div>
-                      <h3 className="text-sm font-bold text-zinc-100 mb-1">إظهار سجل المشاهدة</h3>
-                      <p className="text-xs text-zinc-500">السماح للآخرين برؤية ما شاهدته</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={showWatchHistory}
-                        onChange={(e) => setShowWatchHistory(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-red-600 peer-checked:to-cyan-600"></div>
-                    </label>
+                {!privacyLoaded ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader size={24} className="animate-spin text-zinc-400" />
                   </div>
+                ) : (
+                  <>
+                    <div className="space-y-4 mb-6">
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
+                        <div>
+                          <h3 className="text-sm font-bold text-zinc-100 mb-1">إظهار سجل المشاهدة</h3>
+                          <p className="text-xs text-zinc-500">السماح للآخرين برؤية ما شاهدته</p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={showWatchHistory}
+                          onClick={() => setShowWatchHistory(v => !v)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-zinc-900 ${
+                            showWatchHistory ? 'bg-gradient-to-r from-red-600 to-cyan-600' : 'bg-zinc-700'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
+                              showWatchHistory ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
 
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
-                    <div>
-                      <h3 className="text-sm font-bold text-zinc-100 mb-1">إظهار المفضلة</h3>
-                      <p className="text-xs text-zinc-500">السماح للآخرين برؤية قائمة المفضلة</p>
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
+                        <div>
+                          <h3 className="text-sm font-bold text-zinc-100 mb-1">إظهار المفضلة</h3>
+                          <p className="text-xs text-zinc-500">السماح للآخرين برؤية قائمة المفضلة</p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={showFavorites}
+                          onClick={() => setShowFavorites(v => !v)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-zinc-900 ${
+                            showFavorites ? 'bg-gradient-to-r from-red-600 to-cyan-600' : 'bg-zinc-700'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
+                              showFavorites ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={showFavorites}
-                        onChange={(e) => setShowFavorites(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-red-600 peer-checked:to-cyan-600"></div>
-                    </label>
-                  </div>
-                </div>
 
-                <button
-                  onClick={handleSavePrivacy}
-                  disabled={savingPrivacy}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-cyan-600 hover:from-red-500 hover:to-cyan-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {savingPrivacy ? (
-                    <><Loader size={18} className="animate-spin" /> جاري الحفظ...</>
-                  ) : (
-                    <><Save size={18} /> حفظ التغييرات</>
-                  )}
-                </button>
+                    <button
+                      onClick={handleSavePrivacy}
+                      disabled={savingPrivacy}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-cyan-600 hover:from-red-500 hover:to-cyan-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {savingPrivacy ? (
+                        <><Loader size={18} className="animate-spin" /> جاري الحفظ...</>
+                      ) : (
+                        <><Save size={18} /> حفظ التغييرات</>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
@@ -687,7 +501,7 @@ export default function ProfileSettingsPage() {
             {activeSection === 'notifications' && (
               <div className="bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 rounded-2xl p-8">
                 <h2 className="text-xl font-bold text-zinc-100 mb-2">إعدادات الإشعارات</h2>
-                <p className="text-sm text-zinc-400 mb-6">اختر الإشعارات التي تريد استلامها</p>
+                <p className="text-sm text-zinc-400 mb-6">اختر الإشعارات التي تريد استلامها • يمكن التعديل مرة كل 24 ساعة</p>
 
                 {notificationsFeedback && (
                   <div className={`mb-6 px-4 py-3 rounded-lg text-sm font-medium ${
@@ -699,51 +513,71 @@ export default function ProfileSettingsPage() {
                   </div>
                 )}
 
-                <div className="space-y-6 mb-6">
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
-                    <div>
-                      <h3 className="text-sm font-bold text-zinc-100 mb-1">الإشعارات عبر البريد الإلكتروني</h3>
-                      <p className="text-xs text-zinc-500">تلقي إشعارات على البريد الإلكتروني</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={emailNotifications}
-                        onChange={(e) => setEmailNotifications(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-red-600 peer-checked:to-cyan-600"></div>
-                    </label>
+                {!notifLoaded ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader size={24} className="animate-spin text-zinc-400" />
                   </div>
+                ) : (
+                  <>
+                    <div className="space-y-4 mb-6">
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
+                        <div>
+                          <h3 className="text-sm font-bold text-zinc-100 mb-1">الإشعارات عبر البريد الإلكتروني</h3>
+                          <p className="text-xs text-zinc-500">تلقي إشعارات على البريد الإلكتروني</p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={emailNotifications}
+                          onClick={() => setEmailNotifications(v => !v)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-zinc-900 ${
+                            emailNotifications ? 'bg-gradient-to-r from-red-600 to-cyan-600' : 'bg-zinc-700'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
+                              emailNotifications ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
 
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
-                    <div>
-                      <h3 className="text-sm font-bold text-zinc-100 mb-1">إشعارات المحتوى الجديد</h3>
-                      <p className="text-xs text-zinc-500">إعلامك بالأفلام والمسلسلات الجديدة</p>
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/30 border border-zinc-800">
+                        <div>
+                          <h3 className="text-sm font-bold text-zinc-100 mb-1">إشعارات المحتوى الجديد</h3>
+                          <p className="text-xs text-zinc-500">إعلامك بالأفلام والمسلسلات الجديدة</p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={newContentNotif}
+                          onClick={() => setNewContentNotif(v => !v)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-zinc-900 ${
+                            newContentNotif ? 'bg-gradient-to-r from-red-600 to-cyan-600' : 'bg-zinc-700'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
+                              newContentNotif ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={newContentNotif}
-                        onChange={(e) => setNewContentNotif(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-cyan-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-red-600 peer-checked:to-cyan-600"></div>
-                    </label>
-                  </div>
-                </div>
 
-                <button
-                  onClick={handleSaveNotifications}
-                  disabled={savingNotifications}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-cyan-600 hover:from-red-500 hover:to-cyan-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {savingNotifications ? (
-                    <><Loader size={18} className="animate-spin" /> جاري الحفظ...</>
-                  ) : (
-                    <><Save size={18} /> حفظ التغييرات</>
-                  )}
-                </button>
+                    <button
+                      onClick={handleSaveNotifications}
+                      disabled={savingNotifications}
+                      className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-cyan-600 hover:from-red-500 hover:to-cyan-500 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {savingNotifications ? (
+                        <><Loader size={18} className="animate-spin" /> جاري الحفظ...</>
+                      ) : (
+                        <><Save size={18} /> حفظ التغييرات</>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
