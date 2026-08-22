@@ -44,6 +44,8 @@ const CHUNK_INIT    = 100;    // statements per D1 request
 const MOVIE_BATCH   = 200;    // rows pulled from local.db at a time
 const SERIES_BATCH  = 50;     // smaller — episodes_json can be large
 const FORCE_ALL     = process.argv.includes('--all');
+const TEST_LIMIT    = process.argv.find(a => a.startsWith('--limit'));
+const LIMIT_COUNT   = TEST_LIMIT ? parseInt(TEST_LIMIT.split('=')[1], 10) : null;
 
 const CF_TOKEN = process.env.CLOUDFLARE_D1_TOKEN;
 if (!CF_TOKEN) {
@@ -138,23 +140,28 @@ async function insertChunk(stmts, chunkSize, table, tmdbIds) {
 }
 
 async function insertSingleWithFallback(stmt, tmdb_id, table) {
+  // Try with all large JSON cols nullified at once
   let current = stmt;
   for (const col of LARGE_JSON_COLS) {
     current = nullifyCol(current, col);
-    try {
-      await d1Query(current + ';');
-      if (table === 'movies') {
-        localDb.prepare(`UPDATE movies    SET synced_to_d1 = 1, synced_at = datetime('now') WHERE tmdb_id = ?`).run(tmdb_id);
-      } else {
-        localDb.prepare(`UPDATE tv_series SET synced_to_d1 = 1, synced_at = datetime('now') WHERE tmdb_id = ?`).run(tmdb_id);
-      }
-      return;
-    } catch (err) {
-      if (err.code !== 'TOOBIG') throw err;
-    }
   }
-  failed.push({ table, tmdb_id, reason: 'TOOBIG after all JSON cols nulled' });
-  process.stdout.write(`\n    ⚠ Skipped tmdb_id=${tmdb_id} (TOOBIG)\n`);
+  
+  try {
+    await d1Query(current + ';');
+    if (table === 'movies') {
+      localDb.prepare(`UPDATE movies    SET synced_to_d1 = 1, synced_at = datetime('now') WHERE tmdb_id = ?`).run(tmdb_id);
+    } else {
+      localDb.prepare(`UPDATE tv_series SET synced_to_d1 = 1, synced_at = datetime('now') WHERE tmdb_id = ?`).run(tmdb_id);
+    }
+    return;
+  } catch (err) {
+    if (err.code === 'TOOBIG') {
+      failed.push({ table, tmdb_id, reason: 'TOOBIG after all JSON cols nulled' });
+      process.stdout.write(`\n    ⚠ Skipped tmdb_id=${tmdb_id} (TOOBIG)\n`);
+      return;
+    }
+    throw err;
+  }
 }
 
 function nullifyCol(stmt, colName) {
@@ -334,12 +341,29 @@ async function main() {
 
   const syncFilter = FORCE_ALL ? '' : 'AND synced_to_d1 = 0';
 
-  const totalMovies = localDb.prepare(`
+  // Get eligible IDs upfront if limit is specified
+  let movieIds = null, seriesIds = null;
+  if (LIMIT_COUNT) {
+    movieIds = localDb.prepare(`
+      SELECT tmdb_id FROM movies
+      WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${syncFilter}
+      LIMIT ?
+    `).all(LIMIT_COUNT).map(r => r.tmdb_id);
+    
+    seriesIds = localDb.prepare(`
+      SELECT tmdb_id FROM tv_series
+      WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved')
+        AND slug IS NOT NULL AND slug != '' ${syncFilter}
+      LIMIT ?
+    `).all(LIMIT_COUNT).map(r => r.tmdb_id);
+  }
+
+  const totalMovies = movieIds ? movieIds.length : localDb.prepare(`
     SELECT COUNT(*) as c FROM movies
     WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${syncFilter}
   `).get().c;
 
-  const totalSeries = localDb.prepare(`
+  const totalSeries = seriesIds ? seriesIds.length : localDb.prepare(`
     SELECT COUNT(*) as c FROM tv_series
     WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved')
       AND slug IS NOT NULL AND slug != '' ${syncFilter}
@@ -366,12 +390,20 @@ async function main() {
     bar.start(totalMovies, 0);
 
     while (true) {
-      const rows = localDb.prepare(`
-        SELECT tmdb_id FROM movies
-        WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${syncFilter}
-        LIMIT ?
-      `).all(MOVIE_BATCH).map(r => r.tmdb_id);
-      if (rows.length === 0) break;
+      let rows;
+      if (movieIds) {
+        // Use pre-selected IDs (for --limit mode)
+        rows = movieIds.splice(0, MOVIE_BATCH);
+        if (rows.length === 0) break;
+      } else {
+        // Normal mode: fetch batch from DB
+        rows = localDb.prepare(`
+          SELECT tmdb_id FROM movies
+          WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${syncFilter}
+          LIMIT ?
+        `).all(MOVIE_BATCH).map(r => r.tmdb_id);
+        if (rows.length === 0) break;
+      }
 
       const stmts = rows.map(id => buildMovieInsert(id)).filter(Boolean);
       if (stmts.length > 0) await adaptiveInsert(stmts, 'movies', rows);
@@ -392,13 +424,21 @@ async function main() {
     bar.start(totalSeries, 0);
 
     while (true) {
-      const rows = localDb.prepare(`
-        SELECT tmdb_id FROM tv_series
-        WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved')
-          AND slug IS NOT NULL AND slug != '' ${syncFilter}
-        LIMIT ?
-      `).all(SERIES_BATCH).map(r => r.tmdb_id);
-      if (rows.length === 0) break;
+      let rows;
+      if (seriesIds) {
+        // Use pre-selected IDs (for --limit mode)
+        rows = seriesIds.splice(0, SERIES_BATCH);
+        if (rows.length === 0) break;
+      } else {
+        // Normal mode: fetch batch from DB
+        rows = localDb.prepare(`
+          SELECT tmdb_id FROM tv_series
+          WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved')
+            AND slug IS NOT NULL AND slug != '' ${syncFilter}
+          LIMIT ?
+        `).all(SERIES_BATCH).map(r => r.tmdb_id);
+        if (rows.length === 0) break;
+      }
 
       const stmts = rows.map(id => buildSeriesInsert(id)).filter(Boolean);
       if (stmts.length > 0) await adaptiveInsert(stmts, 'tv_series', rows);
