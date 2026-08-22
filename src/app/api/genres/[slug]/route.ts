@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeFirst, executeAll } from '@/lib/db'
+import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams } from '@/lib/genre-siblings'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +35,11 @@ export async function GET(
     const validSorts = ['popularity', 'vote_average', 'vote_count', 'release_year', 'first_air_year']
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder  = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
-    const likeParam  = `%"name_ar":"${genre.name_ar}"%`
+    
+    const genreIds = getGenreWithSiblings(genre.tmdb_id)
+    const whereClause = buildGenreWhereClause(genreIds, 'm')
+    const whereClauseSeries = buildGenreWhereClause(genreIds, 's')
+    const genreParams = buildGenreParams(genreIds)
 
     if (type === 'movie') {
       const rows = await executeAll(
@@ -43,10 +48,10 @@ export async function GET(
                 m.overview_ar, m.overview_en, m.genres_json, m.original_language,
                 'movie' as media_type
          FROM movies m
-         WHERE genres_json LIKE ?
+         WHERE ${whereClause}
          ORDER BY m.${sortColumn} ${sortOrder}
          LIMIT ? OFFSET ?`,
-        [likeParam, limit + 1, offset]
+        [...genreParams, limit + 1, offset]
       )
       const hasMore = rows.length > limit
       if (hasMore) rows.pop()
@@ -59,10 +64,10 @@ export async function GET(
                 s.overview_ar, s.overview_en, s.genres_json, s.original_language,
                 'tv' as media_type
          FROM tv_series s
-         WHERE genres_json LIKE ?
+         WHERE ${whereClauseSeries}
          ORDER BY s.${sortColumn} ${sortOrder}
          LIMIT ? OFFSET ?`,
-        [likeParam, limit + 1, offset]
+        [...genreParams, limit + 1, offset]
       )
       const hasMore = rows.length > limit
       if (hasMore) rows.pop()
@@ -77,18 +82,18 @@ export async function GET(
                   m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
                   m.overview_ar, m.overview_en, m.genres_json, m.original_language,
                   'movie' as media_type
-           FROM movies m WHERE genres_json LIKE ?
+           FROM movies m WHERE ${whereClause}
            ORDER BY m.${sortColumn} ${sortOrder} LIMIT ?`,
-          [likeParam, fetchLimit]
+          [...genreParams, fetchLimit]
         ),
         executeAll(
           `SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
                   s.vote_average, s.vote_count, s.popularity, s.first_air_date, s.first_air_year,
                   s.overview_ar, s.overview_en, s.genres_json, s.original_language,
                   'tv' as media_type
-           FROM tv_series s WHERE genres_json LIKE ?
+           FROM tv_series s WHERE ${whereClauseSeries}
            ORDER BY s.${sortColumn} ${sortOrder} LIMIT ?`,
-          [likeParam, fetchLimit]
+          [...genreParams, fetchLimit]
         )
       ])
       

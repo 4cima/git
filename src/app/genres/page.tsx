@@ -52,25 +52,29 @@ export default async function GenresPage() {
                   
                   {/* Counts */}
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between text-zinc-400">
-                      <span className="flex items-center gap-2">
-                        <Film size={16} className="text-red-400" />
-                        أفلام
-                      </span>
-                      <span className="font-bold text-white">
-                        {genre.movie_count?.toLocaleString('ar-EG') || 0}
-                      </span>
-                    </div>
+                    {genre.movie_count > 0 && (
+                      <div className="flex items-center justify-between text-zinc-400">
+                        <span className="flex items-center gap-2">
+                          <Film size={16} className="text-red-400" />
+                          أفلام
+                        </span>
+                        <span className="font-bold text-white">
+                          {genre.movie_count.toLocaleString('ar-EG')}
+                        </span>
+                      </div>
+                    )}
                     
-                    <div className="flex items-center justify-between text-zinc-400">
-                      <span className="flex items-center gap-2">
-                        <Tv size={16} className="text-blue-400" />
-                        مسلسلات
-                      </span>
-                      <span className="font-bold text-white">
-                        {genre.series_count?.toLocaleString('ar-EG') || 0}
-                      </span>
-                    </div>
+                    {genre.series_count > 0 && (
+                      <div className="flex items-center justify-between text-zinc-400">
+                        <span className="flex items-center gap-2">
+                          <Tv size={16} className="text-blue-400" />
+                          مسلسلات
+                        </span>
+                        <span className="font-bold text-white">
+                          {genre.series_count.toLocaleString('ar-EG')}
+                        </span>
+                      </div>
+                    )}
                     
                     <div className="pt-2 mt-2 border-t border-zinc-800">
                       <div className="flex items-center justify-between font-bold">

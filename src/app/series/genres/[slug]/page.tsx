@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { SeriesGenrePageClient } from '@/components/pages/SeriesGenrePageClient'
+import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams } from '@/lib/genre-siblings'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -33,14 +34,18 @@ export default async function SeriesGenrePage({ params }: PageProps) {
       name_en: genre.name_en, name_ar: genre.name_ar, slug: genre.slug
     }
 
+    const genreIds = getGenreWithSiblings(genre.tmdb_id)
+    const whereClause = buildGenreWhereClause(genreIds)
+    const genreParams = buildGenreParams(genreIds)
+
     const initialSeries = await executeAll(
       `SELECT id, slug, name_ar, name_en, poster_path, backdrop_path,
               vote_average, first_air_year, overview_ar, genres_json
        FROM tv_series
-       WHERE genres_json LIKE ?
+       WHERE ${whereClause}
        ORDER BY popularity DESC
        LIMIT 21`,
-      [`%"name_ar":"${genre.name_ar}"%`]
+      genreParams
     )
 
     const hasMore = initialSeries.length > 20

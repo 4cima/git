@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { MovieGenrePageClient } from '@/components/pages/MovieGenrePageClient'
+import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams } from '@/lib/genre-siblings'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -33,14 +34,18 @@ export default async function MovieGenrePage({ params }: PageProps) {
       name_en: genre.name_en, name_ar: genre.name_ar, slug: genre.slug
     }
 
+    const genreIds = getGenreWithSiblings(genre.tmdb_id)
+    const whereClause = buildGenreWhereClause(genreIds)
+    const genreParams = buildGenreParams(genreIds)
+
     const initialMovies = await executeAll(
       `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path,
               vote_average, release_year, overview_ar, genres_json
        FROM movies
-       WHERE genres_json LIKE ?
+       WHERE ${whereClause}
        ORDER BY popularity DESC
        LIMIT 21`,
-      [`%"name_ar":"${genre.name_ar}"%`]
+      genreParams
     )
 
     const hasMore = initialMovies.length > 20
