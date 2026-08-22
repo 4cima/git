@@ -100,7 +100,7 @@ export const MoviesGrid = ({ initialMovies, initialCursor }: MoviesGridProps) =>
           <Link
             href={`?cursor=${cursor}`}
             onClick={loadMore}
-            className="px-8 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold hover:scale-105 transition-transform flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold hover:transition-transform flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>

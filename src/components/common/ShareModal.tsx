@@ -104,7 +104,7 @@ export const ShareModal = ({ isOpen, onClose, url, title, lang = 'ar' }: ShareMo
                   />
                   <button
                     onClick={handleCopy}
-                    className="absolute left-2 top-2 bottom-2 w-10 flex items-center justify-center bg-lumen-gold text-black rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-lumen-gold/20"
+                    className="absolute left-2 top-2 bottom-2 w-10 flex items-center justify-center bg-lumen-gold text-black rounded-xl hover:active:scale-95 transition-all shadow-lg shadow-lumen-gold/20"
                     title={t('نسخ الرابط', 'Copy Link')}
                   >
                     <Copy size={16} />

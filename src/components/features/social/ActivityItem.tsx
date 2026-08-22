@@ -674,7 +674,7 @@ export const ActivityItem = ({ activity, currentUserId, currentUserRole }: Activ
               <button
                 type="submit"
                 disabled={!newComment.trim() || isBusy}
-                className="w-10 h-10 rounded-xl bg-lumen-gold text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                className="w-10 h-10 rounded-xl bg-lumen-gold text-black flex items-center justify-center hover:active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
               >
                 <Send size={14} />
               </button>

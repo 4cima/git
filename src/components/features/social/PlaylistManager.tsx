@@ -102,7 +102,7 @@ export const PlaylistManager = () => {
           <button
             onClick={handleGenerateAiPlaylist}
             disabled={generating}
-            className="h-10 px-4 rounded-xl bg-primary text-black font-bold text-xs flex items-center gap-2 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            className="h-10 px-4 rounded-xl bg-primary text-black font-bold text-xs flex items-center gap-2 hover:active:scale-95 transition-all disabled:opacity-50"
           >
             {generating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
             توليد ذكي

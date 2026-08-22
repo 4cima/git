@@ -27,7 +27,7 @@ export const StatsCard = ({
     color = 'blue',
     subtitle
 }: StatsCardProps) => (
-    <div className={`bg-gradient-to-br ${colorClasses[color]} backdrop-blur-sm border rounded-xl p-4 hover:scale-105 transition-transform`}>
+    <div className={`bg-gradient-to-br ${colorClasses[color]} backdrop-blur-sm border rounded-xl p-4 hover:transition-transform`}>
         <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">{title}</span>
             <div className="p-2 rounded-lg bg-white/5">

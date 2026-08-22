@@ -80,7 +80,7 @@ export const ContinueWatchingRow = ({ userId }: { userId: string }) => {
               href={href}
               className="snap-center shrink-0 w-[120px] md:w-[140px] group"
             >
-              <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-md transition-transform duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(0,255,204,0.3)]">
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-md transition-transform duration-300 hover:hover:shadow-[0_0_30px_rgba(0,255,204,0.3)]">
                 <div className="aspect-[2/3] bg-zinc-900">
                   {(movie.poster_path || r.meta?.poster_path) ? (
                     <img

@@ -115,7 +115,7 @@ const ServerSwitcher = ({
             className={`
               relative group flex items-center gap-3 px-5 h-11 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300
               ${currentServer === idx 
-                ? 'bg-gradient-to-r from-primary to-luxury-purple text-white shadow-[0_0_20px_rgba(225,29,72,0.3)] scale-105 border-primary' 
+                ? 'bg-gradient-to-r from-primary to-luxury-purple text-white shadow-[0_0_20px_rgba(225,29,72,0.3)] border-primary' 
                 : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800 hover:text-white border-white/5 hover:border-white/10'
               }
               border

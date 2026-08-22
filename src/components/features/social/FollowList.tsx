@@ -108,7 +108,7 @@ export const FollowList = ({
                     "h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                     isFollowed
                       ? "bg-white/5 text-zinc-400 border border-white/10 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20"
-                      : "bg-lumen-gold text-black hover:scale-105 active:scale-95 shadow-lg shadow-lumen-gold/10"
+                      : "bg-lumen-gold text-black hover:active:scale-95 shadow-lg shadow-lumen-gold/10"
                   )}
                 >
                   {isFollowed ? (

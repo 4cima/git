@@ -214,7 +214,7 @@ export const EmbedPlayer = ({ server, serverIndex = 0, cinemaMode, toggleCinemaM
                 <span className="block text-sm text-zinc-500 font-medium leading-relaxed">{lang === 'ar' ? 'جميع السيرفرات غير متاحة حالياً' : 'All servers unavailable'}</span>
                 <button
                   onClick={onNextServer}
-                  className="mt-4 px-6 py-3 rounded-2xl bg-primary text-black text-sm font-bold hover:scale-105 transition-transform"
+                  className="mt-4 px-6 py-3 rounded-2xl bg-primary text-black text-sm font-bold hover:transition-transform"
                 >
                   {lang === 'ar' ? 'تجربة سيرفر آخر' : 'Try Another Server'}
                 </button>

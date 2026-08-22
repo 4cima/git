@@ -153,7 +153,7 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
 
             <button
               onClick={() => setShowPlayer(!showPlayer)}
-              className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center gap-2 font-bold hover:scale-105 transition-transform"
+              className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center gap-2 font-bold hover:transition-transform"
             >
               <Play className="fill-current" />
               {showPlayer ? 'إخفاء المشغل' : 'مشاهدة الآن'}

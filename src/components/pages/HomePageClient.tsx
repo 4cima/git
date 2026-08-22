@@ -547,7 +547,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
               {/* Backdrop Background with transition */}
               <div
                 key={`backdrop-${heroItem.id}`}
-                className="absolute inset-0 bg-cover transition-all duration-1000 scale-105 animate-fadeIn"
+                className="absolute inset-0 bg-cover transition-all duration-1000 animate-fadeIn"
                 style={{
                   backgroundImage: `url(/tmdb/w780${heroItem.backdrop_path || heroItem.poster_path})`,
                   backgroundPosition: 'center 30%'
@@ -567,7 +567,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                       {(() => {
                         const mediaColorScheme = getMediaTypeColor(heroItem.media_type)
                         return (
-                          <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider animate-fadeIn flex items-center gap-1.5`}>
+                          <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-1.5`}>
                             <span>{mediaColorScheme.icon}</span>
                             <span>{heroItem.media_type === 'movie' ? 'فيلم' : 'مسلسل'}</span>
                           </span>
@@ -709,8 +709,8 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           className={`absolute inset-0 w-full h-full rounded-2xl overflow-hidden border-2 border-slate-800 shadow-2xl transition-all duration-700 ${
                             isActive
                               ? swipeDirection === 'left'
-                                ? 'opacity-100 scale-105 rotate-2 z-10 animate-cardEnterFromRight'
-                                : 'opacity-100 scale-105 rotate-2 z-10 animate-cardEnterFromLeft'
+                                ? 'opacity-100 rotate-2 z-10 animate-cardEnterFromRight'
+                                : 'opacity-100 rotate-2 z-10 animate-cardEnterFromLeft'
                               : isPrevious && swipeDirection === 'left'
                               ? 'opacity-0 -translate-x-32 -translate-y-8 rotate-[-15deg] scale-90 z-0 animate-cardThrowLeft'
                               : isPrevious && swipeDirection === 'right'

@@ -215,7 +215,7 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
                 alt={mainTitle}
                 loading="lazy"
                 decoding="async"
-                className={`h-full w-full object-cover transition-all duration-500 ease-lumen ${isHovered ? 'scale-105 brightness-75' : 'scale-100'}`}
+                className={`h-full w-full object-cover transition-all duration-500 ease-lumen ${isHovered ? 'brightness-75' : 'scale-100'}`}
                 onError={() => setThumbSrc('')}
               />
             ) : (
@@ -224,7 +224,7 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
                 alt={mainTitle}
                 size="w92"
                 className="h-full w-full"
-                imgClassName={`transition-all duration-500 ease-lumen ${isHovered ? 'scale-105 brightness-75' : 'scale-100'}`}
+                imgClassName={`transition-all duration-500 ease-lumen ${isHovered ? 'brightness-75' : 'scale-100'}`}
                 fallback={
                   <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-800 text-zinc-600 p-4 text-center">
                     <Play size={32} strokeWidth={1.5} className="mb-2 opacity-50" />
