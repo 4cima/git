@@ -44,7 +44,7 @@ requiredKeys.forEach(key => {
 })
 
 export const FLAGS = {
-  ADS_ENABLED: false,
+  ADS_ENABLED: true,
 }
 
 // re-export for backwards compatibility & tests
