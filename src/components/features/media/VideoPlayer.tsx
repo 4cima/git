@@ -47,9 +47,13 @@ interface VideoPlayerProps {
   seekTo?: number
   onPiPEnter?: () => void
   onPiPExit?: () => void
+  contentType?: 'movie' | 'tv'
+  tmdbId?: number
+  seasonNumber?: number
+  episodeNumber?: number
 }
 
-export const VideoPlayer = ({ url, subtitles = [], introStart, introEnd, title, poster, onProgress, onPlay, onPause, onDuration, playing: externalPlaying, seekTo, onPiPEnter, onPiPExit }: VideoPlayerProps) => {
+export const VideoPlayer = ({ url, subtitles = [], introStart, introEnd, title, poster, onProgress, onPlay, onPause, onDuration, playing: externalPlaying, seekTo, onPiPEnter, onPiPExit, contentType, tmdbId, seasonNumber, episodeNumber }: VideoPlayerProps) => {
   // Check if this is YouTube and force iframe mode
   const isYouTube = url.includes('youtube.com') || url.includes('youtu.be')
   const forceIframe = isYouTube
@@ -92,6 +96,35 @@ export const VideoPlayer = ({ url, subtitles = [], introStart, introEnd, title, 
   const [showSubtitlesMenu, setShowSubtitlesMenu] = useState(false)
   const [activeSubtitle, setActiveSubtitle] = useState<number>(-1) // -1 for none
   const [fallbackToIframe, setFallbackToIframe] = useState(forceIframe) // Force iframe for YouTube
+
+  // Watch progress tracking
+  const lastSaveTimeRef = useRef<number>(0)
+  const saveWatchProgress = useCallback(async (playedSeconds: number, totalDuration: number) => {
+    if (!contentType || !tmdbId || totalDuration === 0) return
+    
+    const now = Date.now()
+    // Throttle to max once per 15 seconds
+    if (now - lastSaveTimeRef.current < 15000) return
+    lastSaveTimeRef.current = now
+    
+    try {
+      await fetch('/api/user/watch-progress', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content_type: contentType,
+          tmdb_id: tmdbId,
+          season_number: seasonNumber,
+          episode_number: episodeNumber,
+          watch_duration: Math.floor(playedSeconds),
+          total_duration: Math.floor(totalDuration),
+          completed: playedSeconds >= totalDuration * 0.9 ? 1 : 0
+        })
+      })
+    } catch (error) {
+      // Silently ignore 401 and network errors
+    }
+  }, [contentType, tmdbId, seasonNumber, episodeNumber])
 
   // Refs
   const playerRef = useRef<any>(null)
@@ -217,6 +250,11 @@ export const VideoPlayer = ({ url, subtitles = [], introStart, introEnd, title, 
       setPlayed(state.played)
     }
     setLoaded(state.loaded)
+
+    // Save watch progress
+    if (duration > 0) {
+      saveWatchProgress(state.playedSeconds, duration)
+    }
 
     // Intro Skip Logic
     if (introStart !== undefined && introEnd !== undefined) {
@@ -387,8 +425,22 @@ export const VideoPlayer = ({ url, subtitles = [], introStart, introEnd, title, 
           logger.warn('Failed to exit PiP on unmount:', err)
         })
       }
+      
+      // Save final watch progress on unmount
+      if (playerRef.current && duration > 0) {
+        try {
+          const currentTime = playerRef.current.getCurrentTime?.() || 0
+          if (currentTime > 0) {
+            // Force immediate save bypassing throttle
+            lastSaveTimeRef.current = 0
+            saveWatchProgress(currentTime, duration)
+          }
+        } catch (error) {
+          // Ignore errors on unmount
+        }
+      }
     }
-  }, [])
+  }, [duration, saveWatchProgress])
 
   if (error) {
     const isYouTube = url.includes('youtube.com') || url.includes('youtu.be')

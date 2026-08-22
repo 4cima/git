@@ -23,6 +23,52 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
   const [selectedServer, setSelectedServer] = useState(0)
   const [showPlayer, setShowPlayer] = useState(false)
 
+  // Load favorites status
+  useEffect(() => {
+    const loadFavoriteStatus = async () => {
+      try {
+        const res = await fetch('/api/user/favorites')
+        if (res.ok) {
+          const data = await res.json()
+          const isFavorited = data.favorites?.some((f: any) => 
+            f.content_type === 'movie' && f.tmdb_id === (movie?.tmdb_id || movie?.id)
+          )
+          setInWatchlist(isFavorited)
+        }
+      } catch (error) {
+        // Silently ignore 401 when not logged in
+      }
+    }
+    if (movie) loadFavoriteStatus()
+  }, [movie])
+
+  // Toggle favorite
+  const toggleFavorite = async () => {
+    if (!movie) return
+    const tmdbId = movie.tmdb_id || movie.id
+    
+    setInWatchlist(!inWatchlist) // Optimistic UI update
+    
+    try {
+      if (!inWatchlist) {
+        // Add to favorites
+        await fetch('/api/user/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content_type: 'movie', tmdb_id: tmdbId })
+        })
+      } else {
+        // Remove from favorites
+        await fetch(`/api/user/favorites?content_type=movie&tmdb_id=${tmdbId}`, {
+          method: 'DELETE'
+        })
+      }
+    } catch (error) {
+      // Revert on error, silently ignore 401
+      setInWatchlist(inWatchlist)
+    }
+  }
+
   useEffect(() => {
     const fetchMovie = async () => {
       try {
@@ -142,7 +188,7 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
             </div>
 
             <button
-              onClick={() => setInWatchlist(!inWatchlist)}
+              onClick={toggleFavorite}
               className={`w-full py-3 rounded-lg flex items-center justify-center gap-2 font-medium transition-all ${
                 inWatchlist ? 'bg-red-500/20 text-red-500' : 'bg-white/10 hover:bg-white/20'
               }`}
