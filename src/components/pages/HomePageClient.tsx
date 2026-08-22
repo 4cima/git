@@ -631,7 +631,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                   {/* Bottom Section: Buttons */}
                   <div className="space-y-4">
                     {/* Action Button */}
-                    <div className="animate-fadeIn" style={{ animationDelay: '0.3s' }}>
+                    <div>
                       <Link
                         href={`${
                           heroItem.media_type === 'movie'
