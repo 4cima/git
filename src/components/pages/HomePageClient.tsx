@@ -547,7 +547,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
               {/* Backdrop Background with transition */}
               <div
                 key={`backdrop-${heroItem.id}`}
-                className="absolute inset-0 bg-cover transition-all duration-1000 animate-fadeIn"
+                className="absolute inset-0 bg-cover transition-all duration-1000"
                 style={{
                   backgroundImage: `url(/tmdb/w780${heroItem.backdrop_path || heroItem.poster_path})`,
                   backgroundPosition: 'center 30%'
@@ -573,15 +573,15 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           </span>
                         )
                       })()}
-                      <span className="bg-slate-900/80 border border-slate-800 px-2 py-0.5 rounded text-slate-300 animate-fadeIn">
+                      <span className="bg-slate-900/80 border border-slate-800 px-2 py-0.5 rounded text-slate-300">
                         {heroItem.year}
                       </span>
-                      <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-bold flex items-center animate-fadeIn">
+                      <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded font-bold flex items-center">
                         <Star className="w-3 h-3 ml-1 fill-amber-400" />{' '}
                         {heroItem.vote_average.toFixed(1)}
                       </span>
                       {heroItem.primary_genre && (
-                        <span className={`${getGenreColor(heroItem.primary_genre).bg} ${getGenreColor(heroItem.primary_genre).text} border ${getGenreColor(heroItem.primary_genre).border} px-2 py-0.5 rounded font-bold animate-fadeIn`}>
+                        <span className={`${getGenreColor(heroItem.primary_genre).bg} ${getGenreColor(heroItem.primary_genre).text} border ${getGenreColor(heroItem.primary_genre).border} px-2 py-0.5 rounded font-bold`}>
                           {heroItem.primary_genre}
                         </span>
                       )}
@@ -623,7 +623,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                     </div>
 
                     {/* Description with Limited Width */}
-                    <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-sm line-clamp-7 animate-fadeIn" style={{ animationDelay: '0.2s' }}>
+                    <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-sm line-clamp-7" style={{ animationDelay: '0.2s' }}>
                       {sanitizeOverview(heroItem.overview_ar)}
                     </p>
                   </div>
