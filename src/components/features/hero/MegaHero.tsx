@@ -89,6 +89,7 @@ export function MegaHero({ items }: MegaHeroProps) {
         <div
           dir="rtl"
           className="relative h-[60vh] min-h-[440px] sm:h-[65vh] sm:min-h-[480px] overflow-hidden rounded-2xl border border-white/10 mx-4 sm:mx-6"
+          style={{ aspectRatio: '16 / 9' }}
         >
           {/* Desktop Backdrop */}
           <AnimatePresence mode="sync">
@@ -98,8 +99,9 @@ export function MegaHero({ items }: MegaHeroProps) {
               alt={current.title}
               loading="eager"
               fetchPriority="high"
-              initial={{ opacity: 0, scale: 1.06 }}
-              animate={{ opacity: 1, scale: 1 }}
+              sizes="(max-width: 768px) 100vw, 1280px"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.1, ease: 'easeOut' }}
               className="hidden md:block absolute inset-0 h-full w-full object-cover"
@@ -109,8 +111,9 @@ export function MegaHero({ items }: MegaHeroProps) {
               key={`mobile-${current.id}`}
               src={getThumbUrl(current)}
               alt={current.title}
-              initial={{ opacity: 0, scale: 1.06 }}
-              animate={{ opacity: 1, scale: 1 }}
+              sizes="(max-width: 768px) 100vw, 1280px"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.1, ease: 'easeOut' }}
               className="md:hidden absolute inset-0 h-full w-full object-cover"

@@ -60,7 +60,7 @@ export function FeaturedSpotlight({ items }: FeaturedSpotlightProps) {
             alt={primary.title}
             loading="lazy"
             decoding="async"
-            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
 
@@ -115,7 +115,7 @@ export function FeaturedSpotlight({ items }: FeaturedSpotlightProps) {
               alt={item.title}
               loading="lazy"
               decoding="async"
-              className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+              className="absolute inset-0 h-full w-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-gray-950/95 via-gray-950/20 to-transparent" />
 
