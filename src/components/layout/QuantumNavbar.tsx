@@ -195,7 +195,7 @@ export const QuantumNavbar = memo(() => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
-                            className="absolute top-full left-0 mt-1 w-48 bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden z-50"
+                            className="absolute top-full right-0 mt-1 w-48 max-w-[calc(100vw-1rem)] bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden z-[1300]"
                           >
                             {/* User Info */}
                             <div className="px-3 py-2 border-b border-zinc-800">

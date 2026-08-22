@@ -1,42 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { executeFirst, executeAll } from '@/lib/db'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server';
+import { executeFirst } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth-server';
 
 export async function GET(request: NextRequest) {
-  try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll: () => cookieStore.getAll(), setAll: (s) => s.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } }
-    )
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const user = await getCurrentUser(request);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const userId = session.user.id
-    const [watchStats, favRow, revRow, achRow] = await Promise.all([
-      executeFirst(
-        `SELECT COUNT(DISTINCT CASE WHEN content_type='movie' THEN tmdb_id END) as movies_watched,
-                COUNT(DISTINCT CASE WHEN content_type='series' THEN tmdb_id END) as series_watched,
-                SUM(watch_duration) as total_watch_time
-         FROM watch_history WHERE user_id = ?`,
-        [userId]
-      ),
-      executeFirst('SELECT COUNT(*) as count FROM favorites WHERE user_id = ?', [userId]),
-      executeFirst('SELECT COUNT(*) as count FROM user_reviews WHERE user_id = ?', [userId]),
-      executeFirst('SELECT COUNT(*) as count FROM user_achievements WHERE user_id = ?', [userId]),
-    ])
+  const tables = ['watch_history', 'favorites', 'user_reviews', 'user_achievements'] as const;
+  const stats: Record<string, number> = {};
 
-    return NextResponse.json({
-      moviesWatched:  Number(watchStats?.movies_watched) || 0,
-      seriesWatched:  Number(watchStats?.series_watched) || 0,
-      totalWatchTime: Math.round((Number(watchStats?.total_watch_time) || 0) / 3600),
-      favorites:      Number(favRow?.count) || 0,
-      reviews:        Number(revRow?.count) || 0,
-      achievements:   Number(achRow?.count) || 0,
-    })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
+  for (const table of tables) {
+    const row = await executeFirst<{ c: number }>(
+      `SELECT COUNT(*) AS c FROM ${table} WHERE user_id = ?`,
+      [user.id]
+    );
+    stats[table] = row?.c ?? 0;
   }
+
+  return NextResponse.json({ ok: true, stats });
 }

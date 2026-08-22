@@ -83,7 +83,7 @@ export function UserMenu() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-56 rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-1rem)] rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl overflow-hidden z-[1300] animate-in fade-in slide-in-from-top-2 duration-200">
           {/* User Info */}
           <div className="px-4 py-3 border-b border-zinc-800">
             <p className="text-sm font-semibold text-zinc-100 truncate">{username}</p>
