@@ -19,18 +19,21 @@ interface Stats {
 }
 
 interface Activity {
-  activity_type: 'watch' | 'favorite' | 'review'
-  content_type: 'movie' | 'series'
+  type: 'watch' | 'favorite' | 'review'
+  content_type: string
   tmdb_id: number
-  title: string
-  poster_path?: string
-  activity_date: string
-  watch_duration?: number
-  completed?: boolean
-  season_number?: number
-  episode_number?: number
-  rating?: number
-  review_text?: string
+  title: string | null
+  poster_path?: string | null
+  date: string
+  data: {
+    watch_duration?: number
+    completed?: boolean
+    season_number?: number
+    episode_number?: number
+    rating?: number
+    review_text?: string
+    [key: string]: unknown
+  }
 }
 
 export default function ProfilePage() {
@@ -424,12 +427,12 @@ export default function ProfilePage() {
                     <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-800 hover:border-zinc-700 transition-colors group">
                       {/* Activity Icon */}
                       <div className={`p-2 rounded-lg ${
-                        activity.activity_type === 'watch' ? 'bg-cyan-600/20 text-cyan-400' :
-                        activity.activity_type === 'favorite' ? 'bg-red-600/20 text-red-400' :
+                        activity.type === 'watch' ? 'bg-cyan-600/20 text-cyan-400' :
+                        activity.type === 'favorite' ? 'bg-red-600/20 text-red-400' :
                         'bg-yellow-600/20 text-yellow-400'
                       }`}>
-                        {activity.activity_type === 'watch' ? <Play size={16} /> :
-                         activity.activity_type === 'favorite' ? <Heart size={16} /> :
+                        {activity.type === 'watch' ? <Play size={16} /> :
+                         activity.type === 'favorite' ? <Heart size={16} /> :
                          <Star size={16} />}
                       </div>
 
@@ -437,47 +440,47 @@ export default function ProfilePage() {
                       {activity.poster_path && (
                         <img 
                           src={`/tmdb/w92${activity.poster_path}`}
-                          alt={activity.title}
+                          alt={activity.title || ''}
                           className="w-12 h-18 rounded-lg object-cover border border-zinc-700 group-hover:border-zinc-600 transition-colors"
                         />
                       )}
 
                       {/* Details */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-zinc-100 mb-1 line-clamp-1">{activity.title}</p>
+                        <p className="text-sm font-bold text-zinc-100 mb-1 line-clamp-1">{activity.title || 'بدون عنوان'}</p>
                         
                         <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-500">
-                          {activity.activity_type === 'watch' && (
+                          {activity.type === 'watch' && (
                             <>
                               <span className="px-2 py-0.5 rounded bg-cyan-600/10 text-cyan-400">شاهدت</span>
-                              {activity.season_number && activity.episode_number && (
-                                <span>الموسم {activity.season_number} • الحلقة {activity.episode_number}</span>
+                              {activity.data.season_number && activity.data.episode_number && (
+                                <span>الموسم {activity.data.season_number} • الحلقة {activity.data.episode_number}</span>
                               )}
-                              {activity.watch_duration && activity.watch_duration > 0 && (
-                                <span>{Math.round(activity.watch_duration / 60)} دقيقة</span>
+                              {activity.data.watch_duration && Number(activity.data.watch_duration) > 0 && (
+                                <span>{Math.round(Number(activity.data.watch_duration) / 60)} دقيقة</span>
                               )}
                             </>
                           )}
-                          {activity.activity_type === 'favorite' && (
+                          {activity.type === 'favorite' && (
                             <span className="px-2 py-0.5 rounded bg-red-600/10 text-red-400">أضفت للمفضلة</span>
                           )}
-                          {activity.activity_type === 'review' && (
+                          {activity.type === 'review' && (
                             <>
                               <span className="px-2 py-0.5 rounded bg-yellow-600/10 text-yellow-400">قيّمت</span>
-                              {activity.rating && (
+                              {activity.data.rating && (
                                 <span className="flex items-center gap-1">
                                   <Star size={10} className="fill-yellow-400 text-yellow-400" />
-                                  {activity.rating.toFixed(1)}
+                                  {Number(activity.data.rating).toFixed(1)}
                                 </span>
                               )}
                             </>
                           )}
                           <span>•</span>
-                          <span>{formatActivityDate(activity.activity_date)}</span>
+                          <span>{formatActivityDate(activity.date)}</span>
                         </div>
 
-                        {activity.review_text && (
-                          <p className="text-xs text-zinc-400 mt-2 line-clamp-2">{activity.review_text}</p>
+                        {activity.data.review_text && (
+                          <p className="text-xs text-zinc-400 mt-2 line-clamp-2">{String(activity.data.review_text)}</p>
                         )}
                       </div>
 
