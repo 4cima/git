@@ -330,7 +330,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                     {trailerKey && backdrop ? (
                       <>
                         {/* Backdrop Image */}
-                        <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="eager" fetchPriority="high" style={{aspectRatio: '16/9'}} />
                         {/* Play Button Overlay */}
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                           <div className="relative">
@@ -347,7 +347,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                         </div>
                       </>
                     ) : backdrop ? (
-                      <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="eager" fetchPriority="high" style={{aspectRatio: '16/9'}} />
                     ) : null}
                   </div>
                 </div>
