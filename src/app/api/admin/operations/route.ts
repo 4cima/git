@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { spawn } from 'child_process'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { executeAll, executeFirst } from '@/lib/db'
+import { executeAll } from '@/lib/db'
+import { getCurrentUser } from '@/lib/auth-server'
 
 const ALLOWED_COMMANDS: Record<string, { cmd: string; args: string[]; risk: 'low' | 'medium' | 'high' }> = {
   'npm run download-ids':                        { cmd: 'npm',  args: ['run', 'download-ids'],                       risk: 'low'    },
@@ -37,17 +36,10 @@ export async function POST(request: NextRequest) {
     if (commandConfig.risk === 'high' && !confirm)
       return NextResponse.json({ error: 'Confirmation required for high-risk operation' }, { status: 400 })
 
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-    )
-    const { data: { user } } = await supabase.auth.getUser()
+    const user = await getCurrentUser(request)
     if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
-    const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single()
-    const username = profile?.username || user.email || 'unknown'
+    const username = user.name || user.email || 'unknown'
 
     const logRows = await executeAll(
       'INSERT INTO operations_log (user_id, username, command, exit_code) VALUES (?, ?, ?, NULL) RETURNING id',
