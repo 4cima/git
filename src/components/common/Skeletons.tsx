@@ -42,11 +42,11 @@ export const SkeletonPosterCard = memo(() => {
         <div className="h-full w-full bg-gradient-to-r from-zinc-800 via-zinc-700/60 to-zinc-800" />
         <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
-      <div className="p-3 min-h-[80px]">
-        <div className="h-4 w-3/4 rounded bg-zinc-800 mb-2 relative overflow-hidden">
+      <div className="p-2.5 h-[52px]">
+        <div className="h-[13px] w-3/4 rounded bg-zinc-800 mb-1 relative overflow-hidden">
           <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
-        <div className="h-3 w-1/2 rounded bg-zinc-800 relative overflow-hidden">
+        <div className="h-[11px] w-1/2 rounded bg-zinc-800 relative overflow-hidden">
           <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
       </div>

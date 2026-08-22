@@ -34,7 +34,7 @@ export default async function MovieGenrePage({ params }: PageProps) {
       name_en: genre.name_en, name_ar: genre.name_ar, slug: genre.slug
     }
 
-    const genreIds = getGenreWithSiblings(genre.tmdb_id)
+    const genreIds = getGenreWithSiblings(Number(genre.tmdb_id))
     const whereClause = buildGenreWhereClause(genreIds)
     const genreParams = buildGenreParams(genreIds)
 

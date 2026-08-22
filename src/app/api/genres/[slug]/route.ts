@@ -36,7 +36,7 @@ export async function GET(
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder  = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
-    const genreIds = getGenreWithSiblings(genre.tmdb_id)
+    const genreIds = getGenreWithSiblings(Number(genre.tmdb_id))
     const whereClause = buildGenreWhereClause(genreIds, 'm')
     const whereClauseSeries = buildGenreWhereClause(genreIds, 's')
     const genreParams = buildGenreParams(genreIds)

@@ -217,7 +217,7 @@ export function MegaHero({ items }: MegaHeroProps) {
                             : 'relative h-20 w-14 shrink-0 overflow-hidden rounded-lg ring-1 ring-white/15 opacity-55 transition-all duration-300 hover:opacity-90'
                         }
                       >
-                        <img
+                        <img sizes="(max-width: 768px) 100vw, 50vw"
                           src={getThumbUrl(slide)}
                           alt={slide.title}
                           loading="lazy"

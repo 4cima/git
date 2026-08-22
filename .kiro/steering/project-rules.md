@@ -1,10 +1,12 @@
 # 4cima — Standing Rules (apply to every task, every session)
 
-1. No guessing or assuming. If you don't have real evidence — actual command output, actual file content, an actual test result — say so explicitly. Don't fill gaps with plausible-sounding guesses.
+1. **NEVER take ANY action based on assumptions, guesses, or "obvious" logic.** If you don't have real evidence — actual command output, actual file content, actual test result, actual database query result — say so explicitly and CHECK FIRST. Don't fill gaps with plausible-sounding guesses.
 
 2. Never say something "works," "is fixed," or "is verified" unless you have real proof for that exact claim. A successful build does not mean a feature works. A file existing does not mean it's wired up and used.
 
-3. Before investigating something, check whether it was already found or decided earlier in this project (git log, prior commits, existing code). Don't rediscover the same commit hash or table schema twice — if unsure, ask instead of redoing it from scratch.
+3. **CRITICAL: When user reports a problem (e.g., "genres showing 0"), ALWAYS verify the actual data in the database FIRST before making ANY code changes.** Run actual queries. Check actual tables. Get actual counts. Never assume you understand the problem without seeing the real data.
+
+4. Before investigating something, check whether it was already found or decided earlier in this project (git log, prior commits, existing code). Don't rediscover the same commit hash or table schema twice — if unsure, ask instead of redoing it from scratch.
 
 4. Never create extra .md report/summary files. Report findings in chat only.
 

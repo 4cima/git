@@ -29,7 +29,7 @@ export default async function GenreOverviewPage({ params }: PageProps) {
     const genre = await executeFirst('SELECT * FROM genres WHERE slug = ? LIMIT 1', [slug])
     if (!genre) notFound()
 
-    const genreIds = getGenreWithSiblings(genre.tmdb_id)
+    const genreIds = getGenreWithSiblings(Number(genre.tmdb_id))
     const whereClause = buildGenreWhereClause(genreIds)
     const genreParams = buildGenreParams(genreIds)
 
