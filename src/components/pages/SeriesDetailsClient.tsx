@@ -421,7 +421,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
       <div className="absolute top-0 left-0 right-0 h-[70vh]">
         {backdrop && (
           <div className="absolute inset-0">
-            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="lazy" />
+            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="eager" fetchPriority="high" style={{aspectRatio: '16/9'}} />
             {/* Adaptive gradient based on image brightness */}
             <div className={`absolute inset-0 ${overlayConfig.gradient}`} />
             {/* Bottom fade for smooth transition - last 25% fades to background */}

@@ -167,7 +167,7 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
       <div className="absolute inset-0 h-[70vh]">
         {backdrop && (
           <div className="absolute inset-0">
-            <img src={backdrop} alt="" className="w-full h-full object-cover opacity-40" loading="lazy" />
+            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-40" loading="eager" fetchPriority="high" style={{aspectRatio: '16/9'}} />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
           </div>
         )}
