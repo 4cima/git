@@ -86,32 +86,52 @@ async function execViaHttp<T>(sql: string, args: SqlValue[]): Promise<T[]> {
   const body: { sql: string; params?: SqlValue[] } = { sql };
   if (args.length > 0) body.params = args;
 
-  const res = await fetch(D1_HTTP_URL, {
-    method:  'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type':  'application/json',
-    },
-    body: JSON.stringify(body),
-  });
+  // Retry logic for flaky local D1 HTTP connections
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(D1_HTTP_URL, {
+        method:  'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type':  'application/json',
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(10000), // 10s timeout
+      });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => '(unreadable)');
-    throw new Error(`D1 HTTP ${res.status} ${res.statusText}: ${text}`);
+      if (!res.ok) {
+        const text = await res.text().catch(() => '(unreadable)');
+        throw new Error(`D1 HTTP ${res.status} ${res.statusText}: ${text}`);
+      }
+
+      const data = await res.json() as {
+        success: boolean;
+        errors:  { code: number; message: string }[];
+        result:  { results: T[] }[];
+      };
+
+      if (!data.success) {
+        const msg = (data.errors ?? []).map(e => `[${e.code}] ${e.message}`).join(', ');
+        throw new Error(`D1 HTTP query failed: ${msg || 'unknown error'}`);
+      }
+
+      return data.result?.[0]?.results ?? [];
+    } catch (err) {
+      lastError = err as Error;
+      // Only retry on network errors (ECONNRESET, ETIMEDOUT, etc)
+      if (err instanceof TypeError && err.message.includes('fetch failed')) {
+        if (attempt < 2) {
+          console.warn(`⚠️ D1 HTTP retry ${attempt + 1}/3 after network error`);
+          await new Promise(r => setTimeout(r, 100 * (attempt + 1))); // backoff
+          continue;
+        }
+      }
+      throw err;
+    }
   }
-
-  const data = await res.json() as {
-    success: boolean;
-    errors:  { code: number; message: string }[];
-    result:  { results: T[] }[];
-  };
-
-  if (!data.success) {
-    const msg = (data.errors ?? []).map(e => `[${e.code}] ${e.message}`).join(', ');
-    throw new Error(`D1 HTTP query failed: ${msg || 'unknown error'}`);
-  }
-
-  return data.result?.[0]?.results ?? [];
+  
+  throw lastError!;
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
