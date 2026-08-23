@@ -12,6 +12,7 @@ import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
 import { AdsManager } from '@/components/features/system/AdsManager'
+import { MovieCard } from '@/components/common/MovieCard'
 
 interface MovieDetailsClientProps {
   movie: any
@@ -602,35 +603,17 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {similarMovies.map((item: any) => (
-              <Link
+              <MovieCard
                 key={item.id}
-                href={`/movies/${item.slug}`}
-                className="group relative"
-              >
-                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-red-500/50 transition-all">
-                  {item.poster_path ? (
-                    <img
-                      src={`/tmdb/w185${item.poster_path}`}
-                      alt={item.title_ar || item.title_en}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Film className="w-12 h-12 text-zinc-700" />
-                    </div>
-                  )}
-                  {item.vote_average > 0 && (
-                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/80 px-2 py-1 rounded">
-                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                      <span className="text-xs font-bold text-white">{item.vote_average.toFixed(1)}</span>
-                    </div>
-                  )}
-                </div>
-                <h3 className="mt-2 text-sm font-bold text-white line-clamp-2 group-hover:text-red-400 transition-colors">
-                  {item.title_ar || item.title_en}
-                </h3>
-              </Link>
+                id={item.id}
+                slug={item.slug}
+                title_ar={item.title_ar}
+                title_en={item.title_en}
+                poster_path={item.poster_path}
+                vote_average={item.vote_average}
+                year={item.release_date ? new Date(item.release_date).getFullYear() : undefined}
+                media_type="movie"
+              />
             ))}
           </div>
         </div>
