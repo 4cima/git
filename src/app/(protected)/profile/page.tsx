@@ -5,7 +5,7 @@
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { User, Mail, Calendar, Shield, Film, Tv, Clock, Heart, Award, TrendingUp, Star, Edit2, Settings, LogOut, Play } from 'lucide-react'
+import { User, Mail, Calendar, Shield, Film, Tv, Clock, Heart, Award, TrendingUp, Star, Edit2, Settings, LogOut, Play, CheckCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
@@ -17,6 +17,8 @@ interface Stats {
   reviews: number
   achievements: number
 }
+
+type TabType = 'overview' | 'activity' | 'favorites' | 'completed' | 'stats'
 
 interface Activity {
   type: 'watch' | 'favorite' | 'review'
@@ -38,7 +40,7 @@ interface Activity {
 
 export default function ProfilePage() {
   const { user, profile, signOut } = useAuth()
-  const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'stats'>('overview')
+  const [activeTab, setActiveTab] = useState<TabType>('overview')
   const [stats, setStats] = useState<Stats>({
     moviesWatched: 0,
     seriesWatched: 0,
@@ -48,8 +50,12 @@ export default function ProfilePage() {
     achievements: 0,
   })
   const [activities, setActivities] = useState<Activity[]>([])
+  const [favoritesList, setFavoritesList] = useState<any[]>([])
+  const [completedList, setCompletedList] = useState<any[]>([])
   const [loadingStats, setLoadingStats] = useState(true)
   const [loadingActivity, setLoadingActivity] = useState(false)
+  const [loadingFavorites, setLoadingFavorites] = useState(false)
+  const [loadingCompleted, setLoadingCompleted] = useState(false)
 
   useEffect(() => {
     fetchStats()
@@ -59,6 +65,12 @@ export default function ProfilePage() {
   useEffect(() => {
     if (activeTab === 'activity' && activities.length === 0) {
       fetchActivity()
+    }
+    if (activeTab === 'favorites' && favoritesList.length === 0) {
+      fetchFavorites()
+    }
+    if (activeTab === 'completed' && completedList.length === 0) {
+      fetchCompleted()
     }
   }, [activeTab])
 
@@ -98,6 +110,36 @@ export default function ProfilePage() {
       console.error('Failed to fetch activity:', error)
     } finally {
       setLoadingActivity(false)
+    }
+  }
+
+  const fetchFavorites = async () => {
+    setLoadingFavorites(true)
+    try {
+      const res = await fetch('/api/user/favorites', { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setFavoritesList(data.items || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch favorites:', error)
+    } finally {
+      setLoadingFavorites(false)
+    }
+  }
+
+  const fetchCompleted = async () => {
+    setLoadingCompleted(true)
+    try {
+      const res = await fetch('/api/user/completed', { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setCompletedList(data.items || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch completed:', error)
+    } finally {
+      setLoadingCompleted(false)
     }
   }
 
@@ -296,6 +338,26 @@ export default function ProfilePage() {
             }`}
           >
             النشاط
+          </button>
+          <button
+            onClick={() => setActiveTab('favorites')}
+            className={`flex-1 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              activeTab === 'favorites'
+                ? 'bg-gradient-to-r from-red-600 to-cyan-600 text-white shadow-lg'
+                : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50'
+            }`}
+          >
+            المفضلة
+          </button>
+          <button
+            onClick={() => setActiveTab('completed')}
+            className={`flex-1 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+              activeTab === 'completed'
+                ? 'bg-gradient-to-r from-red-600 to-cyan-600 text-white shadow-lg'
+                : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50'
+            }`}
+          >
+            تمت مشاهدته
           </button>
           <button
             onClick={() => setActiveTab('stats')}
@@ -641,6 +703,109 @@ export default function ProfilePage() {
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Favorites Tab */}
+          {activeTab === 'favorites' && (
+            <div>
+              <h2 className="text-xl font-bold text-zinc-100 mb-6 flex items-center gap-2">
+                <Heart size={20} className="text-red-500" />
+                المفضلة
+              </h2>
+
+              {loadingFavorites ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="aspect-[2/3] bg-zinc-800 animate-pulse rounded-xl" />
+                  ))}
+                </div>
+              ) : favoritesList.length === 0 ? (
+                <div className="text-center py-12">
+                  <Heart size={48} className="mx-auto text-zinc-700 mb-4" />
+                  <p className="text-zinc-400">لا توجد عناصر في المفضلة</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {favoritesList.map((item: any) => (
+                    <Link
+                      key={item.id}
+                      href={`/${item.content_type === 'tv' ? 'series' : 'movies'}/${item.content_id || item.tmdb_id}`}
+                      className="group relative aspect-[2/3] rounded-xl overflow-hidden bg-zinc-800 hover:scale-105 transition-transform"
+                    >
+                      {item.poster_path ? (
+                        <img
+                          src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
+                          alt={item.title || ''}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-zinc-800">
+                          <Film size={32} className="text-zinc-600" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                          <p className="text-white text-sm font-bold line-clamp-2">{item.title}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Completed Tab */}
+          {activeTab === 'completed' && (
+            <div>
+              <h2 className="text-xl font-bold text-zinc-100 mb-6 flex items-center gap-2">
+                <CheckCircle size={20} className="text-green-500" />
+                تمت مشاهدته
+              </h2>
+
+              {loadingCompleted ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="aspect-[2/3] bg-zinc-800 animate-pulse rounded-xl" />
+                  ))}
+                </div>
+              ) : completedList.length === 0 ? (
+                <div className="text-center py-12">
+                  <CheckCircle size={48} className="mx-auto text-zinc-700 mb-4" />
+                  <p className="text-zinc-400">لم تقم بمشاهدة أي عمل بعد</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {completedList.map((item: any) => (
+                    <Link
+                      key={item.id}
+                      href={`/${item.content_type === 'tv' ? 'series' : 'movies'}/${item.content_id || item.tmdb_id}`}
+                      className="group relative aspect-[2/3] rounded-xl overflow-hidden bg-zinc-800 hover:scale-105 transition-transform"
+                    >
+                      {item.poster_path ? (
+                        <img
+                          src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
+                          alt={item.title || ''}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-zinc-800">
+                          <Film size={32} className="text-zinc-600" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                          <p className="text-white text-sm font-bold line-clamp-2">{item.title}</p>
+                        </div>
+                      </div>
+                      <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
+                        <CheckCircle size={16} />
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>

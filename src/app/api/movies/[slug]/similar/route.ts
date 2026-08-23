@@ -40,7 +40,7 @@ export async function GET(
     // Find similar movies with overlapping genres using json_each for better performance
     const placeholders = genreIds.map(() => '?').join(',')
     const similar = await executeAll(
-      `SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.vote_average, m.release_date, m.genres_json,
+      `SELECT m.id, m.tmdb_id, m.slug, m.title_ar, m.title_en, m.poster_path, m.vote_average, m.release_date, m.genres_json,
               COUNT(DISTINCT json_extract(j.value, '$.tmdb_id')) as overlap
        FROM movies m, json_each(m.genres_json) j
        WHERE m.tmdb_id != ?

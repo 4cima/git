@@ -40,7 +40,7 @@ export async function GET(
     // Find similar series with overlapping genres using json_each for better performance
     const placeholders = genreIds.map(() => '?').join(',')
     const similar = await executeAll(
-      `SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.vote_average, s.first_air_date, s.genres_json,
+      `SELECT s.id, s.tmdb_id, s.slug, s.name_ar, s.name_en, s.poster_path, s.vote_average, s.first_air_date, s.genres_json,
               COUNT(DISTINCT json_extract(j.value, '$.tmdb_id')) as overlap
        FROM tv_series s, json_each(s.genres_json) j
        WHERE s.tmdb_id != ?

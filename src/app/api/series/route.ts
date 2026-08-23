@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     
     const rows = await executeAll(
       `SELECT
-          tv_series.id, tv_series.slug, tv_series.name_ar, tv_series.name_en, tv_series.poster_path,
+          tv_series.id, tv_series.tmdb_id, tv_series.slug, tv_series.name_ar, tv_series.name_en, tv_series.poster_path,
           tv_series.vote_average, tv_series.first_air_year,
           tv_series.genres_json, tv_series.overview_ar, tv_series.country_of_origin
        FROM tv_series

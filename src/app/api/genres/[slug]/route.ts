@@ -43,7 +43,7 @@ export async function GET(
 
     if (type === 'movie') {
       const rows = await executeAll(
-        `SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
+        `SELECT m.id, m.tmdb_id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
                 m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
                 m.overview_ar, m.overview_en, m.genres_json, m.original_language,
                 'movie' as media_type
@@ -59,7 +59,7 @@ export async function GET(
 
     } else if (type === 'tv') {
       const rows = await executeAll(
-        `SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
+        `SELECT s.id, s.tmdb_id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
                 s.vote_average, s.vote_count, s.popularity, s.first_air_date, s.first_air_year,
                 s.overview_ar, s.overview_en, s.genres_json, s.original_language,
                 'tv' as media_type
@@ -78,7 +78,7 @@ export async function GET(
       const fetchLimit = Math.ceil(limit * 1.5)
       const [moviesRows, seriesRows] = await Promise.all([
         executeAll(
-          `SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
+          `SELECT m.id, m.tmdb_id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
                   m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
                   m.overview_ar, m.overview_en, m.genres_json, m.original_language,
                   'movie' as media_type
@@ -87,7 +87,7 @@ export async function GET(
           [...genreParams, fetchLimit]
         ),
         executeAll(
-          `SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
+          `SELECT s.id, s.tmdb_id, s.slug, s.name_ar, s.name_en, s.poster_path, s.backdrop_path,
                   s.vote_average, s.vote_count, s.popularity, s.first_air_date, s.first_air_year,
                   s.overview_ar, s.overview_en, s.genres_json, s.original_language,
                   'tv' as media_type

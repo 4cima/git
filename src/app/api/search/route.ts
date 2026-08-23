@@ -47,7 +47,7 @@ async function cascadingSearch(query: string, queryLength: number) {
       const searchTerm = sanitizeSearchInput(query)
       const [moviesFTS, seriesFTS] = await Promise.all([
         executeAll(
-          `SELECT movies.id, movies.slug, movies.title_en, movies.title_ar,
+          `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_en, movies.title_ar,
                   movies.poster_path, movies.release_year, movies.vote_average,
                   movies.popularity, movies.filter_status, 'movie' as media_type, 999 as search_level
            FROM movies
@@ -59,7 +59,7 @@ async function cascadingSearch(query: string, queryLength: number) {
           [searchTerm]
         ),
         executeAll(
-          `SELECT tv_series.id, tv_series.slug, tv_series.name_en, tv_series.name_ar,
+          `SELECT tv_series.id, tv_series.tmdb_id, tv_series.slug, tv_series.name_en, tv_series.name_ar,
                   tv_series.poster_path, tv_series.first_air_year, tv_series.vote_average,
                   tv_series.popularity, tv_series.filter_status, 'tv' as media_type, 999 as search_level
            FROM tv_series
@@ -82,7 +82,7 @@ async function cascadingSearch(query: string, queryLength: number) {
     try {
       const [moviesPrefix, seriesPrefix] = await Promise.all([
         executeAll(
-          `SELECT id, slug, title_en, title_ar, poster_path, release_year,
+          `SELECT id, tmdb_id, slug, title_en, title_ar, poster_path, release_year,
                   vote_average, popularity, filter_status, 'movie' as media_type, 998 as search_level
            FROM movies
            WHERE (LOWER(title_ar) LIKE LOWER(?) || '%' OR LOWER(title_en) LIKE LOWER(?) || '%')
@@ -92,7 +92,7 @@ async function cascadingSearch(query: string, queryLength: number) {
           [query, query]
         ),
         executeAll(
-          `SELECT id, slug, name_en, name_ar, poster_path, first_air_year,
+          `SELECT id, tmdb_id, slug, name_en, name_ar, poster_path, first_air_year,
                   vote_average, popularity, filter_status, 'tv' as media_type, 998 as search_level
            FROM tv_series
            WHERE (LOWER(name_ar) LIKE LOWER(?) || '%' OR LOWER(name_en) LIKE LOWER(?) || '%')
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
     // 1-char: short_titles_lookup
     if (queryLength === 1) {
       const results = await executeAll(
-        `SELECT source_id as id, media_type, slug,
+        `SELECT source_id as id, tmdb_id, media_type, slug,
                 title_ar, title_en, name_ar, name_en,
                 poster_path, release_year, first_air_year,
                 vote_average, popularity, filter_status

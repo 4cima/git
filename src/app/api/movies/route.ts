@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
     const sortOrder  = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
     const rows = await executeAll(
-      `SELECT movies.id, movies.slug, movies.title_ar, movies.title_en, movies.poster_path,
+      `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en, movies.poster_path,
               movies.vote_average, movies.release_year,
               movies.genres_json, movies.overview_ar, movies.original_language
        FROM movies

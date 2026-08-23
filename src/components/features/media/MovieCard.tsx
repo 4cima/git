@@ -195,7 +195,8 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
 
   // Fetch card state on mount
   useEffect(() => {
-    if (!movie.tmdb_id) return
+    const tmdbId = movie.tmdb_id || movie.id
+    if (!tmdbId) return
     
     const fetchState = async () => {
       try {
@@ -205,12 +206,12 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items: [{ content_type: contentType, tmdb_id: movie.tmdb_id }]
+            items: [{ content_type: contentType, tmdb_id: tmdbId }]
           })
         })
         if (res.ok) {
           const data = await res.json()
-          const key = `${contentType}-${movie.tmdb_id}`
+          const key = `${contentType}-${tmdbId}`
           if (data.states && data.states[key]) {
             setCardState(data.states[key])
           }
@@ -221,13 +222,14 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
     }
     
     fetchState()
-  }, [movie.tmdb_id, isTv])
+  }, [movie.tmdb_id, movie.id, isTv])
 
   const toggleCardState = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
-    if (stateLoading || !movie.tmdb_id) return
+    const tmdbId = movie.tmdb_id || movie.id
+    if (stateLoading || !tmdbId) return
     
     setStateLoading(true)
     const prevState = cardState
@@ -245,7 +247,7 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content_type: contentType,
-          tmdb_id: movie.tmdb_id,
+          tmdb_id: tmdbId,
           title: mainTitle,
           poster_path: movie.poster_path
         })
