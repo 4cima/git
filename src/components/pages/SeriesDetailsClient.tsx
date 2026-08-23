@@ -12,7 +12,7 @@ import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
 import { AdsManager } from '@/components/features/system/AdsManager'
-import { MovieCard } from '@/components/common/MovieCard'
+import { MovieCard } from '@/components/features/media/MovieCard'
 
 interface SeriesDetailsClientProps {
   series: any
@@ -867,17 +867,17 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
             قد يعجبك أيضاً
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {similarSeries.map((item: any) => (
+            {similarSeries.map((item: any, i: number) => (
               <MovieCard
                 key={item.id}
-                id={item.id}
-                slug={item.slug}
-                title_ar={item.name_ar}
-                title_en={item.name_en}
-                poster_path={item.poster_path}
-                vote_average={item.vote_average}
-                year={item.first_air_date ? new Date(item.first_air_date).getFullYear() : undefined}
-                media_type="tv"
+                movie={{
+                  ...item,
+                  media_type: 'tv',
+                  title_ar: item.name_ar,
+                  title_en: item.name_en,
+                  name: item.name_ar || item.name_en
+                }}
+                index={i}
               />
             ))}
           </div>

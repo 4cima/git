@@ -12,7 +12,7 @@ import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
 import { AdsManager } from '@/components/features/system/AdsManager'
-import { MovieCard } from '@/components/common/MovieCard'
+import { MovieCard } from '@/components/features/media/MovieCard'
 
 interface MovieDetailsClientProps {
   movie: any
@@ -602,17 +602,15 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
             قد يعجبك أيضاً
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {similarMovies.map((item: any) => (
+            {similarMovies.map((item: any, i: number) => (
               <MovieCard
                 key={item.id}
-                id={item.id}
-                slug={item.slug}
-                title_ar={item.title_ar}
-                title_en={item.title_en}
-                poster_path={item.poster_path}
-                vote_average={item.vote_average}
-                year={item.release_date ? new Date(item.release_date).getFullYear() : undefined}
-                media_type="movie"
+                movie={{ 
+                  ...item, 
+                  media_type: 'movie',
+                  title: item.title_ar || item.title_en
+                }}
+                index={i}
               />
             ))}
           </div>
