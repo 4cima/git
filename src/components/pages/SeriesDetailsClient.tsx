@@ -631,7 +631,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                     onClick={toggleCardState}
                     disabled={stateLoading}
                     className={clsx(
-                      "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-lg",
+                      "flex-shrink-0 w-15 h-15 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-lg",
                       cardState === 'favorite'
                         ? "bg-red-500 border-red-400 text-white hover:bg-red-600 shadow-red-500/50"
                         : cardState === 'completed'
@@ -645,7 +645,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                       'إزالة من تمت المشاهدة'
                     }
                   >
-                    <Heart className={clsx("w-6 h-6", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
+                    <Heart className={clsx("w-8 h-8", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
                   </button>
                 </div>
                 
