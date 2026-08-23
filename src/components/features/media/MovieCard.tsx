@@ -5,7 +5,7 @@
 import { memo, useState, useEffect, useRef, lazy, Suspense } from 'react'
 import type { DragEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, Star } from 'lucide-react'
+import { Play, Star, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { TmdbImage } from '../../common/TmdbImage'
 import { translateGenre } from '../../../utils/genreTranslator'
@@ -41,12 +41,17 @@ export type Movie = {
   aggregate_rating?: number | null
   rating_count?: number
   review_count?: number
+  tmdb_id?: number
 }
+
+type CardState = 'neutral' | 'favorite' | 'completed'
 
 export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; index?: number; isVisible?: boolean }) => {
   const [isHovered, setIsHovered] = useState(false)
   const [trailerKey, setTrailerKey] = useState<string | null>(null)
   const [thumbSrc, setThumbSrc] = useState<string>(((movie as any).thumbnail || '').trim())
+  const [cardState, setCardState] = useState<CardState>('neutral')
+  const [stateLoading, setStateLoading] = useState(false)
 
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -188,6 +193,80 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
     setThumbSrc(((movie as any).thumbnail || '').trim())
   }, [(movie as any).thumbnail])
 
+  // Fetch card state on mount
+  useEffect(() => {
+    if (!movie.tmdb_id) return
+    
+    const fetchState = async () => {
+      try {
+        const contentType = isTv ? 'tv' : 'movie'
+        const res = await fetch('/api/user/card-state', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: [{ content_type: contentType, tmdb_id: movie.tmdb_id }]
+          })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          const key = `${contentType}-${movie.tmdb_id}`
+          if (data.states && data.states[key]) {
+            setCardState(data.states[key])
+          }
+        }
+      } catch {
+        // Silent fail - user might not be logged in
+      }
+    }
+    
+    fetchState()
+  }, [movie.tmdb_id, isTv])
+
+  const toggleCardState = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (stateLoading || !movie.tmdb_id) return
+    
+    setStateLoading(true)
+    const prevState = cardState
+    
+    // Optimistic update
+    const nextState = cardState === 'neutral' ? 'favorite' : 
+                      cardState === 'favorite' ? 'completed' : 'neutral'
+    setCardState(nextState)
+    
+    try {
+      const contentType = isTv ? 'tv' : 'movie'
+      const res = await fetch('/api/user/card-action', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content_type: contentType,
+          tmdb_id: movie.tmdb_id,
+          title: mainTitle,
+          poster_path: movie.poster_path
+        })
+      })
+      
+      if (!res.ok) {
+        // Revert on error
+        setCardState(prevState)
+      } else {
+        const data = await res.json()
+        if (data.newState) {
+          setCardState(data.newState)
+        }
+      }
+    } catch {
+      setCardState(prevState)
+    } finally {
+      setStateLoading(false)
+    }
+  }
+
   if (!hasPosterPath || !hasValidTitle) return null
 
   return (
@@ -280,15 +359,41 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
               </span>
             </div>
 
-            {/* Top Left - Rating Badge */}
-            {rating != null && (
-              <div className="absolute top-2 left-2 z-20">
-                <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
-                  <Star size={11} fill="currentColor" className="shrink-0" />
-                  <span className="text-[9px] font-bold">{rating}</span>
-                </span>
-              </div>
-            )}
+            {/* Top Left - Heart Button (State Indicator) */}
+            <div className="absolute top-2 left-2 z-30">
+              <button
+                onClick={toggleCardState}
+                disabled={stateLoading}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 backdrop-blur-md shadow-lg border-2 ${
+                  cardState === 'favorite' 
+                    ? 'bg-red-500/90 border-red-400 hover:bg-red-600' 
+                    : cardState === 'completed'
+                    ? 'bg-green-500/90 border-green-400 hover:bg-green-600'
+                    : 'bg-white/10 border-white/30 hover:bg-white/20'
+                } ${stateLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                title={
+                  cardState === 'neutral' ? 'إضافة للمفضلة' :
+                  cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
+                  'إزالة من تمت المشاهدة'
+                }
+              >
+                <Heart 
+                  size={14} 
+                  className={`${
+                    cardState === 'favorite' ? 'fill-white text-white' :
+                    cardState === 'completed' ? 'fill-white text-white' :
+                    'text-white/70'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Top Right - Media Type Badge */}
+            <div className="absolute top-2 right-2 z-20">
+              <span className={`${mediaTypeColorScheme.bg} ${mediaTypeColorScheme.text} ${mediaTypeColorScheme.border} border px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                {mediaTypeColorScheme.label}
+              </span>
+            </div>
 
             {/* Bottom Right - Genre Badge */}
             {genre && (
@@ -299,14 +404,20 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
               </div>
             )}
 
-            {/* Bottom Left - Year Badge */}
-            {year && (
-              <div className="absolute bottom-2 left-2 z-20">
+            {/* Bottom Left - Rating & Year */}
+            <div className="absolute bottom-2 left-2 z-20 flex flex-col gap-1">
+              {rating != null && (
+                <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                  <Star size={11} fill="currentColor" className="shrink-0" />
+                  <span className="text-[9px] font-bold">{rating}</span>
+                </span>
+              )}
+              {year && (
                 <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${getYearStyle(year)}`}>
                   {year}
                 </span>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Play Button Overlay on Hover */}
             <AnimatePresence>
