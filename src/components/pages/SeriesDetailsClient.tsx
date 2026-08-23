@@ -631,12 +631,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                     onClick={toggleCardState}
                     disabled={stateLoading}
                     className={clsx(
-                      "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2",
+                      "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-lg",
                       cardState === 'favorite'
-                        ? "bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30"
+                        ? "bg-red-500 border-red-400 text-white hover:bg-red-600 shadow-red-500/50"
                         : cardState === 'completed'
-                        ? "bg-green-500/20 border-green-500 text-green-500 hover:bg-green-500/30"
-                        : "bg-white/5 border-white/20 text-white/60 hover:bg-white/10 hover:border-white/40",
+                        ? "bg-green-500 border-green-400 text-white hover:bg-green-600 shadow-green-500/50"
+                        : "bg-black/70 border-white/40 text-white hover:bg-black/80 hover:border-white/60",
                       stateLoading && "opacity-50 cursor-not-allowed"
                     )}
                     title={

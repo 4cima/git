@@ -759,12 +759,12 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                       <button
                         onClick={(e) => toggleCardState(heroItem, e)}
                         disabled={isCardLoading(heroItem)}
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 backdrop-blur-md shadow-lg border-2 ${
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 shadow-lg border-2 ${
                           getCardState(heroItem) === 'favorite' 
-                            ? 'bg-red-500/90 border-red-400 hover:bg-red-600' 
+                            ? 'bg-red-500 border-red-400 hover:bg-red-600 shadow-red-500/50' 
                             : getCardState(heroItem) === 'completed'
-                            ? 'bg-green-500/90 border-green-400 hover:bg-green-600'
-                            : 'bg-white/10 border-white/30 hover:bg-white/20'
+                            ? 'bg-green-500 border-green-400 hover:bg-green-600 shadow-green-500/50'
+                            : 'bg-black/80 border-white/40 hover:bg-black/90 hover:border-white/60'
                         } ${isCardLoading(heroItem) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         title={
                           getCardState(heroItem) === 'neutral' ? 'إضافة للمفضلة' :
@@ -777,7 +777,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           className={`${
                             getCardState(heroItem) === 'favorite' ? 'fill-white text-white' :
                             getCardState(heroItem) === 'completed' ? 'fill-white text-white' :
-                            'text-white/70'
+                            'text-white'
                           }`}
                         />
                       </button>
