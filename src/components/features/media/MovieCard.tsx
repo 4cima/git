@@ -197,6 +197,9 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
 
   // Fetch card state on mount
   useEffect(() => {
+    // Don't fetch if user is not logged in
+    if (!user) return
+    
     const tmdbId = movie.tmdb_id || movie.id
     if (!tmdbId) return
     
@@ -224,7 +227,7 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
     }
     
     fetchState()
-  }, [movie.tmdb_id, movie.id, isTv])
+  }, [user, movie.tmdb_id, movie.id, isTv])
 
   const toggleCardState = async (e: React.MouseEvent) => {
     e.preventDefault()

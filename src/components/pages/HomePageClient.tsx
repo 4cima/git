@@ -447,6 +447,9 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
   
   // Fetch card states for all visible items
   useEffect(() => {
+    // Don't fetch if user is not logged in
+    if (!user) return
+    
     const fetchStates = async () => {
       const allItems = [...(data?.trendingMovies || []).slice(0, moviesDisplayCount), ...(data?.trendingSeries || []).slice(0, seriesDisplayCount), ...(heroItems || [])]
       const items = allItems
@@ -475,7 +478,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
     }
     
     fetchStates()
-  }, [data, moviesDisplayCount, seriesDisplayCount, heroItems])
+  }, [user, data, moviesDisplayCount, seriesDisplayCount, heroItems])
   
   // Toggle card state function
   const toggleCardState = async (item: MediaItem, e?: React.MouseEvent) => {

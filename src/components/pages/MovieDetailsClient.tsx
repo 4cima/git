@@ -205,7 +205,8 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
   // Check card state on mount
   useEffect(() => {
-    if (!movie?.tmdb_id) return
+    // Don't fetch if user is not logged in
+    if (!user || !movie?.tmdb_id) return
     
     const fetchState = async () => {
       try {
@@ -230,7 +231,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
     }
     
     fetchState()
-  }, [movie?.tmdb_id])
+  }, [user, movie?.tmdb_id])
 
   const logWatch = async () => {
     if (watchLogged || !movie?.tmdb_id) return

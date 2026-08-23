@@ -295,7 +295,8 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
   // Check card state on mount
   useEffect(() => {
-    if (!series?.tmdb_id) return
+    // Don't fetch if user is not logged in
+    if (!user || !series?.tmdb_id) return
     
     const fetchState = async () => {
       try {
@@ -320,7 +321,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     }
     
     fetchState()
-  }, [series?.tmdb_id])
+  }, [user, series?.tmdb_id])
 
   // Reset watch log when episode changes
   useEffect(() => {
