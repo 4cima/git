@@ -28,7 +28,7 @@ export async function GET(
       const genres = typeof series.genres_json === 'string' 
         ? JSON.parse(series.genres_json) 
         : series.genres_json
-      genreIds = genres.map((g: any) => g.tmdb_id || g.id).filter((id: any) => typeof id === 'number')
+      genreIds = genres.map((g: any) => Number(g.tmdb_id ?? g.id)).filter((id: any) => !isNaN(id) && id > 0)
     } catch {
       return NextResponse.json({ data: [] })
     }
@@ -37,19 +37,24 @@ export async function GET(
       return NextResponse.json({ data: [] })
     }
     
-    // Find similar series with overlapping genres
+    // Find similar series with overlapping genres using json_each for better performance
+    const placeholders = genreIds.map(() => '?').join(',')
     const similar = await executeAll(
-      `SELECT id, slug, name_ar, name_en, poster_path, vote_average, first_air_date
-       FROM tv_series
-       WHERE tmdb_id != ?
-         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-         AND genres_json IS NOT NULL
-         AND (${genreIds.map(() => `genres_json LIKE ?`).join(' OR ')})
-       ORDER BY vote_average DESC, vote_count DESC
+      `SELECT s.id, s.slug, s.name_ar, s.name_en, s.poster_path, s.vote_average, s.first_air_date,
+              COUNT(DISTINCT json_extract(j.value, '$.tmdb_id')) as overlap
+       FROM tv_series s, json_each(s.genres_json) j
+       WHERE s.tmdb_id != ?
+         AND (s.filter_status IN ('clean', 'reviewed_approved') OR s.filter_status IS NULL)
+         AND s.genres_json IS NOT NULL
+         AND s.vote_count >= 50
+         AND json_extract(j.value, '$.tmdb_id') IN (${placeholders})
+       GROUP BY s.tmdb_id
+       HAVING overlap >= ${Math.min(2, genreIds.length)}
+       ORDER BY overlap DESC, s.vote_count DESC, s.vote_average DESC
        LIMIT ?`,
       [
         series.tmdb_id,
-        ...genreIds.map(id => `%"tmdb_id":${id}%`),
+        ...genreIds,
         limit
       ]
     )

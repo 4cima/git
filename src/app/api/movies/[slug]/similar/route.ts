@@ -28,7 +28,7 @@ export async function GET(
       const genres = typeof movie.genres_json === 'string' 
         ? JSON.parse(movie.genres_json) 
         : movie.genres_json
-      genreIds = genres.map((g: any) => g.tmdb_id || g.id).filter((id: any) => typeof id === 'number')
+      genreIds = genres.map((g: any) => Number(g.tmdb_id ?? g.id)).filter((id: any) => !isNaN(id) && id > 0)
     } catch {
       return NextResponse.json({ data: [] })
     }
@@ -37,19 +37,24 @@ export async function GET(
       return NextResponse.json({ data: [] })
     }
     
-    // Find similar movies with overlapping genres
+    // Find similar movies with overlapping genres using json_each for better performance
+    const placeholders = genreIds.map(() => '?').join(',')
     const similar = await executeAll(
-      `SELECT id, slug, title_ar, title_en, poster_path, vote_average, release_date
-       FROM movies
-       WHERE tmdb_id != ?
-         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-         AND genres_json IS NOT NULL
-         AND (${genreIds.map(() => `genres_json LIKE ?`).join(' OR ')})
-       ORDER BY vote_average DESC, vote_count DESC
+      `SELECT m.id, m.slug, m.title_ar, m.title_en, m.poster_path, m.vote_average, m.release_date,
+              COUNT(DISTINCT json_extract(j.value, '$.tmdb_id')) as overlap
+       FROM movies m, json_each(m.genres_json) j
+       WHERE m.tmdb_id != ?
+         AND (m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL)
+         AND m.genres_json IS NOT NULL
+         AND m.vote_count >= 50
+         AND json_extract(j.value, '$.tmdb_id') IN (${placeholders})
+       GROUP BY m.tmdb_id
+       HAVING overlap >= ${Math.min(2, genreIds.length)}
+       ORDER BY overlap DESC, m.vote_count DESC, m.vote_average DESC
        LIMIT ?`,
       [
         movie.tmdb_id,
-        ...genreIds.map(id => `%"tmdb_id":${id}%`),
+        ...genreIds,
         limit
       ]
     )
