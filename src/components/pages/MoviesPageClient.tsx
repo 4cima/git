@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/Footer'
 import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid'
+import { MovieCard } from '@/components/features/media/MovieCard'
 
 const GENRES = [
   { name: 'دراما',        slug: 'drama',            emoji: '🎭' },
@@ -486,71 +487,21 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
           ) : movies.length > 0 ? (
             <>
               <div className="grid-responsive gap-6">
-                {movies.map((item) => {
-                  let primaryGenre = null
-                  try { const g = JSON.parse(item.genres_json || '[]'); primaryGenre = g?.[0]?.name_ar || null } catch {}
-                  const year = Number(item.release_year || item.year)
-                  const currentYear = new Date().getFullYear()
-                  const yearStyle = year === currentYear
-                    ? 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
-                    : year >= 2020 ? 'bg-blue-600 text-white border border-blue-500'
-                    : year >= 2010 ? 'bg-cyan-600 text-white border border-cyan-500'
-                    : year >= 2000 ? 'bg-slate-100 text-slate-900 border border-slate-200 font-bold'
-                    : 'bg-slate-700 text-slate-300 border border-slate-600'
-
-                  return (
-                    <Link key={item.id} href={`/movies/${item.slug}`}
-                      className="group bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative"
-                    >
+                {movies.map((item, index) => (
+                  <MovieCard 
+                    key={item.id} 
+                    movie={{
+                      ...item,
+                      media_type: 'movie'
+                    }} 
+                    index={index} 
+                    isVisible={true} 
+                  />
+                ))}
                       <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
                         <img src={`/tmdb/w185${item.poster_path}`} alt={item.title_ar}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        
-                        {/* Media Type Badge */}
-                        <div className="absolute top-2 right-2 z-20">
-                          <span className="flex items-center gap-1 bg-red-600/90 text-white border border-red-500/60 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
-                            <Film className="w-[10px] h-[10px] shrink-0" />
-                            <span className="text-[9px] font-bold">فيلم</span>
-                          </span>
-                        </div>
-                        
-                        {item.vote_average > 0 && (
-                          <div className="absolute top-2 left-2 z-20">
-                            <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
-                              <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
-                              <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
-                            </span>
-                          </div>
-                        )}
-                        {primaryGenre && (
-                          <div className="absolute bottom-2 right-2 z-20">
-                            <span className={`${getGenreColor(primaryGenre).bg} ${getGenreColor(primaryGenre).text} border ${getGenreColor(primaryGenre).border} px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>{primaryGenre}</span>
-                          </div>
-                        )}
-                        {year > 0 && (
-                          <div className="absolute bottom-2 left-2 z-20">
-                            <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>{year}</span>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
-                          <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                            <Play className="w-5 h-5 text-white fill-white mr-0.5" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-2.5 h-[52px] flex flex-col justify-center relative overflow-hidden">
-                        <div className="transition-opacity duration-200 group-hover:opacity-0">
-                          <h3 className="text-[13px] font-bold text-slate-200 line-clamp-1 leading-tight">{sanitizeTitle(item.title_ar)}</h3>
-                          {item.title_en && <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 leading-tight">{item.title_en}</p>}
-                        </div>
-                        <div className="absolute inset-0 p-2.5 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <p className="text-[9px] text-slate-300 line-clamp-3 leading-relaxed">{item.overview_ar || 'لا يوجد وصف متاح'}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })}
               </div>
 
               {/* Infinite scroll trigger */}
