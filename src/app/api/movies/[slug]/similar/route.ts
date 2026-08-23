@@ -28,7 +28,7 @@ export async function GET(
       const genres = typeof movie.genres_json === 'string' 
         ? JSON.parse(movie.genres_json) 
         : movie.genres_json
-      genreIds = genres.map((g: any) => g.id).filter(Boolean)
+      genreIds = genres.map((g: any) => g.tmdb_id || g.id).filter((id: any) => typeof id === 'number')
     } catch {
       return NextResponse.json({ data: [] })
     }
@@ -38,11 +38,10 @@ export async function GET(
     }
     
     // Find similar movies with overlapping genres
-    const placeholders = genreIds.map(() => '?').join(',')
     const similar = await executeAll(
       `SELECT id, slug, title_ar, title_en, poster_path, vote_average, release_date
        FROM movies
-       WHERE id != ?
+       WHERE tmdb_id != ?
          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
          AND genres_json IS NOT NULL
          AND (${genreIds.map(() => `genres_json LIKE ?`).join(' OR ')})
@@ -50,7 +49,7 @@ export async function GET(
        LIMIT ?`,
       [
         movie.tmdb_id,
-        ...genreIds.map(id => `%"id":${id}%`),
+        ...genreIds.map(id => `%"tmdb_id":${id}%`),
         limit
       ]
     )

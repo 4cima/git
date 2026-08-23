@@ -28,7 +28,7 @@ export async function GET(
       const genres = typeof series.genres_json === 'string' 
         ? JSON.parse(series.genres_json) 
         : series.genres_json
-      genreIds = genres.map((g: any) => g.id).filter(Boolean)
+      genreIds = genres.map((g: any) => g.tmdb_id || g.id).filter((id: any) => typeof id === 'number')
     } catch {
       return NextResponse.json({ data: [] })
     }
@@ -41,7 +41,7 @@ export async function GET(
     const similar = await executeAll(
       `SELECT id, slug, name_ar, name_en, poster_path, vote_average, first_air_date
        FROM tv_series
-       WHERE id != ?
+       WHERE tmdb_id != ?
          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
          AND genres_json IS NOT NULL
          AND (${genreIds.map(() => `genres_json LIKE ?`).join(' OR ')})
@@ -49,7 +49,7 @@ export async function GET(
        LIMIT ?`,
       [
         series.tmdb_id,
-        ...genreIds.map(id => `%"id":${id}%`),
+        ...genreIds.map(id => `%"tmdb_id":${id}%`),
         limit
       ]
     )
