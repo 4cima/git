@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { FLAGS } from '../../../lib/constants'
 import { errorLogger } from '../../../services/errorLogging'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-
 type AdRow = {
   id: number
   title: string
@@ -66,11 +64,12 @@ async function fetchAd(type: AdRow['type'], position?: string) {
     const params = new URLSearchParams({ active: 'true', type })
     if (position) params.append('position', position)
     
-    const response = await fetch(`${API_BASE}/api/ads?${params.toString()}`)
+    const response = await fetch(`/api/ads?${params.toString()}`)
     if (!response.ok) return null
     
-    const ads = await response.json() as AdRow[]
-    return ads[0] || null
+    const data = await response.json()
+    const ads = data.data || data
+    return Array.isArray(ads) ? ads[0] || null : null
   } catch {
     return null
   }
@@ -78,7 +77,7 @@ async function fetchAd(type: AdRow['type'], position?: string) {
 
 async function incImpression(ad: AdRow) {
   try {
-    await fetch(`${API_BASE}/api/ads/${ad.id}/impression`, { method: 'POST' })
+    await fetch(`/api/ads/${ad.id}/impression`, { method: 'POST' })
   } catch (err: any) {
     errorLogger.logError({
       message: 'Failed to increment ad impression',
@@ -91,7 +90,7 @@ async function incImpression(ad: AdRow) {
 
 async function incClick(ad: AdRow) {
   try {
-    await fetch(`${API_BASE}/api/ads/${ad.id}/click`, { method: 'POST' })
+    await fetch(`/api/ads/${ad.id}/click`, { method: 'POST' })
   } catch (err: any) {
     errorLogger.logError({
       message: 'Failed to increment ad click',
@@ -187,7 +186,13 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
 
   // Render Logic
   if (!FLAGS.ADS_ENABLED) return null
-  if (!ad) return null
+  if (!ad) {
+    // Return empty marker for banner slots to show placement
+    if (type === 'banner') {
+      return <div data-ad-slot={position || 'banner'} data-ad-empty="1" hidden />
+    }
+    return null
+  }
 
   if (type === 'banner') {
     const sanitizedCode = sanitizeAdHtml(ad?.content || '')
