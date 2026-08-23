@@ -63,10 +63,20 @@ export default function ProfilePage() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/profile/stats')
+      const res = await fetch('/api/profile/stats', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
-        setStats(data)
+        if (data.ok && data.stats) {
+          // Map API response to UI structure
+          setStats({
+            moviesWatched: 0, // API doesn't separate by type yet
+            seriesWatched: 0,
+            totalWatchTime: Math.floor((data.stats.watch_history || 0) * 1.5), // Estimate hours
+            favorites: data.stats.favorites || 0,
+            reviews: data.stats.user_reviews || 0,
+            achievements: data.stats.user_achievements || 0,
+          })
+        }
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error)
@@ -78,7 +88,7 @@ export default function ProfilePage() {
   const fetchActivity = async () => {
     setLoadingActivity(true)
     try {
-      const res = await fetch('/api/profile/activity?limit=20')
+      const res = await fetch('/api/profile/activity?limit=20', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         setActivities(data.activities || [])
