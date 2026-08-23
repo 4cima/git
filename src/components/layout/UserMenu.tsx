@@ -8,8 +8,9 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { User, LogOut, Settings } from 'lucide-react'
+import { User, LogOut, Settings, ChevronDown } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import { getAvatarUrl } from '@/utils/avatarUtils'
 
 export function UserMenu() {
   const { user, profile, signOut, loading } = useAuth()
@@ -58,27 +59,29 @@ export function UserMenu() {
 
   // Show user menu if authenticated
   const username = profile?.username || user.email?.split('@')[0] || 'User'
-  const avatarUrl = profile?.avatar_url
+  const firstName = username.split(' ')[0] // Get first name only
+  const avatarUrl = getAvatarUrl(profile?.avatar_url, user.id, user.email)
   const isAdmin = profile?.role === 'admin' || profile?.role === 'supervisor'
 
   return (
     <div className="relative" ref={menuRef}>
-      {/* Avatar Button */}
+      {/* Compact Avatar Button with First Name and Arrow */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1 rounded-full hover:bg-zinc-800 transition-colors"
+        className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-zinc-800/50 transition-colors"
       >
-        {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={username}
-            className="w-8 h-8 rounded-full object-cover border-2 border-zinc-700"
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-cyan-400 flex items-center justify-center text-white text-sm font-bold">
-            {username.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <img
+          src={avatarUrl}
+          alt={firstName}
+          className="w-8 h-8 rounded-full object-cover border-2 border-zinc-700"
+        />
+        <span className="text-sm font-semibold text-white hidden sm:block">
+          {firstName}
+        </span>
+        <ChevronDown 
+          size={16} 
+          className={`text-zinc-400 transition-transform hidden sm:block ${isOpen ? 'rotate-180' : ''}`} 
+        />
       </button>
 
       {/* Dropdown Menu */}

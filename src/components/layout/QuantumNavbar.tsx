@@ -8,6 +8,7 @@ import { Home, Film, Tv, Zap, Rocket, Sparkles, Drama, Smile, Eye, Heart, Skull,
 import { UserMenu } from './UserMenu'
 import { useAuth } from '@/hooks/useAuth'
 import { SearchBox } from './SearchBox'
+import { getAvatarUrl } from '@/utils/avatarUtils'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
@@ -170,19 +171,13 @@ export const QuantumNavbar = memo(() => {
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
                         className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
                       >
-                        {profile?.avatar_url ? (
-                          <img
-                            src={profile.avatar_url}
-                            alt={profile.username || 'User'}
-                            className="w-6 h-6 rounded-full object-cover border border-zinc-700"
-                          />
-                        ) : (
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-red-600 to-cyan-400 flex items-center justify-center text-white text-xs font-bold">
-                            {(profile?.username || user.email?.split('@')[0] || 'U').charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        <img
+                          src={getAvatarUrl(profile?.avatar_url, user.id, user.email)}
+                          alt={(profile?.username || user.email?.split('@')[0] || 'User').split(' ')[0]}
+                          className="w-6 h-6 rounded-full object-cover border border-zinc-700"
+                        />
                         <span className="text-sm font-semibold text-white truncate max-w-[80px]">
-                          {profile?.username || user.email?.split('@')[0] || 'User'}
+                          {(profile?.username || user.email?.split('@')[0] || 'User').split(' ')[0]}
                         </span>
                         <ChevronDown size={14} className={`text-zinc-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                       </button>

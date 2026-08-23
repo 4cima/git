@@ -8,13 +8,19 @@ interface HomeCardHeartProps {
   state: CardState
   loading: boolean
   onClick: (e: React.MouseEvent) => void
+  isLoggedIn?: boolean // Optional prop to control visibility
 }
 
-export function HomeCardHeart({ state, loading, onClick }: HomeCardHeartProps) {
+export function HomeCardHeart({ state, loading, onClick, isLoggedIn = true }: HomeCardHeartProps) {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     onClick(e)
+  }
+  
+  // Don't render if user is not logged in
+  if (!isLoggedIn) {
+    return null
   }
   
   return (

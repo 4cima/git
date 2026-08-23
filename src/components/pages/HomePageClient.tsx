@@ -17,6 +17,7 @@ import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
 import { AdsManager } from '@/components/features/system/AdsManager'
 import { HomeCardHeart } from './HomeCardHeart'
+import { useAuth } from '@/hooks/useAuth'
 
 interface MediaItem {
   id: number
@@ -73,6 +74,8 @@ function mapItems(items: any[] | undefined, type: 'movie' | 'tv'): MediaItem[] {
 }
 
 export function HomePageClient({ initialData }: HomePageClientProps) {
+  const { user } = useAuth() // Check if user is logged in
+  
   // State management - Initialize with server data
   const [data, setData] = useState<HomeData>({
     trendingMovies: mapItems(initialData.trendingMovies, 'movie'),
@@ -755,32 +758,34 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                         <Play className="w-5 h-5 ml-2 fill-slate-950" /> شاهد العمل الآن
                       </Link>
                       
-                      {/* Hero Heart Button */}
-                      <button
-                        onClick={(e) => toggleCardState(heroItem, e)}
-                        disabled={isCardLoading(heroItem)}
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 shadow-lg border-2 ${
-                          getCardState(heroItem) === 'favorite' 
-                            ? 'bg-red-500 border-red-400 hover:bg-red-600 shadow-red-500/50' 
-                            : getCardState(heroItem) === 'completed'
-                            ? 'bg-green-500 border-green-400 hover:bg-green-600 shadow-green-500/50'
-                            : 'bg-black/80 border-white/40 hover:bg-black/90 hover:border-white/60'
-                        } ${isCardLoading(heroItem) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                        title={
-                          getCardState(heroItem) === 'neutral' ? 'إضافة للمفضلة' :
-                          getCardState(heroItem) === 'favorite' ? 'نقل لتمت المشاهدة' :
-                          'إزالة من تمت المشاهدة'
-                        }
-                      >
-                        <Heart 
-                          size={20} 
-                          className={`${
-                            getCardState(heroItem) === 'favorite' ? 'fill-white text-white' :
-                            getCardState(heroItem) === 'completed' ? 'fill-white text-white' :
-                            'text-white'
-                          }`}
-                        />
-                      </button>
+                      {/* Hero Heart Button - Only show if logged in */}
+                      {user && (
+                        <button
+                          onClick={(e) => toggleCardState(heroItem, e)}
+                          disabled={isCardLoading(heroItem)}
+                          className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 shadow-lg border-2 ${
+                            getCardState(heroItem) === 'favorite' 
+                              ? 'bg-red-500 border-red-400 hover:bg-red-600 shadow-red-500/50' 
+                              : getCardState(heroItem) === 'completed'
+                              ? 'bg-green-500 border-green-400 hover:bg-green-600 shadow-green-500/50'
+                              : 'bg-black/80 border-white/40 hover:bg-black/90 hover:border-white/60'
+                          } ${isCardLoading(heroItem) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                          title={
+                            getCardState(heroItem) === 'neutral' ? 'إضافة للمفضلة' :
+                            getCardState(heroItem) === 'favorite' ? 'نقل لتمت المشاهدة' :
+                            'إزالة من تمت المشاهدة'
+                          }
+                        >
+                          <Heart 
+                            size={24} 
+                            className={`${
+                              getCardState(heroItem) === 'favorite' ? 'fill-white text-white' :
+                              getCardState(heroItem) === 'completed' ? 'fill-white text-white' :
+                              'text-white'
+                            }`}
+                          />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { TmdbImage } from '../../common/TmdbImage'
 import { translateGenre } from '../../../utils/genreTranslator'
 import { getGenreColor, getMediaTypeColor } from '../../../utils/genreColors'
+import { useAuth } from '@/hooks/useAuth'
 
 const LazyReactPlayer = lazy(() => import('react-player'))
 
@@ -47,6 +48,7 @@ export type Movie = {
 type CardState = 'neutral' | 'favorite' | 'completed'
 
 export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; index?: number; isVisible?: boolean }) => {
+  const { user } = useAuth() // Check if user is logged in
   const [isHovered, setIsHovered] = useState(false)
   const [trailerKey, setTrailerKey] = useState<string | null>(null)
   const [thumbSrc, setThumbSrc] = useState<string>(((movie as any).thumbnail || '').trim())
@@ -361,34 +363,36 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
               </span>
             </div>
 
-            {/* Top Left - Heart Button (State Indicator) */}
-            <div className="absolute top-2 left-2 z-30">
-              <button
-                onClick={toggleCardState}
-                disabled={stateLoading}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg border-2 ${
-                  cardState === 'favorite' 
-                    ? 'bg-red-500 border-red-400 hover:bg-red-600 shadow-red-500/50' 
-                    : cardState === 'completed'
-                    ? 'bg-green-500 border-green-400 hover:bg-green-600 shadow-green-500/50'
-                    : 'bg-black/80 border-white/40 hover:bg-black/90 hover:border-white/60'
-                } ${stateLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                title={
-                  cardState === 'neutral' ? 'إضافة للمفضلة' :
-                  cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
-                  'إزالة من تمت المشاهدة'
-                }
-              >
-                <Heart 
-                  size={14} 
-                  className={`${
-                    cardState === 'favorite' ? 'fill-white text-white' :
-                    cardState === 'completed' ? 'fill-white text-white' :
-                    'text-white'
-                  }`}
-                />
-              </button>
-            </div>
+            {/* Top Left - Heart Button (State Indicator) - Only show if logged in */}
+            {user && (
+              <div className="absolute top-2 left-2 z-30">
+                <button
+                  onClick={toggleCardState}
+                  disabled={stateLoading}
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg border-2 ${
+                    cardState === 'favorite' 
+                      ? 'bg-red-500 border-red-400 hover:bg-red-600 shadow-red-500/50' 
+                      : cardState === 'completed'
+                      ? 'bg-green-500 border-green-400 hover:bg-green-600 shadow-green-500/50'
+                      : 'bg-black/80 border-white/40 hover:bg-black/90 hover:border-white/60'
+                  } ${stateLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  title={
+                    cardState === 'neutral' ? 'إضافة للمفضلة' :
+                    cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
+                    'إزالة من تمت المشاهدة'
+                  }
+                >
+                  <Heart 
+                    size={18} 
+                    className={`${
+                      cardState === 'favorite' ? 'fill-white text-white' :
+                      cardState === 'completed' ? 'fill-white text-white' :
+                      'text-white'
+                    }`}
+                  />
+                </button>
+              </div>
+            )}
 
             {/* Top Right - Media Type Badge */}
             <div className="absolute top-2 right-2 z-20">
