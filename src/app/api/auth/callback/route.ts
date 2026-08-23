@@ -11,9 +11,10 @@ export async function GET(req: NextRequest) {
   }
 
   const res = NextResponse.redirect(new URL('/', req.url));
+  const isLocalhost = req.url.includes('localhost') || req.url.includes('127.0.0.1');
   res.cookies.set(SESSION_COOKIE, result.sessionId, {
     httpOnly: true,
-    secure:   true,
+    secure:   !isLocalhost, // false on localhost, true on production
     sameSite: 'lax',
     path:     '/',
     maxAge:   SESSION_MAX_AGE,
