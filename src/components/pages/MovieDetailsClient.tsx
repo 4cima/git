@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Calendar, Clock, AlertTriangle, Film } from 'lucide-react'
+import { Star, Calendar, Clock, AlertTriangle, Film, Heart } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { EmbedPlayer } from '../features/media/EmbedPlayer'
@@ -27,6 +27,8 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
   const [similarMovies, setSimilarMovies] = useState<any[]>([])
   const [similarLoading, setSimilarLoading] = useState(true)
   const [watchLogged, setWatchLogged] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [favLoading, setFavLoading] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const title = sanitizeTitle(movie?.title_ar || movie?.title_en || movie?.title || 'فيلم')
@@ -198,33 +200,89 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
     fetchSimilar()
   }, [movie?.slug])
 
-  // Log watch activity on server selection
+  // Check favorite status on mount
   useEffect(() => {
-    if (watchLogged || !movie?.tmdb_id || active < 0 || !servers[active]) return
+    if (!movie?.tmdb_id) return
     
-    const logWatch = async () => {
+    const checkFavorite = async () => {
       try {
-        await fetch('/api/user/watch-progress', {
-          method: 'PUT',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content_type: 'movie',
-            tmdb_id: movie.tmdb_id,
-            title: movie.title_ar || movie.title_en,
-            poster_path: movie.poster_path,
-            watch_duration: 0,
-            completed: false
-          })
+        const response = await fetch(`/api/user/favorites?tmdb_id=${movie.tmdb_id}&content_type=movie`, {
+          credentials: 'include'
         })
-        setWatchLogged(true)
+        if (response.ok) {
+          const data = await response.json()
+          setIsFavorite(data.isFavorite || false)
+        }
       } catch (error) {
-        // Silent fail - don't break player
+        // Silent fail
       }
     }
     
-    logWatch()
-  }, [active, movie, servers, watchLogged])
+    checkFavorite()
+  }, [movie?.tmdb_id])
+
+  const handlePlayerClick = async () => {
+    if (watchLogged || !movie?.tmdb_id) return
+    
+    try {
+      await fetch('/api/user/watch-progress', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content_type: 'movie',
+          tmdb_id: movie.tmdb_id,
+          title: movie.title_ar || movie.title_en,
+          poster_path: movie.poster_path,
+          watch_duration: 0,
+          completed: false
+        })
+      })
+      setWatchLogged(true)
+    } catch (error) {
+      // Silent fail - don't break player
+    }
+  }
+
+  const toggleFavorite = async () => {
+    if (favLoading || !movie?.tmdb_id) return
+    
+    setFavLoading(true)
+    const newState = !isFavorite
+    setIsFavorite(newState) // Optimistic update
+    
+    try {
+      const response = await fetch(
+        newState 
+          ? '/api/user/favorites'
+          : `/api/user/favorites?tmdb_id=${movie.tmdb_id}&content_type=movie`,
+        {
+          method: newState ? 'POST' : 'DELETE',
+          credentials: 'include',
+          headers: newState ? { 'Content-Type': 'application/json' } : undefined,
+          body: newState ? JSON.stringify({
+            content_type: 'movie',
+            tmdb_id: movie.tmdb_id,
+            title: movie.title_ar || movie.title_en,
+            poster_path: movie.poster_path
+          }) : undefined
+        }
+      )
+      
+      if (response.status === 429) {
+        // Rate limited - revert
+        setIsFavorite(!newState)
+      } else if (!response.ok) {
+        // Error - revert
+        setIsFavorite(!newState)
+      }
+    } catch (error) {
+      // Error - revert
+      setIsFavorite(!newState)
+    } finally {
+      setFavLoading(false)
+    }
+  }
 
   const handleOpenTrailer = () => {
     setIsModalOpen(true)
@@ -325,10 +383,28 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
               {/* Left side: Title, Info, Genres, Description */}
               <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
-                <h1 className="text-xl md:text-2xl font-black mb-2 text-zinc-100">{title}</h1>
-                {titleEn && titleEn !== title && (
-                  <h2 className="text-xl text-zinc-400 mb-6 font-medium tracking-wide text-left">{titleEn}</h2>
-                )}
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <div className="flex-1">
+                    <h1 className="text-xl md:text-2xl font-black text-zinc-100">{title}</h1>
+                    {titleEn && titleEn !== title && (
+                      <h2 className="text-xl text-zinc-400 mt-2 font-medium tracking-wide text-left">{titleEn}</h2>
+                    )}
+                  </div>
+                  <button
+                    onClick={toggleFavorite}
+                    disabled={favLoading}
+                    className={clsx(
+                      "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2",
+                      isFavorite
+                        ? "bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30"
+                        : "bg-white/5 border-white/20 text-white/60 hover:bg-white/10 hover:border-white/40",
+                      favLoading && "opacity-50 cursor-not-allowed"
+                    )}
+                    title={isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+                  >
+                    <Heart className={clsx("w-6 h-6", isFavorite && "fill-current")} />
+                  </button>
+                </div>
                 
                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium mb-6">
                   {/* Genres on the right */}
@@ -575,7 +651,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
               </div>
 
               {/* Embedded Player */}
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 space-y-4" onClick={handlePlayerClick}>
                 <EmbedPlayer
                   server={servers[active]}
                   serverIndex={active}
