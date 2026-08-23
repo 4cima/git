@@ -47,12 +47,26 @@ export type Movie = {
 
 type CardState = 'neutral' | 'favorite' | 'completed'
 
-export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; index?: number; isVisible?: boolean }) => {
+interface MovieCardProps {
+  movie: Movie
+  index?: number
+  isVisible?: boolean
+  initialCardState?: CardState // Optional: if provided, skip individual API call
+  onStateChange?: (newState: CardState) => void // Optional: callback when state changes
+}
+
+export const MovieCard = memo(({ 
+  movie, 
+  index = 0, 
+  isVisible,
+  initialCardState,
+  onStateChange 
+}: MovieCardProps) => {
   const { user } = useAuth() // Check if user is logged in
   const [isHovered, setIsHovered] = useState(false)
   const [trailerKey, setTrailerKey] = useState<string | null>(null)
   const [thumbSrc, setThumbSrc] = useState<string>(((movie as any).thumbnail || '').trim())
-  const [cardState, setCardState] = useState<CardState>('neutral')
+  const [cardState, setCardState] = useState<CardState>(initialCardState || 'neutral')
   const [stateLoading, setStateLoading] = useState(false)
 
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -195,10 +209,17 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
     setThumbSrc(((movie as any).thumbnail || '').trim())
   }, [(movie as any).thumbnail])
 
-  // Fetch card state on mount
+  // Update card state when initialCardState changes
   useEffect(() => {
-    // Don't fetch if user is not logged in
-    if (!user) return
+    if (initialCardState !== undefined) {
+      setCardState(initialCardState)
+    }
+  }, [initialCardState])
+
+  // Fetch card state on mount (only if not provided via prop)
+  useEffect(() => {
+    // Skip if state provided via prop, or user not logged in
+    if (initialCardState !== undefined || !user) return
     
     const tmdbId = movie.tmdb_id || movie.id
     if (!tmdbId) return
@@ -227,7 +248,7 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
     }
     
     fetchState()
-  }, [user, movie.tmdb_id, movie.id, isTv])
+  }, [user, movie.tmdb_id, movie.id, isTv, initialCardState])
 
   const toggleCardState = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -243,6 +264,11 @@ export const MovieCard = memo(({ movie, index = 0, isVisible }: { movie: Movie; 
     const nextState = cardState === 'neutral' ? 'favorite' : 
                       cardState === 'favorite' ? 'completed' : 'neutral'
     setCardState(nextState)
+    
+    // Notify parent if callback provided
+    if (onStateChange) {
+      onStateChange(nextState)
+    }
     
     try {
       const contentType = isTv ? 'tv' : 'movie'

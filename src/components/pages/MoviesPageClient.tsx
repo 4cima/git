@@ -9,6 +9,7 @@ import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid'
 import { MovieCard } from '@/components/features/media/MovieCard'
+import { useAuth } from '@/hooks/useAuth'
 
 const GENRES = [
   { name: 'دراما',        slug: 'drama',            emoji: '🎭' },
@@ -87,6 +88,7 @@ const SORT_OPTIONS = [
 ]
 
 export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[] }) {
+  const { user } = useAuth() // Check if user is logged in
   const searchParams = useSearchParams()
   const [movies, setMovies]                   = useState<any[]>(initialMovies)
   const [loading, setLoading]                 = useState(initialMovies.length === 0)
@@ -103,6 +105,9 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
   const [page, setPage]                       = useState(1)
   const [hasMore, setHasMore]                 = useState(false)
   const observerTarget = useRef<HTMLDivElement>(null)
+
+  // Batch card states for heart buttons
+  const [cardStates, setCardStates] = useState<Record<number, 'neutral' | 'favorite' | 'completed'>>({})
 
   // Single open dropdown at a time
   const [openDropdown, setOpenDropdown] = useState<'genre'|'year'|'rating'|'country'|'sort'|null>(null)
@@ -278,6 +283,35 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
       abortController.abort()
     }
   }, [selectedGenre, selectedYear, selectedRating, selectedCountry, sortBy, sortOrder, page, debouncedSearch])
+
+  // Batch fetch card states for all movies (only if user is logged in)
+  useEffect(() => {
+    if (!user || movies.length === 0) return
+
+    const fetchStates = async () => {
+      try {
+        const res = await fetch('/api/user/card-state', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: movies.map(m => ({ id: m.id, type: 'movie' }))
+          })
+        })
+        
+        if (!res.ok) return
+        
+        const data = await res.json()
+        if (data.states) {
+          setCardStates(data.states)
+        }
+      } catch (err) {
+        // Silently fail - heart buttons will show neutral state
+      }
+    }
+
+    fetchStates()
+  }, [movies, user])
 
   // Infinite scroll observer - prefetch before reaching last rows
   useEffect(() => {
@@ -487,21 +521,24 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
           ) : movies.length > 0 ? (
             <>
               <div className="grid-responsive gap-6">
-                {movies.map((item, index) => (
-                  <MovieCard 
-                    key={item.id} 
-                    movie={{
-                      ...item,
-                      media_type: 'movie'
-                    }} 
-                    index={index} 
-                    isVisible={true} 
-                  />
-                ))}
-                      <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
-                        <img src={`/tmdb/w185${item.poster_path}`} alt={item.title_ar}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {movies.map((item, index) => {
+                  const cardKey = item.id
+                  return (
+                    <MovieCard 
+                      key={item.id} 
+                      movie={{
+                        ...item,
+                        media_type: 'movie'
+                      }} 
+                      index={index} 
+                      isVisible={true}
+                      initialCardState={cardStates[cardKey]}
+                      onStateChange={(newState) => {
+                        setCardStates(prev => ({ ...prev, [cardKey]: newState }))
+                      }}
+                    />
+                  )
+                })}
               </div>
 
               {/* Infinite scroll trigger */}

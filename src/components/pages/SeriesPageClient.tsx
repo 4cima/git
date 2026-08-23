@@ -10,6 +10,7 @@ import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid'
 import { MovieCard } from '@/components/features/media/MovieCard'
+import { useAuth } from '@/hooks/useAuth'
 
 const GENRES = [
   { name: 'دراما',               slug: 'drama',              emoji: '🎭' },
@@ -93,6 +94,7 @@ const SORT_OPTIONS = [
 ]
 
 export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[] }) {
+  const { user } = useAuth() // Check if user is logged in
   const searchParams = useSearchParams()
   const [series, setSeries]                   = useState<any[]>(initialSeries)
   const [loading, setLoading]                 = useState(initialSeries.length === 0)
@@ -109,6 +111,9 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
   const [page, setPage]                       = useState(1)
   const [hasMore, setHasMore]                 = useState(false)
   const observerTarget = useRef<HTMLDivElement>(null)
+
+  // Batch card states for heart buttons
+  const [cardStates, setCardStates] = useState<Record<number, 'neutral' | 'favorite' | 'completed'>>({})
 
   // Single open dropdown at a time
   const [openDropdown, setOpenDropdown] = useState<'genre'|'year'|'rating'|'country'|'sort'|null>(null)
@@ -284,6 +289,35 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
       abortController.abort()
     }
   }, [selectedGenre, selectedYear, selectedRating, selectedCountry, sortBy, sortOrder, page, debouncedSearch])
+
+  // Batch fetch card states for all series (only if user is logged in)
+  useEffect(() => {
+    if (!user || series.length === 0) return
+
+    const fetchStates = async () => {
+      try {
+        const res = await fetch('/api/user/card-state', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: series.map(s => ({ id: s.id, type: 'tv' }))
+          })
+        })
+        
+        if (!res.ok) return
+        
+        const data = await res.json()
+        if (data.states) {
+          setCardStates(data.states)
+        }
+      } catch (err) {
+        // Silently fail - heart buttons will show neutral state
+      }
+    }
+
+    fetchStates()
+  }, [series, user])
 
   // Infinite scroll observer - prefetch before reaching last rows
   useEffect(() => {
@@ -494,17 +528,24 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
           ) : series.length > 0 ? (
             <>
               <div className="grid-responsive gap-6">
-                {series.map((item, index) => (
-                  <MovieCard 
-                    key={item.id} 
-                    movie={{
-                      ...item,
-                      media_type: 'tv'
-                    }} 
-                    index={index} 
-                    isVisible={true} 
-                  />
-                ))}
+                {series.map((item, index) => {
+                  const cardKey = item.id
+                  return (
+                    <MovieCard 
+                      key={item.id} 
+                      movie={{
+                        ...item,
+                        media_type: 'tv'
+                      }} 
+                      index={index} 
+                      isVisible={true}
+                      initialCardState={cardStates[cardKey]}
+                      onStateChange={(newState) => {
+                        setCardStates(prev => ({ ...prev, [cardKey]: newState }))
+                      }}
+                    />
+                  )
+                })}
               </div>
 
               {/* Infinite scroll trigger */}
