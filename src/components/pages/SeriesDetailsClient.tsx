@@ -652,8 +652,6 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                     </button>
                   )}
                 </div>
-                  </button>
-                </div>
                 
                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium mb-6">
                   {/* Genres on the right */}
