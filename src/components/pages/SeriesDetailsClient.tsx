@@ -11,6 +11,7 @@ import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
+import { AdsManager } from '@/components/features/system/AdsManager'
 
 interface SeriesDetailsClientProps {
   series: any
@@ -801,6 +802,11 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                     )
                   })}
                 </div>
+              </div>
+
+              {/* Ad Banner before Player */}
+              <div className="px-4 py-4">
+                <AdsManager type="banner" position="series-before-player" />
               </div>
 
               {/* Embedded Player */}

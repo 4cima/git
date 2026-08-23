@@ -14,6 +14,7 @@ import { Loading } from '@/components/common/Loading'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
+import { AdsManager } from '@/components/features/system/AdsManager'
 
 interface MediaItem {
   id: number
@@ -747,6 +748,13 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
           </div>
         </section>
       )}
+
+      {/* Ad Banner after Hero */}
+      <div className="w-full bg-slate-950">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-4">
+          <AdsManager type="banner" position="home-after-hero" />
+        </div>
+      </div>
 
       {/* 3. Trending Content Sections */}
       <section className="w-full bg-slate-950">
