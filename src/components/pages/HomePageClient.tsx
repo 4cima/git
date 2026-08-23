@@ -432,8 +432,6 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
   }, [scrollHorizontal])
 
   const heroItem = heroItems.length > 0 ? heroItems[heroIndex] : null
-
-  if (loading) return <Loading fullScreen text="جاري التحميل..." />
   
   // Error state
   if (error) {
