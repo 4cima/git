@@ -9,15 +9,18 @@ import {
   Play,
   AlertTriangle,
   ArrowLeft,
+  Heart,
 } from 'lucide-react'
 import { Loading } from '@/components/common/Loading'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
 import { AdsManager } from '@/components/features/system/AdsManager'
+import { HomeCardHeart } from './HomeCardHeart'
 
 interface MediaItem {
   id: number
+  tmdb_id?: number
   slug: string
   title: string
   title_ar: string
@@ -30,6 +33,8 @@ interface MediaItem {
   media_type: 'movie' | 'tv'
   primary_genre: string | null
 }
+
+type CardState = 'neutral' | 'favorite' | 'completed'
 
 interface HomeData {
   trendingMovies: MediaItem[]
@@ -83,6 +88,10 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
   // Lazy loading state
   const [moviesDisplayCount, setMoviesDisplayCount] = useState(25) // نبدأ بـ 25
   const [seriesDisplayCount, setSeriesDisplayCount] = useState(25) // نبدأ بـ 25
+  
+  // Card states for hearts
+  const [cardStates, setCardStates] = useState<Record<string, CardState>>({})
+  const [stateLoading, setStateLoading] = useState<Record<string, boolean>>({})
   
   // Simple refs for scroll
   const moviesScrollRef = useRef<HTMLDivElement>(null)
@@ -433,6 +442,110 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
 
   const heroItem = heroItems.length > 0 ? heroItems[heroIndex] : null
   
+  // Fetch card states for all visible items
+  useEffect(() => {
+    const fetchStates = async () => {
+      const allItems = [...(data?.trendingMovies || []).slice(0, moviesDisplayCount), ...(data?.trendingSeries || []).slice(0, seriesDisplayCount), ...(heroItems || [])]
+      const items = allItems
+        .filter(item => item.tmdb_id || item.id)
+        .map(item => ({
+          content_type: item.media_type === 'tv' ? 'tv' : 'movie',
+          tmdb_id: item.tmdb_id || item.id
+        }))
+      
+      if (items.length === 0) return
+      
+      try {
+        const res = await fetch('/api/user/card-state', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setCardStates(data.states || {})
+        }
+      } catch {
+        // Silent fail - user might not be logged in
+      }
+    }
+    
+    fetchStates()
+  }, [data, moviesDisplayCount, seriesDisplayCount, heroItems])
+  
+  // Toggle card state function
+  const toggleCardState = async (item: MediaItem, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    const tmdbId = item.tmdb_id || item.id
+    if (!tmdbId) return
+    
+    const contentType = item.media_type === 'tv' ? 'tv' : 'movie'
+    const key = `${contentType}-${tmdbId}`
+    
+    if (stateLoading[key]) return
+    
+    setStateLoading(prev => ({ ...prev, [key]: true }))
+    
+    const currentState = cardStates[key] || 'neutral'
+    const nextState = currentState === 'neutral' ? 'favorite' : 
+                      currentState === 'favorite' ? 'completed' : 'neutral'
+    
+    // Optimistic update
+    setCardStates(prev => ({ ...prev, [key]: nextState }))
+    
+    try {
+      const res = await fetch('/api/user/card-action', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content_type: contentType,
+          tmdb_id: tmdbId,
+          title: item.title_ar || item.title_en,
+          poster_path: item.poster_path
+        })
+      })
+      
+      if (!res.ok) {
+        // Revert on error
+        setCardStates(prev => ({ ...prev, [key]: currentState }))
+      } else {
+        const data = await res.json()
+        if (data.newState) {
+          setCardStates(prev => ({ ...prev, [key]: data.newState }))
+        }
+      }
+    } catch {
+      // Revert on error
+      setCardStates(prev => ({ ...prev, [key]: currentState }))
+    } finally {
+      setStateLoading(prev => ({ ...prev, [key]: false }))
+    }
+  }
+  
+  // Get card state for an item
+  const getCardState = (item: MediaItem): CardState => {
+    const tmdbId = item.tmdb_id || item.id
+    if (!tmdbId) return 'neutral'
+    const contentType = item.media_type === 'tv' ? 'tv' : 'movie'
+    const key = `${contentType}-${tmdbId}`
+    return cardStates[key] || 'neutral'
+  }
+  
+  // Check if loading
+  const isCardLoading = (item: MediaItem): boolean => {
+    const tmdbId = item.tmdb_id || item.id
+    if (!tmdbId) return false
+    const contentType = item.media_type === 'tv' ? 'tv' : 'movie'
+    const key = `${contentType}-${tmdbId}`
+    return stateLoading[key] || false
+  }
+  
   // Error state
   if (error) {
     return (
@@ -629,8 +742,8 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
 
                   {/* Bottom Section: Buttons */}
                   <div className="space-y-4">
-                    {/* Action Button */}
-                    <div>
+                    {/* Action Buttons Row */}
+                    <div className="flex items-center gap-3">
                       <Link
                         href={`${
                           heroItem.media_type === 'movie'
@@ -641,6 +754,33 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                       >
                         <Play className="w-5 h-5 ml-2 fill-slate-950" /> شاهد العمل الآن
                       </Link>
+                      
+                      {/* Hero Heart Button */}
+                      <button
+                        onClick={(e) => toggleCardState(heroItem, e)}
+                        disabled={isCardLoading(heroItem)}
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 backdrop-blur-md shadow-lg border-2 ${
+                          getCardState(heroItem) === 'favorite' 
+                            ? 'bg-red-500/90 border-red-400 hover:bg-red-600' 
+                            : getCardState(heroItem) === 'completed'
+                            ? 'bg-green-500/90 border-green-400 hover:bg-green-600'
+                            : 'bg-white/10 border-white/30 hover:bg-white/20'
+                        } ${isCardLoading(heroItem) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        title={
+                          getCardState(heroItem) === 'neutral' ? 'إضافة للمفضلة' :
+                          getCardState(heroItem) === 'favorite' ? 'نقل لتمت المشاهدة' :
+                          'إزالة من تمت المشاهدة'
+                        }
+                      >
+                        <Heart 
+                          size={20} 
+                          className={`${
+                            getCardState(heroItem) === 'favorite' ? 'fill-white text-white' :
+                            getCardState(heroItem) === 'completed' ? 'fill-white text-white' :
+                            'text-white/70'
+                          }`}
+                        />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -825,6 +965,15 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           {/* Dark gradient on hover */}
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           
+                          {/* Top Left - Heart Button */}
+                          <div className="absolute top-2 left-2 z-30">
+                            <HomeCardHeart
+                              state={getCardState(item)}
+                              loading={isCardLoading(item)}
+                              onClick={(e) => toggleCardState(item, e)}
+                            />
+                          </div>
+                          
                           {/* Top Right - Media Type Badge */}
                           {(() => {
                             const mediaColorScheme = getMediaTypeColor(item.media_type)
@@ -837,9 +986,9 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                             )
                           })()}
                           
-                          {/* Top Left - Rating Badge */}
+                          {/* Rating Badge - moved below heart */}
                           {item.vote_average > 0 && (
-                            <div className="absolute top-2 left-2 z-20">
+                            <div className="absolute top-12 left-2 z-20">
                               <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
                                 <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
                                 <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
@@ -1007,6 +1156,15 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           {/* Dark gradient on hover */}
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           
+                          {/* Top Left - Heart Button */}
+                          <div className="absolute top-2 left-2 z-30">
+                            <HomeCardHeart
+                              state={getCardState(item)}
+                              loading={isCardLoading(item)}
+                              onClick={(e) => toggleCardState(item, e)}
+                            />
+                          </div>
+                          
                           {/* Top Right - Media Type Badge */}
                           {(() => {
                             const mediaColorScheme = getMediaTypeColor(item.media_type)
@@ -1019,9 +1177,9 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                             )
                           })()}
                           
-                          {/* Top Left - Rating Badge */}
+                          {/* Rating Badge - moved below heart */}
                           {item.vote_average > 0 && (
-                            <div className="absolute top-2 left-2 z-20">
+                            <div className="absolute top-12 left-2 z-20">
                               <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
                                 <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
                                 <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>

@@ -27,8 +27,8 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
   const [similarMovies, setSimilarMovies] = useState<any[]>([])
   const [similarLoading, setSimilarLoading] = useState(true)
   const [watchLogged, setWatchLogged] = useState(false)
-  const [isFavorite, setIsFavorite] = useState(false)
-  const [favLoading, setFavLoading] = useState(false)
+  const [cardState, setCardState] = useState<'neutral' | 'favorite' | 'completed'>('neutral')
+  const [stateLoading, setStateLoading] = useState(false)
   const [showPlayOverlay, setShowPlayOverlay] = useState(true)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
@@ -201,25 +201,33 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
     fetchSimilar()
   }, [movie?.slug])
 
-  // Check favorite status on mount
+  // Check card state on mount
   useEffect(() => {
     if (!movie?.tmdb_id) return
     
-    const checkFavorite = async () => {
+    const fetchState = async () => {
       try {
-        const response = await fetch(`/api/user/favorites?tmdb_id=${movie.tmdb_id}&content_type=movie`, {
-          credentials: 'include'
+        const res = await fetch('/api/user/card-state', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: [{ content_type: 'movie', tmdb_id: movie.tmdb_id }]
+          })
         })
-        if (response.ok) {
-          const data = await response.json()
-          setIsFavorite(data.isFavorite || false)
+        if (res.ok) {
+          const data = await res.json()
+          const key = `movie-${movie.tmdb_id}`
+          if (data.states && data.states[key]) {
+            setCardState(data.states[key])
+          }
         }
-      } catch (error) {
-        // Silent fail
+      } catch {
+        // Silent fail - user might not be logged in
       }
     }
     
-    checkFavorite()
+    fetchState()
   }, [movie?.tmdb_id])
 
   const logWatch = async () => {
@@ -257,43 +265,43 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
     logWatch()
   }
 
-  const toggleFavorite = async () => {
-    if (favLoading || !movie?.tmdb_id) return
+  const toggleCardState = async () => {
+    if (stateLoading || !movie?.tmdb_id) return
     
-    setFavLoading(true)
-    const newState = !isFavorite
-    setIsFavorite(newState) // Optimistic update
+    setStateLoading(true)
+    const prevState = cardState
+    
+    // Optimistic update
+    const nextState = cardState === 'neutral' ? 'favorite' : 
+                      cardState === 'favorite' ? 'completed' : 'neutral'
+    setCardState(nextState)
     
     try {
-      const response = await fetch(
-        newState 
-          ? '/api/user/favorites'
-          : `/api/user/favorites?tmdb_id=${movie.tmdb_id}&content_type=movie`,
-        {
-          method: newState ? 'POST' : 'DELETE',
-          credentials: 'include',
-          headers: newState ? { 'Content-Type': 'application/json' } : undefined,
-          body: newState ? JSON.stringify({
-            content_type: 'movie',
-            tmdb_id: movie.tmdb_id,
-            title: movie.title_ar || movie.title_en,
-            poster_path: movie.poster_path
-          }) : undefined
-        }
-      )
+      const res = await fetch('/api/user/card-action', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content_type: 'movie',
+          tmdb_id: movie.tmdb_id,
+          title: movie.title_ar || movie.title_en,
+          poster_path: movie.poster_path
+        })
+      })
       
-      if (response.status === 429) {
-        // Rate limited - revert
-        setIsFavorite(!newState)
-      } else if (!response.ok) {
-        // Error - revert
-        setIsFavorite(!newState)
+      if (!res.ok) {
+        // Revert on error
+        setCardState(prevState)
+      } else {
+        const data = await res.json()
+        if (data.newState) {
+          setCardState(data.newState)
+        }
       }
-    } catch (error) {
-      // Error - revert
-      setIsFavorite(!newState)
+    } catch {
+      setCardState(prevState)
     } finally {
-      setFavLoading(false)
+      setStateLoading(false)
     }
   }
 
@@ -404,18 +412,24 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                     )}
                   </div>
                   <button
-                    onClick={toggleFavorite}
-                    disabled={favLoading}
+                    onClick={toggleCardState}
+                    disabled={stateLoading}
                     className={clsx(
                       "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 border-2",
-                      isFavorite
+                      cardState === 'favorite'
                         ? "bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30"
+                        : cardState === 'completed'
+                        ? "bg-green-500/20 border-green-500 text-green-500 hover:bg-green-500/30"
                         : "bg-white/5 border-white/20 text-white/60 hover:bg-white/10 hover:border-white/40",
-                      favLoading && "opacity-50 cursor-not-allowed"
+                      stateLoading && "opacity-50 cursor-not-allowed"
                     )}
-                    title={isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+                    title={
+                      cardState === 'neutral' ? 'إضافة للمفضلة' :
+                      cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
+                      'إزالة من تمت المشاهدة'
+                    }
                   >
-                    <Heart className={clsx("w-6 h-6", isFavorite && "fill-current")} />
+                    <Heart className={clsx("w-6 h-6", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
                   </button>
                 </div>
                 
