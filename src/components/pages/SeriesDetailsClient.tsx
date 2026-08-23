@@ -37,6 +37,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const [volume, setVolume] = useState(100)
   const [isMuted, setIsMuted] = useState(false)
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
+  const [watchLogged, setWatchLogged] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const playerRef = useRef<HTMLDivElement>(null)
   const progressInterval = useRef<NodeJS.Timeout | null>(null)
@@ -286,6 +287,41 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     
     fetchSimilar()
   }, [series?.slug])
+
+  // Log watch activity on server/episode selection
+  useEffect(() => {
+    if (watchLogged || !series?.tmdb_id || active < 0 || !servers[active]) return
+    
+    const logWatch = async () => {
+      try {
+        await fetch('/api/user/watch-progress', {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content_type: 'tv',
+            tmdb_id: series.tmdb_id,
+            title: series.name_ar || series.name_en,
+            poster_path: series.poster_path,
+            season_number: selectedSeason,
+            episode_number: selectedEpisode,
+            watch_duration: 0,
+            completed: false
+          })
+        })
+        setWatchLogged(true)
+      } catch (error) {
+        // Silent fail - don't break player
+      }
+    }
+    
+    logWatch()
+  }, [active, series, servers, selectedSeason, selectedEpisode, watchLogged])
+
+  // Reset watch log when episode changes
+  useEffect(() => {
+    setWatchLogged(false)
+  }, [selectedSeason, selectedEpisode])
 
   const handlePlayPause = () => {
     if (!player) return

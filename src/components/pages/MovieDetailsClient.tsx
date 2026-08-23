@@ -26,6 +26,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
   const [similarMovies, setSimilarMovies] = useState<any[]>([])
   const [similarLoading, setSimilarLoading] = useState(true)
+  const [watchLogged, setWatchLogged] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const title = sanitizeTitle(movie?.title_ar || movie?.title_en || movie?.title || 'فيلم')
@@ -196,6 +197,34 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
     
     fetchSimilar()
   }, [movie?.slug])
+
+  // Log watch activity on server selection
+  useEffect(() => {
+    if (watchLogged || !movie?.tmdb_id || active < 0 || !servers[active]) return
+    
+    const logWatch = async () => {
+      try {
+        await fetch('/api/user/watch-progress', {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content_type: 'movie',
+            tmdb_id: movie.tmdb_id,
+            title: movie.title_ar || movie.title_en,
+            poster_path: movie.poster_path,
+            watch_duration: 0,
+            completed: false
+          })
+        })
+        setWatchLogged(true)
+      } catch (error) {
+        // Silent fail - don't break player
+      }
+    }
+    
+    logWatch()
+  }, [active, movie, servers, watchLogged])
 
   const handleOpenTrailer = () => {
     setIsModalOpen(true)
