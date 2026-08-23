@@ -971,10 +971,10 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           )}
                           
                           {/* Dark gradient on hover */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                           
                           {/* Top Left - Heart Button */}
-                          <div className="absolute top-2 left-2 z-30">
+                          <div className="absolute top-2 left-2 z-40">
                             <HomeCardHeart state={getCardState(item)} loading={isCardLoading(item)} onClick={(e) => toggleCardState(item, e)} isLoggedIn={!!user} />
                           </div>
                           
@@ -1040,8 +1040,8 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           })()}
                           
                           {/* Play Hover Button - Center */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
-                            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
+                            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300 pointer-events-auto">
                               <Play className="w-5 h-5 text-white fill-white mr-0.5" />
                             </div>
                           </div>
@@ -1158,10 +1158,10 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           )}
                           
                           {/* Dark gradient on hover */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                           
                           {/* Top Left - Heart Button */}
-                          <div className="absolute top-2 left-2 z-30">
+                          <div className="absolute top-2 left-2 z-40">
                             <HomeCardHeart state={getCardState(item)} loading={isCardLoading(item)} onClick={(e) => toggleCardState(item, e)} isLoggedIn={!!user} />
                           </div>
                           
@@ -1227,8 +1227,8 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           })()}
                           
                           {/* Play Hover Button - Center */}
-                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30">
-                            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
+                            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300 pointer-events-auto">
                               <Play className="w-5 h-5 text-white fill-white mr-0.5" />
                             </div>
                           </div>
