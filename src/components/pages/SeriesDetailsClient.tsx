@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Clock, Calendar, AlertTriangle } from 'lucide-react'
+import { Star, Clock, Calendar, AlertTriangle, Tv } from 'lucide-react'
 import clsx from 'clsx'
+import Link from 'next/link'
 import { EmbedPlayer } from '../features/media/EmbedPlayer'
 import { useServers } from '../../hooks/useServers'
 import { getGenreColor } from '@/utils/genreColors'
@@ -28,6 +29,8 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const [playingTrailer, setPlayingTrailer] = useState(false)
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
+  const [similarSeries, setSimilarSeries] = useState<any[]>([])
+  const [similarLoading, setSimilarLoading] = useState(true)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(100)
   const [isMuted, setIsMuted] = useState(false)
@@ -259,6 +262,28 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
       document.removeEventListener('wheel', handleScroll)
     }
   }, [isModalOpen])
+
+  // Fetch similar series
+  useEffect(() => {
+    if (!series?.slug) return
+    
+    const fetchSimilar = async () => {
+      try {
+        setSimilarLoading(true)
+        const response = await fetch(`/api/tv/${series.slug}/similar?limit=12`)
+        if (response.ok) {
+          const data = await response.json()
+          setSimilarSeries(data.data || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch similar series:', error)
+      } finally {
+        setSimilarLoading(false)
+      }
+    }
+    
+    fetchSimilar()
+  }, [series?.slug])
 
   const handlePlayPause = () => {
     if (!player) return
@@ -826,6 +851,49 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
           </div>
         </div>
       </div>
+
+      {/* Similar Series Section */}
+      {!similarLoading && similarSeries.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+          <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
+            <Tv className="w-6 h-6 text-blue-500" />
+            قد يعجبك أيضاً
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {similarSeries.map((item: any) => (
+              <Link
+                key={item.id}
+                href={`/series/${item.slug}`}
+                className="group relative"
+              >
+                <div className="aspect-[2/3] rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 hover:border-blue-500/50 transition-all">
+                  {item.poster_path ? (
+                    <img
+                      src={`/tmdb/w185${item.poster_path}`}
+                      alt={item.name_ar || item.name_en}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Tv className="w-12 h-12 text-zinc-700" />
+                    </div>
+                  )}
+                  {item.vote_average > 0 && (
+                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/80 px-2 py-1 rounded">
+                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                      <span className="text-xs font-bold text-white">{item.vote_average.toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
+                <h3 className="mt-2 text-sm font-bold text-white line-clamp-2 group-hover:text-blue-400 transition-colors">
+                  {item.name_ar || item.name_en}
+                </h3>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

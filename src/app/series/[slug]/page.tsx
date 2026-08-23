@@ -12,14 +12,38 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug }  = await params
   const series    = await executeFirst(
-    'SELECT name_ar, name_en, overview_ar FROM tv_series WHERE slug = ? LIMIT 1', [slug]
+    'SELECT name_ar, name_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json FROM tv_series WHERE slug = ? LIMIT 1', [slug]
   )
   if (!series) return { title: 'مسلسل غير موجود | فور سيما' }
-  const title       = String(series.name_ar || series.name_en || 'مسلسل')
-  const description = String(series.overview_ar || 'شاهد المسلسل على فور سيما')
+  
+  const title = String(
+    (series.seo_title_ar && String(series.seo_title_ar).trim()) || 
+    series.name_ar || 
+    series.name_en || 
+    'مسلسل'
+  )
+  const description = String(
+    (series.seo_description_ar && String(series.seo_description_ar).trim()) || 
+    series.overview_ar || 
+    'شاهد المسلسل على فور سيما'
+  ).slice(0, 160)
+  
+  let keywords: string | undefined
+  try {
+    if (series.seo_keywords_json) {
+      const keywordsArray = typeof series.seo_keywords_json === 'string' 
+        ? JSON.parse(series.seo_keywords_json) 
+        : series.seo_keywords_json
+      if (Array.isArray(keywordsArray) && keywordsArray.length > 0) {
+        keywords = keywordsArray.join(', ')
+      }
+    }
+  } catch {}
+  
   return {
     title: `${title} | فور سيما`,
-    description: description.slice(0, 160),
+    description,
+    keywords,
     alternates: { canonical: `https://4cima.com/series/${slug}` }
   }
 }

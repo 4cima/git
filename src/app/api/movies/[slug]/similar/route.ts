@@ -1,19 +1,70 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { executeAll, executeFirst } from '@/lib/db'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const WORKER_URL = process.env.NEXT_PUBLIC_WORKER_URL || 'http://127.0.0.1:8787'
     const { slug } = await params
-    const searchParams = request.nextUrl.searchParams
-    const limit = searchParams.get('limit') || '18'
-    const response = await fetch(`${WORKER_URL}/api/movies/${slug}/similar?limit=${limit}`)
-    if (!response.ok) return NextResponse.json({ data: [] }, { status: 200 })
-    const data = await response.json()
-    return NextResponse.json(data)
+    const { searchParams } = new URL(request.url)
+    const limit = Math.min(parseInt(searchParams.get('limit') || '12'), 24)
+    
+    // Get the current movie's genres
+    const movie = await executeFirst(
+      `SELECT tmdb_id, genres_json FROM movies WHERE slug = ? LIMIT 1`,
+      [slug]
+    )
+    
+    if (!movie || !movie.genres_json) {
+      return NextResponse.json({ data: [] })
+    }
+    
+    let genreIds: number[] = []
+    try {
+      const genres = typeof movie.genres_json === 'string' 
+        ? JSON.parse(movie.genres_json) 
+        : movie.genres_json
+      genreIds = genres.map((g: any) => g.id).filter(Boolean)
+    } catch {
+      return NextResponse.json({ data: [] })
+    }
+    
+    if (genreIds.length === 0) {
+      return NextResponse.json({ data: [] })
+    }
+    
+    // Find similar movies with overlapping genres
+    const placeholders = genreIds.map(() => '?').join(',')
+    const similar = await executeAll(
+      `SELECT id, slug, title_ar, title_en, poster_path, vote_average, release_date
+       FROM movies
+       WHERE id != ?
+         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+         AND genres_json IS NOT NULL
+         AND (${genreIds.map(() => `genres_json LIKE ?`).join(' OR ')})
+       ORDER BY vote_average DESC, vote_count DESC
+       LIMIT ?`,
+      [
+        movie.tmdb_id,
+        ...genreIds.map(id => `%"id":${id}%`),
+        limit
+      ]
+    )
+    
+    return NextResponse.json(
+      { data: similar || [] },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+        }
+      }
+    )
   } catch (error) {
-    return NextResponse.json({ data: [] }, { status: 200 })
+    console.error('❌ [API /movies/:slug/similar] Error:', error)
+    return NextResponse.json({ data: [] }, { status: 500 })
   }
 }

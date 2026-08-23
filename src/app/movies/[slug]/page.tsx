@@ -12,15 +12,39 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const movie = await executeFirst(
-    'SELECT title_ar, title_en, overview_ar FROM movies WHERE slug = ? LIMIT 1',
+    'SELECT title_ar, title_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json FROM movies WHERE slug = ? LIMIT 1',
     [slug]
   )
   if (!movie) return { title: 'فيلم غير موجود | فور سيما' }
-  const title       = String(movie.title_ar || movie.title_en || 'فيلم')
-  const description = String(movie.overview_ar || 'شاهد الفيلم على فور سيما')
+  
+  const title = String(
+    (movie.seo_title_ar && String(movie.seo_title_ar).trim()) || 
+    movie.title_ar || 
+    movie.title_en || 
+    'فيلم'
+  )
+  const description = String(
+    (movie.seo_description_ar && String(movie.seo_description_ar).trim()) || 
+    movie.overview_ar || 
+    'شاهد الفيلم على فور سيما'
+  ).slice(0, 160)
+  
+  let keywords: string | undefined
+  try {
+    if (movie.seo_keywords_json) {
+      const keywordsArray = typeof movie.seo_keywords_json === 'string' 
+        ? JSON.parse(movie.seo_keywords_json) 
+        : movie.seo_keywords_json
+      if (Array.isArray(keywordsArray) && keywordsArray.length > 0) {
+        keywords = keywordsArray.join(', ')
+      }
+    }
+  } catch {}
+  
   return {
     title: `${title} | فور سيما`,
-    description: description.slice(0, 160),
+    description,
+    keywords,
     alternates: { canonical: `https://4cima.com/movies/${slug}` }
   }
 }
