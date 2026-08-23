@@ -40,6 +40,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const [watchLogged, setWatchLogged] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   const [favLoading, setFavLoading] = useState(false)
+  const [showPlayOverlay, setShowPlayOverlay] = useState(true)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const playerRef = useRef<HTMLDivElement>(null)
   const progressInterval = useRef<NodeJS.Timeout | null>(null)
@@ -314,9 +315,10 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   // Reset watch log when episode changes
   useEffect(() => {
     setWatchLogged(false)
+    setShowPlayOverlay(true)
   }, [selectedSeason, selectedEpisode])
 
-  const handlePlayerClick = async () => {
+  const logWatch = async () => {
     if (watchLogged || !series?.tmdb_id) return
     
     try {
@@ -339,6 +341,18 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     } catch (error) {
       // Silent fail - don't break player
     }
+  }
+
+  const handleServerClick = (idx: number) => {
+    if (servers[idx]?.status !== 'offline') {
+      setActive(idx)
+      logWatch()
+    }
+  }
+
+  const handleOverlayClick = () => {
+    setShowPlayOverlay(false)
+    logWatch()
   }
 
   const toggleFavorite = async () => {
@@ -898,7 +912,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                     return (
                       <button
                         key={`${s.name}-${idx}`}
-                        onClick={() => !isServerOffline && setActive(idx)}
+                        onClick={() => handleServerClick(idx)}
                         title={`${s.name} - ${isServerOffline ? 'Offline' : isActive ? 'Active' : 'Available'}`}
                         disabled={isServerOffline}
                         className={clsx(
@@ -923,7 +937,8 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
               </div>
 
               {/* Embedded Player */}
-              <div className="flex-1 space-y-4" onClick={handlePlayerClick}>
+              <div className="flex-1 space-y-4 relative">
+              <div className="relative">
               <EmbedPlayer
                 server={servers[active]}
                 serverIndex={active}
@@ -939,6 +954,19 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                 activeServerIndex={active}
                 onServerSelect={setActive}
               />
+              {showPlayOverlay && active >= 0 && servers[active] && (
+                <div 
+                  onClick={handleOverlayClick}
+                  className="absolute inset-0 z-10 cursor-pointer flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors"
+                >
+                  <div className="w-16 h-16 rounded-full bg-red-600/90 hover:bg-red-500 hover:scale-110 transition-all flex items-center justify-center shadow-2xl">
+                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                </div>
+              )}
+              </div>
 
               {/* Disclaimer with Report Button */}
               <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">

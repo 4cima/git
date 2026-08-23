@@ -53,6 +53,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchStats()
+    fetchActivity()
   }, [])
 
   useEffect(() => {
