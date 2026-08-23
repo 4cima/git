@@ -72,7 +72,7 @@ export default function ProfilePage() {
           setStats({
             moviesWatched: 0, // API doesn't separate by type yet
             seriesWatched: 0,
-            totalWatchTime: Math.floor((data.stats.watch_history || 0) * 1.5), // Estimate hours
+            totalWatchTime: Math.floor((data.stats.total_watch_duration_minutes || 0) / 60), // Convert minutes to hours
             favorites: data.stats.favorites || 0,
             reviews: data.stats.user_reviews || 0,
             achievements: data.stats.user_achievements || 0,
