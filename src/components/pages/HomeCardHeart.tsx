@@ -11,11 +11,17 @@ interface HomeCardHeartProps {
 }
 
 export function HomeCardHeart({ state, loading, onClick }: HomeCardHeartProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onClick(e)
+  }
+  
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       disabled={loading}
-      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg border-2 ${
+      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg border-2 ${
         state === 'favorite' 
           ? 'bg-red-500 border-red-400 hover:bg-red-600 shadow-red-500/50' 
           : state === 'completed'
@@ -29,7 +35,7 @@ export function HomeCardHeart({ state, loading, onClick }: HomeCardHeartProps) {
       }
     >
       <Heart 
-        size={14} 
+        size={18} 
         className={`${
           state === 'favorite' ? 'fill-white text-white' :
           state === 'completed' ? 'fill-white text-white' :
