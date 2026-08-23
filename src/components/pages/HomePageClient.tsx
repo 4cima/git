@@ -972,11 +972,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           
                           {/* Top Left - Heart Button */}
                           <div className="absolute top-2 left-2 z-30">
-                            <HomeCardHeart
-                              state={getCardState(item)}
-                              loading={isCardLoading(item)}
-                              onClick={(e) => toggleCardState(item, e)}
-                            />
+                            <HomeCardHeart state={getCardState(item)} loading={isCardLoading(item)} onClick={(e) => toggleCardState(item, e)} isLoggedIn={!!user} />
                           </div>
                           
                           {/* Top Right - Media Type Badge */}
@@ -1163,11 +1159,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                           
                           {/* Top Left - Heart Button */}
                           <div className="absolute top-2 left-2 z-30">
-                            <HomeCardHeart
-                              state={getCardState(item)}
-                              loading={isCardLoading(item)}
-                              onClick={(e) => toggleCardState(item, e)}
-                            />
+                            <HomeCardHeart state={getCardState(item)} loading={isCardLoading(item)} onClick={(e) => toggleCardState(item, e)} isLoggedIn={!!user} />
                           </div>
                           
                           {/* Top Right - Media Type Badge */}
