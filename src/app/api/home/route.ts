@@ -12,9 +12,9 @@ export async function GET() {
     // Use idx_movies_popularity and idx_tv_popularity (exist in D1 schema)
     const [trendingMovies, trendingSeries] = await Promise.all([
       executeAll(
-        `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar,
-                release_year as year, vote_average, genres_json
-         FROM movies INDEXED BY idx_movies_popularity
+        `SELECT tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar,
+                release_year as year, vote_average
+         FROM movies
          WHERE poster_path IS NOT NULL
            AND backdrop_path IS NOT NULL
            AND vote_average > 0
@@ -23,9 +23,9 @@ export async function GET() {
         []
       ),
       executeAll(
-        `SELECT id, tmdb_id, slug, name_ar as title_ar, name_en as title_en, poster_path, backdrop_path, overview_ar,
-                first_air_year as year, vote_average, genres_json
-         FROM tv_series INDEXED BY idx_tv_popularity
+        `SELECT tmdb_id, slug, name_ar as title_ar, name_en as title_en, poster_path, backdrop_path, overview_ar,
+                first_air_year as year, vote_average
+         FROM tv_series
          WHERE poster_path IS NOT NULL
            AND backdrop_path IS NOT NULL
            AND vote_average > 0

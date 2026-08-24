@@ -71,12 +71,24 @@ async function execViaBinding<T>(
 let localDb: any = null;
 
 async function execViaLocalFile<T>(sql: string, args: SqlValue[]): Promise<T[]> {
-  if (!localDb) {
-    const Database = require('better-sqlite3');
-    const path = require('path');
-    const dbPath = path.resolve(process.cwd(), 'data/4cima-local.db');
-    localDb = new Database(dbPath, { readonly: false });
+  // Import only in Node.js (not Edge runtime)
+  if (typeof process !== 'undefined' && process.versions?.node) {
+    if (!localDb) {
+      // Use require for better-sqlite3 (CJS only)
+      const Database = eval("require('better-sqlite3')");
+      const path = eval("require('path')");
+      const dbPath = path.resolve(process.cwd(), 'data/4cima-local.db');
+      localDb = new Database(dbPath, { readonly: false });
+    }
+    
+    const stmt = localDb.prepare(sql);
+    const rows = args.length > 0 ? stmt.all(...args) : stmt.all();
+    return rows as T[];
   }
+  
+  throw new Error('Local SQLite not available in Edge runtime');
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
