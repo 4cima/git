@@ -71,8 +71,11 @@ async function execViaBinding<T>(
 let localDb: any = null;
 
 async function execViaLocalFile<T>(sql: string, args: SqlValue[]): Promise<T[]> {
-  // Import only in Node.js (not Edge runtime)
-  if (typeof process !== 'undefined' && process.versions?.node) {
+  // Check if we're in Node.js runtime (not Edge)
+  // Edge runtime doesn't have require or module
+  const isNode = typeof require !== 'undefined' && typeof module !== 'undefined';
+  
+  if (isNode) {
     if (!localDb) {
       // Use require for better-sqlite3 (CJS only)
       const Database = eval("require('better-sqlite3')");
