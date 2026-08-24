@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
     const rows = await executeAll(
       `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en, movies.poster_path,
               movies.vote_average, movies.release_year,
-              movies.genres_json, movies.overview_ar, movies.original_language
+              movies.genres_json, movies.overview_ar, movies.original_language, movies.videos_json
        FROM movies
        ${ftsJoin}
        ${whereClause}
@@ -118,8 +118,19 @@ export async function GET(request: NextRequest) {
     const hasMore = rows.length > limit
     if (hasMore) rows.pop()
 
+    // Parse videos_json for each movie
+    const moviesWithVideos = rows.map((row: any) => {
+      let videos = []
+      if (row.videos_json) {
+        try {
+          videos = typeof row.videos_json === 'string' ? JSON.parse(row.videos_json) : row.videos_json
+        } catch {}
+      }
+      return { ...row, videos }
+    })
+
     const response = NextResponse.json({
-      movies: rows,
+      movies: moviesWithVideos,
       pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }
     })
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')

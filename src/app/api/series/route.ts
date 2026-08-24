@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       `SELECT
           tv_series.id, tv_series.tmdb_id, tv_series.slug, tv_series.name_ar, tv_series.name_en, tv_series.poster_path,
           tv_series.vote_average, tv_series.first_air_year,
-          tv_series.genres_json, tv_series.overview_ar, tv_series.country_of_origin
+          tv_series.genres_json, tv_series.overview_ar, tv_series.country_of_origin, tv_series.videos_json
        FROM tv_series
        ${ftsJoin}
        ${whereClause}
@@ -95,9 +95,20 @@ export async function GET(request: NextRequest) {
     const hasMore = rows.length > limit
     if (hasMore) rows.pop()
 
+    // Parse videos_json for each series
+    const seriesWithVideos = rows.map((row: any) => {
+      let videos = []
+      if (row.videos_json) {
+        try {
+          videos = typeof row.videos_json === 'string' ? JSON.parse(row.videos_json) : row.videos_json
+        } catch {}
+      }
+      return { ...row, videos }
+    })
+
     const cacheTime = ratingMin ? 300 : 60
     const response  = NextResponse.json({
-      series:     rows,
+      series:     seriesWithVideos,
       pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }
     })
     response.headers.set('Cache-Control', `public, s-maxage=${cacheTime}, stale-while-revalidate=600`)

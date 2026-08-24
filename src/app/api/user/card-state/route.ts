@@ -40,32 +40,71 @@ export async function POST(request: NextRequest) {
 
   const states: Record<string, 'neutral' | 'favorite' | 'completed'> = {};
 
+  // Extract all tmdb_ids by content_type
+  const movieIds: number[] = [];
+  const seriesIds: number[] = [];
+  
+  for (const item of body.items) {
+    if (item.content_type === 'movie') {
+      movieIds.push(item.tmdb_id);
+    } else if (item.content_type === 'tv') {
+      seriesIds.push(item.tmdb_id);
+    }
+  }
+
+  // Batch fetch favorites - one query for movies, one for series
+  const favorites = new Set<string>();
+  
+  if (movieIds.length > 0) {
+    const placeholders = movieIds.map(() => '?').join(',');
+    const movieFavs = await executeAll<{tmdb_id: number}>(
+      `SELECT tmdb_id FROM favorites WHERE user_id=? AND content_type='movie' AND tmdb_id IN (${placeholders})`,
+      [user.id, ...movieIds]
+    );
+    movieFavs.forEach(f => favorites.add(`movie-${f.tmdb_id}`));
+  }
+  
+  if (seriesIds.length > 0) {
+    const placeholders = seriesIds.map(() => '?').join(',');
+    const seriesFavs = await executeAll<{tmdb_id: number}>(
+      `SELECT tmdb_id FROM favorites WHERE user_id=? AND content_type='tv' AND tmdb_id IN (${placeholders})`,
+      [user.id, ...seriesIds]
+    );
+    seriesFavs.forEach(f => favorites.add(`tv-${f.tmdb_id}`));
+  }
+
+  // Batch fetch completed - one query for movies, one for series
+  const completed = new Set<string>();
+  
+  if (movieIds.length > 0) {
+    const placeholders = movieIds.map(() => '?').join(',');
+    const movieComps = await executeAll<{tmdb_id: number}>(
+      `SELECT tmdb_id FROM completed_watch WHERE user_id=? AND content_type='movie' AND tmdb_id IN (${placeholders})`,
+      [user.id, ...movieIds]
+    );
+    movieComps.forEach(c => completed.add(`movie-${c.tmdb_id}`));
+  }
+  
+  if (seriesIds.length > 0) {
+    const placeholders = seriesIds.map(() => '?').join(',');
+    const seriesComps = await executeAll<{tmdb_id: number}>(
+      `SELECT tmdb_id FROM completed_watch WHERE user_id=? AND content_type='tv' AND tmdb_id IN (${placeholders})`,
+      [user.id, ...seriesIds]
+    );
+    seriesComps.forEach(c => completed.add(`tv-${c.tmdb_id}`));
+  }
+
+  // Build states object
   for (const item of body.items) {
     const key = `${item.content_type}-${item.tmdb_id}`;
     
-    // Check if in favorites
-    const fav = await executeFirst<{id: number}>(
-      `SELECT id FROM favorites WHERE user_id=? AND content_type=? AND tmdb_id=?`,
-      [user.id, item.content_type, item.tmdb_id]
-    );
-    
-    if (fav) {
+    if (favorites.has(key)) {
       states[key] = 'favorite';
-      continue;
-    }
-    
-    // Check if completed
-    const comp = await executeFirst<{id: number}>(
-      `SELECT id FROM completed_watch WHERE user_id=? AND content_type=? AND tmdb_id=?`,
-      [user.id, item.content_type, item.tmdb_id]
-    );
-    
-    if (comp) {
+    } else if (completed.has(key)) {
       states[key] = 'completed';
-      continue;
+    } else {
+      states[key] = 'neutral';
     }
-    
-    states[key] = 'neutral';
   }
 
   return NextResponse.json({ ok: true, states });

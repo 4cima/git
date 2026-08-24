@@ -295,7 +295,10 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items: movies.map(m => ({ id: m.id, type: 'movie' }))
+            items: movies.map(m => ({ 
+              content_type: 'movie', 
+              tmdb_id: m.tmdb_id || m.id 
+            }))
           })
         })
         
@@ -522,7 +525,8 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
             <>
               <div className="grid-responsive gap-6">
                 {movies.map((item, index) => {
-                  const cardKey = item.id
+                  const tmdbId = item.tmdb_id || item.id
+                  const stateKey = `movie-${tmdbId}`
                   return (
                     <MovieCard 
                       key={item.id} 
@@ -532,9 +536,9 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
                       }} 
                       index={index} 
                       isVisible={true}
-                      initialCardState={cardStates[cardKey]}
+                      initialCardState={user ? cardStates[stateKey] : undefined}
                       onStateChange={(newState) => {
-                        setCardStates(prev => ({ ...prev, [cardKey]: newState }))
+                        setCardStates(prev => ({ ...prev, [stateKey]: newState }))
                       }}
                     />
                   )

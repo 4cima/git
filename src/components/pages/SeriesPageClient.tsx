@@ -301,7 +301,10 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items: series.map(s => ({ id: s.id, type: 'tv' }))
+            items: series.map(s => ({ 
+              content_type: 'tv', 
+              tmdb_id: s.tmdb_id || s.id 
+            }))
           })
         })
         
@@ -529,7 +532,8 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
             <>
               <div className="grid-responsive gap-6">
                 {series.map((item, index) => {
-                  const cardKey = item.id
+                  const tmdbId = item.tmdb_id || item.id
+                  const stateKey = `tv-${tmdbId}`
                   return (
                     <MovieCard 
                       key={item.id} 
@@ -539,9 +543,9 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
                       }} 
                       index={index} 
                       isVisible={true}
-                      initialCardState={cardStates[cardKey]}
+                      initialCardState={user ? cardStates[stateKey] : undefined}
                       onStateChange={(newState) => {
-                        setCardStates(prev => ({ ...prev, [cardKey]: newState }))
+                        setCardStates(prev => ({ ...prev, [stateKey]: newState }))
                       }}
                     />
                   )
