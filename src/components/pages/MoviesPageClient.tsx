@@ -107,7 +107,7 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
   const observerTarget = useRef<HTMLDivElement>(null)
 
   // Batch card states for heart buttons
-  const [cardStates, setCardStates] = useState<Record<number, 'neutral' | 'favorite' | 'completed'>>({})
+  const [cardStates, setCardStates] = useState<Record<string, 'neutral' | 'favorite' | 'completed'>>({})
 
   // Single open dropdown at a time
   const [openDropdown, setOpenDropdown] = useState<'genre'|'year'|'rating'|'country'|'sort'|null>(null)
