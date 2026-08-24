@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
 import { sanitizeSearchInput } from '@/lib/search-utils'
 
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {

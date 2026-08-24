@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { executeAll, executeFirst } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth-server';
 
+export const runtime = 'nodejs'
+
 // Get card states for multiple items
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser(request);

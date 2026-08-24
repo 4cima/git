@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
 
+export const runtime = 'nodejs'
 export const dynamic = 'force-static'
 export const revalidate = 3600
 
