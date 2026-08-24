@@ -115,6 +115,15 @@ export async function executeAll<T = Record<string, SqlValue>>(
       'Check wrangler.jsonc has d1_databases with binding="DB".'
     );
   }
+  
+  // Check if we can use local file (Node.js only, not Edge)
+  const isNode = typeof require !== 'undefined' && typeof module !== 'undefined';
+  if (!isNode) {
+    // Edge runtime without Cloudflare binding - return empty results
+    // This happens in middleware during dev
+    return [] as T[];
+  }
+  
   // Node.js / local dev - use local SQLite file
   return execViaLocalFile<T>(sql, args);
 }
