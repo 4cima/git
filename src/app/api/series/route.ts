@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
 import { sanitizeSearchInput } from '@/lib/search-utils'
 
-export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -27,15 +26,15 @@ export async function GET(request: NextRequest) {
     const args: (string | number)[] = []
     
     if (genre) {
-      conditions.push(`primary_genre LIKE ?`)
-      args.push(`%${genre}%`)
+      conditions.push(`genres_json LIKE ?`)
+      args.push(`%"slug":"${genre}"%`)
     }
     
     let ftsJoin = ''
     if (search) {
       const sanitized = sanitizeSearchInput(search)
       if (sanitized) {
-        ftsJoin = 'JOIN series_fts ON tv_series.tmdb_id = series_fts.rowid'
+        ftsJoin = 'JOIN series_fts ON tv_series.id = series_fts.rowid'
         conditions.push('series_fts MATCH ?')
         args.push(sanitized)
       }
@@ -82,9 +81,9 @@ export async function GET(request: NextRequest) {
     
     const rows = await executeAll(
       `SELECT
-          tv_series.tmdb_id, tv_series.slug, tv_series.name_ar, tv_series.name_en, tv_series.poster_path,
+          tv_series.id, tv_series.tmdb_id, tv_series.slug, tv_series.name_ar, tv_series.name_en, tv_series.poster_path,
           tv_series.vote_average, tv_series.first_air_year,
-          tv_series.overview_ar, tv_series.country_of_origin
+          tv_series.genres_json, tv_series.overview_ar, tv_series.country_of_origin
        FROM tv_series
        ${ftsJoin}
        ${whereClause}

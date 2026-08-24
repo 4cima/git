@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
 import { sanitizeSearchInput } from '@/lib/search-utils'
 
-export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -39,8 +38,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (genre) {
-      conditions.push(`primary_genre LIKE ?`)
-      args.push(`%${genre}%`)
+      conditions.push(`genres_json LIKE ?`)
+      args.push(`%"slug":"${genre}"%`)
     }
     
     if (year) {
@@ -105,9 +104,9 @@ export async function GET(request: NextRequest) {
     const sortOrder  = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
     const rows = await executeAll(
-      `SELECT movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en, movies.poster_path,
+      `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en, movies.poster_path,
               movies.vote_average, movies.release_year,
-              movies.overview_ar, movies.original_language
+              movies.genres_json, movies.overview_ar, movies.original_language
        FROM movies
        ${ftsJoin}
        ${whereClause}
