@@ -13,8 +13,8 @@ export const revalidate = 0
 async function getHomeData() {
   const [movies, series] = await Promise.all([
     executeAll(
-      `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path,
-              vote_average, release_year, overview_ar, genres_json
+      `SELECT tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
+              vote_average, release_year, overview_ar
        FROM movies
        WHERE filter_status = 'clean'
        ORDER BY popularity DESC
@@ -22,8 +22,8 @@ async function getHomeData() {
       []
     ),
     executeAll(
-      `SELECT id, slug, name_ar AS title_ar, name_en AS title_en, poster_path, backdrop_path,
-              vote_average, first_air_year AS release_year, overview_ar, genres_json
+      `SELECT tmdb_id, slug, name_ar AS title_ar, name_en AS title_en, poster_path, backdrop_path,
+              vote_average, first_air_year AS release_year, overview_ar
        FROM tv_series
        WHERE filter_status = 'clean'
        ORDER BY popularity DESC
