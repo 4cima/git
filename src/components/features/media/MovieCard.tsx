@@ -67,7 +67,7 @@ export const MovieCard = memo(({
   const [trailerKey, setTrailerKey] = useState<string | null>(null)
   const [thumbSrc, setThumbSrc] = useState<string>(((movie as any).thumbnail || '').trim())
   const [cardState, setCardState] = useState<CardState>(initialCardState || 'neutral')
-  const [stateLoading, setStateLoading] = useState(false)
+  const hasInteractedRef = useRef(false) // Track if user has clicked
 
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -209,17 +209,17 @@ export const MovieCard = memo(({
     setThumbSrc(((movie as any).thumbnail || '').trim())
   }, [(movie as any).thumbnail])
 
-  // Update card state when initialCardState changes
+  // Update card state when initialCardState changes (only if user hasn't interacted)
   useEffect(() => {
-    if (initialCardState !== undefined) {
+    if (initialCardState !== undefined && !hasInteractedRef.current) {
       setCardState(initialCardState)
     }
   }, [initialCardState])
 
-  // Fetch card state on mount (only if not provided via prop)
+  // Fetch card state on mount (only if not provided via prop and user logged in)
   useEffect(() => {
-    // Skip if state provided via prop, or user not logged in
-    if (initialCardState !== undefined || !user) return
+    // Skip if state provided via prop, or user not logged in, or user has interacted
+    if (initialCardState !== undefined || !user || hasInteractedRef.current) return
     
     const tmdbId = movie.tmdb_id || movie.id
     if (!tmdbId) return
@@ -255,12 +255,14 @@ export const MovieCard = memo(({
     e.stopPropagation()
     
     const tmdbId = movie.tmdb_id || movie.id
-    if (stateLoading || !tmdbId) return
+    if (!tmdbId) return
     
-    setStateLoading(true)
+    // Mark as interacted
+    hasInteractedRef.current = true
+    
     const prevState = cardState
     
-    // Optimistic update
+    // Optimistic update - change color immediately
     const nextState = cardState === 'neutral' ? 'favorite' : 
                       cardState === 'favorite' ? 'completed' : 'neutral'
     setCardState(nextState)
@@ -270,6 +272,7 @@ export const MovieCard = memo(({
       onStateChange(nextState)
     }
     
+    // Fire-and-forget API call
     try {
       const contentType = isTv ? 'tv' : 'movie'
       const res = await fetch('/api/user/card-action', {
@@ -285,18 +288,27 @@ export const MovieCard = memo(({
       })
       
       if (!res.ok) {
-        // Revert on error
+        // Silently revert on error (401 or other)
         setCardState(prevState)
+        if (onStateChange) {
+          onStateChange(prevState)
+        }
       } else {
         const data = await res.json()
-        if (data.newState) {
+        if (data.newState && data.newState !== nextState) {
+          // Server returned different state, sync it
           setCardState(data.newState)
+          if (onStateChange) {
+            onStateChange(data.newState)
+          }
         }
       }
     } catch {
+      // Silently revert on network error
       setCardState(prevState)
-    } finally {
-      setStateLoading(false)
+      if (onStateChange) {
+        onStateChange(prevState)
+      }
     }
   }
 
@@ -397,14 +409,13 @@ export const MovieCard = memo(({
               <div className="absolute top-2 left-2 z-30">
                 <button
                   onClick={toggleCardState}
-                  disabled={stateLoading}
                   className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg border-2 ${
                     cardState === 'favorite' 
                       ? 'bg-red-500 border-red-400 hover:bg-red-600 shadow-red-500/50' 
                       : cardState === 'completed'
                       ? 'bg-green-500 border-green-400 hover:bg-green-600 shadow-green-500/50'
                       : 'bg-black/80 border-white/40 hover:bg-black/90 hover:border-white/60'
-                  } ${stateLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  } cursor-pointer`}
                   title={
                     cardState === 'neutral' ? 'إضافة للمفضلة' :
                     cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
