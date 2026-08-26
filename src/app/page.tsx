@@ -7,33 +7,39 @@ export const metadata: Metadata = {
   description: 'موقع فور سيما لمشاهدة أحدث الأفلام والمسلسلات المترجمة بجودة عالية - أكشن، دراما، كوميديا، رعب، وأكثر',
 }
 
-export const dynamic    = 'force-dynamic'
-export const revalidate = 0
+export const dynamic    = 'force-static'
+export const revalidate = 300 // 5 minutes
 
 async function getHomeData() {
-  const [movies, series] = await Promise.all([
-    executeAll(
-      `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path,
-              vote_average, release_year, overview_ar, genres_json
-       FROM movies
-       WHERE filter_status = 'clean'
-       ORDER BY popularity DESC
-       LIMIT 100`,
-      []
-    ),
-    executeAll(
-      `SELECT id, slug, name_ar AS title_ar, name_en AS title_en, poster_path, backdrop_path,
-              vote_average, first_air_year AS release_year, overview_ar, genres_json
-       FROM tv_series
-       WHERE filter_status = 'clean'
-       ORDER BY popularity DESC
-       LIMIT 100`,
-      []
-    )
-  ])
-  return {
-    trendingMovies: movies.map(r => JSON.parse(JSON.stringify(r))),
-    trendingSeries: series.map(r => JSON.parse(JSON.stringify(r)))
+  try {
+    const [movies, series] = await Promise.all([
+      executeAll(
+        `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
+                vote_average, printf('%04d-01-01', release_year) AS release_date, overview_ar, genres_json
+         FROM list_movies_popular
+         ORDER BY rank
+         LIMIT 100`,
+        []
+      ),
+      executeAll(
+        `SELECT id, tmdb_id, slug, name_ar AS title_ar, name_en AS title_en, poster_path, backdrop_path,
+                vote_average, printf('%04d-01-01', first_air_year) AS first_air_date, overview_ar, genres_json
+         FROM list_series_popular
+         ORDER BY rank
+         LIMIT 100`,
+        []
+      )
+    ])
+    return {
+      trendingMovies: movies.map(r => JSON.parse(JSON.stringify(r))),
+      trendingSeries: series.map(r => JSON.parse(JSON.stringify(r)))
+    }
+  } catch (error) {
+    console.error('Error fetching home data:', error)
+    return {
+      trendingMovies: [],
+      trendingSeries: []
+    }
   }
 }
 

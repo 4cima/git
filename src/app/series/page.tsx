@@ -8,19 +8,24 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://4cima.com/series' }
 }
 
-export const dynamic    = 'force-dynamic'
-export const revalidate = 0
+export const dynamic    = 'force-static'
+export const revalidate = 300 // 5 minutes
 
 async function getInitialSeries() {
-  const rows = await executeAll(
-    `SELECT id, slug, name_ar, name_en, poster_path, vote_average, first_air_year, genres_json
-     FROM tv_series
-     WHERE filter_status = 'clean'
-     ORDER BY popularity DESC
-     LIMIT 50`,
-    []
-  )
-  return rows.map(row => JSON.parse(JSON.stringify(row)))
+  try {
+    const rows = await executeAll(
+      `SELECT id, slug, name_ar, name_en, poster_path, vote_average,
+              printf('%04d-01-01', first_air_year) AS first_air_date, genres_json
+       FROM list_series_popular
+       ORDER BY rank
+       LIMIT 50`,
+      []
+    )
+    return rows.map(row => JSON.parse(JSON.stringify(row)))
+  } catch (error) {
+    console.error('Error fetching initial series:', error)
+    return []
+  }
 }
 
 export default async function SeriesPage() {

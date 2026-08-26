@@ -41,8 +41,8 @@ function getMatchType(title: string, query: string): 'exact' | 'startsWith' | 'c
 async function cascadingSearch(query: string, queryLength: number) {
   let allResults: any[] = []
 
-  // FTS5 search (>= 3 chars)
-  if (queryLength >= 3) {
+  // FTS5 search (>= 2 chars minimum)
+  if (queryLength >= 2) {
     try {
       const searchTerm = sanitizeSearchInput(query)
       const [moviesFTS, seriesFTS] = await Promise.all([
@@ -77,36 +77,8 @@ async function cascadingSearch(query: string, queryLength: number) {
     }
   }
 
-  // Prefix search for 2-char queries
-  if (queryLength === 2 && allResults.length === 0) {
-    try {
-      const [moviesPrefix, seriesPrefix] = await Promise.all([
-        executeAll(
-          `SELECT id, tmdb_id, slug, title_en, title_ar, poster_path, release_year,
-                  vote_average, popularity, filter_status, 'movie' as media_type, 998 as search_level
-           FROM movies
-           WHERE (LOWER(title_ar) LIKE LOWER(?) || '%' OR LOWER(title_en) LIKE LOWER(?) || '%')
-             AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-           ORDER BY popularity DESC, vote_average DESC
-           LIMIT 30`,
-          [query, query]
-        ),
-        executeAll(
-          `SELECT id, tmdb_id, slug, name_en, name_ar, poster_path, first_air_year,
-                  vote_average, popularity, filter_status, 'tv' as media_type, 998 as search_level
-           FROM tv_series
-           WHERE (LOWER(name_ar) LIKE LOWER(?) || '%' OR LOWER(name_en) LIKE LOWER(?) || '%')
-             AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-           ORDER BY popularity DESC, vote_average DESC
-           LIMIT 30`,
-          [query, query]
-        )
-      ])
-      allResults.push(...moviesPrefix, ...seriesPrefix)
-    } catch {
-      console.log('2-char prefix search failed')
-    }
-  }
+  // Prefix search for 2-char queries - DISABLED (use FTS only)
+  // Level 998 queries on movies/tv_series tables removed to avoid full table scans
 
   return allResults
 }
@@ -140,6 +112,11 @@ export async function GET(request: NextRequest) {
         [q, q, q, q, q, q, q, q]
       )
       return NextResponse.json({ results, totalFound: results.length, searchStrategy: 'short-title-lookup' })
+    }
+    
+    // 2-char minimum for FTS
+    if (queryLength < 2) {
+      return NextResponse.json({ results: [], searchStrategy: 'min-2-char' })
     }
     
     const allResults = await cascadingSearch(q, queryLength)

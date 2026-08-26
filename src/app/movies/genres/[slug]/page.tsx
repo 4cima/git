@@ -39,7 +39,7 @@ export default async function MovieGenrePage({ params }: PageProps) {
     const genreParams = buildGenreParams(genreIds)
 
     const initialMovies = await executeAll(
-      `SELECT id, slug, title_ar, title_en, poster_path, backdrop_path,
+      `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
               vote_average, release_year, overview_ar, genres_json
        FROM movies
        WHERE ${whereClause}

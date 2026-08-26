@@ -41,6 +41,69 @@ export async function GET(
     const whereClauseSeries = buildGenreWhereClause(genreIds, 's')
     const genreParams = buildGenreParams(genreIds)
 
+    // Use cache for first page default sort (popularity) movie/tv type with single genre
+    if (page === 1 && sort === 'popularity' && genreIds.length === 1) {
+      if (type === 'movie') {
+        try {
+          const cacheRows = await executeAll(
+            `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
+                    vote_average, release_year, overview_ar, genres_json, popularity,
+                    printf('%04d-01-01', release_year) as release_date,
+                    'movie' as media_type
+             FROM list_movies_genre
+             WHERE genre_tmdb_id = ?
+             ORDER BY rank ASC
+             LIMIT ? OFFSET ?`,
+            [genre.tmdb_id, limit + 1, offset]
+          )
+          const hasMore = cacheRows.length > limit
+          if (hasMore) cacheRows.pop()
+          return NextResponse.json({ 
+            genre, 
+            content: cacheRows, 
+            pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page } 
+          }, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } })
+        } catch (err) {
+          console.error('Cache query failed, returning empty:', err)
+          return NextResponse.json({ 
+            genre, 
+            content: [], 
+            pagination: { page, limit, hasMore: false, totalPages: 1 } 
+          })
+        }
+      } else if (type === 'tv') {
+        try {
+          const cacheRows = await executeAll(
+            `SELECT id, tmdb_id, slug, 
+                    name_ar as title_ar, name_en as title_en,
+                    poster_path, backdrop_path,
+                    vote_average, first_air_year, overview_ar, genres_json, popularity,
+                    printf('%04d-01-01', first_air_year) as first_air_date,
+                    'tv' as media_type
+             FROM list_series_genre
+             WHERE genre_tmdb_id = ?
+             ORDER BY rank ASC
+             LIMIT ? OFFSET ?`,
+            [genre.tmdb_id, limit + 1, offset]
+          )
+          const hasMore = cacheRows.length > limit
+          if (hasMore) cacheRows.pop()
+          return NextResponse.json({ 
+            genre, 
+            content: cacheRows, 
+            pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page } 
+          }, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } })
+        } catch (err) {
+          console.error('Cache query failed, returning empty:', err)
+          return NextResponse.json({ 
+            genre, 
+            content: [], 
+            pagination: { page, limit, hasMore: false, totalPages: 1 } 
+          })
+        }
+      }
+    }
+
     if (type === 'movie') {
       const rows = await executeAll(
         `SELECT m.id, m.tmdb_id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,

@@ -79,6 +79,34 @@ export async function GET(request: NextRequest) {
     const sortColumn  = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder   = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
+    // Use cache for first page top rated with no filters
+    if (page === 1 && sort === 'vote_average' && !genre && !year && !country && !ratingMin && !status && !search) {
+      try {
+        const cacheRows = await executeAll(
+          `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path,
+                  vote_average, first_air_year, genres_json, overview_ar
+           FROM list_series_top_rated
+           ORDER BY rank ASC
+           LIMIT ? OFFSET ?`,
+          [limit + 1, offset]
+        )
+        const hasMore = cacheRows.length > limit
+        if (hasMore) cacheRows.pop()
+        const response = NextResponse.json({
+          series: cacheRows,
+          pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }
+        })
+        response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+        return response
+      } catch (err) {
+        console.error('Cache query failed, returning empty:', err)
+        return NextResponse.json({
+          series: [],
+          pagination: { page, limit, hasMore: false, totalPages: 1 }
+        })
+      }
+    }
+    
     const rows = await executeAll(
       `SELECT
           tv_series.id, tv_series.tmdb_id, tv_series.slug, tv_series.name_ar, tv_series.name_en, tv_series.poster_path,

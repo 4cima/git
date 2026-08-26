@@ -8,6 +8,7 @@ type ActivityItem = {
   content_type: string;
   title: string | null;
   poster_path: string | null;
+  slug?: string | null;
   date: string;
   data: Record<string, unknown>;
 };
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     );
     raw.watch_history = rows;
     for (const r of rows) {
-      activities.push({ type: 'watch', tmdb_id: r.tmdb_id, content_type: r.content_type, title: r.title, poster_path: r.poster_path, date: r.watch_date, data: r });
+      activities.push({ type: 'watch', tmdb_id: r.tmdb_id, content_type: r.content_type, title: r.title, poster_path: r.poster_path, date: r.watch_date, slug: null, data: r });
     }
   }
 
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
     );
     raw.favorites = rows;
     for (const r of rows) {
-      activities.push({ type: 'favorite', tmdb_id: r.tmdb_id, content_type: r.content_type, title: r.title, poster_path: r.poster_path, date: r.added_at, data: r });
+      activities.push({ type: 'favorite', tmdb_id: r.tmdb_id, content_type: r.content_type, title: r.title, poster_path: r.poster_path, date: r.added_at, slug: null, data: r });
     }
   }
 
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
     );
     raw.reviews = rows;
     for (const r of rows) {
-      activities.push({ type: 'review', tmdb_id: r.tmdb_id, content_type: r.content_type, title: r.title, poster_path: null, date: r.created_at, data: r });
+      activities.push({ type: 'review', tmdb_id: r.tmdb_id, content_type: r.content_type, title: r.title, poster_path: null, date: r.created_at, slug: null, data: r });
     }
   }
 

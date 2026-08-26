@@ -25,6 +25,8 @@ export type Movie = {
   name_en?: string | null
   release_date?: string
   first_air_date?: string
+  release_year?: number
+  first_air_year?: number
   poster_path?: string | null
   backdrop_path?: string | null
   vote_average?: number
@@ -53,6 +55,7 @@ interface MovieCardProps {
   isVisible?: boolean
   initialCardState?: CardState // Optional: if provided, skip individual API call
   onStateChange?: (newState: CardState) => void // Optional: callback when state changes
+  forceTv?: boolean // Force series path regardless of media_type
 }
 
 export const MovieCard = memo(({ 
@@ -60,7 +63,8 @@ export const MovieCard = memo(({
   index = 0, 
   isVisible,
   initialCardState,
-  onStateChange 
+  onStateChange,
+  forceTv = false
 }: MovieCardProps) => {
   const { user } = useAuth() // Check if user is logged in
   const [isHovered, setIsHovered] = useState(false)
@@ -77,8 +81,21 @@ export const MovieCard = memo(({
   const mainTitle = titleAr || titleEn || 'Untitled'
   const subTitle = titleAr && titleEn && titleAr !== titleEn ? titleEn : null
 
-  const date = movie.release_date || movie.first_air_date || ''
-  const year = date ? new Date(date).getFullYear() : ''
+  // Extract year: priority to release_year/first_air_year integers, fallback to date string prefix
+  let year: number | string = ''
+  const releaseYear = (movie as any).release_year
+  const firstAirYear = (movie as any).first_air_year
+  
+  if (releaseYear && typeof releaseYear === 'number' && releaseYear > 1800 && releaseYear < 2100) {
+    year = releaseYear
+  } else if (firstAirYear && typeof firstAirYear === 'number' && firstAirYear > 1800 && firstAirYear < 2100) {
+    year = firstAirYear
+  } else {
+    const date = movie.release_date || movie.first_air_date || ''
+    if (date && typeof date === 'string' && /^\d{4}/.test(date)) {
+      year = parseInt(date.substring(0, 4), 10)
+    }
+  }
 
   // Year color logic based on range
   const getYearStyle = (year: number | string) => {
@@ -103,7 +120,7 @@ export const MovieCard = memo(({
     }
   }
 
-  const isTv = movie.media_type === 'tv' || (!!movie.name && !movie.title)
+  const isTv = forceTv || movie.media_type === 'tv' || movie.media_type === 'series' || (movie as any).isSeries === true || (movie as any).type === 'tv' || (movie as any).type === 'series'
   const isGame = movie.media_type === 'game'
   const isSoftware = movie.media_type === 'software'
   const isAnime = movie.media_type === 'anime'
@@ -125,7 +142,16 @@ export const MovieCard = memo(({
     return null
   }
 
-  const watchUrl = `/${mediaType}/${movie.slug}`
+  // Build watchUrl with forceTv priority, then location check, then media_type
+  let watchUrl: string
+  if (forceTv) {
+    watchUrl = `/series/${movie.slug}`
+  } else if (typeof window !== 'undefined' && window.location.pathname.startsWith('/series')) {
+    watchUrl = `/series/${movie.slug}`
+  } else {
+    watchUrl = `/${mediaType}/${movie.slug}`
+  }
+  
   const voteAvg = typeof movie.vote_average === 'number' ? movie.vote_average : parseFloat(String(movie.vote_average || 0))
   const rating = voteAvg > 0 ? Math.round(voteAvg * 10) / 10 : null
 
@@ -221,7 +247,7 @@ export const MovieCard = memo(({
     // Skip if state provided via prop, or user not logged in, or user has interacted
     if (initialCardState !== undefined || !user || hasInteractedRef.current) return
     
-    const tmdbId = movie.tmdb_id || movie.id
+    const tmdbId = movie.tmdb_id
     if (!tmdbId) return
     
     const fetchState = async () => {
@@ -248,13 +274,13 @@ export const MovieCard = memo(({
     }
     
     fetchState()
-  }, [user, movie.tmdb_id, movie.id, isTv, initialCardState])
+  }, [user, movie.tmdb_id, isTv, initialCardState])
 
   const toggleCardState = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     
-    const tmdbId = movie.tmdb_id || movie.id
+    const tmdbId = movie.tmdb_id
     if (!tmdbId) return
     
     // Mark as interacted

@@ -5,9 +5,10 @@
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { User, Mail, Calendar, Shield, Film, Tv, Clock, Heart, Award, TrendingUp, Star, Edit2, Settings, LogOut, Play, CheckCircle } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { User, Mail, Calendar, Shield, Film, Tv, Clock, Heart, Award, TrendingUp, Star, Settings, LogOut, Play, CheckCircle } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { MovieCard } from '@/components/features/media/MovieCard'
 
 interface Stats {
   moviesWatched: number
@@ -27,6 +28,7 @@ interface Activity {
   title: string | null
   poster_path?: string | null
   date: string
+  slug?: string | null
   data: {
     watch_duration?: number
     completed?: boolean
@@ -36,6 +38,24 @@ interface Activity {
     review_text?: string
     [key: string]: unknown
   }
+}
+
+// Helper to check if slug is numeric-only
+const isNumericSlug = (slug: string): boolean => {
+  // Check if all characters are digits
+  for (let i = 0; i < slug.length; i++) {
+    const char = slug.charAt(i);
+    if (char < '0' || char > '9') return false;
+  }
+  return true;
+}
+
+// Helper to build content URL from slug - validate slug is not numeric
+const buildContentUrl = (contentType: string, slug?: string | null, tmdbId?: number): string | null => {
+  if (!slug || slug.trim() === '') return null
+  // Reject numeric-only slugs
+  if (isNumericSlug(slug.trim())) return null
+  return contentType === 'tv' ? `/series/${slug}` : `/movies/${slug}`
 }
 
 export default function ProfilePage() {
@@ -56,6 +76,19 @@ export default function ProfilePage() {
   const [loadingActivity, setLoadingActivity] = useState(false)
   const [loadingFavorites, setLoadingFavorites] = useState(false)
   const [loadingCompleted, setLoadingCompleted] = useState(false)
+
+  // Remove from grid as soon as the heart leaves this tab's state
+  const handleFavoriteStateChange = useCallback((newState: 'neutral' | 'favorite' | 'completed', item: any) => {
+    if (newState !== 'favorite') {
+      setFavoritesList(prev => prev.filter(i => i.tmdb_id !== item.tmdb_id || i.content_type !== item.content_type))
+    }
+  }, [])
+
+  const handleCompletedStateChange = useCallback((newState: 'neutral' | 'favorite' | 'completed', item: any) => {
+    if (newState !== 'completed') {
+      setCompletedList(prev => prev.filter(i => i.tmdb_id !== item.tmdb_id || i.content_type !== item.content_type))
+    }
+  }, [])
 
   useEffect(() => {
     fetchStats()
@@ -104,7 +137,32 @@ export default function ProfilePage() {
       const res = await fetch('/api/profile/activity?limit=20', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
-        setActivities(data.activities || [])
+        const acts = data.activities || []
+        
+        // Fetch slugs for activities without valid slugs
+        const needSlugs = acts.filter((a: Activity) => !a.slug || a.slug.trim() === '' || /^\d+$/.test(a.slug.trim()))
+        if (needSlugs.length > 0) {
+          const slugRes = await fetch('/api/user/slugs', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              items: needSlugs.map((a: Activity) => ({ content_type: a.content_type, tmdb_id: a.tmdb_id }))
+            })
+          })
+          if (slugRes.ok) {
+            const slugData = await slugRes.json()
+            const slugMap = slugData.slugs || {}
+            acts.forEach((a: Activity) => {
+              const key = `${a.content_type}-${a.tmdb_id}`
+              if (slugMap[key]) {
+                a.slug = slugMap[key]
+              }
+            })
+          }
+        }
+        
+        setActivities(acts)
       }
     } catch (error) {
       console.error('Failed to fetch activity:', error)
@@ -164,18 +222,22 @@ export default function ProfilePage() {
   const roleInfo = roleConfig[profile.role as keyof typeof roleConfig] || roleConfig.user
 
   const formatActivityDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
+    // Parse UTC date and convert to Cairo time
+    const utcDate = new Date(dateStr + 'Z') // Ensure UTC
+    const cairoDate = new Date(utcDate.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }))
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Africa/Cairo' }))
+    
+    const diffMs = now.getTime() - cairoDate.getTime()
     const diffMins = Math.floor(diffMs / 60000)
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'الآن'
+    if (diffMins < 1) return 'منذ لحظات'
+    if (diffMins === 1) return 'منذ دقيقة'
     if (diffMins < 60) return `منذ ${diffMins} دقيقة`
     if (diffHours < 24) return `منذ ${diffHours} ساعة`
     if (diffDays < 7) return `منذ ${diffDays} يوم`
-    return date.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })
+    return cairoDate.toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', timeZone: 'Africa/Cairo' })
   }
 
   return (
@@ -496,8 +558,11 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {activities.map((activity, idx) => (
-                    <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-800 hover:border-zinc-700 transition-colors group">
+                  {activities.map((activity, idx) => {
+                    const contentUrl = buildContentUrl(activity.content_type, activity.slug, activity.tmdb_id)
+                    
+                    return contentUrl ? (
+                    <Link key={idx} href={contentUrl} className="flex items-start gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-800 hover:border-zinc-700 transition-colors group">
                       {/* Activity Icon */}
                       <div className={`p-2 rounded-lg ${
                         activity.type === 'watch' ? 'bg-cyan-600/20 text-cyan-400' :
@@ -569,8 +634,82 @@ export default function ProfilePage() {
                           <><Tv size={10} className="inline mr-1" />مسلسل</>
                         )}
                       </div>
+                    </Link>
+                  ) : (
+                    <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-800 opacity-50 cursor-not-allowed">
+                      {/* Activity Icon */}
+                      <div className={`p-2 rounded-lg ${
+                        activity.type === 'watch' ? 'bg-cyan-600/20 text-cyan-400' :
+                        activity.type === 'favorite' ? 'bg-red-600/20 text-red-400' :
+                        'bg-yellow-600/20 text-yellow-400'
+                      }`}>
+                        {activity.type === 'watch' ? <Play size={16} /> :
+                         activity.type === 'favorite' ? <Heart size={16} /> :
+                         <Star size={16} />}
+                      </div>
+
+                      {/* Poster */}
+                      {activity.poster_path && (
+                        <img 
+                          src={`/tmdb/w92${activity.poster_path}`}
+                          alt={activity.title || ''}
+                          className="w-12 h-18 rounded-lg object-cover border border-zinc-700"
+                        />
+                      )}
+
+                      {/* Details */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-zinc-100 mb-1 line-clamp-1">{activity.title || 'بدون عنوان'}</p>
+                        
+                        <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-500">
+                          {activity.type === 'watch' && (
+                            <>
+                              <span className="px-2 py-0.5 rounded bg-cyan-600/10 text-cyan-400">شاهدت</span>
+                              {activity.data.season_number && activity.data.episode_number && (
+                                <span>الموسم {activity.data.season_number} • الحلقة {activity.data.episode_number}</span>
+                              )}
+                              {activity.data.watch_duration && Number(activity.data.watch_duration) > 0 && (
+                                <span>{Math.round(Number(activity.data.watch_duration) / 60)} دقيقة</span>
+                              )}
+                            </>
+                          )}
+                          {activity.type === 'favorite' && (
+                            <span className="px-2 py-0.5 rounded bg-red-600/10 text-red-400">أضفت للمفضلة</span>
+                          )}
+                          {activity.type === 'review' && (
+                            <>
+                              <span className="px-2 py-0.5 rounded bg-yellow-600/10 text-yellow-400">قيّمت</span>
+                              {activity.data.rating && (
+                                <span className="flex items-center gap-1">
+                                  <Star size={10} className="fill-yellow-400 text-yellow-400" />
+                                  {Number(activity.data.rating).toFixed(1)}
+                                </span>
+                              )}
+                            </>
+                          )}
+                          <span>•</span>
+                          <span>{formatActivityDate(activity.date)}</span>
+                        </div>
+
+                        {activity.data.review_text && (
+                          <p className="text-xs text-zinc-400 mt-2 line-clamp-2">{String(activity.data.review_text)}</p>
+                        )}
+                      </div>
+
+                      {/* Content Type Badge */}
+                      <div className={`px-2 py-1 rounded text-xs font-bold ${
+                        activity.content_type === 'movie' 
+                          ? 'bg-cyan-600/10 text-cyan-400' 
+                          : 'bg-purple-600/10 text-purple-400'
+                      }`}>
+                        {activity.content_type === 'movie' ? (
+                          <><Film size={10} className="inline mr-1" />فيلم</>
+                        ) : (
+                          <><Tv size={10} className="inline mr-1" />مسلسل</>
+                        )}
+                      </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>
@@ -729,30 +868,45 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {favoritesList.map((item: any) => (
-                    <Link
-                      key={item.id}
-                      href={`/${item.content_type === 'tv' ? 'series' : 'movies'}/${item.content_id || item.tmdb_id}`}
-                      className="group relative aspect-[2/3] rounded-xl overflow-hidden bg-zinc-800 hover:scale-105 transition-transform"
-                    >
-                      {item.poster_path ? (
-                        <img
-                          src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                          alt={item.title || ''}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-zinc-800">
-                          <Film size={32} className="text-zinc-600" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute bottom-0 left-0 right-0 p-3">
-                          <p className="text-white text-sm font-bold line-clamp-2">{item.title}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                  {favoritesList.map((item: any, index: number) => {
+                    const tmdbId = Number(item.tmdb_id)
+                    if (!tmdbId || tmdbId <= 0) return null
+
+                    const isTv = item.content_type === 'tv' || item.media_type === 'tv'
+                    // Text slugs only — numeric/empty slug renders no link (MovieCard hides it)
+                    const textSlug = item.slug && item.slug.trim() !== '' && !isNumericSlug(item.slug.trim())
+                      ? item.slug.trim()
+                      : undefined
+                    
+                    return (
+                      <MovieCard
+                        key={`${item.content_type}-${item.tmdb_id}`}
+                        movie={{
+                          id: tmdbId,
+                          tmdb_id: tmdbId,
+                          slug: textSlug,
+                          title_ar: item.title_ar,
+                          title_en: item.title_en,
+                          title: item.title,
+                          name_ar: item.title_ar,
+                          name_en: item.title_en,
+                          name: item.title,
+                          poster_path: item.poster_path,
+                          vote_average: item.vote_average,
+                          release_year: item.release_year,
+                          first_air_year: item.release_year,
+                          overview_ar: item.overview_ar,
+                          genres_json: item.genres_json,
+                          primary_genre: item.primary_genre,
+                          media_type: isTv ? 'tv' : 'movie',
+                        }}
+                        index={index}
+                        initialCardState="favorite"
+                        onStateChange={(newState) => handleFavoriteStateChange(newState, item)}
+                        forceTv={isTv}
+                      />
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -779,33 +933,45 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {completedList.map((item: any) => (
-                    <Link
-                      key={item.id}
-                      href={`/${item.content_type === 'tv' ? 'series' : 'movies'}/${item.content_id || item.tmdb_id}`}
-                      className="group relative aspect-[2/3] rounded-xl overflow-hidden bg-zinc-800 hover:scale-105 transition-transform"
-                    >
-                      {item.poster_path ? (
-                        <img
-                          src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                          alt={item.title || ''}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-zinc-800">
-                          <Film size={32} className="text-zinc-600" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute bottom-0 left-0 right-0 p-3">
-                          <p className="text-white text-sm font-bold line-clamp-2">{item.title}</p>
-                        </div>
-                      </div>
-                      <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
-                        <CheckCircle size={16} />
-                      </div>
-                    </Link>
-                  ))}
+                  {completedList.map((item: any, index: number) => {
+                    const tmdbId = Number(item.tmdb_id)
+                    if (!tmdbId || tmdbId <= 0) return null
+
+                    const isTv = item.content_type === 'tv' || item.media_type === 'tv'
+                    // Text slugs only — numeric/empty slug renders no link (MovieCard hides it)
+                    const textSlug = item.slug && item.slug.trim() !== '' && !isNumericSlug(item.slug.trim())
+                      ? item.slug.trim()
+                      : undefined
+                    
+                    return (
+                      <MovieCard
+                        key={`${item.content_type}-${item.tmdb_id}`}
+                        movie={{
+                          id: tmdbId,
+                          tmdb_id: tmdbId,
+                          slug: textSlug,
+                          title_ar: item.title_ar,
+                          title_en: item.title_en,
+                          title: item.title,
+                          name_ar: item.title_ar,
+                          name_en: item.title_en,
+                          name: item.title,
+                          poster_path: item.poster_path,
+                          vote_average: item.vote_average,
+                          release_year: item.release_year,
+                          first_air_year: item.release_year,
+                          overview_ar: item.overview_ar,
+                          genres_json: item.genres_json,
+                          primary_genre: item.primary_genre,
+                          media_type: isTv ? 'tv' : 'movie',
+                        }}
+                        index={index}
+                        initialCardState="completed"
+                        onStateChange={(newState) => handleCompletedStateChange(newState, item)}
+                        forceTv={isTv}
+                      />
+                    )
+                  })}
                 </div>
               )}
             </div>

@@ -2,34 +2,27 @@ import { NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
 
 export const dynamic = 'force-static'
-export const revalidate = 3600
+export const revalidate = 300 // 5 minutes
 
 export async function GET() {
   try {
     console.log('🔄 [API /home] Fetching...')
     const startTime = Date.now()
 
-    // Use idx_movies_popularity and idx_tv_popularity (exist in D1 schema)
     const [trendingMovies, trendingSeries] = await Promise.all([
       executeAll(
         `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path, overview_ar,
-                release_year as year, vote_average, genres_json
-         FROM movies INDEXED BY idx_movies_popularity
-         WHERE poster_path IS NOT NULL
-           AND backdrop_path IS NOT NULL
-           AND vote_average > 0
-         ORDER BY popularity DESC
+                printf('%04d-01-01', release_year) AS release_date, vote_average, genres_json
+         FROM list_movies_popular
+         ORDER BY rank
          LIMIT 100`,
         []
       ),
       executeAll(
         `SELECT id, tmdb_id, slug, name_ar as title_ar, name_en as title_en, poster_path, backdrop_path, overview_ar,
-                first_air_year as year, vote_average, genres_json
-         FROM tv_series INDEXED BY idx_tv_popularity
-         WHERE poster_path IS NOT NULL
-           AND backdrop_path IS NOT NULL
-           AND vote_average > 0
-         ORDER BY popularity DESC
+                printf('%04d-01-01', first_air_year) AS first_air_date, vote_average, genres_json
+         FROM list_series_popular
+         ORDER BY rank
          LIMIT 100`,
         []
       )
@@ -39,7 +32,7 @@ export async function GET() {
 
     return NextResponse.json(
       { trendingMovies, trendingSeries },
-      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200' } }
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
     )
   } catch (error) {
     console.error('❌ [API /home] Error:', error)

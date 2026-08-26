@@ -198,9 +198,10 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
         ) : content.length > 0 ? (
           <>
             <div className="grid-responsive gap-4" suppressHydrationWarning>
-              {content.map((item: any, index: number) => (
-                <MovieCard key={item.id} movie={item} index={index} />
-              ))}
+              {content.map((item: any, index: number) => {
+                const enhancedItem = { ...item, media_type: 'tv', isSeries: true }
+                return <MovieCard key={item.id} movie={enhancedItem} index={index} forceTv />
+              })}
             </div>
 
             <div ref={observerTarget} className="h-10 mt-6"></div>

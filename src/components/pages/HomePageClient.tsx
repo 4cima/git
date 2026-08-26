@@ -56,8 +56,18 @@ function mapItems(items: any[] | undefined, type: 'movie' | 'tv'): MediaItem[] {
       // Silent error handling
     }
     
+    // Extract year from various possible fields
+    let year = item.year || item.release_year || item.first_air_year
+    if (!year && item.release_date && typeof item.release_date === 'string' && /^\d{4}/.test(item.release_date)) {
+      year = parseInt(item.release_date.substring(0, 4), 10)
+    }
+    if (!year && item.first_air_date && typeof item.first_air_date === 'string' && /^\d{4}/.test(item.first_air_date)) {
+      year = parseInt(item.first_air_date.substring(0, 4), 10)
+    }
+    
     return {
       id: item.id,
+      tmdb_id: item.tmdb_id && Number(item.tmdb_id) > 0 ? Number(item.tmdb_id) : undefined,
       slug: item.slug,
       title: item.title_ar || item.title_en || item.name_ar || item.name,
       title_ar: item.title_ar || item.name_ar || item.title || item.name,
@@ -66,8 +76,8 @@ function mapItems(items: any[] | undefined, type: 'movie' | 'tv'): MediaItem[] {
       backdrop_path: item.backdrop_path,
       vote_average: Number(item.vote_average) || 0,
       overview_ar: item.overview_ar || item.overview,
-      year: item.year || item.release_year || item.first_air_year || item.release_date?.substring(0, 4),
-      media_type: item.media_type || type,
+      year: year,
+      media_type: type,
       primary_genre: primaryGenre,
     }
   })
@@ -487,7 +497,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
       e.stopPropagation()
     }
     
-    const tmdbId = item.tmdb_id || item.id
+    const tmdbId = item.tmdb_id
     if (!tmdbId) return
     
     const contentType = item.media_type === 'tv' ? 'tv' : 'movie'
@@ -536,7 +546,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
   
   // Get card state for an item
   const getCardState = (item: MediaItem): CardState => {
-    const tmdbId = item.tmdb_id || item.id
+    const tmdbId = item.tmdb_id
     if (!tmdbId) return 'neutral'
     const contentType = item.media_type === 'tv' ? 'tv' : 'movie'
     const key = `${contentType}-${tmdbId}`
@@ -545,7 +555,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
   
   // Check if loading
   const isCardLoading = (item: MediaItem): boolean => {
-    const tmdbId = item.tmdb_id || item.id
+    const tmdbId = item.tmdb_id
     if (!tmdbId) return false
     const contentType = item.media_type === 'tv' ? 'tv' : 'movie'
     const key = `${contentType}-${tmdbId}`
@@ -794,9 +804,9 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                 </div>
 
                 {/* Animated Poster Thumbnail with Swipe Gesture */}
-                <div className="hidden lg:block lg:col-span-4 pl-8">
+                <div className="hidden lg:flex lg:col-span-4 items-center justify-center">
                   <div 
-                    className="relative w-64 aspect-[2/3] cursor-grab active:cursor-grabbing select-none translate-y-2 hover:animate-wiggle"
+                    className="relative w-64 aspect-[2/3] cursor-grab active:cursor-grabbing select-none hover:animate-wiggle"
                     onMouseDown={(e) => {
                       const startX = e.clientX
                       const handleMouseMove = (moveEvent: MouseEvent) => {
@@ -957,12 +967,15 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                         {/* Poster with Overlay Badges */}
                         <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
                           {item.poster_path ? (
-                            <img
-                              src={`/tmdb/w185${item.poster_path}`}
-                              alt={item.title_ar}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              loading="lazy"
-                            />
+                            <>
+                              <div className="absolute inset-0 bg-slate-800 animate-pulse" />
+                              <img
+                                src={`/tmdb/w185${item.poster_path}`}
+                                alt={item.title_ar}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
+                                loading="lazy"
+                              />
+                            </>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 p-4 text-center">
                               <Film className="w-8 h-8 text-slate-700 mb-2" />
@@ -990,16 +1003,6 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                             )
                           })()}
                           
-                          {/* Rating Badge - moved below heart */}
-                          {item.vote_average > 0 && (
-                            <div className="absolute top-12 left-2 z-20">
-                              <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
-                                <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
-                                <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
-                              </span>
-                            </div>
-                          )}
-                          
                           {/* Bottom Right - Genre Badge */}
                           {item.primary_genre && (() => {
                             const genreColorScheme = getGenreColor(item.primary_genre)
@@ -1012,32 +1015,38 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                             )
                           })()}
                           
-                          {/* Bottom Left - Year Badge */}
-                          {item.year && (() => {
-                            const y = Number(item.year)
-                            const currentYear = new Date().getFullYear()
-                            
-                            let yearStyle = ''
-                            if (y === currentYear) {
-                              yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
-                            } else if (y >= 2020 && y <= 2025) {
-                              yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
-                            } else if (y >= 2010 && y <= 2019) {
-                              yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
-                            } else if (y >= 2000 && y <= 2009) {
-                              yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
-                            } else {
-                              yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
-                            }
-                            
-                            return (
-                              <div className="absolute bottom-2 left-2 z-20">
+                          {/* Bottom Left - Rating & Year */}
+                          <div className="absolute bottom-2 left-2 z-20 flex flex-col gap-1">
+                            {item.vote_average > 0 && (
+                              <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                                <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
+                                <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
+                              </span>
+                            )}
+                            {item.year && (() => {
+                              const y = Number(item.year)
+                              const currentYear = new Date().getFullYear()
+                              
+                              let yearStyle = ''
+                              if (y === currentYear) {
+                                yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
+                              } else if (y >= 2020 && y <= 2025) {
+                                yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
+                              } else if (y >= 2010 && y <= 2019) {
+                                yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
+                              } else if (y >= 2000 && y <= 2009) {
+                                yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
+                              } else {
+                                yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
+                              }
+                              
+                              return (
                                 <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>
                                   {item.year}
                                 </span>
-                              </div>
-                            )
-                          })()}
+                              )
+                            })()}
+                          </div>
                           
                           {/* Play Hover Button - Center */}
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
@@ -1144,12 +1153,15 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                         {/* Poster with Overlay Badges */}
                         <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
                           {item.poster_path ? (
-                            <img
-                              src={`/tmdb/w185${item.poster_path}`}
-                              alt={item.title_ar}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              loading="lazy"
-                            />
+                            <>
+                              <div className="absolute inset-0 bg-slate-800 animate-pulse" />
+                              <img
+                                src={`/tmdb/w185${item.poster_path}`}
+                                alt={item.title_ar}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
+                                loading="lazy"
+                              />
+                            </>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 p-4 text-center">
                               <Tv className="w-8 h-8 text-slate-700 mb-2" />
@@ -1177,16 +1189,6 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                             )
                           })()}
                           
-                          {/* Rating Badge - moved below heart */}
-                          {item.vote_average > 0 && (
-                            <div className="absolute top-12 left-2 z-20">
-                              <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
-                                <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
-                                <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
-                              </span>
-                            </div>
-                          )}
-                          
                           {/* Bottom Right - Genre Badge */}
                           {item.primary_genre && (() => {
                             const genreColorScheme = getGenreColor(item.primary_genre)
@@ -1199,32 +1201,38 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                             )
                           })()}
                           
-                          {/* Bottom Left - Year Badge */}
-                          {item.year && (() => {
-                            const y = Number(item.year)
-                            const currentYear = new Date().getFullYear()
-                            
-                            let yearStyle = ''
-                            if (y === currentYear) {
-                              yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
-                            } else if (y >= 2020 && y <= 2025) {
-                              yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
-                            } else if (y >= 2010 && y <= 2019) {
-                              yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
-                            } else if (y >= 2000 && y <= 2009) {
-                              yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
-                            } else {
-                              yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
-                            }
-                            
-                            return (
-                              <div className="absolute bottom-2 left-2 z-20">
+                          {/* Bottom Left - Rating & Year */}
+                          <div className="absolute bottom-2 left-2 z-20 flex flex-col gap-1">
+                            {item.vote_average > 0 && (
+                              <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                                <Star className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
+                                <span className="text-[9px] font-bold">{item.vote_average.toFixed(1)}</span>
+                              </span>
+                            )}
+                            {item.year && (() => {
+                              const y = Number(item.year)
+                              const currentYear = new Date().getFullYear()
+                              
+                              let yearStyle = ''
+                              if (y === currentYear) {
+                                yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
+                              } else if (y >= 2020 && y <= 2025) {
+                                yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
+                              } else if (y >= 2010 && y <= 2019) {
+                                yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
+                              } else if (y >= 2000 && y <= 2009) {
+                                yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
+                              } else {
+                                yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
+                              }
+                              
+                              return (
                                 <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>
                                   {item.year}
                                 </span>
-                              </div>
-                            )
-                          })()}
+                              )
+                            })()}
+                          </div>
                           
                           {/* Play Hover Button - Center */}
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">

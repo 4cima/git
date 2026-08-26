@@ -60,7 +60,7 @@ export function GenreOverviewPageClient({
           {topMovies.length > 0 ? (
             <div className="grid-responsive gap-4">
               {topMovies.map((movie: any, index: number) => (
-                <MovieCard key={movie.id} movie={movie} index={index} />
+                <MovieCard key={movie.id} movie={{...movie, media_type: 'movie'}} index={index} />
               ))}
             </div>
           ) : (
@@ -92,7 +92,7 @@ export function GenreOverviewPageClient({
           {topSeries.length > 0 ? (
             <div className="grid-responsive gap-4">
               {topSeries.map((series: any, index: number) => (
-                <MovieCard key={series.id} movie={series} index={index} />
+                <MovieCard key={series.id} movie={{...series, media_type: 'tv'}} index={index} forceTv={true} />
               ))}
             </div>
           ) : (

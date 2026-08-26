@@ -35,7 +35,7 @@ export default async function GenreOverviewPage({ params }: PageProps) {
 
     const [topMovies, topSeries] = await Promise.all([
       executeAll(
-        `SELECT id, slug, title_ar, title_en, poster_path, vote_average, release_year
+        `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, vote_average, release_year, overview_ar, genres_json
          FROM movies
          WHERE ${whereClause}
            AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
@@ -44,7 +44,7 @@ export default async function GenreOverviewPage({ params }: PageProps) {
         genreParams
       ),
       executeAll(
-        `SELECT id, slug, name_ar as title_ar, name_en as title_en, poster_path, vote_average, first_air_year as release_year
+        `SELECT id, tmdb_id, slug, name_ar as title_ar, name_en as title_en, poster_path, vote_average, first_air_year as release_year, overview_ar, genres_json
          FROM tv_series
          WHERE ${whereClause}
            AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)

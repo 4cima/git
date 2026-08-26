@@ -39,7 +39,7 @@ export default async function SeriesGenrePage({ params }: PageProps) {
     const genreParams = buildGenreParams(genreIds)
 
     const initialSeries = await executeAll(
-      `SELECT id, slug, name_ar, name_en, poster_path, backdrop_path,
+      `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, backdrop_path,
               vote_average, first_air_year, overview_ar, genres_json
        FROM tv_series
        WHERE ${whereClause}
@@ -51,6 +51,13 @@ export default async function SeriesGenrePage({ params }: PageProps) {
     const hasMore = initialSeries.length > 20
     if (hasMore) initialSeries.pop()
 
+    // Enhance series data with media_type and isSeries
+    const enhancedSeries = initialSeries.map((show: any) => ({
+      ...show,
+      media_type: 'tv',
+      isSeries: true
+    }))
+
     return (
       <>
         <div className="hidden" aria-hidden="true" data-ssr-content="series">
@@ -58,7 +65,7 @@ export default async function SeriesGenrePage({ params }: PageProps) {
             <div key={show.id} data-series-title={show.name_ar || show.name_en} />
           ))}
         </div>
-        <SeriesGenrePageClient genre={plainGenre} slug={slug} initialSeries={initialSeries} initialHasMore={hasMore} />
+        <SeriesGenrePageClient genre={plainGenre} slug={slug} initialSeries={enhancedSeries} initialHasMore={hasMore} />
       </>
     )
   } catch { notFound() }

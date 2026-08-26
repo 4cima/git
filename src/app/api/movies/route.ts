@@ -103,6 +103,34 @@ export async function GET(request: NextRequest) {
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder  = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
+    // Use cache for first page top rated with no filters
+    if (page === 1 && sort === 'vote_average' && !genre && !year && !country && !language && !ratingMin && !ratingMax && !runtimeMin && !runtimeMax && !search) {
+      try {
+        const cacheRows = await executeAll(
+          `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path,
+                  vote_average, release_year, genres_json, overview_ar
+           FROM list_movies_top_rated
+           ORDER BY rank ASC
+           LIMIT ? OFFSET ?`,
+          [limit + 1, offset]
+        )
+        const hasMore = cacheRows.length > limit
+        if (hasMore) cacheRows.pop()
+        const response = NextResponse.json({
+          movies: cacheRows,
+          pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }
+        })
+        response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+        return response
+      } catch (err) {
+        console.error('Cache query failed, returning empty:', err)
+        return NextResponse.json({
+          movies: [],
+          pagination: { page, limit, hasMore: false, totalPages: 1 }
+        })
+      }
+    }
+    
     const rows = await executeAll(
       `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en, movies.poster_path,
               movies.vote_average, movies.release_year,

@@ -120,9 +120,62 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, isFavorite: !!item });
   }
   
-  // Return all favorites
+  // Return all favorites with full MovieCard fields
   const rows = await executeAll(
-    `SELECT * FROM favorites WHERE user_id=? ORDER BY added_at DESC LIMIT 50`, [user.id]
+    `SELECT 
+        f.tmdb_id,
+        f.content_type,
+        f.title,
+        f.poster_path,
+        f.added_at,
+        CASE 
+          WHEN f.content_type = 'movie' THEN m.slug
+          WHEN f.content_type = 'tv' THEN t.slug
+          ELSE NULL
+        END as slug,
+        CASE 
+          WHEN f.content_type = 'movie' THEN m.title_ar
+          WHEN f.content_type = 'tv' THEN t.name_ar
+          ELSE NULL
+        END as title_ar,
+        CASE 
+          WHEN f.content_type = 'movie' THEN m.title_en
+          WHEN f.content_type = 'tv' THEN t.name_en
+          ELSE NULL
+        END as title_en,
+        CASE 
+          WHEN f.content_type = 'movie' THEN m.vote_average
+          WHEN f.content_type = 'tv' THEN t.vote_average
+          ELSE NULL
+        END as vote_average,
+        CASE 
+          WHEN f.content_type = 'movie' THEN m.release_year
+          WHEN f.content_type = 'tv' THEN t.first_air_year
+          ELSE NULL
+        END as release_year,
+        CASE 
+          WHEN f.content_type = 'movie' THEN m.overview_ar
+          WHEN f.content_type = 'tv' THEN t.overview_ar
+          ELSE NULL
+        END as overview_ar,
+        CASE 
+          WHEN f.content_type = 'movie' THEN m.genres_json
+          WHEN f.content_type = 'tv' THEN t.genres_json
+          ELSE NULL
+        END as genres_json,
+        CASE 
+          WHEN f.content_type = 'movie' THEN m.primary_genre
+          WHEN f.content_type = 'tv' THEN t.primary_genre
+          ELSE NULL
+        END as primary_genre,
+        f.content_type as media_type
+     FROM favorites f
+     LEFT JOIN movies m ON m.tmdb_id = f.tmdb_id AND f.content_type = 'movie'
+     LEFT JOIN tv_series t ON t.tmdb_id = f.tmdb_id AND f.content_type = 'tv'
+     WHERE f.user_id = ?
+     ORDER BY f.added_at DESC 
+     LIMIT 100`, 
+    [user.id]
   );
   return NextResponse.json({ ok: true, items: rows });
 }
