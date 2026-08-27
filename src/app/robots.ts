@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin', '/api', '/profile', '/login', '/register'],
     },
-    sitemap: 'https://4cima.com/sitemap.xml',
+    sitemap: 'https://4cima.com/sitemap-index.xml',
   }
 }

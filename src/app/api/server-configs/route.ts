@@ -1,15 +1,23 @@
 import { NextResponse } from 'next/server'
-import { STREAM_SERVERS } from '@/services/streamService'
+import { getOrderedServers } from '@/lib/serverOrder'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
-  return NextResponse.json({
-    servers: STREAM_SERVERS.map(server => ({
-      id: server.id,
-      name: server.name,
-      url: server.base
-    })),
-    lastUpdated: new Date().toISOString()
-  })
+  const ordered = await getOrderedServers()
+  return NextResponse.json(
+    {
+      servers: ordered.map(server => ({
+        id: server.id,
+        name: server.name,
+        url: server.base
+      })),
+      lastUpdated: new Date().toISOString()
+    },
+    {
+      headers: {
+        'Cache-Control': 'no-store'
+      }
+    }
+  )
 }

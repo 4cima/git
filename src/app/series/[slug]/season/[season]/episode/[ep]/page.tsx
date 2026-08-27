@@ -2,31 +2,50 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { buildServerUrl, StreamServer } from '@/services/streamService'
 
 export default function WatchEpisodePage() {
   const params = useParams()
   const router = useRouter()
   const [serverIndex, setServerIndex] = useState(0)
-  
+  const [servers, setServers] = useState<StreamServer[]>([])
+
   const slug = params.slug as string
   const season = params.season as string
   const ep = params.ep as string
-  
-  // Get series ID from slug (you'll need to fetch this)
+
+  // Get series ID from slug
   const [seriesId, setSeriesId] = useState<number | null>(null)
-  
+
   useEffect(() => {
-    // Fetch series to get ID
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tv/${slug}`)
       .then(res => res.json())
       .then(data => setSeriesId(data.id))
       .catch(console.error)
   }, [slug])
-  
-  const embedUrl = seriesId
-    ? getEmbedUrl(seriesId, Number(season), Number(ep), serverIndex)
+
+  // Load the single source of truth for server order at runtime
+  useEffect(() => {
+    fetch(`/api/server-configs`)
+      .then(res => res.json())
+      .then(data => {
+        const list = data?.servers || []
+        if (Array.isArray(list) && list.length > 0) {
+          setServers(list.map((row: { id: string; name: string; url: string }) => ({
+            id: row.id,
+            name: row.name,
+            base: row.url,
+          })))
+        }
+      })
+      .catch(console.error)
+  }, [])
+
+  const current = servers[serverIndex]
+  const embedUrl = seriesId && current
+    ? buildServerUrl(current, 'tv', seriesId, Number(season), Number(ep))
     : ''
-  
+
   return (
     <div className="min-h-screen bg-black">
       <div className="page-container py-8">
@@ -56,53 +75,23 @@ export default function WatchEpisodePage() {
         </div>
         
         {/* Server Selector */}
-        <div className="flex gap-2 mb-8">
-          <button
-            onClick={() => setServerIndex(0)}
-            className={`px-4 py-2 rounded ${
-              serverIndex === 0
-                ? 'bg-primary text-black'
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-          >
-            vidsrc
-          </button>
-          <button
-            onClick={() => setServerIndex(1)}
-            className={`px-4 py-2 rounded ${
-              serverIndex === 1
-                ? 'bg-primary text-black'
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-          >
-            2embed
-          </button>
-          <button
-            onClick={() => setServerIndex(2)}
-            className={`px-4 py-2 rounded ${
-              serverIndex === 2
-                ? 'bg-primary text-black'
-                : 'bg-white/10 text-white hover:bg-white/20'
-            }`}
-          >
-            embed.su
-          </button>
+        <div className="flex flex-wrap gap-2 mb-8">
+          {servers.map((server, idx) => (
+            <button
+              key={server.id}
+              onClick={() => setServerIndex(idx)}
+              aria-label={`سيرفر ${idx + 1}`}
+              className={`px-4 py-2 rounded ${
+                serverIndex === idx
+                  ? 'bg-primary text-black'
+                  : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              v{idx + 1}
+            </button>
+          ))}
         </div>
       </div>
     </div>
   )
-}
-
-function getEmbedUrl(
-  seriesId: number,
-  season: number,
-  episode: number,
-  serverIndex: number
-): string {
-  const servers = [
-    `https://vidsrc.xyz/embed/tv/${seriesId}/${season}/${episode}`,
-    `https://www.2embed.cc/embedtv/${seriesId}&s=${season}&e=${episode}`,
-    `https://embed.su/embed/tv/${seriesId}/${season}/${episode}`,
-  ]
-  return servers[serverIndex] || servers[0]
 }

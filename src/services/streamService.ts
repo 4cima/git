@@ -4,7 +4,7 @@
  * 
  * @description خدمة موحدة 100% لجلب روابط التشغيل من السيرفرات المجانية
  * @author 4Cima Team
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 // Note: No Supabase import needed - content is in Turso via API
@@ -28,37 +28,28 @@ export interface StreamServer {
 }
 
 // ==========================================
-// Server List (12 Free Servers)
+// Server List (8 Free Servers)
 // ==========================================
 export const STREAM_SERVERS: StreamServer[] = [
   { id: 'vidsrc_vip', name: 'VidSrc.vip', base: 'https://vidrock.net/embed' },
   { id: 'vidrock_ru', name: 'VidRock.ru', base: 'https://vidrock.ru/embed' },
-  { id: 'autoembed_co', name: 'AutoEmbed', base: 'https://autoembed.co/movie/tmdb' },
-  { id: 'vidsrc_net', name: 'VidSrc.net', base: 'https://vidsrc.net/embed' },
-  { id: '2embed_cc', name: '2Embed', base: 'https://www.2embed.cc/embed' },
   { id: '111movies', name: '111Movies', base: 'https://111movies.com' },
-  { id: 'smashystream', name: 'SmashyStream', base: 'https://player.smashy.stream' },
   { id: 'vidsrc_io', name: 'VidSrc.io', base: 'https://vidsrc.io/embed' },
-  { id: 'vidsrc_cc', name: 'VidSrc.cc', base: 'https://vidsrc.cc/v2/embed' },
-  { id: 'vidsrc_xyz', name: 'VidSrc.xyz', base: 'https://vidsrc.xyz/embed' },
-  { id: '2embed_skin', name: '2Embed.skin', base: 'https://www.2embed.skin/embed' },
   { id: 'vidsrc_me', name: 'VidSrc.me', base: 'https://vidsrc.me/embed' },
+  { id: 'vidlink', name: 'VidLink', base: 'https://vidlink.pro' },
+  { id: 'videasy', name: 'Videasy', base: 'https://player.videasy.net' },
+  { id: 'autoembed_co', name: 'AutoEmbed', base: 'https://autoembed.co/movie/tmdb' },
 ];
 
 // Base URL overrides
 const BASE_OVERRIDES: Record<string, string> = {
   autoembed_co: 'https://autoembed.co',
-  vidsrc_net: 'https://vidsrc.net/embed',
   vidsrc_io: 'https://vidsrc.io/embed',
-  vidsrc_cc: 'https://vidsrc.cc/v2/embed',
-  vidsrc_xyz: 'https://vidsrc.xyz/embed',
   vidsrc_me: 'https://vidsrc.me/embed',
   vidsrc_vip: 'https://vidrock.net/embed',
   vidrock_ru: 'https://vidrock.ru/embed',
-  '2embed_cc': 'https://www.2embed.cc/embed',
-  '2embed_skin': 'https://www.2embed.skin/embed',
-  smashystream: 'https://player.smashy.stream',
-  '111movies': 'https://111movies.com',
+  vidlink: 'https://vidlink.pro',
+  videasy: 'https://player.videasy.net',
 };
 
 const getBase = (server: StreamServer) => BASE_OVERRIDES[server.id] || server.base;
@@ -87,14 +78,6 @@ const withArabic = (url: string, serverId: string, _mediaType: 'movie' | 'tv'): 
     return appendParam(appendParam(url, 'lang', 'ar'), 'sub', 'ar');
   }
 
-  if (id.startsWith('2embed')) {
-    return appendParam(appendParam(url, 'lang', 'ar'), 'subtitles', 'ar');
-  }
-
-  if (id === 'smashystream') {
-    return appendParam(appendParam(url, 'lang', 'ar'), 'sub', 'ar');
-  }
-
   if (id === '111movies') {
     return appendParam(url, 'lang', 'ar');
   }
@@ -118,14 +101,6 @@ export const buildServerUrl = (
 
   let url = '';
 
-  // SmashyStream
-  if (id === 'smashystream') {
-    url = mediaType === 'movie'
-      ? `${server.base}/movie/${tmdbId}`
-      : `https://smashy.stream/tv/${tmdbId}/${season}/${episode}/player`;
-    return mediaType === 'tv' ? url : withArabic(url, id, mediaType);
-  }
-
   // AutoEmbed
   if (id === 'autoembed_co') {
     url = mediaType === 'movie'
@@ -134,36 +109,44 @@ export const buildServerUrl = (
     return withArabic(url, id, mediaType);
   }
 
-  // 2Embed variants
-  if (id.startsWith('2embed')) {
-    url = mediaType === 'movie'
-      ? `${base}/${tmdbId}`
-      : `${base}/${tmdbId}/${season}/${episode}`;
-    return withArabic(url, id, mediaType);
-  }
-
-  // VidSrc.cc
-  if (id === 'vidsrc_cc') {
-    url = mediaType === 'movie'
-      ? `${base}/movie/${tmdbId}`
-      : `${base}/tv/${tmdbId}?autoPlay=false&s=${season}&e=${episode}`;
-    return withArabic(url, id, mediaType);
-  }
-
-  // VidSrc.io
-  if (id === 'vidsrc_io') {
+  // VidSrc.io and other VidSrc variants (vidsrc_vip, vidrock_ru)
+  if (id === 'vidsrc_io' || id.startsWith('vidsrc_')) {
     url = mediaType === 'movie'
       ? `${base}/movie/${tmdbId}`
       : `${base}/tv/${tmdbId}/${season}/${episode}`;
     return withArabic(url, id, mediaType);
   }
 
-  // Other VidSrc variants
-  if (id.startsWith('vidsrc_')) {
+  // VidRock.ru — same template family as vidsrc variants
+  if (id === 'vidrock_ru') {
     url = mediaType === 'movie'
       ? `${base}/movie/${tmdbId}`
       : `${base}/tv/${tmdbId}/${season}/${episode}`;
     return withArabic(url, id, mediaType);
+  }
+
+  // VidSrc.me
+  if (id === 'vidsrc_me') {
+    url = mediaType === 'movie'
+      ? `${base}/movie/${tmdbId}`
+      : `${base}/tv/${tmdbId}/${season}/${episode}`;
+    return withArabic(url, id, mediaType);
+  }
+
+  // VidLink
+  if (id === 'vidlink') {
+    url = mediaType === 'movie'
+      ? `https://vidlink.pro/movie/${tmdbId}`
+      : `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}`;
+    return url;
+  }
+
+  // Videasy
+  if (id === 'videasy') {
+    url = mediaType === 'movie'
+      ? `https://player.videasy.net/movie/${tmdbId}`
+      : `https://player.videasy.net/tv/${tmdbId}/${season}/${episode}`;
+    return url;
   }
 
   // 111Movies
@@ -197,8 +180,7 @@ export const buildAllServerSources = (
 
 /**
  * Fetch stream sources (unified with Android app)
- * 1. Try to get from embed_links table first
- * 2. Fallback to building from free servers
+ * Builds directly from free servers using TMDB ID.
  */
 export async function fetchStreamSources(
   contentId: number,

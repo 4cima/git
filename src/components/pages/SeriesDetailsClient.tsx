@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Clock, Calendar, AlertTriangle, Tv, Heart } from 'lucide-react'
+import { Star, Clock, Calendar, Tv, Heart } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { getGenreColor } from '@/utils/genreColors'
@@ -353,6 +353,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     openWatchWithPlayer({
       type: 'tv',
       id,
+      slug: series?.slug,
       season: selectedSeason,
       episode: selectedEpisode,
     })
@@ -626,28 +627,6 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                       <h2 className="text-xl text-zinc-400 mt-2 font-medium tracking-wide text-left">{titleEn}</h2>
                     )}
                   </div>
-                  {user && (
-                    <button
-                      onClick={toggleCardState}
-                      disabled={stateLoading}
-                      className={clsx(
-                        "flex-shrink-0 w-15 h-15 rounded-full flex items-center justify-center transition-all duration-300 border-2 shadow-lg",
-                        cardState === 'favorite'
-                          ? "bg-red-500 border-red-400 text-white hover:bg-red-600 shadow-red-500/50"
-                          : cardState === 'completed'
-                          ? "bg-green-500 border-green-400 text-white hover:bg-green-600 shadow-green-500/50"
-                          : "bg-black/70 border-white/40 text-white hover:bg-black/80 hover:border-white/60",
-                        stateLoading && "opacity-50 cursor-not-allowed"
-                      )}
-                      title={
-                        cardState === 'neutral' ? 'إضافة للمفضلة' :
-                        cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
-                        'إزالة من تمت المشاهدة'
-                      }
-                    >
-                      <Heart className={clsx("w-8 h-8", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
-                    </button>
-                  )}
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium mb-6">
@@ -916,18 +895,46 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
             {/* Watch CTA — Catalog Only: player is hosted on 4cima.stream */}
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl sm:p-8">
-              <WatchButton
-                label="مشاهدة المسلسل"
-                sublabel={`الموسم ${selectedSeason} - الحلقة ${selectedEpisode}`}
-                onClick={handleWatch}
-                className="mx-auto max-w-md"
-              />
-              {/* Disclaimer */}
-              <div className="mt-6 flex items-start gap-2 text-xs leading-relaxed text-zinc-500">
-                <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-red-400" />
-                <p>
-                  جميع المحتويات المعروضة يتم جلبها تلقائياً من مصادر خارجية. الموقع غير مسؤول عن أي محتوى معروض.
-                </p>
+              <div className="mx-auto flex max-w-md items-stretch gap-3">
+                <WatchButton
+                  label="مشاهدة المسلسل"
+                  sublabel={`الموسم ${selectedSeason} - الحلقة ${selectedEpisode}`}
+                  onClick={handleWatch}
+                  className="flex-1"
+                />
+                {user && (
+                  <button
+                    onClick={toggleCardState}
+                    disabled={stateLoading}
+                    className={clsx(
+                      "group relative flex w-[86px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white shadow-xl transition-transform duration-200 active:scale-95",
+                      stateLoading && "opacity-60 cursor-not-allowed"
+                    )}
+                    title={
+                      cardState === 'neutral' ? 'إضافة للمفضلة' :
+                      cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
+                      'إزالة من تمت المشاهدة'
+                    }
+                    aria-label={
+                      cardState === 'neutral' ? 'إضافة للمفضلة' :
+                      cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
+                      'إزالة من تمت المشاهدة'
+                    }
+                  >
+                    <span
+                      className={clsx(
+                        "flex h-11 w-11 items-center justify-center rounded-full bg-white/25 ring-2 transition-colors",
+                        cardState === 'favorite'
+                          ? "ring-red-300"
+                          : cardState === 'completed'
+                          ? "ring-green-300"
+                          : "ring-white/30"
+                      )}
+                    >
+                      <Heart className={clsx("h-6 w-6", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

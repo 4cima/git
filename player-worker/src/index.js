@@ -8,6 +8,7 @@
  * Clean-URL routes:
  *   GET /movies/{slug}                        → movie player
  *   GET /series/{slug}/season/{n}/episode/{y} → tv episode player
+ *   GET /{slug}                               → bare slug, type resolved via TMDB multi-search
  *   GET /                                     → info page
  *   GET /api/embed-proxy?url=…                → ISP-blocked server proxy
  *   GET /healthz                              → liveness probe
@@ -57,6 +58,9 @@ const safeDecode = (s) => {
   try { return decodeURIComponent(s); } catch { return s; }
 };
 
+// Single-segment paths that must never be treated as a content slug.
+const RESERVED_PATHS = new Set(['api', 'healthz', 'watch', 'movies', 'series', 'admin', 'login']);
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
@@ -70,6 +74,19 @@ export default {
 
       const mTv = path.match(/^\/series\/(.+?)\/season\/(\d+)(?:\/episode\/(\d+))?$/);
       if (mTv) return await handlePlayer(url, safeDecode(mTv[1]), 'tv', parseInt(mTv[2], 10), mTv[3] ? parseInt(mTv[3], 10) : 1);
+
+      // Bare clean-slug route (e.g. /oppenheimer) — the media type is
+      // unknown, so resolve it via TMDB multi-search first.
+      const mBare = path.match(/^\/([A-Za-z0-9_-]+)$/);
+      if (mBare && !RESERVED_PATHS.has(mBare[1].toLowerCase())) {
+        const slug = safeDecode(mBare[1]);
+        try {
+          const mediaType = await resolveAnyFromTmdb(slug);
+          return await handlePlayer(url, slug, mediaType, 1, 1);
+        } catch (e) {
+          return playerErrorPage(slug, null, e.message);
+        }
+      }
 
       if (path === '/' || path === '') {
         const body = '<!doctype html><html><head><meta charset="utf-8"><title>4cima Player</title></head><body style="font-family:sans-serif;text-align:center;padding:4rem;background:#0a0c11;color:#e5e7eb"><h1>4cima Player</h1><p>Open a title from <a href="https://4cima.com">4cima.com</a>.</p></body></html>';
@@ -215,6 +232,25 @@ async function resolveFromTmdb(slug, mediaType) {
     backdrop: hit.backdrop_path,
     poster: hit.poster_path,
   };
+}
+
+// Resolve a bare slug whose media type is unknown via TMDB multi-search.
+// Returns 'movie' | 'tv' (person/other results are skipped).
+async function resolveAnyFromTmdb(slug) {
+  const url = new URL('https://api.themoviedb.org/3/search/multi');
+  url.searchParams.set('api_key', TMDB_API_KEY);
+  url.searchParams.set('query', slug.replace(/[-_]/g, ' '));
+  url.searchParams.set('include_adult', 'false');
+  let data = null;
+  try {
+    const res = await fetch(url.toString(), { method: 'GET' });
+    if (res.ok) data = await res.json();
+  } catch { /* fall through */ }
+  const hit = ((data && data.results) || []).find(
+    (r) => r.media_type === 'movie' || r.media_type === 'tv'
+  );
+  if (!hit) throw new Error(`No TMDB match for slug "${slug}"`);
+  return hit.media_type;
 }
 
 async function fetchSeasonsList(tmdbId) {
@@ -533,7 +569,9 @@ footer a:hover{color:var(--muted)}
 function playerErrorPage(slug, mediaType, message) {
   const backUrl = mediaType === 'movie'
     ? `${PLAY_BASE}/movies/${encodeURIComponent(slug)}`
-    : `${PLAY_BASE}/series/${encodeURIComponent(slug)}`;
+    : mediaType === 'tv'
+    ? `${PLAY_BASE}/series/${encodeURIComponent(slug)}`
+    : PLAY_BASE;
   const body = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>

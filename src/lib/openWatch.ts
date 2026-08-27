@@ -5,6 +5,7 @@ import { CONFIG } from './constants'
 export type WatchTarget = {
   type: 'movie' | 'tv'
   id: number
+  slug?: string
   season?: number
   episode?: number
 }
@@ -45,7 +46,17 @@ function extractAdUrl(input: string): string | null {
 }
 
 export function toPlayerUrl(target: WatchTarget): string {
-  const base = CONFIG.PLAYER_URL || 'https://4cima.stream'
+  const base = (CONFIG.PLAYER_URL || 'https://4cima.stream').replace(/\/$/, '')
+  // Clean slug URLs — the worker resolves the slug via TMDB search.
+  // (query-string /watch URLs are only a fallback when no slug exists)
+  if (target.slug) {
+    if (target.type === 'tv') {
+      const season = target.season ?? 1
+      const episode = target.episode ?? 1
+      return `${base}/series/${encodeURIComponent(target.slug)}/season/${season}/episode/${episode}`
+    }
+    return `${base}/${encodeURIComponent(target.slug)}`
+  }
   const u = new URL('/watch', base)
   u.searchParams.set('type', target.type)
   u.searchParams.set('id', String(target.id))

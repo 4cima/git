@@ -2,9 +2,8 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /api
-Disallow: /auth
-Disallow: /movies?*
-Disallow: /series?*
-Disallow: /genres/*?*
+Disallow: /profile
+Disallow: /login
+Disallow: /register
 
-Sitemap: https://4cima.com/sitemap.xml
+Sitemap: https://4cima.com/sitemap-index.xml
