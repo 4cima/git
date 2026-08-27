@@ -1,0 +1,13 @@
+{
+  "name": "4cima-player",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone video player Worker for 4cima.stream (dedicated account)",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^3.99.0"
+  }
+}

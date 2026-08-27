@@ -14,6 +14,7 @@ import { useImageBrightness } from '@/utils/imageAnalysis'
 import { AdsManager } from '@/components/features/system/AdsManager'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
+import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
 
 interface MovieDetailsClientProps {
   movie: any
@@ -264,9 +265,18 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
   }
 
   const handleOverlayClick = () => {
-    setShowPlayOverlay(false)
-    logWatch()
+    // Watch flow: pop-under ad first, then open the external player
+    // (hosted on 4cima.stream) passing the film's TMDB id.
+    const id = Number(effectiveId)
+    if (Number.isFinite(id) && id > 0) {
+      openWatchWithPlayer({ type: 'movie', id })
+    }
   }
+
+  // Preload the pop-under URL once so it can fire synchronously on click.
+  useEffect(() => {
+    prefetchWatchAd()
+  }, [])
 
   const toggleCardState = async () => {
     if (stateLoading || !movie?.tmdb_id) return
@@ -659,7 +669,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                       <button
                         key={`${s.name}-${idx}`}
                         onClick={() => handleServerClick(idx)}
-                        title={`${s.name} - ${isServerOffline ? 'Offline' : isActive ? 'Active' : 'Available'}`}
+                        aria-label={`سيرفر ${idx + 1}`}
                         disabled={isServerOffline}
                         className={clsx(
                           "flex items-center justify-center w-16 h-12 rounded-xl border transition-all duration-300 font-black text-lg leading-none",
@@ -670,7 +680,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                               : "bg-white/5 border-white/5 text-white hover:bg-white/10 hover:border-white/10 hover:text-white"
                         )}
                       >
-                        V{idx + 1}
+                        v{idx + 1}
                       </button>
                     )
                   })}

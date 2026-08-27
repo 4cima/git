@@ -14,6 +14,8 @@ export const CONFIG = {
   TMDB_API_KEY: process.env.NEXT_PUBLIC_TMDB_API_KEY || envVar('VITE_TMDB_API_KEY') || runtimeConfig.VITE_TMDB_API_KEY,
   YOUTUBE_API_KEY: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || envVar('VITE_YOUTUBE_API_KEY') || runtimeConfig.VITE_YOUTUBE_API_KEY,
   DOMAIN: process.env.NEXT_PUBLIC_DOMAIN || envVar('VITE_DOMAIN') || runtimeConfig.VITE_DOMAIN || 'https://4cima.com',
+  // External player host (dedicated Worker on 4cima.stream)
+  PLAYER_URL: process.env.NEXT_PUBLIC_PLAYER_URL || runtimeConfig.NEXT_PUBLIC_PLAYER_URL || 'https://4cima.stream',
   // Use centralized API configuration
   API_BASE: API_BASE_URL
 }

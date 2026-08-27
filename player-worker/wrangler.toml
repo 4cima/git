@@ -1,0 +1,24 @@
+# ============================================================
+# 4CIMA Player Worker — hosted on 4cima.stream (dedicated account)
+# ============================================================
+# This Worker intentionally lives in its own project folder and is
+# deployed to the SEPARATE Cloudflare account that owns 4cima.stream.
+# It must NOT be confused with the main site worker (`wrangler.jsonc`).
+
+name = "4cima-player"
+main = "src/index.js"
+account_id = "67df2529f10696968362c6017b7005f2"
+compatibility_date = "2025-10-15"
+
+# The source of truth for how this worker will be reached publicly.
+# `custom_domain = true` auto-binds the route to the zone on the SAME
+# account that owns 4cima.stream (this Worker's account).
+#
+# If binding from the dashboard instead: open the Worker → Settings →
+# Domains → Add → type `4cima.stream` → connect. Then remove the routes
+# block below OR keep it (dashboard takes precedence).
+routes = [
+  { pattern = "4cima.stream", custom_domain = true }
+]
+
+# No bindings, DB or KV required — the player is a self-contained edge page.
