@@ -923,7 +923,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                   >
                     <span
                       className={clsx(
-                        "flex h-11 w-11 items-center justify-center rounded-full bg-white/25 ring-2 transition-colors",
+                        "flex h-11 w-11 items-center justify-center rounded-full bg-zinc-400/25 ring-2 ring-white/40 transition-colors",
                         cardState === 'favorite'
                           ? "ring-red-300"
                           : cardState === 'completed'

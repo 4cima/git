@@ -24,27 +24,10 @@
 const PLAY_BASE = 'https://4cima.com';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/original/';
 
-// Strict CSP: lock player frame-ancestors to 4cima.com, but allow
-// external media iframes (frame-src) so vidsrc/vidlink embeds work.
-// TMDB backdrops (img-src) and the Google "Cairo" font
-// (style-src / font-src) are explicitly whitelisted.
-const CSP_HEADER =
-  "default-src 'self'; " +
-  "script-src 'self' 'unsafe-inline'; " +
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-  "font-src 'self' data: https://fonts.gstatic.com; " +
-  "img-src 'self' data: https://image.tmdb.org; " +
-  "frame-ancestors 'self' https://4cima.com; " +
-  "base-uri 'self'; " +
-  "form-action 'self'; " +
-  "frame-src * data: blob:; " +
-  "child-src * data: blob:; " +
-  "connect-src *";
-
+// CSP removed per user request: some embed servers were blocked by
+// frame-ancestors / style-src. Only lightweight headers remain.
 const COMMON_HEADERS = {
-  'Content-Security-Policy': CSP_HEADER,
   'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'ALLOW-FROM https://4cima.com',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'encrypted-media *, fullscreen *',
 };
@@ -340,7 +323,7 @@ async function handlePlayer(url, slug, mediaType, season = 1, episode = 1, preRe
 
   return new Response(
     htmlPage({
-      slug, mediaType, tmdbId, title, season, episode,
+      slug, mediaType, tmdbId, title, titleEn: resolved.latinTitle, season, episode,
       servers, seasons: seasonsList, episodes: epList,
       backdropUrl, backUrl, refUrl,
     }),
@@ -364,7 +347,7 @@ const esc = (v) => String(v == null ? '' : v)
 // Serialize data for an inline <script> without letting "</script>" break out.
 const jsonForScript = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
-function htmlPage({ slug, mediaType, tmdbId, title, season, episode, servers, seasons, episodes, backdropUrl, backUrl, refUrl }) {
+function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, servers, seasons, episodes, backdropUrl, backUrl, refUrl }) {
   const isTv = mediaType === 'tv';
   const pageTitle = title
     ? (isTv
@@ -394,10 +377,12 @@ function htmlPage({ slug, mediaType, tmdbId, title, season, episode, servers, se
 html,body{height:100%;font-family:Cairo,sans-serif;background:var(--bg);color:var(--text)}
 body{display:flex;flex-direction:column}
 header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(0,0,0,.5);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
-.logo{font-size:18px;font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
-.title{font-size:14px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
-.back-btn{margin-right:auto;padding:7px 16px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;white-space:nowrap}
-.back-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.logo{display:inline-flex;align-items:center;gap:8px;font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;text-decoration:none;cursor:pointer;transition:transform .15s}
+.logo:hover{transform:scale(1.05)}
+.title-ar{font-size:16px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32vw}
+.title-en{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:24vw;direction:ltr}
+.back-btn{margin-right:auto;padding:9px 20px;border-radius:10px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:14px;font-weight:800;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35)}
+.back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
 .server-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);scrollbar-width:thin;scrollbar-color:#333 transparent}
 .server-tab{flex-shrink:0;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
@@ -424,8 +409,9 @@ footer a:hover{color:var(--muted)}
 </head>
 <body style="${bgStyle}">
 <header>
-  <span class="logo">🎬 4cima</span>
-  ${title ? `<span class="title" dir="auto">${esc(title)}</span>` : ''}
+  <a class="logo" href="https://4cima.com" target="_blank" rel="noopener" title="4cima.com">🎬 4cima</a>
+  ${title ? `<span class="title-ar" dir="auto">${esc(title)}</span>` : ''}
+  ${titleEn && titleEn !== title ? `<span class="title-en" dir="ltr">${esc(titleEn)}</span>` : ''}
   <a class="back-btn" href="${esc(refUrl)}">↩ العودة للصفحة</a>
 </header>
 <main>
@@ -441,7 +427,7 @@ footer a:hover{color:var(--muted)}
     <iframe id="player" allow="fullscreen;autoplay;encrypted-media" allowfullscreen title="4cima Player"></iframe>
   </div>
 </main>
-<footer>جميع المحتويات من <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDb</a>. المشغّل من <a href="https://4cima.stream" target="_blank" rel="noopener">4cima.stream</a></footer>
+<footer>شاهد أحدث الأفلام والمسلسلات بجودة عالية على <a href="https://4cima.com" target="_blank" rel="noopener"><strong>4cima.com</strong></a> — بث مباشر عبر <a href="https://4cima.stream" target="_blank" rel="noopener"><strong>4cima.stream</strong></a></footer>
 <script>
 (function () {
   'use strict';
@@ -509,11 +495,13 @@ footer a:hover{color:var(--muted)}
   function renderTabs() {
     if (!B) return;
     B.innerHTML = '';
-    D.servers.forEach(function (s) {
+    D.servers.forEach(function (s, idx) {
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'server-tab';
-      btn.textContent = s.name;
+      // Visitor-facing label only — real server names stay in D.servers
+      // (used by selectServer/srcFor) but are never rendered.
+      btn.textContent = 'سيرفر ' + (idx + 1);
       btn.addEventListener('click', function () { selectServer(btn, s); });
       B.appendChild(btn);
     });
