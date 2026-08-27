@@ -9,6 +9,7 @@ import { SectionHeader } from '../common/SectionHeader'
 import { Loading } from '../common/Loading'
 import ReactPlayer from 'react-player'
 import clsx from 'clsx'
+import { openWatchWithPlayer } from '@/lib/openWatch'
 
 // @ts-ignore - react-player types issue
 const Player = ReactPlayer as any
@@ -206,7 +207,13 @@ export const SeriesDetailsPage = ({ slug }: { slug: string }) => {
             </button>
 
             <button
-              onClick={() => router.push(`/watch/series/${slug}/season/${selectedSeason}/episode/1`)}
+              onClick={() => openWatchWithPlayer({
+                type: 'tv',
+                id: series?.tmdb_id || series?.id,
+                slug: series?.slug || slug,
+                season: selectedSeason,
+                episode: 1,
+              })}
               className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center gap-2 font-bold hover:scale-105 transition-transform"
             >
               <Play className="fill-current" />
@@ -277,7 +284,13 @@ export const SeriesDetailsPage = ({ slug }: { slug: string }) => {
                   {episodes.map((episode: any) => (
                     <button
                       key={episode.id}
-                      onClick={() => router.push(`/watch/series/${slug}/season/${selectedSeason}/episode/${episode.episode_number}`)}
+                      onClick={() => openWatchWithPlayer({
+                        type: 'tv',
+                        id: series?.tmdb_id || series?.id,
+                        slug: series?.slug || slug,
+                        season: selectedSeason,
+                        episode: episode.episode_number,
+                      })}
                       className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 hover:border-cyan-500 transition-all"
                     >
                       <div className="aspect-video w-full overflow-hidden bg-zinc-900">

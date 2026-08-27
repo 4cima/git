@@ -10,15 +10,18 @@ export async function GET(
 ) {
   try {
     const { slug } = await params
-    
+
     console.log('🔄 [API /movies/:slug] Fetching movie:', slug)
-    
+
+    // Numeric lookups resolve by tmdb_id (used by the player worker's
+    // /watch?id=… fallback); text slugs match the slug column only.
+    const isNumeric = /^\d+$/.test(slug)
     const movie = await executeFirst(
-      `SELECT * FROM movies 
-            WHERE slug = ? 
+      `SELECT * FROM movies
+            WHERE (slug = ?${isNumeric ? ' OR tmdb_id = ?' : ''})
               AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
             LIMIT 1`,
-      [slug]
+      isNumeric ? [slug, Number(slug)] : [slug]
     )
     
     if (!movie) {

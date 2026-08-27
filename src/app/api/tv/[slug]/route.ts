@@ -10,12 +10,15 @@ export async function GET(
   try {
     const { slug } = await params
 
+    // Numeric lookups resolve by tmdb_id (used by the player worker's
+    // /watch?id=… fallback); text slugs match the slug column only.
+    const isNumeric = /^\d+$/.test(slug)
     const series = await executeFirst(
       `SELECT * FROM tv_series
-            WHERE slug = ?
+            WHERE (slug = ?${isNumeric ? ' OR tmdb_id = ?' : ''})
               AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
             LIMIT 1`,
-      [slug]
+      isNumeric ? [slug, Number(slug)] : [slug]
     )
 
     if (!series) {

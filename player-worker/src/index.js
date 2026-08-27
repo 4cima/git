@@ -9,6 +9,7 @@
  *   GET /movies/{slug}                        → movie player
  *   GET /series/{slug}/season/{n}/episode/{y} → tv episode player
  *   GET /{slug}                               → bare slug, type resolved via TMDB multi-search
+ *   GET /watch?type=&id=&season=&episode=     → legacy query fallback (tmdb id)
  *   GET /                                     → info page
  *   GET /api/embed-proxy?url=…                → ISP-blocked server proxy
  *   GET /healthz                              → liveness probe
@@ -22,7 +23,6 @@
 
 const PLAY_BASE = 'https://4cima.com';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/original/';
-const TMDB_API_KEY = 'd1cf50a073ebf6c00401a9a74f8e3c24'; // public web key
 
 // Strict CSP: lock player frame-ancestors to 4cima.com, but allow
 // external media iframes (frame-src) so vidsrc/vidlink embeds work.
@@ -69,6 +69,9 @@ export default {
       if (path === '/api/embed-proxy') return await handleEmbedProxy(url);
       if (path === '/healthz') return new Response('ok', { status: 200 });
 
+      // Legacy query-based fallback: /watch?type=tv&id=94997&season=3&episode=4
+      if (path === '/watch') return await handleWatchFallback(url);
+
       const mMovie = path.match(/^\/movies\/(.+)$/);
       if (mMovie) return await handlePlayer(url, safeDecode(mMovie[1]), 'movie', 1, 1);
 
@@ -81,8 +84,8 @@ export default {
       if (mBare && !RESERVED_PATHS.has(mBare[1].toLowerCase())) {
         const slug = safeDecode(mBare[1]);
         try {
-          const mediaType = await resolveAnyFromTmdb(slug);
-          return await handlePlayer(url, slug, mediaType, 1, 1);
+          const { mediaType, data } = await resolveAnyFromSite(slug);
+          return await handlePlayer(url, data.slug || slug, mediaType, 1, 1, data);
         } catch (e) {
           return playerErrorPage(slug, null, e.message);
         }
@@ -203,102 +206,113 @@ function buildServerSources(mediaType, tmdbId, season, episode) {
 }
 
 // ------------------------------------------------------------------
-// TMDB resolution: slug → tmdb_id + title + artwork
+// Title resolution via the 4cima.com catalogue API (NOT TMDB — the
+// old public TMDB key was revoked). The site API resolves text slugs,
+// and numeric paths match tmdb_id (used by the /watch fallback).
 // ------------------------------------------------------------------
-async function resolveFromTmdb(slug, mediaType) {
-  const searchPath = mediaType === 'movie' ? 'search/movie' : 'search/tv';
-  const apiUrl = new URL(`https://api.themoviedb.org/3/${searchPath}`);
-  apiUrl.searchParams.set('api_key', TMDB_API_KEY);
-  apiUrl.searchParams.set('query', slug.replace(/[-_]/g, ' '));
-  apiUrl.searchParams.set('language', 'ar-MA');
-  apiUrl.searchParams.set('include_adult', 'false');
-
-  const fetchJson = async (u) => {
-    const res = await fetch(u, { method: 'GET' });
-    if (!res.ok) return null;
-    try { return await res.json(); } catch { return null; }
-  };
-
-  let json = await fetchJson(apiUrl.toString());
-  if (!json || !(json.results || []).length) {
-    apiUrl.searchParams.set('language', 'en-US');
-    json = await fetchJson(apiUrl.toString());
-  }
-  if (!json || !(json.results || []).length) throw new Error(`No TMDB match for slug "${slug}"`);
-  const hit = json.results[0];
-  return {
-    tmdbId: hit.id,
-    title: hit.title || hit.name || '',
-    backdrop: hit.backdrop_path,
-    poster: hit.poster_path,
-  };
-}
-
-// Resolve a bare slug whose media type is unknown via TMDB multi-search.
-// Returns 'movie' | 'tv' (person/other results are skipped).
-async function resolveAnyFromTmdb(slug) {
-  const url = new URL('https://api.themoviedb.org/3/search/multi');
-  url.searchParams.set('api_key', TMDB_API_KEY);
-  url.searchParams.set('query', slug.replace(/[-_]/g, ' '));
-  url.searchParams.set('include_adult', 'false');
-  let data = null;
+async function fetchSiteJson(path) {
   try {
-    const res = await fetch(url.toString(), { method: 'GET' });
-    if (res.ok) data = await res.json();
-  } catch { /* fall through */ }
-  const hit = ((data && data.results) || []).find(
-    (r) => r.media_type === 'movie' || r.media_type === 'tv'
-  );
-  if (!hit) throw new Error(`No TMDB match for slug "${slug}"`);
-  return hit.media_type;
+    const res = await fetch(`${PLAY_BASE}${path}`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
-async function fetchSeasonsList(tmdbId) {
-  const url = new URL(`https://api.themoviedb.org/3/tv/${tmdbId}`);
-  url.searchParams.set('api_key', TMDB_API_KEY);
-  url.searchParams.set('language', 'ar-MA');
-  const res = await fetch(url.toString(), { method: 'GET' });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return (data.seasons || [])
-    .filter((s) => s.season_number > 0)
-    .map((s) => ({ season_number: s.season_number, episode_count: s.episode_count }));
-}
-
-async function fetchSeasonEpisodes(tmdbId, seasonNumber) {
-  const out = { season: null, episodes: [] };
-  if (!seasonNumber) return out;
-  const url = new URL(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}`);
-  url.searchParams.set('api_key', TMDB_API_KEY);
-  url.searchParams.set('language', 'ar-MA');
-  const res = await fetch(url.toString(), { method: 'GET' });
-  if (!res.ok) return out;
-  const data = await res.json();
-  out.season = {
-    season_number: data.season_number,
-    name: data.name,
-    episode_count: (data.episodes || []).length,
+function normalizeSiteRow(row) {
+  const seasons = (Array.isArray(row.seasons) ? row.seasons : [])
+    .filter((s) => (s.season_number ?? 0) > 0)
+    .map((s) => ({ season_number: s.season_number, episode_count: s.episode_count || 0 }));
+  return {
+    tmdbId: row.tmdb_id,
+    slug: row.slug || '',
+    title: row.title_ar || row.name_ar || row.title_en || row.name_en || row.title || row.name || '',
+    latinTitle: row.title_en || row.name_en || row.name_original || row.original_name || row.title_ar || row.name_ar || '',
+    backdrop: row.backdrop_path || null,
+    poster: row.poster_path || null,
+    seasons,
   };
-  out.episodes = (data.episodes || []).map((e) => ({
-    id: e.id,
-    episode_number: e.episode_number,
-    name: e.name,
-    still_path: e.still_path,
-  }));
-  return out;
+}
+
+async function resolveFromSite(slug, mediaType) {
+  const row = mediaType === 'movie'
+    ? await fetchSiteJson(`/api/movies/${encodeURIComponent(slug)}`)
+    : await fetchSiteJson(`/api/tv/${encodeURIComponent(slug)}`);
+  if (!row || !row.tmdb_id) throw new Error(`No catalogue match for slug "${slug}"`);
+  return normalizeSiteRow(row);
+}
+
+// Bare slug: media type unknown — try movies, then tv.
+async function resolveAnyFromSite(slug) {
+  const movie = await fetchSiteJson(`/api/movies/${encodeURIComponent(slug)}`);
+  if (movie && movie.tmdb_id) return { mediaType: 'movie', data: normalizeSiteRow(movie) };
+  const tv = await fetchSiteJson(`/api/tv/${encodeURIComponent(slug)}`);
+  if (tv && tv.tmdb_id) return { mediaType: 'tv', data: normalizeSiteRow(tv) };
+  throw new Error(`No catalogue match for slug "${slug}"`);
+}
+
+// Resolve directly by TMDB id (numeric site-API paths match tmdb_id).
+async function resolveByIdFromSite(tmdbId, mediaType) {
+  const row = await fetchSiteJson(`${mediaType === 'movie' ? '/api/movies/' : '/api/tv/'}${tmdbId}`);
+  if (!row || !row.tmdb_id) throw new Error(`Catalogue has no ${mediaType} with tmdb_id ${tmdbId}`);
+  return normalizeSiteRow(row);
+}
+
+const slugifyLatin = (text, fallback) => {
+  const slug = String(text || '')
+    .toLowerCase()
+    .replace(/[''’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || fallback;
+};
+
+// Legacy /watch?type=…&id=… handler — resolves by TMDB id, then renders
+// the same player page as the clean-slug routes.
+async function handleWatchFallback(url) {
+  const type = (url.searchParams.get('type') || '').toLowerCase();
+  const id = parseInt(url.searchParams.get('id') || '', 10);
+  if (type !== 'movie' && type !== 'tv') {
+    return new Response('Bad Request — type must be movie or tv', { status: 400, headers: COMMON_HEADERS });
+  }
+  if (!Number.isFinite(id) || id <= 0) {
+    return new Response('Bad Request — missing/invalid id', { status: 400, headers: COMMON_HEADERS });
+  }
+  const season = parseInt(url.searchParams.get('season') || '1', 10) || 1;
+  const episode = parseInt(url.searchParams.get('episode') || '1', 10) || 1;
+
+  let resolved;
+  try {
+    resolved = await resolveByIdFromSite(id, type);
+  } catch (e) {
+    return playerErrorPage(String(id), type, e.message);
+  }
+
+  // Prefer the catalogue's canonical slug for in-page navigation.
+  const slug = resolved.slug || slugifyLatin(resolved.latinTitle, `${type}-${id}`);
+  return await handlePlayer(url, slug, type, season, episode, resolved);
 }
 
 // ------------------------------------------------------------------
 // Page handler
 // ------------------------------------------------------------------
-async function handlePlayer(url, slug, mediaType, season = 1, episode = 1) {
+async function handlePlayer(url, slug, mediaType, season = 1, episode = 1, preResolved = null) {
   if (!slug) return new Response('Bad Request — missing slug', { status: 400, headers: COMMON_HEADERS });
 
   let resolved;
-  try {
-    resolved = await resolveFromTmdb(slug, mediaType);
-  } catch (e) {
-    return playerErrorPage(slug, mediaType, e.message);
+  if (preResolved) {
+    // Already resolved (bare-slug multi-try or /watch by-id) — reuse it.
+    resolved = preResolved;
+  } else {
+    try {
+      resolved = await resolveFromSite(slug, mediaType);
+    } catch (e) {
+      return playerErrorPage(slug, mediaType, e.message);
+    }
   }
 
   const { tmdbId, title, backdrop, poster } = resolved;
@@ -307,12 +321,9 @@ async function handlePlayer(url, slug, mediaType, season = 1, episode = 1) {
   let seasonsList = [];
   let epList = [];
   if (mediaType === 'tv') {
-    const [sList, sDetail] = await Promise.all([
-      fetchSeasonsList(tmdbId),
-      fetchSeasonEpisodes(tmdbId, season),
-    ]);
-    seasonsList = sList;
-    epList = sDetail.episodes;
+    seasonsList = resolved.seasons || [];
+    const cnt = (seasonsList.find((s) => s.season_number === season) || {}).episode_count || 0;
+    epList = Array.from({ length: cnt }, (_, i) => ({ episode_number: i + 1, name: '' }));
   }
 
   const backdropUrl = backdrop
