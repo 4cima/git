@@ -5,14 +5,12 @@ import { motion } from 'framer-motion'
 import { Star, Clock, Calendar, AlertTriangle, Tv, Heart } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
-import { EmbedPlayer } from '../features/media/EmbedPlayer'
-import { useServers } from '../../hooks/useServers'
 import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
-import { AdsManager } from '@/components/features/system/AdsManager'
 import { MovieCard } from '@/components/features/media/MovieCard'
+import { WatchButton } from '@/components/features/media/WatchButton'
 import { useAuth } from '@/hooks/useAuth'
 import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
 
@@ -27,7 +25,6 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     seasons.find((s: any) => s.season_number > 0)?.season_number || 1
   )
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1)
-  const [cinemaMode, setCinemaMode] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [player, setPlayer] = useState<any>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -43,7 +40,6 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const [watchLogged, setWatchLogged] = useState(false)
   const [cardState, setCardState] = useState<'neutral' | 'favorite' | 'completed'>('neutral')
   const [stateLoading, setStateLoading] = useState(false)
-  const [showPlayOverlay, setShowPlayOverlay] = useState(true)
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const playerRef = useRef<HTMLDivElement>(null)
   const progressInterval = useRef<NodeJS.Timeout | null>(null)
@@ -80,12 +76,6 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   }, [series?.episode_run_time])
   
   const effectiveId = series?.tmdb_id || series?.id || 0
-  const { servers, active, setActive, loading: serversLoading, reportBroken, reporting } = useServers(
-    effectiveId,
-    'tv',
-    selectedSeason,
-    selectedEpisode
-  )
   
   // Parse genres from JSON with fallback
   const genres = useMemo(() => {
@@ -327,7 +317,6 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   // Reset watch log when episode changes
   useEffect(() => {
     setWatchLogged(false)
-    setShowPlayOverlay(true)
   }, [selectedSeason, selectedEpisode])
 
   const logWatch = async () => {
@@ -355,25 +344,18 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     }
   }
 
-  const handleServerClick = (idx: number) => {
-    if (servers[idx]?.status !== 'offline') {
-      setActive(idx)
-      logWatch()
-    }
-  }
-
-  const handleOverlayClick = () => {
-    // Watch flow: pop-under ad first, then open the external player
-    // (hosted on 4cima.stream) passing the series TMDB id + season/episode.
+  const handleWatch = () => {
+    // Log watch progress, then: pop-under ad first, then open the external
+    // player (hosted on 4cima.stream) passing series id + season/episode.
     const id = Number(series?.tmdb_id)
-    if (Number.isFinite(id) && id > 0) {
-      openWatchWithPlayer({
-        type: 'tv',
-        id,
-        season: selectedSeason,
-        episode: selectedEpisode,
-      })
-    }
+    if (!(Number.isFinite(id) && id > 0)) return
+    logWatch()
+    openWatchWithPlayer({
+      type: 'tv',
+      id,
+      season: selectedSeason,
+      episode: selectedEpisode,
+    })
   }
   // Preload the pop-under URL once so it can fire synchronously on click.
   useEffect(() => {
@@ -932,100 +914,20 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
               </div>
             </div>
 
-            {/* Player with Side Servers */}
-            <div className="flex gap-4">
-              {/* Servers Sidebar */}
-              <div className="flex-shrink-0 w-14">
-                <h3 className="text-xs font-black mb-2 text-center text-white">السيرفرات</h3>
-                <div className="flex flex-col gap-2 sticky top-4">
-                  {servers.map((s, idx) => {
-                    const isActive = idx === active
-                    const isServerOffline = s.status === 'offline'
-
-                    return (
-                      <button
-                        key={`${s.name}-${idx}`}
-                        onClick={() => handleServerClick(idx)}
-                        aria-label={`سيرفر ${idx + 1}`}
-                        disabled={isServerOffline}
-                        className={clsx(
-                          "flex items-center justify-center w-14 h-10 rounded-lg border transition-all duration-300 font-black text-base leading-none",
-                          isActive
-                            ? "bg-green-700 border-green-700 text-white shadow-lg shadow-green-700/30"
-                            : isServerOffline
-                              ? "bg-rose-500/5 border-rose-500/20 text-rose-500/50 cursor-not-allowed opacity-50"
-                              : "bg-white/5 border-white/5 text-white hover:bg-white/10 hover:border-white/10 hover:text-white"
-                        )}
-                      >
-                        v{idx + 1}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Ad Banner before Player */}
-              <div className="px-4 py-4">
-                <AdsManager type="banner" position="series-before-player" />
-              </div>
-
-              {/* Embedded Player */}
-              <div className="flex-1 space-y-4 relative">
-              <div className="relative">
-              <EmbedPlayer
-                server={servers[active]}
-                serverIndex={active}
-                cinemaMode={cinemaMode}
-                toggleCinemaMode={() => setCinemaMode(!cinemaMode)}
-                loading={serversLoading}
-                onNextServer={() => active < servers.length - 1 ? setActive(active + 1) : setActive(0)}
-                onReport={() => {}} // Disabled - moved to disclaimer
-                reporting={false}
-                poster={backdrop || poster}
-                lang="ar"
-                servers={servers}
-                activeServerIndex={active}
-                onServerSelect={setActive}
+            {/* Watch CTA — Catalog Only: player is hosted on 4cima.stream */}
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl sm:p-8">
+              <WatchButton
+                label="مشاهدة المسلسل"
+                sublabel={`الموسم ${selectedSeason} - الحلقة ${selectedEpisode}`}
+                onClick={handleWatch}
+                className="mx-auto max-w-md"
               />
-              {showPlayOverlay && active >= 0 && servers[active] && (
-                <div 
-                  onClick={handleOverlayClick}
-                  className="absolute inset-0 z-10 cursor-pointer flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors"
-                >
-                  <div className="w-16 h-16 rounded-full bg-red-600/90 hover:bg-red-500 hover:scale-110 transition-all flex items-center justify-center shadow-2xl">
-                    <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </div>
-                </div>
-              )}
-              </div>
-
-              {/* Disclaimer with Report Button */}
-              <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle size={16} className="text-red-400" />
-                    <span className="text-sm text-red-400 font-bold">إخلاء مسؤولية</span>
-                  </div>
-                  <button
-                    onClick={reportBroken}
-                    disabled={reporting}
-                    className={clsx(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all duration-300 text-xs font-medium",
-                      reporting
-                        ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 cursor-not-allowed"
-                        : "bg-white/5 border-white/5 text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-500/30 hover:text-yellow-300"
-                    )}
-                  >
-                    <AlertTriangle size={14} />
-                    {reporting ? 'جاري الإبلاغ...' : 'إبلاغ عن مشكلة'}
-                  </button>
-                </div>
-                <p className="text-sm text-zinc-400">
+              {/* Disclaimer */}
+              <div className="mt-6 flex items-start gap-2 text-xs leading-relaxed text-zinc-500">
+                <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-red-400" />
+                <p>
                   جميع المحتويات المعروضة يتم جلبها تلقائياً من مصادر خارجية. الموقع غير مسؤول عن أي محتوى معروض.
                 </p>
-              </div>
               </div>
             </div>
           </div>
