@@ -462,28 +462,24 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
   const runtimeLabel = typeof runtime === 'number' && runtime > 0
     ? `${Math.floor(runtime / 60)}س ${runtime % 60}د`
     : '';
-  const infoLeft = [
-    `<span class="info-badge info-badge-${isTv ? 'tv' : 'movie'}">${isTv ? 'مسلسل' : 'فيلم'}</span>`,
-    (genres || []).map((g) => `<span class="info-genre" style="${genreChipStyle(g)}">${esc(g)}</span>`).join(''),
-  ].filter(Boolean).join('');
+  // Type badge + AR/EN title frame now live in the header, next to the logo,
+  // using the same title/titleEn/type that used to feed info-row.
+  const arHtml = title ? `<span class="info-title-ar" dir="auto">${esc(title)}</span>` : '';
+  const enHtml = titleEn && titleEn !== title ? `<span class="info-title-en" dir="ltr">${esc(titleEn)}</span>` : '';
+  const titlesRow = (arHtml || enHtml)
+    ? `<span class="info-titles info-titles-${isTv ? 'tv' : 'movie'}">${arHtml}${enHtml}</span>` : '';
+  const headerBadge = (arHtml || enHtml)
+    ? `<span class="info-badge info-badge-${isTv ? 'tv' : 'movie'}">${isTv ? 'مسلسل' : 'فيلم'}</span>` : '';
+  // info-row keeps only the fact chips (genres + year + runtime + rating),
+  // balanced to fill the width now that the name has moved to the header.
+  const infoGenres = (genres || []).map((g) => `<span class="info-genre" style="${genreChipStyle(g)}">${esc(g)}</span>`).join('');
   const infoRight = [
     (year ? `<span class="info-chip info-chip-year" dir="ltr">${esc(year)}</span>` : ''),
     (runtimeLabel ? `<span class="info-chip info-chip-runtime">${runtimeLabel}</span>` : ''),
     (rating ? `<span class="info-chip info-chip-rating" dir="ltr">★ ${esc(rating)}</span>` : ''),
   ].filter(Boolean).join('');
-  const arHtml = title ? `<span class="info-title-ar" dir="auto">${esc(title)}</span>` : '';
-  const enHtml = titleEn && titleEn !== title ? `<span class="info-title-en" dir="ltr">${esc(titleEn)}</span>` : '';
-  const titlesRow = (arHtml || enHtml)
-    ? `<span class="info-titles info-titles-${isTv ? 'tv' : 'movie'}">${arHtml}${enHtml}</span>`
-    : '';
-  const hasInfoRow = !!(infoLeft || titlesRow || infoRight);
-  const infoRowHtml = hasInfoRow ? `<div class="info-row">${[
-    infoLeft,
-    infoLeft && titlesRow ? '<span class="info-sep" aria-hidden="true"></span>' : '',
-    titlesRow,
-    (titlesRow || infoLeft) && infoRight ? '<span class="info-sep" aria-hidden="true"></span>' : '',
-    infoRight,
-  ].filter(Boolean).join('')}</div>` : '';
+  const infoRowHtml = (infoGenres || infoRight)
+    ? `<div class="info-row">${infoGenres}${infoRight}</div>` : '';
 
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -499,22 +495,22 @@ html,body{height:100%;font-family:Cairo,sans-serif;background:var(--bg);color:va
 body{display:flex;flex-direction:column}
 header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(0,0,0,.5);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
 .logo-wrap{display:flex;align-items:center;gap:8px;height:44px}
-.logo{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;text-decoration:none;cursor:pointer;transition:transform .15s}
+.logo{display:inline-flex;align-items:center;gap:8px;font-size:26px;font-weight:900;line-height:1.2;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;text-decoration:none;cursor:pointer;transition:transform .15s;flex-shrink:0}
 .logo:hover{transform:scale(1.05)}
 .title-col{display:flex;flex-direction:column;justify-content:center;min-width:0}
 .title-ar{font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
 .title-en{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;line-height:1.2}
-.back-btn{margin-right:auto;padding:9px 20px;border-radius:10px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:14px;font-weight:800;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35);height:44px;display:flex;align-items:center}
+.back-btn{margin-right:auto;padding:8px 20px;border-radius:10px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:16px;font-weight:800;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35);height:44px;display:flex;align-items:center;flex-shrink:0}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
-.info-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 16px;background:rgba(0,0,0,.35);border-bottom:1px solid var(--border)}
-.info-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}
+.info-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;padding:14px 16px;background:rgba(0,0,0,.35);border-bottom:1px solid var(--border)}
+.info-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;flex-shrink:0}
 .info-badge-movie{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);color:#f87171}
 .info-badge-tv{background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.3);color:#22d3ee}
-.info-genre{padding:3px 10px;border-radius:8px;font-size:10px;font-weight:800;letter-spacing:.05em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);white-space:nowrap}
-.info-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.1);color:#e4e4e7;white-space:nowrap}
+.info-genre{padding:3.6px 12px;border-radius:8px;font-size:12px;font-weight:800;letter-spacing:.05em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);white-space:nowrap}
+.info-chip{display:inline-flex;align-items:center;gap:4px;padding:3.6px 12px;border-radius:999px;font-size:14.4px;font-weight:700;background:rgba(255,255,255,.1);color:#e4e4e7;white-space:nowrap}
 .info-chip-rating{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.2);color:#eab308}
 .info-sep{width:1px;height:16px;background:rgba(255,255,255,.15);flex-shrink:0}
-.info-titles{display:inline-flex;align-items:baseline;gap:8px;padding:4px 14px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden}
+.info-titles{display:inline-flex;align-items:baseline;gap:8px;padding:4px 14px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden;min-width:0;flex:0 1 auto}
 .info-titles-movie{background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.35)}
 .info-titles-tv{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.35)}
 .info-title-ar{font-size:18px;font-weight:900;color:#f4f4f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -522,10 +518,12 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .info-titles-movie .info-title-en{color:#f87171}
 .info-titles-tv .info-title-en{color:#22d3ee}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
-.server-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);scrollbar-width:thin;scrollbar-color:#333 transparent}
-.server-tab{flex-shrink:0;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.055);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
+.server-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
+.server-bar{flex:1 1 auto;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;padding-bottom:2px}
+.server-tab{flex-shrink:0;padding:8.4px 16.8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.55);color:#e5e7eb;font-size:14.4px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
 .server-tab:hover{border-color:var(--red);color:#fff}
 .server-tab.active{background:linear-gradient(135deg,var(--red),var(--orange));border-color:transparent;color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.35)}
+.server-hint{flex:1 1 300px;min-width:250px;color:#4ade80;font-size:18.72px;font-weight:700;line-height:1.45;text-align:right;align-self:center}
 .ep-picker{display:flex;gap:8px;padding:10px 16px;flex-wrap:wrap;align-items:center;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border)}
 .ep-label{font-size:12px;font-weight:700;color:var(--cyan);white-space:nowrap}
 select{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:12px;font-family:inherit;cursor:pointer}
@@ -539,7 +537,6 @@ iframe{width:100%;height:100%;border:none;display:block;background:#000}
 .error-msg{color:#f87171;font-weight:700;font-size:16px}
 .status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.85);color:var(--muted);font-size:14px;text-align:center;padding:20px;z-index:5}
 .status-title{font-size:15px;font-weight:800;color:#fff}
-.status-note{font-size:18px;color:#d1d5db;line-height:1.7;max-width:460px;text-align:center}
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 footer{padding:10px;text-align:center;font-size:11px;color:#4b5563;border-top:1px solid var(--border)}
@@ -549,14 +546,17 @@ footer a:hover{color:var(--muted)}
 </head>
 <body style="${bgStyle}">
 <header>
-  <div class="logo-wrap">
-    <a class="logo" href="https://4cima.com" target="_blank" rel="noopener" title="4cima.com">🎬 4cima</a>
-  </div>
+  <a class="logo" href="https://4cima.com" target="_blank" rel="noopener" title="4cima.com">🎬 4cima</a>
+  ${headerBadge}
+  ${titlesRow}
   <a class="back-btn" href="${esc(refUrl)}">↩ العودة للصفحة</a>
 </header>
 <main>
   ${infoRowHtml}
-  <div class="server-bar" id="serverBar" aria-label="مصادر المشاهدة"></div>
+  <div class="server-row">
+    <div class="server-bar" id="serverBar" aria-label="مصادر المشاهدة"></div>
+    <div class="server-hint" id="serverHint" role="note">ابحث عن الترجمة العربية من زر الترجمة CC في الشريط السفلي أو من أيقونة الإعدادات داخل الشريط. إن لم تجدها غيّر السيرفر وجرّب فيه.</div>
+  </div>
   ${isTv ? `<div class="ep-picker" id="epPicker">
     <span class="ep-label">الموسم:</span>
     <select id="seasonSelect" aria-label="الموسم"></select>
@@ -567,7 +567,6 @@ footer a:hover{color:var(--muted)}
     <div class="status" id="status">
       <div class="spinner"></div>
       <span class="status-title">جاري تحميل المشغّل…</span>
-      <span class="status-note">ابحث عن الترجمة العربية من زر الترجمة CC في الشريط السفلي أو من أيقونة الإعدادات داخل الشريط. إن لم تجدها غيّر السيرفر وجرّب فيه.</span>
     </div>
     <iframe id="player" allow="fullscreen;autoplay;encrypted-media" allowfullscreen title="4cima Player"></iframe>
   </div>
@@ -636,15 +635,10 @@ footer a:hover{color:var(--muted)}
 
   function load(u) {
     showStatus();
-    // AutoEmbed (server 8) only: dynamic sandbox blocks popups/ad-windows but
-    // still lets the embed run (scripts/same-origin/forms/presentation). No
-    // allow-popups and no allow-top-navigation. Direct servers (1–7) run
-    // fully open — sandbox is removed entirely before loading their src.
-    if (active && active.id === 'autoembed_co') {
-      P.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
-    } else {
-      P.removeAttribute('sandbox');
-    }
+    // Never a sandbox on the iframe for ANY server (1–8). AutoEmbed (server 8)
+    // rejects a sandboxed frame with "Playback blocked… sandboxed frame", so we
+    // always clear it. Ad handling stays on the proxy + window.open no-op.
+    P.removeAttribute('sandbox');
     P.src = u;
   }
 
