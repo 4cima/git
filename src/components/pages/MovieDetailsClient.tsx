@@ -632,7 +632,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                     onClick={toggleCardState}
                     disabled={stateLoading}
                     className={clsx(
-                      "group relative flex w-[86px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white shadow-xl transition-transform duration-200 active:scale-95",
+                      "group relative flex w-[86px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-zinc-800 text-white shadow-xl transition-transform duration-200 active:scale-95 hover:bg-zinc-700",
                       stateLoading && "opacity-60 cursor-not-allowed"
                     )}
                     title={
@@ -648,15 +648,15 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                   >
                     <span
                       className={clsx(
-                        "flex h-11 w-11 items-center justify-center rounded-full bg-zinc-400/25 ring-2 ring-white/40 transition-colors",
+                        "flex h-11 w-11 items-center justify-center rounded-full bg-zinc-700 transition-colors",
                         cardState === 'favorite'
-                          ? "ring-red-300"
+                          ? "text-red-500"
                           : cardState === 'completed'
-                          ? "ring-green-300"
-                          : "ring-white/30"
+                          ? "text-green-500"
+                          : "text-zinc-200"
                       )}
                     >
-                      <Heart className={clsx("h-6 w-6", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
+                      <Heart className={clsx("h-7 w-7", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
                     </span>
                   </button>
                 )}

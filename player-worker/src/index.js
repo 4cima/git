@@ -24,12 +24,25 @@
 const PLAY_BASE = 'https://4cima.com';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/original/';
 
-// CSP removed per user request: some embed servers were blocked by
-// frame-ancestors / style-src. Only lightweight headers remain.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src https://fonts.gstatic.com data:",
+  "img-src 'self' data: blob: https://image.tmdb.org https://*.tmdb.org",
+  "frame-src *",
+  "media-src *",
+  "connect-src 'self' https://4cima.com https://www.4cima.com https://4cima.stream",
+  "frame-ancestors 'self' https://4cima.com https://www.4cima.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+].join('; ');
+
 const COMMON_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'encrypted-media *, fullscreen *',
+  'Referrer-Policy': 'no-referrer-when-downgrade',
+  'Permissions-Policy': 'fullscreen=*, encrypted-media=*, autoplay=*',
+  'Content-Security-Policy': CSP,
 };
 
 const HTML_HEADERS = {
@@ -377,11 +390,13 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
 html,body{height:100%;font-family:Cairo,sans-serif;background:var(--bg);color:var(--text)}
 body{display:flex;flex-direction:column}
 header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(0,0,0,.5);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
-.logo{display:inline-flex;align-items:center;gap:8px;font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;text-decoration:none;cursor:pointer;transition:transform .15s}
+.logo-wrap{display:flex;align-items:center;gap:8px;height:44px}
+.logo{display:inline-flex;align-items:center;gap:8px;font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;text-decoration:none;cursor:pointer;transition:transform .15s}
 .logo:hover{transform:scale(1.05)}
-.title-ar{font-size:16px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32vw}
-.title-en{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:24vw;direction:ltr}
-.back-btn{margin-right:auto;padding:9px 20px;border-radius:10px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:14px;font-weight:800;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35)}
+.title-col{display:flex;flex-direction:column;justify-content:center;min-width:0}
+.title-ar{font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.title-en{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;line-height:1.2}
+.back-btn{margin-right:auto;padding:9px 20px;border-radius:10px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:14px;font-weight:800;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35);height:44px;display:flex;align-items:center}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
 .server-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);scrollbar-width:thin;scrollbar-color:#333 transparent}
@@ -409,9 +424,13 @@ footer a:hover{color:var(--muted)}
 </head>
 <body style="${bgStyle}">
 <header>
-  <a class="logo" href="https://4cima.com" target="_blank" rel="noopener" title="4cima.com">🎬 4cima</a>
-  ${title ? `<span class="title-ar" dir="auto">${esc(title)}</span>` : ''}
-  ${titleEn && titleEn !== title ? `<span class="title-en" dir="ltr">${esc(titleEn)}</span>` : ''}
+  <div class="logo-wrap">
+    <a class="logo" href="https://4cima.com" target="_blank" rel="noopener" title="4cima.com">🎬 4cima</a>
+    <div class="title-col">
+      ${title ? `<span class="title-ar" dir="auto">${esc(title)}</span>` : ''}
+      ${titleEn && titleEn !== title ? `<span class="title-en" dir="ltr">${esc(titleEn)}</span>` : ''}
+    </div>
+  </div>
   <a class="back-btn" href="${esc(refUrl)}">↩ العودة للصفحة</a>
 </header>
 <main>
