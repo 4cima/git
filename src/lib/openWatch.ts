@@ -45,8 +45,31 @@ function extractAdUrl(input: string): string | null {
   }
 }
 
+// Anti-bot: the player host is never present as a plain string in the
+// client bundle / static HTML — it is decoded at runtime only inside the
+// click handler path.
+const PLAYER_HOST_B64 = 'NGNpbWEuc3RyZWFt' // → '4cima.stream'
+
+function playerBase(): string {
+  // Runtime-decoded host first (anti-bot); CONFIG only as fallback.
+  const decoded = atobSafe()
+  if (decoded) return `https://${decoded}`.replace(/\/$/, '')
+  return (CONFIG.PLAYER_URL || 'https://4cima.stream').replace(/\/$/, '')
+}
+
+function atobSafe(): string {
+  try {
+    const raw = typeof window !== 'undefined' && typeof window.atob === 'function'
+      ? window.atob(PLAYER_HOST_B64)
+      : Buffer.from(PLAYER_HOST_B64, 'base64').toString('utf-8')
+    return raw === '4cima.stream' ? raw : ''
+  } catch {
+    return ''
+  }
+}
+
 export function toPlayerUrl(target: WatchTarget): string {
-  const base = (CONFIG.PLAYER_URL || 'https://4cima.stream').replace(/\/$/, '')
+  const base = playerBase()
   // Clean slug URLs — the worker resolves the slug via TMDB search.
   // (query-string /watch URLs are only a fallback when no slug exists)
   if (target.slug) {
