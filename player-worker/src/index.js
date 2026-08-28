@@ -109,8 +109,8 @@ const BASE_OVERRIDES = {
 };
 
 // Servers routed through /api/embed-proxy (often ISP-blocked in Egypt).
-// OWNER TEST: proxies disabled — servers 1,2,4,5 now load directly like 3,6,7,8.
-const PROXIED_IDS = new Set([]);
+// OWNER: proxy AutoEmbed (server 8) only — kills its ad script; 1–7 stay direct.
+const PROXIED_IDS = new Set(['autoembed_co']);
 
 const appendParam = (url, key, value) =>
   new RegExp(`([?&])${key}=`, 'i').test(url)
@@ -390,6 +390,56 @@ const esc = (v) => String(v == null ? '' : v)
 // Serialize data for an inline <script> without letting "</script>" break out.
 const jsonForScript = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
+// Genre chip colors — ported 1:1 from src/utils/genreColors.ts (getGenreColor).
+// Each pair: [background, border] — Tailwind palette hex equivalents.
+const GENRE_COLORS = {
+  'action': '#450a0a,#7f1d1d',           // bg-red-950 / border-red-900
+  'أكشن': '#450a0a,#7f1d1d',
+  'drama': '#6b21a8,#7e22ce',            // bg-purple-800 / border-purple-700
+  'دراما': '#6b21a8,#7e22ce',
+  'comedy': '#a16207,#ca8a04',           // bg-yellow-700 / border-yellow-600
+  'كوميديا': '#a16207,#ca8a04',
+  'horror': '#1f2937,#374151',           // bg-gray-800 / border-gray-700
+  'رعب': '#1f2937,#374151',
+  'romance': '#9d174d,#be185d',          // bg-pink-800 / border-pink-700
+  'رومانسي': '#9d174d,#be185d',
+  'science fiction': '#155e75,#0e7490',  // bg-cyan-800 / border-cyan-700
+  'sci-fi': '#155e75,#0e7490',
+  'خيال علمي': '#155e75,#0e7490',
+  'adventure': '#065f46,#047857',        // bg-emerald-800 / border-emerald-700
+  'مغامرة': '#065f46,#047857',
+  'thriller': '#9a3412,#c2410c',         // bg-orange-800 / border-orange-700
+  'إثارة': '#9a3412,#c2410c',
+  'crime': '#450a0a,#7f1d1d',            // bg-red-950 / border-red-900
+  'جريمة': '#450a0a,#7f1d1d',
+  'fantasy': '#3730a3,#4338ca',          // bg-indigo-800 / border-indigo-700
+  'فانتازيا': '#3730a3,#4338ca',
+  'animation': '#1e40af,#1d4ed8',        // bg-blue-800 / border-blue-700
+  'أنيميشن': '#1e40af,#1d4ed8',
+  'رسوم متحركة': '#1e40af,#1d4ed8',
+  'family': '#166534,#15803d',           // bg-green-800 / border-green-700
+  'عائلي': '#166534,#15803d',
+  'war': '#334155,#475569',              // bg-slate-700 / border-slate-600
+  'حرب': '#334155,#475569',
+  'history': '#92400e,#b45309',          // bg-amber-800 / border-amber-700
+  'تاريخي': '#92400e,#b45309',
+  'mystery': '#5b21b6,#6d28d9',          // bg-violet-800 / border-violet-700
+  'غموض': '#5b21b6,#6d28d9',
+  'documentary': '#115e59,#0f766e',      // bg-teal-800 / border-teal-700
+  'وثائقي': '#115e59,#0f766e',
+  'western': '#7c2d12,#9a3412',          // bg-orange-900 / border-orange-800
+  'غربي': '#7c2d12,#9a3412',
+  'music': '#86198f,#a21caf',            // bg-fuchsia-800 / border-fuchsia-700
+  'موسيقي': '#86198f,#a21caf',
+};
+const GENRE_DEFAULT = '#3f3f46,#52525b'; // defaultGenreColor: bg-zinc-700 / border-zinc-600
+
+function genreChipStyle(genre) {
+  const pair = GENRE_COLORS[String(genre || '').toLowerCase().trim()] || GENRE_DEFAULT;
+  const [bg, bd] = pair.split(',');
+  return `background:${bg};border:1px solid ${bd};color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.3);`;
+}
+
 function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, servers, seasons, episodes, backdropUrl, backUrl, refUrl, year, runtime, rating, genres }) {
   const isTv = mediaType === 'tv';
   const pageTitle = title
@@ -414,7 +464,7 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     : '';
   const infoLeft = [
     `<span class="info-badge info-badge-${isTv ? 'tv' : 'movie'}">${isTv ? 'مسلسل' : 'فيلم'}</span>`,
-    (genres || []).map((g) => `<span class="info-genre">${esc(g)}</span>`).join(''),
+    (genres || []).map((g) => `<span class="info-genre" style="${genreChipStyle(g)}">${esc(g)}</span>`).join(''),
   ].filter(Boolean).join('');
   const infoRight = [
     (year ? `<span class="info-chip info-chip-year" dir="ltr">${esc(year)}</span>` : ''),
@@ -460,11 +510,11 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .info-badge-movie{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);color:#f87171}
 .info-badge-tv{background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.3);color:#22d3ee}
 .info-genre{padding:3px 10px;border-radius:8px;font-size:10px;font-weight:800;letter-spacing:.05em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);white-space:nowrap}
-.info-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.1);color:var(--text);white-space:nowrap}
-.info-chip-rating{background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.3);color:#eab308}
+.info-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.1);color:#e4e4e7;white-space:nowrap}
+.info-chip-rating{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.2);color:#eab308}
 .info-sep{width:1px;height:16px;background:rgba(255,255,255,.15);flex-shrink:0}
-.info-title-ar{font-size:18px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.info-title-en{font-size:14.4px;font-weight:700;color:#d1d5db;direction:ltr;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.info-title-ar{font-size:18px;font-weight:900;color:#f4f4f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.info-title-en{font-size:14.4px;font-weight:600;color:#a1a1aa;direction:ltr;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
 .server-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);scrollbar-width:thin;scrollbar-color:#333 transparent}
 .server-tab{flex-shrink:0;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.055);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
@@ -481,6 +531,11 @@ select option{background:#111827;color:#e5e7eb}
 .player-wrap{flex:1;display:flex;min-height:0;position:relative}
 iframe{width:100%;height:100%;border:none;display:block;background:#000}
 .error-msg{color:#f87171;font-weight:700;font-size:16px}
+.status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.85);color:var(--muted);font-size:14px;text-align:center;padding:20px;z-index:5}
+.status-title{font-size:15px;font-weight:800;color:#fff}
+.status-note{font-size:12px;color:#d1d5db;line-height:1.7;max-width:420px;text-align:center}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 footer{padding:10px;text-align:center;font-size:11px;color:#4b5563;border-top:1px solid var(--border)}
 footer a{color:#6b7280;text-decoration:none}
 footer a:hover{color:var(--muted)}
@@ -503,6 +558,11 @@ footer a:hover{color:var(--muted)}
     <div class="ep-btns" id="epBtns"></div>
   </div>` : ''}
   <div class="player-wrap">
+    <div class="status" id="status">
+      <div class="spinner"></div>
+      <span class="status-title">جاري تحميل المشغّل…</span>
+      <span class="status-note">ابحث عن الترجمة العربية من زر الترجمة CC في الشريط السفلي أو من أيقونة الإعدادات داخل الشريط. إن لم تجدها غيّر السيرفر وجرّب فيه.</span>
+    </div>
     <iframe id="player" allow="fullscreen;autoplay;encrypted-media" allowfullscreen title="4cima Player"></iframe>
   </div>
 </main>
@@ -512,9 +572,23 @@ footer a:hover{color:var(--muted)}
   'use strict';
   var D = ${boot};
   var P = document.getElementById('player');
+  var S = document.getElementById('status');
   var B = document.getElementById('serverBar');
   var E = document.getElementById('epPicker');
   var active = null;
+  var hideTimer = null;
+
+  // Spinner auto-hides within 2500ms no matter what (even if iframe never fires load).
+  function hideStatus() {
+    if (S) S.style.display = 'none';
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+  }
+  function showStatus() {
+    if (!S) return;
+    S.style.display = 'flex';
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(hideStatus, 2500);
+  }
 
   function pageUrl(sn, en) {
     var s = (sn === undefined) ? D.season : sn;
@@ -554,7 +628,7 @@ footer a:hover{color:var(--muted)}
     return u;
   }
 
-  function load(u) { P.src = u; }
+  function load(u) { showStatus(); P.src = u; }
 
   function selectServer(btn, s) {
     active = s;
@@ -626,6 +700,8 @@ footer a:hover{color:var(--muted)}
 
   renderTabs();
   renderPicker();
+  P.addEventListener('load', hideStatus);
+  showStatus();
 })();
 </script>
 </body>
@@ -778,6 +854,21 @@ async function handleEmbedProxy(url) {
     const u = new URL(target);
     const proxyPrefix = '/api/embed-proxy';
     
+    // Known ad scripts (notably AutoEmbed's aclib.js): serve an empty JS
+    // body instead of the ad. Everything else passes through untouched.
+    const adNeedles = ['aclib.js', 'ads.js', 'adsbygoogle', 'popunder', 'googlesyndication', 'doubleclick'];
+    const adHaystack = (u.hostname + u.pathname).toLowerCase();
+    if (adNeedles.some((n) => adHaystack.includes(n))) {
+      return new Response('', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/javascript; charset=utf-8',
+          'Cache-Control': 'public, max-age=3600',
+          ...COMMON_HEADERS,
+        },
+      });
+    }
+
     const upstream = await fetch(u.toString(), {
       method: 'GET', redirect: 'follow',
       headers: {
