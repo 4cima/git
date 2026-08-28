@@ -629,6 +629,51 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                   </div>
                 </div>
 
+                {/* Watch + favorite row — directly under the titles, above genres */}
+                <div className="mb-5">
+                  <div className="mx-auto flex max-w-md items-stretch gap-3">
+                    <WatchButton
+                      label="مشاهدة المسلسل"
+                      sublabel={`الموسم ${selectedSeason} - الحلقة ${selectedEpisode}`}
+                      onClick={handleWatch}
+                      className="flex-1"
+                    />
+                    {user && (
+                      <button
+                        onClick={toggleCardState}
+                        disabled={stateLoading}
+                        className={clsx(
+                          "group relative flex w-[86px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white shadow-xl transition-transform duration-200 active:scale-95",
+                          stateLoading && "opacity-60 cursor-not-allowed"
+                        )}
+                        title={
+                          cardState === 'neutral' ? 'إضافة للمفضلة' :
+                          cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
+                          'إزالة من تمت المشاهدة'
+                        }
+                        aria-label={
+                          cardState === 'neutral' ? 'إضافة للمفضلة' :
+                          cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
+                          'إزالة من تمت المشاهدة'
+                        }
+                      >
+                        <span
+                          className={clsx(
+                            "flex h-11 w-11 items-center justify-center rounded-full bg-zinc-900/80 ring-1 ring-white/20 transition-colors",
+                            cardState === 'favorite'
+                              ? "text-red-500"
+                              : cardState === 'completed'
+                              ? "text-green-500"
+                              : "text-zinc-300"
+                          )}
+                        >
+                          <Heart className={clsx("h-7 w-7", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium mb-6">
                   {/* Genres on the right */}
                   {genres.length > 0 && genres.map((g: any, idx: number) => {
@@ -893,50 +938,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
               </div>
             </div>
 
-            {/* Watch CTA — Catalog Only: player is hosted on 4cima.stream */}
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl sm:p-8">
-              <div className="mx-auto flex max-w-md items-stretch gap-3">
-                <WatchButton
-                  label="مشاهدة المسلسل"
-                  sublabel={`الموسم ${selectedSeason} - الحلقة ${selectedEpisode}`}
-                  onClick={handleWatch}
-                  className="flex-1"
-                />
-                {user && (
-                  <button
-                    onClick={toggleCardState}
-                    disabled={stateLoading}
-                    className={clsx(
-                      "group relative flex w-[86px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white shadow-xl transition-transform duration-200 active:scale-95",
-                      stateLoading && "opacity-60 cursor-not-allowed"
-                    )}
-                    title={
-                      cardState === 'neutral' ? 'إضافة للمفضلة' :
-                      cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
-                      'إزالة من تمت المشاهدة'
-                    }
-                    aria-label={
-                      cardState === 'neutral' ? 'إضافة للمفضلة' :
-                      cardState === 'favorite' ? 'نقل لتمت المشاهدة' :
-                      'إزالة من تمت المشاهدة'
-                    }
-                  >
-                    <span
-                      className={clsx(
-                        "flex h-11 w-11 items-center justify-center rounded-full bg-zinc-900/80 ring-1 ring-white/20 transition-colors",
-                        cardState === 'favorite'
-                          ? "text-red-500"
-                          : cardState === 'completed'
-                          ? "text-green-500"
-                          : "text-zinc-300"
-                      )}
-                    >
-                      <Heart className={clsx("h-7 w-7", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
-                    </span>
-                  </button>
-                )}
-              </div>
-            </div>
+            {/* Watch CTA moved under the titles above genres */}
           </div>
         </div>
       </div>
