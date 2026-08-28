@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Clock, Calendar, Tv, Heart } from 'lucide-react'
+import { Star, Clock, Calendar, Tv, Heart, Play } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { getGenreColor } from '@/utils/genreColors'
@@ -10,7 +10,6 @@ import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
 import { MovieCard } from '@/components/features/media/MovieCard'
-import { WatchButton } from '@/components/features/media/WatchButton'
 import { useAuth } from '@/hooks/useAuth'
 import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
 
@@ -629,21 +628,66 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                   </div>
                 </div>
 
-                {/* Watch + favorite row — directly under the titles, above genres */}
+                {/* Watch + favorite + season/episode dropdowns — directly under the titles, above genres */}
                 <div className="mb-5">
-                  <div className="mx-auto flex max-w-md items-stretch gap-3">
-                    <WatchButton
-                      label="مشاهدة المسلسل"
-                      sublabel={`الموسم ${selectedSeason} - الحلقة ${selectedEpisode}`}
-                      onClick={handleWatch}
-                      className="flex-1"
-                    />
+                  <div className="mx-auto flex max-w-md flex-wrap items-stretch gap-3">
+                    <div className="relative flex-1 min-w-[220px] group">
+                      <div
+                        aria-hidden="true"
+                        className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 opacity-60 blur-lg transition-opacity duration-300 group-hover:opacity-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleWatch}
+                        className="relative flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 px-5 py-3 text-white shadow-xl transition-transform duration-200 active:scale-95"
+                      >
+                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/25 ring-2 ring-white/30">
+                          <Play className="ml-0.5 h-5 w-5 fill-current" />
+                        </span>
+                        <span className="flex flex-col text-right">
+                          <span className="text-base sm:text-lg leading-tight font-black">مشاهدة المسلسل</span>
+                          <span className="text-xs font-medium leading-tight text-white/85">الموسم {selectedSeason} - الحلقة {selectedEpisode}</span>
+                        </span>
+                      </button>
+                    </div>
+                    {seasons.length > 0 && (
+                      <select
+                        value={selectedSeason}
+                        onChange={(e) => setSelectedSeason(Number(e.target.value))}
+                        className="h-16 flex-shrink-0 rounded-xl bg-zinc-900 border border-white/15 px-3 text-sm font-bold text-white cursor-pointer transition-colors duration-200 hover:border-white/30"
+                        aria-label="اختر الموسم"
+                      >
+                        {seasons
+                          .filter((s: any) => s.season_number > 0)
+                          .map((season: any, idx: number) => (
+                            <option
+                              key={season.id || `season-${season.season_number}-${idx}`}
+                              value={season.season_number}
+                              className="bg-zinc-900 text-white"
+                            >
+                              الموسم {season.season_number}
+                            </option>
+                          ))}
+                      </select>
+                    )}
+                    <select
+                      value={selectedEpisode}
+                      onChange={(e) => setSelectedEpisode(Number(e.target.value))}
+                      className="h-16 flex-shrink-0 rounded-xl bg-zinc-900 border border-white/15 px-3 text-sm font-bold text-white cursor-pointer transition-colors duration-200 hover:border-white/30"
+                      aria-label="اختر الحلقة"
+                    >
+                      {episodes.map((ep) => (
+                        <option key={ep} value={ep} className="bg-zinc-900 text-white">
+                          حلقة {ep}
+                        </option>
+                      ))}
+                    </select>
                     {user && (
                       <button
                         onClick={toggleCardState}
                         disabled={stateLoading}
                         className={clsx(
-                          "group relative flex w-[86px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white shadow-xl transition-transform duration-200 active:scale-95",
+                          "group relative flex w-[68px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-zinc-900 ring-1 ring-white/15 text-white shadow-xl transition-transform duration-200 active:scale-95",
                           stateLoading && "opacity-60 cursor-not-allowed"
                         )}
                         title={
@@ -659,15 +703,15 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                       >
                         <span
                           className={clsx(
-                            "flex h-11 w-11 items-center justify-center rounded-full bg-zinc-900/80 ring-1 ring-white/20 transition-colors",
+                            "flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900/80 ring-1 ring-white/20 transition-colors",
                             cardState === 'favorite'
                               ? "text-red-500"
                               : cardState === 'completed'
                               ? "text-green-500"
-                              : "text-zinc-300"
+                              : "text-zinc-400"
                           )}
                         >
-                          <Heart className={clsx("h-7 w-7", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
+                          <Heart className={clsx("h-6 w-6", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
                         </span>
                       </button>
                     )}
@@ -881,62 +925,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
               </div>
             </div>
 
-            {/* Season Selector with Container */}
-            {seasons.length > 0 && (
-              <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
-                <h3 className="text-lg font-bold text-purple-500 flex items-center gap-2 mb-3">
-                  <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-                  المواسم
-                  <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {seasons
-                    .filter((s: any) => s.season_number > 0)
-                    .map((season: any, idx: number) => (
-                      <button
-                        key={season.id || `season-${season.season_number}-${idx}`}
-                        onClick={() => setSelectedSeason(season.season_number)}
-                        className={clsx(
-                          'px-2.5 py-1.5 rounded-lg transition-all duration-300 font-medium',
-                          selectedSeason === season.season_number
-                            ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        )}
-                      >
-                        <div className="text-[9px] font-bold leading-tight">الموسم</div>
-                        <div className="text-sm font-black leading-tight">{season.season_number}</div>
-                        <div className="text-[8px] font-semibold opacity-90 leading-tight">{season.episode_count} حلقة</div>
-                      </button>
-                    ))}
-                </div>
-              </div>
-            )}
-
-            {/* Episodes with Container */}
-            <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
-              <h3 className="text-lg font-bold text-cyan-400 flex items-center gap-2 mb-3">
-                <span className="w-1 h-6 bg-cyan-400 rounded-full"></span>
-                الحلقات
-                <span className="w-1 h-6 bg-cyan-400 rounded-full"></span>
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {episodes.map((ep) => (
-                  <button
-                    key={ep}
-                    onClick={() => setSelectedEpisode(ep)}
-                    className={clsx(
-                      'min-w-[50px] px-2.5 py-1.5 rounded-lg transition-all duration-300 flex flex-col items-center justify-center',
-                      selectedEpisode === ep
-                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105'
-                        : 'bg-white/10 hover:bg-white/20 hover:scale-105'
-                    )}
-                  >
-                    <div className="text-[9px] opacity-90 font-medium leading-tight">حلقة</div>
-                    <div className="text-sm font-black leading-tight">{ep}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Seasons/episodes selection moved to dropdowns in the action row. */}
 
             {/* Watch CTA moved under the titles above genres */}
           </div>

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Calendar, Clock, Film, Heart } from 'lucide-react'
+import { Star, Calendar, Clock, Film, Heart, Play } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { getGenreColor } from '@/utils/genreColors'
@@ -10,7 +10,6 @@ import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
 import { MovieCard } from '@/components/features/media/MovieCard'
-import { WatchButton } from '@/components/features/media/WatchButton'
 import { useAuth } from '@/hooks/useAuth'
 import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
 
@@ -413,19 +412,32 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
                 {/* Watch + favorite row — directly under the titles, above genres */}
                 <div className="mb-5">
-                  <div className="mx-auto flex max-w-md items-stretch gap-3">
-                    <WatchButton
-                      label="مشاهدة الفيلم"
-                      sublabel="تشغيل فوري بجودة عالية"
-                      onClick={handleWatch}
-                      className="flex-1"
-                    />
+                  <div className="mx-auto flex max-w-md flex-wrap items-stretch gap-3">
+                    <div className="relative flex-1 min-w-[220px] group">
+                      <div
+                        aria-hidden="true"
+                        className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 opacity-60 blur-lg transition-opacity duration-300 group-hover:opacity-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleWatch}
+                        className="relative flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 px-5 py-3 text-white shadow-xl transition-transform duration-200 active:scale-95"
+                      >
+                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/25 ring-2 ring-white/30">
+                          <Play className="ml-0.5 h-5 w-5 fill-current" />
+                        </span>
+                        <span className="flex flex-col text-right">
+                          <span className="text-base sm:text-lg leading-tight font-black">مشاهدة الفيلم</span>
+                          <span className="text-xs font-medium leading-tight text-white/85">تشغيل فوري بجودة عالية</span>
+                        </span>
+                      </button>
+                    </div>
                     {user && (
                       <button
                         onClick={toggleCardState}
                         disabled={stateLoading}
                         className={clsx(
-                          "group relative flex w-[86px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white shadow-xl transition-transform duration-200 active:scale-95",
+                          "group relative flex w-[68px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-zinc-900 ring-1 ring-white/15 text-white shadow-xl transition-transform duration-200 active:scale-95",
                           stateLoading && "opacity-60 cursor-not-allowed"
                         )}
                         title={
@@ -441,15 +453,15 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                       >
                         <span
                           className={clsx(
-                            "flex h-11 w-11 items-center justify-center rounded-full bg-zinc-900/80 ring-1 ring-white/20 transition-colors",
+                            "flex h-9 w-9 items-center justify-center rounded-full bg-zinc-900/80 ring-1 ring-white/20 transition-colors",
                             cardState === 'favorite'
                               ? "text-red-500"
                               : cardState === 'completed'
                               ? "text-green-500"
-                              : "text-zinc-300"
+                              : "text-zinc-400"
                           )}
                         >
-                          <Heart className={clsx("h-7 w-7", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
+                          <Heart className={clsx("h-6 w-6", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
                         </span>
                       </button>
                     )}
