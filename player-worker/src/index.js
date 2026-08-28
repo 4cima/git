@@ -109,7 +109,8 @@ const BASE_OVERRIDES = {
 };
 
 // Servers routed through /api/embed-proxy (often ISP-blocked in Egypt).
-const PROXIED_IDS = new Set(['vidsrc_vip', 'vidrock_ru', 'vidsrc_io', 'vidsrc_me']);
+// OWNER TEST: proxies disabled — servers 1,2,4,5 now load directly like 3,6,7,8.
+const PROXIED_IDS = new Set([]);
 
 const appendParam = (url, key, value) =>
   new RegExp(`([?&])${key}=`, 'i').test(url)
