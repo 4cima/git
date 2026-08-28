@@ -464,7 +464,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .info-chip-rating{background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.3);color:#eab308}
 .info-sep{width:1px;height:16px;background:rgba(255,255,255,.15);flex-shrink:0}
 .info-title-ar{font-size:18px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.info-title-en{font-size:14px;font-weight:600;color:var(--muted);direction:ltr;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.info-title-en{font-size:14.4px;font-weight:700;color:#d1d5db;direction:ltr;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
 .server-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);scrollbar-width:thin;scrollbar-color:#333 transparent}
 .server-tab{flex-shrink:0;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.055);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
@@ -480,9 +480,6 @@ select option{background:#111827;color:#e5e7eb}
 .ep-btn.active{background:var(--cyan);border-color:var(--cyan);color:#000;font-weight:900}
 .player-wrap{flex:1;display:flex;min-height:0;position:relative}
 iframe{width:100%;height:100%;border:none;display:block;background:#000}
-.status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(0,0,0,.85);color:var(--muted);font-size:14px;text-align:center;padding:20px}
-.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 .error-msg{color:#f87171;font-weight:700;font-size:16px}
 footer{padding:10px;text-align:center;font-size:11px;color:#4b5563;border-top:1px solid var(--border)}
 footer a{color:#6b7280;text-decoration:none}
@@ -506,7 +503,6 @@ footer a:hover{color:var(--muted)}
     <div class="ep-btns" id="epBtns"></div>
   </div>` : ''}
   <div class="player-wrap">
-    <div class="status" id="status"><div class="spinner"></div><span>جاري تحميل المشغّل…</span></div>
     <iframe id="player" allow="fullscreen;autoplay;encrypted-media" allowfullscreen title="4cima Player"></iframe>
   </div>
 </main>
@@ -516,16 +512,9 @@ footer a:hover{color:var(--muted)}
   'use strict';
   var D = ${boot};
   var P = document.getElementById('player');
-  var S = document.getElementById('status');
   var B = document.getElementById('serverBar');
   var E = document.getElementById('epPicker');
   var active = null;
-
-  function hideStatus() { if (S) S.style.display = 'none'; }
-  function showStatus(html) { if (!S) return; S.style.display = 'flex'; S.innerHTML = html; }
-  function loadingStatus() {
-    showStatus('<div class="spinner"></div><span>جاري تحميل المشغّل…</span>');
-  }
 
   function pageUrl(sn, en) {
     var s = (sn === undefined) ? D.season : sn;
@@ -565,7 +554,7 @@ footer a:hover{color:var(--muted)}
     return u;
   }
 
-  function load(u) { loadingStatus(); P.src = u; }
+  function load(u) { P.src = u; }
 
   function selectServer(btn, s) {
     active = s;
@@ -592,7 +581,7 @@ footer a:hover{color:var(--muted)}
       var first = B.querySelector('button');
       if (first) selectServer(first, D.servers[0]);
     } else {
-      showStatus('<span class="error-msg">⚠ لا توجد مصادر متاحة الآن</span>');
+      B.innerHTML = '<span class="error-msg">⚠ لا توجد مصادر متاحة الآن</span>';
     }
   }
 
@@ -637,8 +626,6 @@ footer a:hover{color:var(--muted)}
 
   renderTabs();
   renderPicker();
-  P.addEventListener('load', hideStatus);
-  setTimeout(hideStatus, 6000);
 })();
 </script>
 </body>
