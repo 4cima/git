@@ -15,34 +15,18 @@
  *   GET /healthz                              → liveness probe
  *
  * Resolves {slug} → TMDB id via the public TMDB search API.
- * Every HTML response carries:
- *   Content-Security-Policy: frame-ancestors 'self' https://4cima.com
- *   (+ frame-src * so external media iframes work)
+ * NOTE: security headers (CSP / frame-ancestors / X-Frame-Options)
+ * have been REMOVED from player pages by owner request.
  * ============================================================
  */
 
 const PLAY_BASE = 'https://4cima.com';
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/original/';
 
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src https://fonts.gstatic.com data:",
-  "img-src 'self' data: blob: https://image.tmdb.org https://*.tmdb.org",
-  "frame-src *",
-  "media-src *",
-  "connect-src 'self' https://4cima.com https://www.4cima.com https://4cima.stream",
-  "frame-ancestors 'self' https://4cima.com https://www.4cima.com",
-  "object-src 'none'",
-  "base-uri 'self'",
-].join('; ');
-
+// Functional headers only (no security restrictions).
 const COMMON_HEADERS = {
-  'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer-when-downgrade',
   'Permissions-Policy': 'fullscreen=*, encrypted-media=*, autoplay=*',
-  'Content-Security-Policy': CSP,
 };
 
 const HTML_HEADERS = {
@@ -400,7 +384,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
 .server-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);scrollbar-width:thin;scrollbar-color:#333 transparent}
-.server-tab{flex-shrink:0;padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
+.server-tab{flex-shrink:0;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.055);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
 .server-tab:hover{border-color:var(--red);color:#fff}
 .server-tab.active{background:linear-gradient(135deg,var(--red),var(--orange));border-color:transparent;color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.35)}
 .ep-picker{display:flex;gap:8px;padding:10px 16px;flex-wrap:wrap;align-items:center;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border)}
