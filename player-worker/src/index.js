@@ -471,10 +471,11 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     (runtimeLabel ? `<span class="info-chip info-chip-runtime">${runtimeLabel}</span>` : ''),
     (rating ? `<span class="info-chip info-chip-rating" dir="ltr">★ ${esc(rating)}</span>` : ''),
   ].filter(Boolean).join('');
-  const titlesRow = [
-    title ? `<span class="info-title-ar" dir="auto">${esc(title)}</span>` : '',
-    titleEn && titleEn !== title ? `<span class="info-title-en" dir="ltr">${esc(titleEn)}</span>` : '',
-  ].filter(Boolean).join('');
+  const arHtml = title ? `<span class="info-title-ar" dir="auto">${esc(title)}</span>` : '';
+  const enHtml = titleEn && titleEn !== title ? `<span class="info-title-en" dir="ltr">${esc(titleEn)}</span>` : '';
+  const titlesRow = (arHtml || enHtml)
+    ? `<span class="info-titles info-titles-${isTv ? 'tv' : 'movie'}">${arHtml}${enHtml}</span>`
+    : '';
   const hasInfoRow = !!(infoLeft || titlesRow || infoRight);
   const infoRowHtml = hasInfoRow ? `<div class="info-row">${[
     infoLeft,
@@ -498,7 +499,7 @@ html,body{height:100%;font-family:Cairo,sans-serif;background:var(--bg);color:va
 body{display:flex;flex-direction:column}
 header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(0,0,0,.5);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
 .logo-wrap{display:flex;align-items:center;gap:8px;height:44px}
-.logo{display:inline-flex;align-items:center;gap:8px;font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;text-decoration:none;cursor:pointer;transition:transform .15s}
+.logo{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:900;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;text-decoration:none;cursor:pointer;transition:transform .15s}
 .logo:hover{transform:scale(1.05)}
 .title-col{display:flex;flex-direction:column;justify-content:center;min-width:0}
 .title-ar{font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
@@ -513,8 +514,13 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .info-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.1);color:#e4e4e7;white-space:nowrap}
 .info-chip-rating{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.2);color:#eab308}
 .info-sep{width:1px;height:16px;background:rgba(255,255,255,.15);flex-shrink:0}
+.info-titles{display:inline-flex;align-items:baseline;gap:8px;padding:4px 14px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden}
+.info-titles-movie{background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.35)}
+.info-titles-tv{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.35)}
 .info-title-ar{font-size:18px;font-weight:900;color:#f4f4f5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.info-title-en{font-size:14.4px;font-weight:600;color:#a1a1aa;direction:ltr;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.info-title-en{font-size:16.2px;font-weight:700;direction:ltr;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.info-titles-movie .info-title-en{color:#f87171}
+.info-titles-tv .info-title-en{color:#22d3ee}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
 .server-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);scrollbar-width:thin;scrollbar-color:#333 transparent}
 .server-tab{flex-shrink:0;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.055);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
@@ -533,7 +539,7 @@ iframe{width:100%;height:100%;border:none;display:block;background:#000}
 .error-msg{color:#f87171;font-weight:700;font-size:16px}
 .status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.85);color:var(--muted);font-size:14px;text-align:center;padding:20px;z-index:5}
 .status-title{font-size:15px;font-weight:800;color:#fff}
-.status-note{font-size:12px;color:#d1d5db;line-height:1.7;max-width:420px;text-align:center}
+.status-note{font-size:18px;color:#d1d5db;line-height:1.7;max-width:460px;text-align:center}
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 footer{padding:10px;text-align:center;font-size:11px;color:#4b5563;border-top:1px solid var(--border)}
@@ -578,7 +584,7 @@ footer a:hover{color:var(--muted)}
   var active = null;
   var hideTimer = null;
 
-  // Spinner auto-hides within 2500ms no matter what (even if iframe never fires load).
+  // Spinner auto-hides within 5000ms no matter what (even if iframe never fires load).
   function hideStatus() {
     if (S) S.style.display = 'none';
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
@@ -587,7 +593,7 @@ footer a:hover{color:var(--muted)}
     if (!S) return;
     S.style.display = 'flex';
     if (hideTimer) clearTimeout(hideTimer);
-    hideTimer = setTimeout(hideStatus, 2500);
+    hideTimer = setTimeout(hideStatus, 5000);
   }
 
   function pageUrl(sn, en) {
@@ -628,7 +634,19 @@ footer a:hover{color:var(--muted)}
     return u;
   }
 
-  function load(u) { showStatus(); P.src = u; }
+  function load(u) {
+    showStatus();
+    // AutoEmbed (server 8) only: dynamic sandbox blocks popups/ad-windows but
+    // still lets the embed run (scripts/same-origin/forms/presentation). No
+    // allow-popups and no allow-top-navigation. Direct servers (1–7) run
+    // fully open — sandbox is removed entirely before loading their src.
+    if (active && active.id === 'autoembed_co') {
+      P.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
+    } else {
+      P.removeAttribute('sandbox');
+    }
+    P.src = u;
+  }
 
   function selectServer(btn, s) {
     active = s;
@@ -856,7 +874,7 @@ async function handleEmbedProxy(url) {
     
     // Known ad scripts (notably AutoEmbed's aclib.js): serve an empty JS
     // body instead of the ad. Everything else passes through untouched.
-    const adNeedles = ['aclib.js', 'ads.js', 'adsbygoogle', 'popunder', 'googlesyndication', 'doubleclick'];
+    const adNeedles = ['aclib.js', 'ads.js', 'adsbygoogle', 'popunder', 'googlesyndication', 'doubleclick', 'pop.js'];
     const adHaystack = (u.hostname + u.pathname).toLowerCase();
     if (adNeedles.some((n) => adHaystack.includes(n))) {
       return new Response('', {
@@ -912,7 +930,18 @@ async function handleEmbedProxy(url) {
       let htmlText = new TextDecoder('utf-8').decode(body);
       htmlText = insertBaseTag(htmlText, u.origin + '/');
       const rewrittenHtml = rewriteHtmlUrls(htmlText, u.toString(), proxyPrefix);
-      finalBody = new TextEncoder().encode(rewrittenHtml);
+      // Inject a one-time window.open no-op into proxied pages only (AutoEmbed,
+      // server 8). This blocks ad popups without touching the main htmlPage and
+      // without breaking fullscreen.
+      let finalHtml = rewrittenHtml;
+      const popupBlock = '<script>window.open=function(){return null;};</script>';
+      const headClose = finalHtml.match(/<\/head>/i);
+      if (headClose && headClose.index !== undefined) {
+        finalHtml = finalHtml.slice(0, headClose.index) + popupBlock + finalHtml.slice(headClose.index);
+      } else {
+        finalHtml = popupBlock + finalHtml;
+      }
+      finalBody = new TextEncoder().encode(finalHtml);
     }
     
     return new Response(finalBody, { status, headers: responseHeaders });
