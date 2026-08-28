@@ -28,7 +28,7 @@ export interface StreamServer {
 }
 
 // ==========================================
-// Server List (8 Free Servers)
+// Server List (7 Free Servers)
 // ==========================================
 export const STREAM_SERVERS: StreamServer[] = [
   { id: 'vidsrc_vip', name: 'VidSrc.vip', base: 'https://vidrock.net/embed' },
@@ -38,12 +38,10 @@ export const STREAM_SERVERS: StreamServer[] = [
   { id: 'vidsrc_me', name: 'VidSrc.me', base: 'https://vidsrc.me/embed' },
   { id: 'vidlink', name: 'VidLink', base: 'https://vidlink.pro' },
   { id: 'videasy', name: 'Videasy', base: 'https://player.videasy.net' },
-  { id: 'autoembed_co', name: 'AutoEmbed', base: 'https://autoembed.co/movie/tmdb' },
 ];
 
 // Base URL overrides
 const BASE_OVERRIDES: Record<string, string> = {
-  autoembed_co: 'https://autoembed.co',
   vidsrc_io: 'https://vidsrc.io/embed',
   vidsrc_me: 'https://vidsrc.me/embed',
   vidsrc_vip: 'https://vidrock.net/embed',
@@ -69,10 +67,6 @@ const appendParam = (url: string, key: string, value: string): string => {
 const withArabic = (url: string, serverId: string, _mediaType: 'movie' | 'tv'): string => {
   if (!serverId) return url
   const id = serverId.toLowerCase();
-
-  if (id === 'autoembed_co') {
-    return appendParam(appendParam(url, 'lang', 'ar'), 'subtitles', 'ar');
-  }
 
   if (id.startsWith('vidsrc_')) {
     return appendParam(appendParam(url, 'lang', 'ar'), 'sub', 'ar');
@@ -100,14 +94,6 @@ export const buildServerUrl = (
   const id = server.id;
 
   let url = '';
-
-  // AutoEmbed
-  if (id === 'autoembed_co') {
-    url = mediaType === 'movie'
-      ? `${base}/movie/tmdb/${tmdbId}`
-      : `${base}/tv/tmdb/${tmdbId}-${season}-${episode}`;
-    return withArabic(url, id, mediaType);
-  }
 
   // VidSrc.io and other VidSrc variants (vidsrc_vip, vidrock_ru)
   if (id === 'vidsrc_io' || id.startsWith('vidsrc_')) {

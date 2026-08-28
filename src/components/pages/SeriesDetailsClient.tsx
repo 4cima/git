@@ -355,6 +355,9 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
       slug: series?.slug,
       season: selectedSeason,
       episode: selectedEpisode,
+      who: user
+        ? (user.user_metadata?.name || user.email?.split('@')[0] || '').trim()
+        : '',
     })
   }
   // Preload the pop-under URL once so it can fire synchronously on click.

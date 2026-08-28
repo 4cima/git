@@ -254,7 +254,14 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
     const id = Number(effectiveId)
     if (!(Number.isFinite(id) && id > 0)) return
     logWatch()
-    openWatchWithPlayer({ type: 'movie', id, slug: movie?.slug })
+    openWatchWithPlayer({
+      type: 'movie',
+      id,
+      slug: movie?.slug,
+      who: user
+        ? (user.user_metadata?.name || user.email?.split('@')[0] || '').trim()
+        : '',
+    })
   }
 
   // Preload the pop-under URL once so it can fire synchronously on click.

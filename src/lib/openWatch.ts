@@ -8,6 +8,10 @@ export type WatchTarget = {
   slug?: string
   season?: number
   episode?: number
+  /** Optional non-secret display name (username / email-prefix) forwarded to
+   *  the player via ?who= so the logged-in user is greeted there. Never a
+   *  token, cookie or password. */
+  who?: string
 }
 
 // Pop-under ad URL is prefetched once per session so it can be opened
@@ -70,21 +74,23 @@ function atobSafe(): string {
 
 export function toPlayerUrl(target: WatchTarget): string {
   const base = playerBase()
+  const whoParam = target.who ? `?who=${encodeURIComponent(target.who)}` : ''
   // Clean slug URLs — the worker resolves the slug via TMDB search.
   // (query-string /watch URLs are only a fallback when no slug exists)
   if (target.slug) {
     if (target.type === 'tv') {
       const season = target.season ?? 1
       const episode = target.episode ?? 1
-      return `${base}/series/${encodeURIComponent(target.slug)}/season/${season}/episode/${episode}`
+      return `${base}/series/${encodeURIComponent(target.slug)}/season/${season}/episode/${episode}${whoParam}`
     }
-    return `${base}/${encodeURIComponent(target.slug)}`
+    return `${base}/${encodeURIComponent(target.slug)}${whoParam}`
   }
   const u = new URL('/watch', base)
   u.searchParams.set('type', target.type)
   u.searchParams.set('id', String(target.id))
   if (target.season != null) u.searchParams.set('season', String(target.season))
   if (target.episode != null) u.searchParams.set('episode', String(target.episode))
+  if (target.who) u.searchParams.set('who', target.who)
   return u.toString()
 }
 
