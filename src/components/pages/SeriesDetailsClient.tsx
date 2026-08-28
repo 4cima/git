@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Star, Clock, Calendar, Tv, Heart, Play } from 'lucide-react'
+import { Star, Clock, Calendar, Tv, Heart, Play, ChevronDown } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
 import { getGenreColor } from '@/utils/genreColors'
@@ -630,8 +630,8 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
                 {/* Watch + favorite + season/episode dropdowns — directly under the titles, above genres */}
                 <div className="mb-5">
-                  <div className="mx-auto flex max-w-md flex-wrap items-stretch gap-3">
-                    <div className="relative flex-1 min-w-[220px] group">
+                  <div className="mx-auto flex w-full max-w-2xl flex-wrap items-stretch justify-center gap-3">
+                    <div className="relative flex-1 min-w-[140px] max-w-[260px] group">
                       <div
                         aria-hidden="true"
                         className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 opacity-60 blur-lg transition-opacity duration-300 group-hover:opacity-100"
@@ -650,44 +650,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                         </span>
                       </button>
                     </div>
-                    {seasons.length > 0 && (
-                      <select
-                        value={selectedSeason}
-                        onChange={(e) => setSelectedSeason(Number(e.target.value))}
-                        className="h-16 flex-shrink-0 rounded-xl bg-zinc-900 border border-white/15 px-3 text-sm font-bold text-white cursor-pointer transition-colors duration-200 hover:border-white/30"
-                        aria-label="اختر الموسم"
-                      >
-                        {seasons
-                          .filter((s: any) => s.season_number > 0)
-                          .map((season: any, idx: number) => (
-                            <option
-                              key={season.id || `season-${season.season_number}-${idx}`}
-                              value={season.season_number}
-                              className="bg-zinc-900 text-white"
-                            >
-                              الموسم {season.season_number}
-                            </option>
-                          ))}
-                      </select>
-                    )}
-                    <select
-                      value={selectedEpisode}
-                      onChange={(e) => setSelectedEpisode(Number(e.target.value))}
-                      className="h-16 flex-shrink-0 rounded-xl bg-zinc-900 border border-white/15 px-3 text-sm font-bold text-white cursor-pointer transition-colors duration-200 hover:border-white/30"
-                      aria-label="اختر الحلقة"
-                    >
-                      {episodes.map((ep) => (
-                        <option key={ep} value={ep} className="bg-zinc-900 text-white">
-                          حلقة {ep}
-                        </option>
-                      ))}
-                    </select>
                     {user && (
                       <button
                         onClick={toggleCardState}
                         disabled={stateLoading}
                         className={clsx(
-                          "group relative flex w-[68px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-zinc-900 ring-1 ring-white/15 text-white shadow-xl transition-transform duration-200 active:scale-95",
+                          "group relative flex w-[68px] flex-shrink-0 items-center justify-center self-stretch rounded-xl border border-white/15 bg-zinc-900 text-white shadow-xl transition-transform duration-200 active:scale-95",
                           stateLoading && "opacity-60 cursor-not-allowed"
                         )}
                         title={
@@ -715,6 +683,44 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                         </span>
                       </button>
                     )}
+                    {seasons.length > 0 && (
+                      <div className="relative h-16 flex-1 min-w-[110px] max-w-[150px]">
+                        <select
+                          value={selectedSeason}
+                          onChange={(e) => setSelectedSeason(Number(e.target.value))}
+                          aria-label="اختر الموسم"
+                          className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 pr-4 pl-9 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
+                        >
+                          {seasons
+                            .filter((s: any) => s.season_number > 0)
+                            .map((season: any, idx: number) => (
+                              <option
+                                key={season.id || `season-${season.season_number}-${idx}`}
+                                value={season.season_number}
+                                className="bg-zinc-900 text-white"
+                              >
+                                الموسم {season.season_number}
+                              </option>
+                            ))}
+                        </select>
+                        <ChevronDown aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                      </div>
+                    )}
+                    <div className="relative h-16 flex-1 min-w-[110px] max-w-[150px]">
+                      <select
+                        value={selectedEpisode}
+                        onChange={(e) => setSelectedEpisode(Number(e.target.value))}
+                        aria-label="اختر الحلقة"
+                        className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 pr-4 pl-9 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
+                      >
+                        {episodes.map((ep) => (
+                          <option key={ep} value={ep} className="bg-zinc-900 text-white">
+                            حلقة {ep}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                    </div>
                   </div>
                 </div>
 

@@ -412,8 +412,8 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
                 {/* Watch + favorite row — directly under the titles, above genres */}
                 <div className="mb-5">
-                  <div className="mx-auto flex max-w-md flex-wrap items-stretch gap-3">
-                    <div className="relative flex-1 min-w-[220px] group">
+                  <div className="mx-auto flex w-full max-w-2xl flex-wrap items-stretch justify-center gap-3">
+                    <div className="relative flex-1 min-w-[140px] max-w-[260px] group">
                       <div
                         aria-hidden="true"
                         className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 opacity-60 blur-lg transition-opacity duration-300 group-hover:opacity-100"
@@ -437,7 +437,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                         onClick={toggleCardState}
                         disabled={stateLoading}
                         className={clsx(
-                          "group relative flex w-[68px] flex-shrink-0 items-center justify-center self-stretch rounded-2xl bg-zinc-900 ring-1 ring-white/15 text-white shadow-xl transition-transform duration-200 active:scale-95",
+                          "group relative flex w-[68px] flex-shrink-0 items-center justify-center self-stretch rounded-xl border border-white/15 bg-zinc-900 text-white shadow-xl transition-transform duration-200 active:scale-95",
                           stateLoading && "opacity-60 cursor-not-allowed"
                         )}
                         title={
