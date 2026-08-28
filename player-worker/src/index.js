@@ -624,18 +624,114 @@ code{font-size:12px;color:#6b7280}
 // ------------------------------------------------------------------
 // Embed proxy
 // ------------------------------------------------------------------
+// MIME type mapping for proper Content-Type headers
+const MIME_TYPES = {
+  '.js': 'application/javascript',
+  '.mjs': 'application/javascript',
+  '.css': 'text/css',
+  '.html': 'text/html',
+  '.htm': 'text/html',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.eot': 'application/vnd.ms-fontobject',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+};
+
+function getMimeType(pathname) {
+  const ext = pathname.substring(pathname.lastIndexOf('.')).toLowerCase();
+  return MIME_TYPES[ext] || 'application/octet-stream';
+}
+
+function rewriteHtmlUrls(html, baseUrl, proxyPrefix) {
+  const base = new URL(baseUrl);
+  const origin = base.origin;
+  
+  // Rewrite src, href, action, poster, data-src, etc. for relative URLs
+  return html.replace(
+    /(src|href|action|poster|data-src|data-href)\s*=\s*["']([^"']+)["']/gi,
+    (match, attr, url) => {
+      // Skip absolute URLs, data URLs, blob URLs, and javascript:
+      if (/^(https?:)?\/\//i.test(url) || url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('javascript:')) {
+        return match;
+      }
+      // Skip already proxied URLs
+      if (url.startsWith('/api/embed-proxy')) {
+        return match;
+      }
+      // Resolve relative URL against the original base
+      let absoluteUrl;
+      try {
+        absoluteUrl = new URL(url, origin).toString();
+      } catch {
+        return match;
+      }
+      // Rewrite to go through proxy
+      const proxiedUrl = `${proxyPrefix}?url=${encodeURIComponent(absoluteUrl)}`;
+      return `${attr}="${proxiedUrl}"`;
+    }
+  );
+}
+
 async function handleEmbedProxy(url) {
   const target = url.searchParams.get('url');
   if (!target) return new Response('Bad Request — missing url', { status: 400, headers: COMMON_HEADERS });
+  
   try {
     const u = new URL(target);
+    const proxyPrefix = '/api/embed-proxy';
+    
     const upstream = await fetch(u.toString(), {
       method: 'GET', redirect: 'follow',
       headers: { 'User-Agent': 'Mozilla/5.0 (4cima-stream-proxy)' },
     });
-    const ct = upstream.headers.get('content-type') || 'text/html';
-    const body = await upstream.text();
-    return new Response(body, { status: upstream.status, headers: { 'Content-Type': ct, 'X-Frame-Options': 'SAMEORIGIN' } });
+    
+    const contentType = upstream.headers.get('content-type') || '';
+    const isHtml = contentType.includes('text/html');
+    const status = upstream.status;
+    
+    // Get body as array buffer to handle binary content properly
+    const body = await upstream.arrayBuffer();
+    
+    // Determine correct MIME type: never let a wrong upstream type
+    // (missing, octet-stream, or text/plain) break JS/CSS/images.
+    const guessed = getMimeType(u.pathname);
+    const looksWrong =
+      !contentType ||
+      contentType === 'application/octet-stream' ||
+      contentType.startsWith('text/plain');
+    const finalContentType = looksWrong && guessed !== 'application/octet-stream'
+      ? guessed
+      : contentType;
+    
+    const responseHeaders = {
+      'Content-Type': finalContentType,
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'SAMEORIGIN',
+      // Allow caching for static assets
+      'Cache-Control': isHtml ? 'no-store' : 'public, max-age=3600',
+    };
+    
+    // For HTML, rewrite relative URLs to go through proxy
+    let finalBody = body;
+    if (isHtml) {
+      const htmlText = new TextDecoder('utf-8').decode(body);
+      const rewrittenHtml = rewriteHtmlUrls(htmlText, target, proxyPrefix);
+      finalBody = new TextEncoder().encode(rewrittenHtml);
+    }
+    
+    return new Response(finalBody, { status, headers: responseHeaders });
   } catch (e) {
     return new Response('Upstream error', { status: 502, headers: COMMON_HEADERS });
   }
