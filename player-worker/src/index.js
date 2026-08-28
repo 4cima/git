@@ -208,6 +208,46 @@ function normalizeSiteRow(row) {
   const seasons = (Array.isArray(row.seasons) ? row.seasons : [])
     .filter((s) => (s.season_number ?? 0) > 0)
     .map((s) => ({ season_number: s.season_number, episode_count: s.episode_count || 0 }));
+
+  // Year: movies use release_year / release_date; tv uses first_air_date.
+  const year =
+    (row.release_year ? String(row.release_year) : '') ||
+    (row.release_date ? String(row.release_date).slice(0, 4) : '') ||
+    (row.first_air_date ? String(row.first_air_date).slice(0, 4) : '') ||
+    '';
+
+  // Runtime: movies have runtime (minutes); tv has episode_run_time
+  // (number, or a JSON-string/array) — minutes as well.
+  let runtime = null;
+  if (typeof row.runtime === 'number' && row.runtime > 0) {
+    runtime = row.runtime;
+  } else {
+    let ert = row.episode_run_time;
+    if (typeof ert === 'string') {
+      try { ert = JSON.parse(ert); } catch { /* keep raw */ }
+    }
+    if (Array.isArray(ert)) ert = ert[0];
+    if (typeof ert === 'number' && ert > 0) runtime = ert;
+  }
+
+  // Rating: vote_average (0–10).
+  const rating = typeof row.vote_average === 'number' && row.vote_average > 0
+    ? Math.round(row.vote_average * 10) / 10
+    : null;
+
+  // Genres: genres_json is a JSON string (or array) of {name_ar, name_en, name}.
+  let genres = [];
+  let gj = row.genres_json;
+  if (typeof gj === 'string') {
+    try { gj = JSON.parse(gj); } catch { gj = []; }
+  }
+  if (Array.isArray(gj)) {
+    genres = gj
+      .map((g) => (g && typeof g === 'object' ? (g.name_ar || g.name_en || g.name || '') : String(g || '')))
+      .filter(Boolean)
+      .slice(0, 6);
+  }
+
   return {
     tmdbId: row.tmdb_id,
     slug: row.slug || '',
@@ -216,6 +256,10 @@ function normalizeSiteRow(row) {
     backdrop: row.backdrop_path || null,
     poster: row.poster_path || null,
     seasons,
+    year,
+    runtime,
+    rating,
+    genres,
   };
 }
 
@@ -324,6 +368,7 @@ async function handlePlayer(url, slug, mediaType, season = 1, episode = 1, preRe
       slug, mediaType, tmdbId, title, titleEn: resolved.latinTitle, season, episode,
       servers, seasons: seasonsList, episodes: epList,
       backdropUrl, backUrl, refUrl,
+      year: resolved.year, runtime: resolved.runtime, rating: resolved.rating, genres: resolved.genres,
     }),
     {
       status: 200,
@@ -345,7 +390,7 @@ const esc = (v) => String(v == null ? '' : v)
 // Serialize data for an inline <script> without letting "</script>" break out.
 const jsonForScript = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
 
-function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, servers, seasons, episodes, backdropUrl, backUrl, refUrl }) {
+function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, servers, seasons, episodes, backdropUrl, backUrl, refUrl, year, runtime, rating, genres }) {
   const isTv = mediaType === 'tv';
   const pageTitle = title
     ? (isTv
@@ -361,6 +406,33 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     slug, mediaType, tmdbId, season, episode,
     servers, seasons, episodes,
   });
+
+  // Work info row (above the player): only render a chip when the API
+  // actually returned a value — no N/A, no invented data.
+  const runtimeLabel = typeof runtime === 'number' && runtime > 0
+    ? `${Math.floor(runtime / 60)}س ${runtime % 60}د`
+    : '';
+  const infoLeft = [
+    `<span class="info-badge info-badge-${isTv ? 'tv' : 'movie'}">${isTv ? 'مسلسل' : 'فيلم'}</span>`,
+    (genres || []).map((g) => `<span class="info-genre">${esc(g)}</span>`).join(''),
+  ].filter(Boolean).join('');
+  const infoRight = [
+    (year ? `<span class="info-chip info-chip-year" dir="ltr">${esc(year)}</span>` : ''),
+    (runtimeLabel ? `<span class="info-chip info-chip-runtime">${runtimeLabel}</span>` : ''),
+    (rating ? `<span class="info-chip info-chip-rating" dir="ltr">★ ${esc(rating)}</span>` : ''),
+  ].filter(Boolean).join('');
+  const titlesRow = [
+    title ? `<span class="info-title-ar" dir="auto">${esc(title)}</span>` : '',
+    titleEn && titleEn !== title ? `<span class="info-title-en" dir="ltr">${esc(titleEn)}</span>` : '',
+  ].filter(Boolean).join('');
+  const hasInfoRow = !!(infoLeft || titlesRow || infoRight);
+  const infoRowHtml = hasInfoRow ? `<div class="info-row">${[
+    infoLeft,
+    infoLeft && titlesRow ? '<span class="info-sep" aria-hidden="true"></span>' : '',
+    titlesRow,
+    (titlesRow || infoLeft) && infoRight ? '<span class="info-sep" aria-hidden="true"></span>' : '',
+    infoRight,
+  ].filter(Boolean).join('')}</div>` : '';
 
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -383,6 +455,16 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .title-en{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;line-height:1.2}
 .back-btn{margin-right:auto;padding:9px 20px;border-radius:10px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:14px;font-weight:800;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35);height:44px;display:flex;align-items:center}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
+.info-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 16px;background:rgba(0,0,0,.35);border-bottom:1px solid var(--border)}
+.info-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}
+.info-badge-movie{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);color:#f87171}
+.info-badge-tv{background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.3);color:#22d3ee}
+.info-genre{padding:3px 10px;border-radius:8px;font-size:10px;font-weight:800;letter-spacing:.05em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);white-space:nowrap}
+.info-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.1);color:var(--text);white-space:nowrap}
+.info-chip-rating{background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.3);color:#eab308}
+.info-sep{width:1px;height:16px;background:rgba(255,255,255,.15);flex-shrink:0}
+.info-title-ar{font-size:18px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.info-title-en{font-size:14px;font-weight:600;color:var(--muted);direction:ltr;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
 .server-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border);scrollbar-width:thin;scrollbar-color:#333 transparent}
 .server-tab{flex-shrink:0;padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.055);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
@@ -411,14 +493,11 @@ footer a:hover{color:var(--muted)}
 <header>
   <div class="logo-wrap">
     <a class="logo" href="https://4cima.com" target="_blank" rel="noopener" title="4cima.com">🎬 4cima</a>
-    <div class="title-col">
-      ${title ? `<span class="title-ar" dir="auto">${esc(title)}</span>` : ''}
-      ${titleEn && titleEn !== title ? `<span class="title-en" dir="ltr">${esc(titleEn)}</span>` : ''}
-    </div>
   </div>
   <a class="back-btn" href="${esc(refUrl)}">↩ العودة للصفحة</a>
 </header>
 <main>
+  ${infoRowHtml}
   <div class="server-bar" id="serverBar" aria-label="مصادر المشاهدة"></div>
   ${isTv ? `<div class="ep-picker" id="epPicker">
     <span class="ep-label">الموسم:</span>

@@ -402,18 +402,18 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
               {/* Left side: Title, Info, Genres, Description */}
               <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
-                {/* Hero row: type → genres → Arabic name → English name (80%) → year → rating */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-3 mb-6 border-b border-white/10 pb-5">
-                  {/* Type badge */}
-                  <span className="flex items-center gap-1.5 bg-red-500/15 border border-red-500/30 px-3 py-1.5 rounded-full text-red-400 text-xs font-bold shadow-lg whitespace-nowrap">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v4H7V5zm8 8v2h1v-2h-1zm-2-2H7v4h6v-4zm2 0h1V9h-1v2zm1-4V5h-1v2h1zM5 5v2H4V5h1zm0 4H4v2h1V9zm-1 4h1v2H4v-2z" clipRule="evenodd" />
-                    </svg>
-                    فيلم
-                  </span>
+                <div className="flex items-start justify-between gap-4 mb-2">
+                  <div className="flex-1">
+                    <h1 className="text-xl md:text-2xl font-black text-zinc-100">{title}</h1>
+                    {titleEn && titleEn !== title && (
+                      <h2 className="text-xl text-zinc-400 mt-2 font-medium tracking-wide text-left">{titleEn}</h2>
+                    )}
+                  </div>
+                </div>
 
-                  {/* Genres */}
-                  {genres.map((g: any, idx: number) => {
+                <div className="flex flex-wrap items-center gap-2 text-sm font-medium mb-6">
+                  {/* Genres on the right */}
+                  {genres.length > 0 && genres.map((g: any, idx: number) => {
                     const genreColorScheme = getGenreColor(g.name_ar || g.name_en || g.name)
                     return (
                       <span
@@ -425,35 +425,24 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                     )
                   })}
 
-                  <span className="hidden sm:block w-px h-5 bg-white/15" aria-hidden="true" />
+                  {/* Spacer to push next items to the left */}
+                  <div className="flex-grow"></div>
 
-                  {/* Arabic + English titles side by side */}
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-zinc-100 leading-tight">
-                    {title}
-                  </h1>
-                  {titleEn && titleEn !== title && (
-                    <h2 className="text-base sm:text-lg md:text-2xl font-medium tracking-wide text-zinc-400 leading-tight" dir="ltr">
-                      {titleEn}
-                    </h2>
-                  )}
-
-                  <span className="hidden sm:block w-px h-5 bg-white/15" aria-hidden="true" />
-
-                  {/* Year + Rating */}
+                  {/* Year, Runtime, Rating on the left */}
                   {year && (
-                    <span className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-zinc-200 text-xs font-medium whitespace-nowrap">
+                    <span className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full text-zinc-200 text-xs">
                       <Calendar className="w-3.5 h-3.5 text-cyan-400" />
                       {year}
                     </span>
                   )}
                   {movie?.runtime && (
-                    <span className="flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-full text-zinc-200 text-xs font-medium whitespace-nowrap">
+                    <span className="flex items-center gap-1 bg-white/10 px-2 py-1 rounded-full text-zinc-200 text-xs">
                       <Clock className="w-3.5 h-3.5 text-purple-400" />
                       {Math.floor(movie.runtime / 60)}س {movie.runtime % 60}د
                     </span>
                   )}
                   {rating > 0 && (
-                    <span className="flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/20 px-2.5 py-1 rounded-full text-yellow-500 text-xs font-bold whitespace-nowrap">
+                    <span className="flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/20 px-2 py-1 rounded-full text-yellow-500 text-xs">
                       <Star className="w-3.5 h-3.5 fill-current" />
                       {rating}
                     </span>
