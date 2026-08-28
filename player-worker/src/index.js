@@ -478,8 +478,75 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     (runtimeLabel ? `<span class="info-chip info-chip-runtime">${runtimeLabel}</span>` : ''),
     (rating ? `<span class="info-chip info-chip-rating" dir="ltr">★ ${esc(rating)}</span>` : ''),
   ].filter(Boolean).join('');
-  const infoRowHtml = (infoGenres || infoRight)
-    ? `<div class="info-row">${infoGenres}${infoRight}</div>` : '';
+  // Action controls for the info row (details-page style, ported to CSS here).
+  // Heart opens the real login page on 4cima.com; no cross-domain favorites API.
+  const heartBtn = `<button type="button" id="favBtn" class="fav-btn" title="إضافة للمفضلة" aria-label="إضافة للمفضلة"><span class="fav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span></button>`;
+  const chevSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+  const seasonSelect = isTv
+    ? `<div class="dd-wrap"><select id="seasonSelect" class="dd-select" aria-label="اختر الموسم"></select>${chevSvg}</div>`
+    : '';
+  const episodeSelect = isTv
+    ? `<div class="dd-wrap"><select id="episodeSelect" class="dd-select" aria-label="اختر الحلقة"></select>${chevSvg}</div>`
+    : '';
+  const backLabel = isTv ? 'العودة لصفحة المسلسل' : 'العودة لصفحة الفيلم';
+  const infoRowHtml = (infoGenres || infoRight || heartBtn || seasonSelect || episodeSelect)
+    ? `<div class="info-row">${infoGenres}${infoRight}${heartBtn}${seasonSelect}${episodeSelect}</div>` : '';
+
+  // Menu links — absolute URLs on 4cima.com (mirror of QuantumNavbar sidebar,
+  // minus SearchBox). Login is not synchronized across domains this round.
+  const menuNav = [
+    { to: '/', label: 'الرئيسية' },
+    { to: '/movies', label: 'أفلام' },
+    { to: '/series', label: 'مسلسلات' },
+  ];
+  const menuLangs = [
+    { code: 'ar', label: 'عربي', filter: 'ar' },
+    { code: 'en', label: 'أجنبي', filter: 'en' },
+    { code: 'tr', label: 'تركي', filter: 'tr' },
+    { code: 'hi', label: 'هندي', filter: 'hi' },
+    { code: 'ko', label: 'كوري', filter: 'ko' },
+    { code: 'zh', label: 'صيني', filter: 'zh,cn' },
+    { code: 'ja', label: 'ياباني', filter: 'ja' },
+    { code: 'fr', label: 'فرنسي', filter: 'fr' },
+    { code: 'es', label: 'إسباني', filter: 'es' },
+    { code: 'de', label: 'ألماني', filter: 'de' },
+  ];
+  const menuGenres = [
+    { slug: 'action', label: 'أكشن' },
+    { slug: 'comedy', label: 'كوميديا' },
+    { slug: 'drama', label: 'دراما' },
+    { slug: 'romance', label: 'رومانسي' },
+    { slug: 'thriller', label: 'إثارة' },
+    { slug: 'horror', label: 'رعب' },
+    { slug: 'crime', label: 'جريمة' },
+    { slug: 'adventure', label: 'مغامرات' },
+    { slug: 'fantasy', label: 'فانتازيا' },
+    { slug: 'animation', label: 'أنمي' },
+  ];
+  const menuNavHtml = `<div class="menu-grid-3">${menuNav.map((l) => `<a href="https://4cima.com${l.to}" target="_blank" rel="noopener">${l.label}</a>`).join('')}</div>`;
+  const menuLangsHtml = `<div class="menu-grid-2">${menuLangs.map((l) => `<a href="https://4cima.com/movies?language=${encodeURIComponent(l.filter)}" target="_blank" rel="noopener">${l.label}</a>`).join('')}</div>`;
+  const menuGenresHtml = `<div class="menu-grid-2">${menuGenres.map((g) => `<a href="https://4cima.com/movies/genres/${encodeURIComponent(g.slug)}" target="_blank" rel="noopener">${g.label}</a>`).join('')}</div>`;
+  const menuHtml = `<div class="menu-backdrop" id="menuBackdrop" hidden></div>
+<aside class="menu-panel" id="menuPanel" aria-hidden="true">
+  <div class="menu-head">
+    <a href="https://4cima.com/login" target="_blank" rel="noopener" class="menu-login">الدخول</a>
+    <button type="button" id="menuClose" class="menu-close" aria-label="إغلاق">✕</button>
+  </div>
+  <div class="menu-body">
+    <div class="menu-section">
+      <div class="menu-label">القائمة</div>
+      ${menuNavHtml}
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">اللغات</div>
+      ${menuLangsHtml}
+    </div>
+    <div class="menu-section">
+      <div class="menu-label">التصنيفات</div>
+      ${menuGenresHtml}
+    </div>
+  </div>
+</aside>`;
 
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -497,12 +564,15 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .logo-wrap{display:flex;align-items:center;gap:8px;height:44px}
 .logo{display:inline-flex;align-items:center;gap:8px;font-size:26px;font-weight:900;line-height:1.2;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;text-decoration:none;cursor:pointer;transition:transform .15s;flex-shrink:0}
 .logo:hover{transform:scale(1.05)}
+.menu-btn{width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;transition:background .15s}
+.menu-btn:hover{background:rgba(255,255,255,.16)}
+.menu-btn svg{width:22px;height:22px}
 .title-col{display:flex;flex-direction:column;justify-content:center;min-width:0}
 .title-ar{font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
 .title-en{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;line-height:1.2}
 .back-btn{margin-right:auto;padding:8px 20px;border-radius:10px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:16px;font-weight:800;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35);height:44px;display:flex;align-items:center;flex-shrink:0}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
-.info-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;padding:14px 16px;background:rgba(0,0,0,.35);border-bottom:1px solid var(--border)}
+.info-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:10px;padding:14px 16px;background:rgba(0,0,0,.35);border-bottom:1px solid var(--border)}
 .info-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;flex-shrink:0}
 .info-badge-movie{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);color:#f87171}
 .info-badge-tv{background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.3);color:#22d3ee}
@@ -510,6 +580,18 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .info-chip{display:inline-flex;align-items:center;gap:4px;padding:3.6px 12px;border-radius:999px;font-size:14.4px;font-weight:700;background:rgba(255,255,255,.1);color:#e4e4e7;white-space:nowrap}
 .info-chip-rating{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.2);color:#eab308}
 .info-sep{width:1px;height:16px;background:rgba(255,255,255,.15);flex-shrink:0}
+.fav-btn{width:68px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#18181b;cursor:pointer;transition:border-color .15s;color:#a1a1aa}
+.fav-btn:hover{border-color:rgba(255,255,255,.3)}
+.fav-ico{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#27272a;color:#a1a1aa}
+.fav-ico svg{width:24px;height:24px;fill:none;stroke:currentColor}
+.fav-btn[data-state="favorite"] .fav-ico{color:#ef4444}
+.fav-btn[data-state="favorite"] .fav-ico svg,.fav-btn[data-state="completed"] .fav-ico svg{fill:currentColor}
+.fav-btn[data-state="completed"] .fav-ico{color:#22c55e}
+.dd-wrap{position:relative;height:64px;width:130px;flex-shrink:0}
+.dd-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#a1a1aa;pointer-events:none}
+.dd-select{appearance:none;-webkit-appearance:none;height:100%;width:100%;padding-inline-start:12px;padding-inline-end:32px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#18181b;color:#fff;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:border-color .15s}
+.dd-select:hover{border-color:rgba(255,255,255,.3)}
+.dd-select option{background:#18181b;color:#fff}
 .info-titles{display:inline-flex;align-items:baseline;gap:8px;padding:4px 14px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden;min-width:0;flex:0 1 auto}
 .info-titles-movie{background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.35)}
 .info-titles-tv{background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.35)}
@@ -518,57 +600,73 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .info-titles-movie .info-title-en{color:#f87171}
 .info-titles-tv .info-title-en{color:#22d3ee}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
-.server-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
+.server-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
 .server-bar{flex:1 1 auto;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;padding-bottom:2px}
 .server-tab{flex-shrink:0;padding:8.4px 16.8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.55);color:#e5e7eb;font-size:14.4px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
 .server-tab:hover{border-color:var(--red);color:#fff}
 .server-tab.active{background:linear-gradient(135deg,var(--red),var(--orange));border-color:transparent;color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.35)}
-.server-hint{flex:1 1 300px;min-width:250px;color:#4ade80;font-size:18.72px;font-weight:700;line-height:1.45;text-align:right;align-self:center}
-.ep-picker{display:flex;gap:8px;padding:10px 16px;flex-wrap:wrap;align-items:center;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border)}
-.ep-label{font-size:12px;font-weight:700;color:var(--cyan);white-space:nowrap}
-select{padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:12px;font-family:inherit;cursor:pointer}
-select option{background:#111827;color:#e5e7eb}
-.ep-btns{display:flex;flex-wrap:wrap;gap:6px}
-.ep-btn{min-width:48px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}
-.ep-btn:hover{border-color:var(--cyan);color:#fff}
-.ep-btn.active{background:var(--cyan);border-color:var(--cyan);color:#000;font-weight:900}
+.back-btn{flex-shrink:0;padding:8px 20px;border-radius:10px;background:linear-gradient(135deg,var(--red),var(--orange));border:none;color:#fff;font-size:16px;font-weight:800;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35);display:flex;align-items:center}
+.back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
+.player-area{display:flex;align-items:stretch;gap:12px;flex:1;min-height:0;padding:0 16px}
 .player-wrap{flex:1;display:flex;min-height:0;position:relative}
 iframe{width:100%;height:100%;border:none;display:block;background:#000}
+.ad-col{width:180px;flex-shrink:0;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02);min-height:200px;display:none}
 .error-msg{color:#f87171;font-weight:700;font-size:16px}
 .status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.85);color:var(--muted);font-size:14px;text-align:center;padding:20px;z-index:5}
 .status-title{font-size:15px;font-weight:800;color:#fff}
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.sub-hint{display:flex;align-items:flex-start;gap:6px;margin:14px 16px;color:#4ade80;font-size:18.72px;font-weight:700;line-height:1.45;text-align:right}
+.sub-hint svg{width:22px;height:22px;flex-shrink:0;margin-top:4px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1200}
+.menu-panel{position:fixed;top:0;right:0;height:100%;width:240px;background:#0a0c11ef;border-left:1px solid rgba(255,255,255,.1);z-index:1300;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.4)}
+.menu-head{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--border)}
+.menu-login{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:rgba(16,185,129,.2);color:#34d399;font-weight:700;font-size:14px;text-decoration:none}
+.menu-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;border-radius:8px;background:transparent;color:#fff;font-size:18px;cursor:pointer}
+.menu-close:hover{color:#ef4444}
+.menu-body{flex:1;overflow-y:auto;padding:12px}
+.menu-section{margin-bottom:16px}
+.menu-label{font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.menu-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.menu-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.menu-grid-3 a,.menu-grid-2 a{display:flex;align-items:center;justify-content:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,.06);color:#d4d4d8;font-size:12px;font-weight:700;text-decoration:none;text-align:center;transition:background .15s}
+.menu-grid-3 a:hover,.menu-grid-2 a:hover{background:rgba(255,255,255,.14);color:#fff}
+@media(max-width:860px){.ad-col{display:none}}
+@media(min-width:861px){.ad-col{display:block}}
 footer{padding:10px;text-align:center;font-size:11px;color:#4b5563;border-top:1px solid var(--border)}
 footer a{color:#6b7280;text-decoration:none}
 footer a:hover{color:var(--muted)}
 </style>
 </head>
 <body style="${bgStyle}">
+${menuHtml}
 <header>
+  <button type="button" id="menuBtn" class="menu-btn" aria-label="القائمة" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
   <a class="logo" href="https://4cima.com" target="_blank" rel="noopener" title="4cima.com">🎬 4cima</a>
   ${headerBadge}
   ${titlesRow}
-  <a class="back-btn" href="${esc(refUrl)}">↩ العودة للصفحة</a>
 </header>
 <main>
   ${infoRowHtml}
   <div class="server-row">
     <div class="server-bar" id="serverBar" aria-label="مصادر المشاهدة"></div>
-    <div class="server-hint" id="serverHint" role="note">ابحث عن الترجمة العربية من زر الترجمة CC في الشريط السفلي أو من أيقونة الإعدادات داخل الشريط. إن لم تجدها غيّر السيرفر وجرّب فيه.</div>
+    <a class="back-btn" href="${esc(refUrl)}">↩ ${backLabel}</a>
   </div>
-  ${isTv ? `<div class="ep-picker" id="epPicker">
-    <span class="ep-label">الموسم:</span>
-    <select id="seasonSelect" aria-label="الموسم"></select>
-    <span class="ep-label">الحلقة:</span>
-    <div class="ep-btns" id="epBtns"></div>
-  </div>` : ''}
-  <div class="player-wrap">
-    <div class="status" id="status">
-      <div class="spinner"></div>
-      <span class="status-title">جاري تحميل المشغّل…</span>
+  <div class="player-area">
+    <div class="player-wrap">
+      <div class="status" id="status">
+        <div class="spinner"></div>
+        <span class="status-title">جاري تحميل المشغّل…</span>
+      </div>
+      <iframe id="player" allow="fullscreen;autoplay;encrypted-media" allowfullscreen title="4cima Player"></iframe>
     </div>
-    <iframe id="player" allow="fullscreen;autoplay;encrypted-media" allowfullscreen title="4cima Player"></iframe>
+    <aside class="ad-col" id="adCol" aria-label="إعلان"></aside>
+  </div>
+  <div class="sub-hint" id="subHint">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M9.5 9h1.5M13 9h1.5M6 12h12"/></svg>
+    <span>لتفعيل الترجمة العربية ابحث عن زر الترجمة <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M9.5 9h1.5M13 9h1.5M6 12h12"/></svg> او داخل زر الاعدادات <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> بالفيديو اسفل شريط التقدم. إن لم تجدها جرب تغيّر السيرفر وابحث بنفس الطريقة.</span>
   </div>
 </main>
 <footer>شاهد أحدث الأفلام والمسلسلات بجودة عالية على <a href="https://4cima.com" target="_blank" rel="noopener"><strong>4cima.com</strong></a> — بث مباشر عبر <a href="https://4cima.stream" target="_blank" rel="noopener"><strong>4cima.stream</strong></a></footer>
@@ -579,7 +677,13 @@ footer a:hover{color:var(--muted)}
   var P = document.getElementById('player');
   var S = document.getElementById('status');
   var B = document.getElementById('serverBar');
-  var E = document.getElementById('epPicker');
+  var seasonSel = document.getElementById('seasonSelect');
+  var episodeSel = document.getElementById('episodeSelect');
+  var favBtn = document.getElementById('favBtn');
+  var menuBtn = document.getElementById('menuBtn');
+  var menuPanel = document.getElementById('menuPanel');
+  var menuBackdrop = document.getElementById('menuBackdrop');
+  var menuClose = document.getElementById('menuClose');
   var active = null;
   var hideTimer = null;
 
@@ -671,47 +775,73 @@ footer a:hover{color:var(--muted)}
     }
   }
 
-  function renderEps() {
-    var wrap = document.getElementById('epBtns');
-    if (!wrap) return;
-    wrap.innerHTML = '';
+  function renderEpSelect() {
+    if (!episodeSel) return;
+    episodeSel.innerHTML = '';
     (D.episodes || []).forEach(function (ep) {
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'ep-btn' + (ep.episode_number === D.episode ? ' active' : '');
-      btn.textContent = ep.episode_number;
-      btn.title = ep.name || ('الحلقة ' + ep.episode_number);
-      btn.addEventListener('click', function () {
-        D.episode = ep.episode_number;
-        var all = wrap.querySelectorAll('button');
-        for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
-        btn.classList.add('active');
-        history.replaceState(null, '', pageUrl());
-        if (active) load(srcFor(active));
-      });
-      wrap.appendChild(btn);
+      var o = document.createElement('option');
+      o.value = ep.episode_number;
+      o.textContent = 'حلقة ' + ep.episode_number;
+      if (ep.episode_number === D.episode) o.selected = true;
+      episodeSel.appendChild(o);
+    });
+    episodeSel.addEventListener('change', function () {
+      // Episode change: reload the active server src without full navigation
+      // (mirrors the old ep-btn behaviour).
+      D.episode = parseInt(this.value, 10) || 1;
+      history.replaceState(null, '', pageUrl());
+      if (active) load(srcFor(active));
     });
   }
 
-  function renderPicker() {
-    if (!E) return;
-    var ss = document.getElementById('seasonSelect');
+  function renderSeasonSelect() {
+    if (!seasonSel) return;
+    seasonSel.innerHTML = '';
     (D.seasons || []).forEach(function (s) {
       var o = document.createElement('option');
       o.value = s.season_number;
-      o.textContent = 'موسم ' + s.season_number + ' (' + (s.episode_count || 0) + ')';
+      o.textContent = 'الموسم ' + s.season_number + ' (' + (s.episode_count || 0) + ')';
       if (s.season_number === D.season) o.selected = true;
-      ss.appendChild(o);
+      seasonSel.appendChild(o);
     });
-    ss.addEventListener('change', function () {
-      // Full navigation so the worker serves the fresh episode list.
+    seasonSel.addEventListener('change', function () {
+      // Season change: full navigation so the worker serves the fresh episode list.
       window.location.href = pageUrl(parseInt(this.value, 10) || 1, 1);
     });
-    renderEps();
+  }
+
+  function initMenu() {
+    if (!menuPanel || !menuBtn) return;
+    function open() {
+      menuPanel.setAttribute('aria-hidden', 'false');
+      if (menuBackdrop) menuBackdrop.hidden = false;
+      menuBtn.setAttribute('aria-expanded', 'true');
+    }
+    function close() {
+      menuPanel.setAttribute('aria-hidden', 'true');
+      if (menuBackdrop) menuBackdrop.hidden = true;
+      menuBtn.setAttribute('aria-expanded', 'false');
+    }
+    menuBtn.addEventListener('click', function () {
+      if (menuPanel.getAttribute('aria-hidden') === 'true') open(); else close();
+    });
+    if (menuBackdrop) menuBackdrop.addEventListener('click', close);
+    if (menuClose) menuClose.addEventListener('click', close);
+  }
+
+  function initFav() {
+    if (!favBtn) return;
+    favBtn.addEventListener('click', function () {
+      // No cross-domain favorites API this round; open the real login on 4cima.com.
+      window.open('https://4cima.com/login', '_blank');
+    });
   }
 
   renderTabs();
-  renderPicker();
+  renderSeasonSelect();
+  renderEpSelect();
+  initMenu();
+  initFav();
   P.addEventListener('load', hideStatus);
   showStatus();
 })();
