@@ -523,7 +523,7 @@ export function SearchBox() {
                 width: isCollapsed ? 0 : 'auto',
               }}
               transition={{ duration: 0.2 }}
-              className="text-sm font-semibold text-slate-200 group-hover:text-white whitespace-nowrap overflow-hidden"
+              className="hidden sm:block text-sm font-semibold text-slate-200 group-hover:text-white whitespace-nowrap overflow-hidden"
             >
               بحث متقدم
             </motion.span>
