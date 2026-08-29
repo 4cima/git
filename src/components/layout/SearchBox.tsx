@@ -150,6 +150,8 @@ export function SearchBox() {
 
   // Simple auto-collapse on scroll down
   useEffect(() => {
+    if (window.innerWidth < 640) { setIsCollapsed(true); return; }
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       
@@ -890,3 +892,4 @@ export function SearchBox() {
     </div>
   )
 }
+
