@@ -89,26 +89,23 @@ export default {
 // ------------------------------------------------------------------
 const SERVERS = [
   { id: 'vidsrc_vip',   name: 'VidSrc',    base: 'https://vidrock.net/embed' },
-  { id: 'vidrock_ru',   name: 'VidRock',   base: 'https://vidrock.ru/embed' },
   { id: '111movies',    name: '111Movies', base: 'https://111movies.com' },
-  { id: 'vidsrc_io',    name: 'VidSrc.io', base: 'https://vidsrc.io/embed' },
   { id: 'vidsrc_me',    name: 'VidSrc.me', base: 'https://vidsrc.me/embed' },
   { id: 'vidlink',      name: 'VidLink',   base: 'https://vidlink.pro' },
   { id: 'videasy',      name: 'Videasy',   base: 'https://player.videasy.net' },
+  { id: 'autoembed_co', name: 'AutoEmbed', base: 'https://autoembed.co' },
 ];
 
 const BASE_OVERRIDES = {
-  vidsrc_io:    'https://vidsrc.io/embed',
+  autoembed_co: 'https://autoembed.co',
   vidsrc_me:    'https://vidsrc.me/embed',
   vidsrc_vip:   'https://vidrock.net/embed',
-  vidrock_ru:   'https://vidrock.ru/embed',
   vidlink:      'https://vidlink.pro',
   videasy:      'https://player.videasy.net',
 };
 
 // Servers routed through /api/embed-proxy (often ISP-blocked in Egypt).
-// AutoEmbed (server 8) is removed entirely — the visitor sees servers 1–7
-// only, all direct. The embed-proxy handler is kept but left unused.
+// All six servers are direct — the embed-proxy handler is kept but unused.
 const PROXIED_IDS = new Set([]);
 
 const appendParam = (url, key, value) =>
@@ -117,6 +114,7 @@ const appendParam = (url, key, value) =>
     : url + (url.includes('?') ? '&' : '?') + `${key}=${value}`;
 
 const withArabic = (url, id) => {
+  if (id === 'autoembed_co') return appendParam(appendParam(url, 'lang', 'ar'), 'subtitles', 'ar');
   if (id.startsWith('vidsrc_')) return appendParam(appendParam(url, 'lang', 'ar'), 'sub', 'ar');
   return appendParam(url, 'lang', 'ar');
 };
@@ -124,7 +122,15 @@ const withArabic = (url, id) => {
 function buildServerUrl(server, mediaType, tmdbId, season, episode) {
   const base = BASE_OVERRIDES[server.id] || server.base;
   const id = server.id;
-  if (id === 'vidsrc_io' || id.startsWith('vidsrc_') || id === 'vidrock_ru' || id === 'vidsrc_me') {
+  if (id === 'autoembed_co') {
+    return withArabic(
+      mediaType === 'movie'
+        ? `${base}/movie/tmdb/${tmdbId}`
+        : `${base}/tv/tmdb/${tmdbId}-${season}-${episode}`,
+      id
+    );
+  }
+  if (id.startsWith('vidsrc_') || id === 'vidsrc_me') {
     return withArabic(
       mediaType === 'movie'
         ? `${base}/movie/${tmdbId}`
@@ -358,11 +364,14 @@ async function handlePlayer(url, slug, mediaType, season = 1, episode = 1, preRe
   let refUrl = url.searchParams.get('ref') || '';
   if (!/^https:\/\/4cima\.com\//i.test(refUrl)) refUrl = backUrl;
 
+  // Full current watch URL — used as the `next` target for login/logout links.
+  const selfUrl = url.toString();
+
   return new Response(
     htmlPage({
       slug, mediaType, tmdbId, title, titleEn: resolved.latinTitle, season, episode,
       servers, seasons: seasonsList, episodes: epList,
-      backdropUrl, backUrl, refUrl, who,
+      backdropUrl, backUrl, refUrl, who, selfUrl,
       year: resolved.year, runtime: resolved.runtime, rating: resolved.rating, genres: resolved.genres,
     }),
     {
@@ -435,7 +444,7 @@ function genreChipStyle(genre) {
   return `background:${bg};border:1px solid ${bd};color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.3);`;
 }
 
-function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, servers, seasons, episodes, backdropUrl, backUrl, refUrl, who, year, runtime, rating, genres }) {
+function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, servers, seasons, episodes, backdropUrl, backUrl, refUrl, who, selfUrl, year, runtime, rating, genres }) {
   const isTv = mediaType === 'tv';
   const displayName = safeDecode(who || '').trim();
   const pageTitle = title
@@ -522,6 +531,10 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
   const loginSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>';
   // Header: login link when anonymous; a user chip + profile/logout when a
   // display name was forwarded via ?who= (or a direct player link, who empty).
+  // Login/logout target back to this exact watch URL (4cima.stream only).
+  const nextParam = encodeURIComponent(selfUrl || 'https://4cima.stream/');
+  const loginUrl = `https://4cima.com/login?next=${nextParam}`;
+  const logoutUrl = `https://4cima.com/api/auth/logout?next=${nextParam}`;
   const menuHeadHtml = displayName
     ? `<div class="menu-user">
          <span class="menu-avatar">${esc(displayName.charAt(0).toUpperCase())}</span>
@@ -529,10 +542,10 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
          <button type="button" id="menuUserToggle" class="menu-user-btn" aria-label="حساب المستخدم" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
          <div class="menu-dropdown" id="menuDropdown" hidden>
            <a href="https://4cima.com/profile" target="_blank" rel="noopener" class="menu-drop-link">الملف الشخصي</a>
-           <a href="https://4cima.com/login" target="_blank" rel="noopener" class="menu-drop-link">تسجيل الخروج</a>
+           <a href="${logoutUrl}" class="menu-drop-link">تسجيل الخروج</a>
          </div>
        </div>`
-    : `<a href="https://4cima.com/login" target="_blank" rel="noopener" class="menu-login">${loginSvg}<span>الدخول</span></a>`;
+    : `<a href="${loginUrl}" class="menu-login">${loginSvg}<span>الدخول</span></a>`;
   const menuNavHtml = `<div class="menu-grid-3">${menuNav.map((l) => `<a href="https://4cima.com${l.to}" target="_blank" rel="noopener">${l.label}</a>`).join('')}</div>`;
   const menuLangsHtml = `<div class="menu-grid-2">${menuLangs.map((l) => `<a href="https://4cima.com/movies?language=${encodeURIComponent(l.filter)}" target="_blank" rel="noopener">${l.label}</a>`).join('')}</div>`;
   const menuGenresHtml = `<div class="menu-grid-2">${menuGenres.map((g) => `<a href="https://4cima.com/movies/genres/${encodeURIComponent(g.slug)}" target="_blank" rel="noopener">${g.label}</a>`).join('')}</div>`;
@@ -564,6 +577,9 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>${esc(pageTitle)}</title>
+<link rel="icon" href="https://4cima.com/icons/favicon.ico"/>
+<link rel="shortcut icon" href="https://4cima.com/icons/favicon.ico"/>
+<link rel="apple-touch-icon" href="https://4cima.com/icons/favicon.ico"/>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -610,32 +626,35 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .info-titles-movie .info-title-en{color:#f87171}
 .info-titles-tv .info-title-en{color:#22d3ee}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
-.server-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
+.server-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
 .server-bar{flex:1 1 auto;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;padding-bottom:2px}
 .server-tab{flex-shrink:0;padding:8.4px 16.8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.55);color:#e5e7eb;font-size:14.4px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
 .server-tab:hover{border-color:var(--red);color:#fff}
 .server-tab.active{background:linear-gradient(135deg,var(--red),var(--orange));border-color:transparent;color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.35)}
-.back-btn{width:100%;height:100%;display:flex;align-items:center;justify-content:center;margin:0;padding:8px 12px;border-radius:10px;background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;font-size:15px;font-weight:800;text-decoration:none;transition:all .2s;box-shadow:0 4px 12px rgba(220,38,38,.35);text-align:center}
-.back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
-.layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers back" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
+.back-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:8.4px 16.8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.55);color:#e5e7eb;font-size:14.4px;font-weight:700;font-family:inherit;text-decoration:none;transition:all .2s;white-space:nowrap}
+.back-btn:hover{border-color:var(--red);color:#fff}
+.layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers servers" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
 .server-row{grid-area:servers}
 .player-wrap{grid-area:player;position:relative;display:flex;min-height:0;min-width:0}
 iframe{width:100%;height:100%;border:none;display:block;background:#000}
 .ad-col{grid-area:ad;width:180px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02);display:block}
 .sub-hint{grid-area:hint}
 @media(max-width:860px){
-  .layout{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;grid-template-areas:"servers" "back" "player" "hint"}
+  .layout{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;grid-template-areas:"servers" "player" "hint"}
   .ad-col{display:none}
-  .back-btn{height:44px}
 }
 .error-msg{color:#f87171;font-weight:700;font-size:16px}
 .status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.85);color:var(--muted);font-size:14px;text-align:center;padding:20px;z-index:5}
 .status-title{font-size:15px;font-weight:800;color:#fff}
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.sub-hint{display:flex;align-items:flex-start;gap:6px;margin:14px 16px;color:#16a34a;font-size:18.72px;font-weight:700;line-height:1.45;text-align:right}
+.sub-hint{display:flex;align-items:flex-start;gap:6px;margin:14px 16px;font-size:18.72px;font-weight:700;line-height:1.45;text-align:right}
+.sub-hint span.hint-text{background:linear-gradient(90deg,#5a6e2b,#16a34a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.35px rgba(255,255,255,.75)}
 .sub-hint svg{width:22px;height:22px;flex-shrink:0;margin-top:4px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:#fff}
-.sub-hint svg.ico-gear{color:#4b5563}
+.sub-hint svg.ico-cc rect{fill:rgba(255,255,255,.08);stroke:#fff;stroke-width:2}
+.sub-hint svg.ico-cc text{fill:#fff;stroke:none;font-size:9px;font-weight:900;font-family:Cairo,sans-serif}
+.sub-hint svg.ico-gear .gear-bg{stroke:rgba(255,255,255,.85);stroke-width:2.6}
+.sub-hint svg.ico-gear .gear-fg{stroke:url(#gearGrad);stroke-width:2}
 .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1200}
 .menu-panel{position:fixed;top:0;right:0;height:100%;width:240px;background:rgba(0,0,0,.95);border-left:1px solid rgba(255,255,255,.1);z-index:1300;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.4)}
 .menu-panel[aria-hidden="true"]{display:none}
@@ -681,8 +700,8 @@ ${menuHtml}
   <div class="layout">
     <div class="server-row">
       <div class="server-bar" id="serverBar" aria-label="مصادر المشاهدة"></div>
+      <a class="back-btn" href="${esc(refUrl)}">↩ ${backLabel}</a>
     </div>
-    <a class="back-btn" href="${esc(refUrl)}">↩ ${backLabel}</a>
     <div class="player-wrap">
       <div class="status" id="status">
         <div class="spinner"></div>
@@ -693,7 +712,7 @@ ${menuHtml}
     <aside class="ad-col" id="adCol" aria-label="إعلان"></aside>
     <div class="sub-hint" id="subHint">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M9.5 9h1.5M13 9h1.5M6 12h12"/></svg>
-      <span>لتفعيل الترجمة العربية ابحث عن زر الترجمة <svg class="ico-cc" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M9.5 9h1.5M13 9h1.5M6 12h12"/></svg> او داخل زر الاعدادات <svg class="ico-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> بالفيديو اسفل شريط التقدم. إن لم تجدها جرب تغيّر السيرفر وابحث بنفس الطريقة.</span>
+      <span class="hint-text">لتفعيل الترجمة العربية ابحث عن زر الترجمة <svg class="ico-cc" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><text x="12" y="15" text-anchor="middle">CC</text></svg> او داخل زر الاعدادات <svg class="ico-gear" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="gearGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a5f"/><stop offset="1" stop-color="#9ca3af"/></linearGradient></defs><path class="gear-bg" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/><circle cx="12" cy="12" r="3"/><path class="gear-fg" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> بالفيديو اسفل شريط التقدم. إن لم تجدها جرب تغيّر السيرفر وابحث بنفس الطريقة.</span>
     </div>
   </div>
 </main>
@@ -749,12 +768,16 @@ ${menuHtml}
       u = m ? 'https://player.videasy.net/movie/' + t : 'https://player.videasy.net/tv/' + t + '/' + sn + '/' + ep;
     } else if (id === '111movies') {
       u = m ? b + '/movie/' + t : 'https://111movies.net/tv/' + t + '/' + sn + '/' + ep;
+    } else if (id === 'autoembed_co') {
+      u = m ? b + '/movie/tmdb/' + t : b + '/tv/tmdb/' + t + '-' + sn + '-' + ep;
     } else {
       u = m ? b + '/movie/' + t : b + '/tv/' + t + '/' + sn + '/' + ep;
     }
     if (id.lastIndexOf('vidsrc_', 0) === 0) {
       u += (u.indexOf('?') >= 0 ? '&' : '?') + 'lang=ar&sub=ar';
-    } else if (id === 'vidrock_ru' || id === '111movies') {
+    } else if (id === 'autoembed_co') {
+      u += (u.indexOf('?') >= 0 ? '&' : '?') + 'lang=ar&subtitles=ar';
+    } else if (id === '111movies') {
       u += (u.indexOf('?') >= 0 ? '&' : '?') + 'lang=ar';
     }
     if (s.px) u = '/api/embed-proxy?url=' + encodeURIComponent(u);
@@ -787,6 +810,14 @@ ${menuHtml}
       // Visitor-facing label only — real server names stay in D.servers
       // (used by selectServer/srcFor) but are never rendered.
       btn.textContent = 'سيرفر ' + (idx + 1);
+      // +18 warning triangle badge on AutoEmbed (last server) only.
+      if (s.id === 'autoembed_co') {
+        var badge = document.createElement('span');
+        badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;vertical-align:middle';
+        badge.title = '+18';
+        badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px" aria-hidden="true"><path d="M12 2.5 22 21H2Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="14.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.3" fill="#fff"/></svg>';
+        btn.appendChild(badge);
+      }
       btn.addEventListener('click', function () { selectServer(btn, s); });
       B.appendChild(btn);
     });

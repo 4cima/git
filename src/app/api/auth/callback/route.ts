@@ -10,8 +10,18 @@ export async function GET(req: NextRequest) {
     return res;
   }
 
-  const res = NextResponse.redirect(new URL('/', req.url));
   const isLocalhost = req.url.includes('localhost') || req.url.includes('127.0.0.1');
+
+  // Post-login redirect target (player deep link) — validated on read.
+  const rawNext = req.cookies.get('auth_next')?.value || '';
+  const next = rawNext && /^https:\/\/(www\.)?4cima\.stream\//.test(rawNext) ? rawNext : '';
+  const display = result.user?.name?.trim() || '';
+  // Attach ?who= (display name only) when returning to the player.
+  const target = next
+    ? next + (next.includes('?') ? '&' : '?') + 'who=' + encodeURIComponent(display)
+    : '/';
+
+  const res = NextResponse.redirect(new URL(target, req.url));
   res.cookies.set(SESSION_COOKIE, result.sessionId, {
     httpOnly: true,
     secure:   !isLocalhost, // false on localhost, true on production
@@ -20,5 +30,6 @@ export async function GET(req: NextRequest) {
     maxAge:   SESSION_MAX_AGE,
   });
   res.cookies.delete('oauth_state');
+  res.cookies.delete('auth_next');
   return res;
 }

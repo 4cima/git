@@ -32,20 +32,18 @@ export interface StreamServer {
 // ==========================================
 export const STREAM_SERVERS: StreamServer[] = [
   { id: 'vidsrc_vip', name: 'VidSrc.vip', base: 'https://vidrock.net/embed' },
-  { id: 'vidrock_ru', name: 'VidRock.ru', base: 'https://vidrock.ru/embed' },
   { id: '111movies', name: '111Movies', base: 'https://111movies.com' },
-  { id: 'vidsrc_io', name: 'VidSrc.io', base: 'https://vidsrc.io/embed' },
   { id: 'vidsrc_me', name: 'VidSrc.me', base: 'https://vidsrc.me/embed' },
   { id: 'vidlink', name: 'VidLink', base: 'https://vidlink.pro' },
   { id: 'videasy', name: 'Videasy', base: 'https://player.videasy.net' },
+  { id: 'autoembed_co', name: 'AutoEmbed', base: 'https://autoembed.co' },
 ];
 
 // Base URL overrides
 const BASE_OVERRIDES: Record<string, string> = {
-  vidsrc_io: 'https://vidsrc.io/embed',
+  autoembed_co: 'https://autoembed.co',
   vidsrc_me: 'https://vidsrc.me/embed',
   vidsrc_vip: 'https://vidrock.net/embed',
-  vidrock_ru: 'https://vidrock.ru/embed',
   vidlink: 'https://vidlink.pro',
   videasy: 'https://player.videasy.net',
 };
@@ -72,6 +70,10 @@ const withArabic = (url: string, serverId: string, _mediaType: 'movie' | 'tv'): 
     return appendParam(appendParam(url, 'lang', 'ar'), 'sub', 'ar');
   }
 
+  if (id === 'autoembed_co') {
+    return appendParam(appendParam(url, 'lang', 'ar'), 'subtitles', 'ar');
+  }
+
   if (id === '111movies') {
     return appendParam(url, 'lang', 'ar');
   }
@@ -95,16 +97,16 @@ export const buildServerUrl = (
 
   let url = '';
 
-  // VidSrc.io and other VidSrc variants (vidsrc_vip, vidrock_ru)
-  if (id === 'vidsrc_io' || id.startsWith('vidsrc_')) {
+  // AutoEmbed — movie: /movie/tmdb/{id}, tv: /tv/tmdb/{id}-{season}-{episode}
+  if (id === 'autoembed_co') {
     url = mediaType === 'movie'
-      ? `${base}/movie/${tmdbId}`
-      : `${base}/tv/${tmdbId}/${season}/${episode}`;
+      ? `${base}/movie/tmdb/${tmdbId}`
+      : `${base}/tv/tmdb/${tmdbId}-${season}-${episode}`;
     return withArabic(url, id, mediaType);
   }
 
-  // VidRock.ru — same template family as vidsrc variants
-  if (id === 'vidrock_ru') {
+  // VidSrc.io and other VidSrc variants (vidsrc_vip)
+  if (id.startsWith('vidsrc_')) {
     url = mediaType === 'movie'
       ? `${base}/movie/${tmdbId}`
       : `${base}/tv/${tmdbId}/${season}/${episode}`;
