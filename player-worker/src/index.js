@@ -737,12 +737,11 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 .layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers servers" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
 .server-row{grid-area:servers}
-.player-wrap{grid-area:player;position:relative;display:block;width:100%;max-width:100%;min-width:0;min-height:0;box-sizing:border-box;overflow:hidden;contain:layout}
-iframe{position:absolute;inset:0;width:100%;height:100%;border:none;display:block;background:#000}
-/* Reserve the exact final 16/9 box before the iframe src is set — kills layout
-   shift. Padding-top spacer (not aspect-ratio) so the box is always exactly the
-   grid-column width and can never overflow the viewport in RTL/mobile. */
-.player-wrap::before{content:'';display:block;width:100%;max-width:100%;padding-top:56.25%}
+/* Single, canonical 16:9 reservation: padding-top on the container itself.
+   No aspect-ratio, no min-height, no ::before spacer — one method only.
+   align-self:start prevents the grid from stretching the box beyond 16:9. */
+.player-wrap{grid-area:player;position:relative;align-self:start;width:100%;max-width:100%;min-width:0;padding-top:56.25%;box-sizing:border-box;overflow:hidden}
+iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;display:block;background:#000}
 .ad-col{grid-area:ad;width:180px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02);display:block}
 .sub-hint{grid-area:hint}
 @media(max-width:860px){
@@ -756,9 +755,9 @@ iframe{position:absolute;inset:0;width:100%;height:100%;border:none;display:bloc
 .status-title{font-size:15px;font-weight:800;color:#fff}
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.sub-hint{display:flex;align-items:center;gap:6px;margin:14px 16px;font-size:18.72px;font-weight:700;line-height:1.45;text-align:right}
-.sub-hint .hint-text{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px}
-.sub-hint span.hint-text{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px}
+.sub-hint{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;margin:14px 16px;font-size:18.72px;font-weight:700;line-height:1.45}
+.sub-hint .hint-text{display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center;gap:4px}
+.sub-hint span.hint-text{display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px}
 .sub-hint .hint-text .ht-in{background:linear-gradient(90deg,#0b5d2e,#15803d);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.35px rgba(255,255,255,.75);text-shadow:0 1px 2px rgba(255,255,255,.15)}
 .sub-hint > svg{width:22px;height:22px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:#fff}
 .sub-hint .hint-text svg{width:22px;height:22px;flex-shrink:0;vertical-align:middle;transform:translateY(2px)}
