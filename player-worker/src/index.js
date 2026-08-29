@@ -499,7 +499,7 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
 
   const bgStyle = backdropUrl
     ? `background:linear-gradient(to bottom,rgba(10,12,17,.55),#0a0c11),url('${esc(backdropUrl)}') center/cover no-repeat fixed;`
-    : 'background:radial-gradient(ellipse at center,#1a1a2e 0%,#0a0c11 100%);';
+    : `background:linear-gradient(to bottom,rgba(10,12,17,.75),#0a0c11),url('https://4cima.com/6565.jpg') center/cover no-repeat fixed;`;
 
   const boot = jsonForScript({
     slug, mediaType, tmdbId, season, episode,
