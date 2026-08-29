@@ -540,12 +540,12 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
   ].filter(Boolean).join('');
   const chevSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
   const seasonSelect = isTv
-    ? `<div class="dd-wrap"><select id="seasonSelect" class="dd-select" aria-label="اختر الموسم"></select>${chevSvg}</div>`
+    ? `<div class="pick-dd" id="seasonDd"><button type="button" class="pick-btn" id="seasonBtn" aria-expanded="false"><span class="pick-emoji">📺</span><span id="seasonLabel"></span><svg class="srv-dd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button><div class="pick-menu" id="seasonMenu" hidden></div></div>`
     : '';
   const episodeSelect = isTv
-    ? `<div class="dd-wrap"><select id="episodeSelect" class="dd-select" aria-label="اختر الحلقة"></select>${chevSvg}</div>`
+    ? `<div class="pick-dd" id="episodeDd"><button type="button" class="pick-btn" id="episodeBtn" aria-expanded="false"><span class="pick-emoji">🎬</span><span id="episodeLabel"></span><svg class="srv-dd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button><div class="pick-menu" id="episodeMenu" hidden></div></div>`
     : '';
-  const backLabel = isTv ? 'العودة لصفحة المسلسل' : 'العودة لصفحة الفيلم';
+  const backLabel = isTv ? 'العودة للمسلسل' : 'العودة للفيلم';
   const infoRowHtml = (infoGenres || infoRight)
     ? `<div class="info-row">${infoGenres}${infoRight}</div>` : '';
 
@@ -693,7 +693,7 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .srv-dd-chev{width:16px;height:16px;transition:transform .2s}
 .srv-dd-btn[aria-expanded="true"] .srv-dd-chev{transform:rotate(180deg)}
-.srv-dd-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:230px;background:rgba(10,12,17,.97);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden;z-index:1500;box-shadow:0 18px 40px rgba(0,0,0,.6);padding:6px;animation:srvIn .18s ease-out}
+.srv-dd-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:172px;background:rgba(10,12,17,.97);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden;z-index:1500;box-shadow:0 18px 40px rgba(0,0,0,.6);padding:4px;animation:srvIn .18s ease-out}
 .srv-dd-menu[hidden]{display:none}
 @keyframes srvIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .srv-dd-head{padding:6px 10px 8px;font-size:11px;font-weight:800;color:#71717a;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px}
@@ -705,9 +705,24 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 .srv-item .srv-check{width:16px;height:16px;flex-shrink:0;opacity:0;transition:opacity .15s}
 .srv-item.active .srv-check{opacity:1;color:#22c55e}
 /* Compact season/episode selects inside the server bar row */
-.server-row .dd-wrap{height:40px;width:92px}
-.server-row .dd-select{font-size:13px;border-radius:8px;padding-inline-start:10px;padding-inline-end:26px}
 .srv-dd-legend{display:flex;align-items:center;gap:8px;padding:8px 10px 6px;font-size:12px;font-weight:700;color:#a1a1aa;border-top:1px solid rgba(255,255,255,.08);margin-top:4px}
+.pick-dd{position:relative;flex-shrink:0}
+.pick-btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#18181b;color:#fff;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap;transition:all .2s}
+.pick-btn:hover{border-color:rgba(255,255,255,.35);box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.pick-btn[aria-expanded="true"]{border-color:var(--red);background:linear-gradient(135deg,rgba(220,38,38,.2),rgba(249,115,22,.12))}
+.pick-btn[aria-expanded="true"] .srv-dd-chev{transform:rotate(180deg)}
+.pick-emoji{font-size:15px;line-height:1}
+.pick-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:190px;max-height:320px;overflow-y:auto;background:rgba(10,12,17,.97);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);border-radius:14px;z-index:1500;box-shadow:0 18px 40px rgba(0,0,0,.6);padding:4px;animation:srvIn .18s ease-out}
+.pick-menu[hidden]{display:none}
+.pick-menu::-webkit-scrollbar{width:6px}
+.pick-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:6px}
+.pick-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:9px 12px;border:none;border-radius:8px;background:transparent;color:#e5e7eb;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;text-align:right;transition:background .15s,color .15s}
+.pick-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.pick-item.active{background:linear-gradient(135deg,rgba(220,38,38,.25),rgba(249,115,22,.15));color:#fff}
+.pick-badge{min-width:24px;height:20px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.08);font-size:11px;font-weight:900;color:#a1a1aa}
+.pick-item.active .pick-badge{background:linear-gradient(135deg,var(--red),var(--orange));color:#fff}
+.pick-check{width:15px;height:15px;flex-shrink:0;opacity:0;color:#22c55e;transition:opacity .15s}
+.pick-item.active .pick-check{opacity:1}
 .back-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;margin-right:0;padding:8.4px 16.8px;border-radius:8px;border:1px solid transparent;background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;font-size:14.4px;font-weight:800;font-family:inherit;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35)}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 .layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers servers" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
@@ -727,13 +742,16 @@ iframe{width:100%;height:100%;border:none;display:block;background:#000}
 .status-title{font-size:15px;font-weight:800;color:#fff}
 .spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.sub-hint{display:flex;align-items:flex-start;gap:6px;margin:14px 16px;font-size:18.72px;font-weight:700;line-height:1.45;text-align:right}
-.sub-hint span.hint-text{background:linear-gradient(90deg,#5a6e2b,#16a34a);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.35px rgba(255,255,255,.75)}
-.sub-hint svg{width:22px;height:22px;flex-shrink:0;margin-top:4px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:#fff}
+.sub-hint{display:flex;align-items:center;gap:6px;margin:14px 16px;font-size:18.72px;font-weight:700;line-height:1.45;text-align:right}
+.sub-hint .hint-text{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px}
+.sub-hint span.hint-text{display:inline-flex;align-items:center;flex-wrap:wrap;gap:4px}
+.sub-hint .hint-text .ht-in{background:linear-gradient(90deg,#0b5d2e,#15803d);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:.35px rgba(255,255,255,.75);text-shadow:0 1px 2px rgba(255,255,255,.15)}
+.sub-hint > svg{width:22px;height:22px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;color:#fff}
+.sub-hint .hint-text svg{width:22px;height:22px;flex-shrink:0;vertical-align:middle;transform:translateY(2px)}
 .sub-hint svg.ico-cc rect{fill:rgba(255,255,255,.08);stroke:#fff;stroke-width:2}
 .sub-hint svg.ico-cc text{fill:#fff;stroke:none;font-size:9px;font-weight:900;font-family:Cairo,sans-serif}
-.sub-hint svg.ico-gear .gear-bg{stroke:rgba(255,255,255,.85);stroke-width:2.6}
-.sub-hint svg.ico-gear .gear-fg{stroke:url(#gearGrad);stroke-width:2}
+.sub-hint svg.ico-gear{fill:url(#gearGrad);stroke:none}
+.sub-hint svg.ico-gear path{stroke:none}
 .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1200}
 .menu-panel{position:fixed;top:0;right:0;height:100%;width:240px;background:rgba(0,0,0,.95);border-left:1px solid rgba(255,255,255,.1);z-index:1300;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.4)}
 .menu-panel[aria-hidden="true"]{display:none}
@@ -810,7 +828,7 @@ ${titlesBar}
     <aside class="ad-col" id="adCol" aria-label="إعلان"></aside>
     <div class="sub-hint" id="subHint">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M9.5 9h1.5M13 9h1.5M6 12h12"/></svg>
-      <span class="hint-text">لتفعيل الترجمة العربية ابحث عن زر الترجمة <svg class="ico-cc" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><text x="12" y="15" text-anchor="middle">CC</text></svg> او داخل زر الاعدادات <svg class="ico-gear" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><defs><linearGradient id="gearGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a5f"/><stop offset="1" stop-color="#9ca3af"/></linearGradient></defs><path class="gear-bg" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/><circle cx="12" cy="12" r="3"/><path class="gear-fg" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> بالفيديو اسفل شريط التقدم. إن لم تجدها جرب تغيّر السيرفر وابحث بنفس الطريقة.</span>
+      <span class="hint-text"><b class="ht-in">لتفعيل الترجمة العربية ابحث عن زر الترجمة</b> <svg class="ico-cc" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><text x="12" y="15" text-anchor="middle">CC</text></svg> <b class="ht-in">او داخل زر الاعدادات</b> <svg class="ico-gear" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="gearGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e3a5f"/><stop offset="1" stop-color="#9ca3af"/></linearGradient></defs><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span>
     </div>
   </div>
 </main>
@@ -822,8 +840,12 @@ ${titlesBar}
   var P = document.getElementById('player');
   var S = document.getElementById('status');
   var B = document.getElementById('serverBar');
-  var seasonSel = document.getElementById('seasonSelect');
-  var episodeSel = document.getElementById('episodeSelect');
+  var seasonBtnEl = document.getElementById('seasonBtn');
+  var seasonMenuEl = document.getElementById('seasonMenu');
+  var seasonLabelEl = document.getElementById('seasonLabel');
+  var episodeBtnEl = document.getElementById('episodeBtn');
+  var episodeMenuEl = document.getElementById('episodeMenu');
+  var episodeLabelEl = document.getElementById('episodeLabel');
   var favBtn = document.getElementById('favBtn');
   var menuBtn = document.getElementById('menuBtn');
   var menuPanel = document.getElementById('menuPanel');
@@ -975,38 +997,63 @@ ${titlesBar}
     document.addEventListener('click', closeSrvDd);
   }
 
-  function renderEpSelect() {
-    if (!episodeSel) return;
-    episodeSel.innerHTML = '';
-    (D.episodes || []).forEach(function (ep) {
-      var o = document.createElement('option');
-      o.value = ep.episode_number;
-      o.textContent = 'حلقة ' + ep.episode_number;
-      if (ep.episode_number === D.episode) o.selected = true;
-      episodeSel.appendChild(o);
+  var CHECK_SVG = '<svg class="pick-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  function setupPick(btn, menu) {
+    if (!btn || !menu) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeSrvDd();
+      var open = !menu.hidden;
+      menu.hidden = open;
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
     });
-    episodeSel.addEventListener('change', function () {
-      // Episode change: reload the active server src without full navigation
-      // (mirrors the old ep-btn behaviour).
-      D.episode = parseInt(this.value, 10) || 1;
-      history.replaceState(null, '', pageUrl());
-      if (active) load(srcFor(active));
+    menu.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener('click', function () {
+      menu.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  function renderEpSelect() {
+    if (!episodeMenuEl || !episodeLabelEl) return;
+    episodeLabelEl.textContent = 'حلقة ' + D.episode;
+    episodeMenuEl.innerHTML = '';
+    (D.episodes || []).forEach(function (ep) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pick-item' + (ep.episode_number === D.episode ? ' active' : '');
+      b.innerHTML = '<span>الحلقة ' + ep.episode_number + '</span><span class="pick-badge">' + ep.episode_number + '</span>' + (ep.episode_number === D.episode ? CHECK_SVG : '');
+      b.addEventListener('click', function () {
+        if (ep.episode_number === D.episode) { episodeMenuEl.hidden = true; return; }
+        D.episode = ep.episode_number;
+        episodeLabelEl.textContent = 'حلقة ' + D.episode;
+        episodeMenuEl.querySelectorAll('.pick-item').forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        episodeMenuEl.hidden = true;
+        episodeBtnEl.setAttribute('aria-expanded', 'false');
+        history.replaceState(null, '', pageUrl());
+        if (active) load(srcFor(active));
+      });
+      episodeMenuEl.appendChild(b);
     });
   }
 
   function renderSeasonSelect() {
-    if (!seasonSel) return;
-    seasonSel.innerHTML = '';
+    if (!seasonMenuEl || !seasonLabelEl) return;
+    seasonLabelEl.textContent = 'الموسم ' + D.season;
+    seasonMenuEl.innerHTML = '';
     (D.seasons || []).forEach(function (s) {
-      var o = document.createElement('option');
-      o.value = s.season_number;
-      o.textContent = 'الموسم ' + s.season_number + ' (' + (s.episode_count || 0) + ')';
-      if (s.season_number === D.season) o.selected = true;
-      seasonSel.appendChild(o);
-    });
-    seasonSel.addEventListener('change', function () {
-      // Season change: full navigation so the worker serves the fresh episode list.
-      window.location.href = pageUrl(parseInt(this.value, 10) || 1, 1);
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pick-item' + (s.season_number === D.season ? ' active' : '');
+      b.innerHTML = '<span>الموسم ' + s.season_number + '</span><span class="pick-badge">' + (s.episode_count || 0) + ' حلقة</span>' + (s.season_number === D.season ? CHECK_SVG : '');
+      b.addEventListener('click', function () {
+        if (s.season_number === D.season) { seasonMenuEl.hidden = true; return; }
+        // Season change: full navigation so the worker serves the fresh episode list.
+        window.location.href = pageUrl(s.season_number, 1);
+      });
+      seasonMenuEl.appendChild(b);
     });
   }
 
@@ -1076,6 +1123,8 @@ ${titlesBar}
   renderSeasonSelect();
   renderEpSelect();
   initSrvDd();
+  setupPick(seasonBtnEl, seasonMenuEl);
+  setupPick(episodeBtnEl, episodeMenuEl);
   initMenu();
   initFav();
   initUserMenu();
