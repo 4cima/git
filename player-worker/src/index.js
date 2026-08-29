@@ -173,6 +173,7 @@ function buildServerSources(mediaType, tmdbId, season, episode) {
     out.push({
       id: srv.id,
       name: srv.name,
+      short: srv.short,
       src,
       base: BASE_OVERRIDES[srv.id] || srv.base,
       px: PROXIED_IDS.has(srv.id) ? 1 : 0,
@@ -640,7 +641,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .titles-bar .fav-btn{margin-right:4px}
 .info-titles-tv .info-title-en{color:#22d3ee}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
-.server-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
+.server-row{display:flex;flex-wrap:nowrap;align-items:center;gap:10px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
 /* --- Advanced servers dropdown --- */
 .srv-dd{position:relative;flex-shrink:0}
 .srv-dd-btn{display:inline-flex;align-items:center;gap:10px;padding:8.4px 16.8px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,rgba(220,38,38,.18),rgba(249,115,22,.12));color:#fff;font-size:14.4px;font-weight:800;font-family:inherit;cursor:pointer;transition:all .2s;white-space:nowrap}
@@ -665,7 +666,7 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 .server-row .dd-wrap{height:40px;width:92px}
 .server-row .dd-select{font-size:13px;border-radius:8px;padding-inline-start:10px;padding-inline-end:26px}
 .srv-dd-legend{display:flex;align-items:center;gap:8px;padding:8px 10px 6px;font-size:12px;font-weight:700;color:#a1a1aa;border-top:1px solid rgba(255,255,255,.08);margin-top:4px}
-.back-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:8.4px 16.8px;border-radius:8px;border:1px solid transparent;background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;font-size:14.4px;font-weight:800;font-family:inherit;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35)}
+.back-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;margin-right:0;padding:8.4px 16.8px;border-radius:8px;border:1px solid transparent;background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;font-size:14.4px;font-weight:800;font-family:inherit;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35)}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 .layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers servers" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
 .server-row{grid-area:servers}
@@ -676,6 +677,8 @@ iframe{width:100%;height:100%;border:none;display:block;background:#000}
 @media(max-width:860px){
   .layout{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;grid-template-areas:"servers" "player" "hint"}
   .ad-col{display:none}
+  .server-row{flex-wrap:wrap}
+  .back-btn{margin-right:auto}
 }
 .error-msg{color:#f87171;font-weight:700;font-size:16px}
 .status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.85);color:var(--muted);font-size:14px;text-align:center;padding:20px;z-index:5}
