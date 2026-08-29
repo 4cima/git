@@ -655,7 +655,7 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 .srv-dd-menu[hidden]{display:none}
 @keyframes srvIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .srv-dd-head{padding:6px 10px 8px;font-size:11px;font-weight:800;color:#71717a;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px}
-.srv-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:none;border-radius:9px;background:transparent;color:#e5e7eb;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;text-align:right;transition:background .15s,color .15s}
+.srv-item{display:flex;align-items:center;gap:10px;width:100%;padding:4px 10px;border:none;border-radius:8px;background:transparent;color:#e5e7eb;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;text-align:right;transition:background .15s,color .15s}
 .srv-item:hover{background:rgba(255,255,255,.08);color:#fff}
 .srv-item.active{background:linear-gradient(135deg,rgba(220,38,38,.25),rgba(249,115,22,.15));color:#fff}
 .srv-num{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.08);font-size:11px;font-weight:900;color:#a1a1aa}
