@@ -113,16 +113,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
   const seriesEndRef = useRef<HTMLDivElement>(null)
   
   // Drag to scroll state
-  const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [scrollLeft, setScrollLeft] = useState(0)
-  const [currentScrollRef, setCurrentScrollRef] = useState<HTMLDivElement | null>(null)
-  
-  // Touch scroll state
-  const [isTouching, setIsTouching] = useState(false)
-  const [touchStartX, setTouchStartX] = useState(0)
-  const [touchScrollLeft, setTouchScrollLeft] = useState(0)
-  const [clickDisabled, setClickDisabled] = useState(false)
+
 
   // إنشاء قائمة الهيرو من البيانات الأولية
   useEffect(() => {
@@ -290,146 +281,9 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
     }
   }, [])
 
-  // Drag to scroll functionality
-  useEffect(() => {
-    // منع السلوك الافتراضي لسحب الصور والروابط
-    const preventDefaultDrag = (e: DragEvent) => {
-      e.preventDefault()
-      return false
-    }
-    
-    const handleMouseDown = (e: MouseEvent) => {
-      const target = e.target as Node
-      let scrollContainer: HTMLDivElement | null = null
-      
-      if (moviesScrollRef.current?.contains(target)) {
-        scrollContainer = moviesScrollRef.current
-      } else if (seriesScrollRef.current?.contains(target)) {
-        scrollContainer = seriesScrollRef.current
-      }
-      
-      if (scrollContainer) {
-        e.preventDefault() // منع السلوك الافتراضي
-        setIsDragging(true)
-        setCurrentScrollRef(scrollContainer)
-        setStartX(e.pageX - scrollContainer.offsetLeft)
-        setScrollLeft(scrollContainer.scrollLeft)
-        scrollContainer.style.cursor = 'grabbing'
-        scrollContainer.style.userSelect = 'none'
-      }
-    }
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging || !currentScrollRef) return
-      e.preventDefault()
-      const x = e.pageX - currentScrollRef.offsetLeft
-      const walk = (x - startX) * 2 // سرعة السحب
-      currentScrollRef.scrollLeft = scrollLeft - walk
-      
-      // منع النقر إذا تم السحب
-      if (Math.abs(walk) > 5) {
-        setClickDisabled(true)
-      }
-      
-      // Trigger scroll event manually
-      const scrollEvent = new Event('scroll', { bubbles: true })
-      currentScrollRef.dispatchEvent(scrollEvent)
-    }
-
-    const handleMouseUp = () => {
-      if (currentScrollRef) {
-        currentScrollRef.style.cursor = 'grab'
-        currentScrollRef.style.userSelect = 'auto'
-        
-        // Trigger final scroll check
-        const scrollEvent = new Event('scroll', { bubbles: true })
-        currentScrollRef.dispatchEvent(scrollEvent)
-      }
-      setIsDragging(false)
-      setCurrentScrollRef(null)
-      
-      // إعادة تفعيل النقر بعد وقت قصير
-      setTimeout(() => setClickDisabled(false), 100)
-    }
-
-    const handleMouseLeave = () => {
-      if (isDragging && currentScrollRef) {
-        currentScrollRef.style.cursor = 'grab'
-        currentScrollRef.style.userSelect = 'auto'
-        setIsDragging(false)
-        setCurrentScrollRef(null)
-      }
-    }
-
-    // إضافة مستمعي الأحداث للـ drag
-    const moviesEl = moviesScrollRef.current
-    const seriesEl = seriesScrollRef.current
-    
-    moviesEl?.addEventListener('dragstart', preventDefaultDrag)
-    seriesEl?.addEventListener('dragstart', preventDefaultDrag)
-    moviesEl?.addEventListener('drop', preventDefaultDrag)
-    seriesEl?.addEventListener('drop', preventDefaultDrag)
-
-    document.addEventListener('mousedown', handleMouseDown)
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
-    document.addEventListener('mouseleave', handleMouseLeave)
-
-    return () => {
-      moviesEl?.removeEventListener('dragstart', preventDefaultDrag)
-      seriesEl?.removeEventListener('dragstart', preventDefaultDrag)
-      moviesEl?.removeEventListener('drop', preventDefaultDrag)
-      seriesEl?.removeEventListener('drop', preventDefaultDrag)
-      
-      document.removeEventListener('mousedown', handleMouseDown)
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-      document.removeEventListener('mouseleave', handleMouseLeave)
-    }
-  }, [isDragging, startX, scrollLeft, currentScrollRef])
-
-  // Touch scroll functionality for mobile
-  useEffect(() => {
-    const handleTouchStart = (e: TouchEvent) => {
-      const target = e.target as Node
-      let scrollContainer: HTMLDivElement | null = null
-      
-      if (moviesScrollRef.current?.contains(target)) {
-        scrollContainer = moviesScrollRef.current
-      } else if (seriesScrollRef.current?.contains(target)) {
-        scrollContainer = seriesScrollRef.current
-      }
-      
-      if (scrollContainer) {
-        setIsTouching(true)
-        setCurrentScrollRef(scrollContainer)
-        setTouchStartX(e.touches[0].pageX)
-        setTouchScrollLeft(scrollContainer.scrollLeft)
-      }
-    }
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isTouching || !currentScrollRef) return
-      const x = e.touches[0].pageX
-      const walk = (touchStartX - x) * 1.5 // سرعة السحب باللمس
-      currentScrollRef.scrollLeft = touchScrollLeft + walk
-    }
-
-    const handleTouchEnd = () => {
-      setIsTouching(false)
-      setCurrentScrollRef(null)
-    }
-
-    document.addEventListener('touchstart', handleTouchStart, { passive: true })
-    document.addEventListener('touchmove', handleTouchMove, { passive: true })
-    document.addEventListener('touchend', handleTouchEnd)
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart)
-      document.removeEventListener('touchmove', handleTouchMove)
-      document.removeEventListener('touchend', handleTouchEnd)
-    }
-  }, [isTouching, touchStartX, touchScrollLeft, currentScrollRef])
+  // Native scroll: overflow-x:auto + touch-action:pan-x handle everything
+  // at the hardware/GPU level — no JS touch-drag listeners needed.
+  // Wheel handler converts vertical-wheel delta → horizontal scroll on desktop.
 
   // Keyboard navigation
   useEffect(() => {
@@ -957,11 +811,6 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                       href={`/movies/${item.slug}`}
                       key={`movie-${item.id}`}
                       className="group flex-shrink-0 w-40 sm:w-48"
-                      onClick={(e) => {
-                        if (clickDisabled) {
-                          e.preventDefault()
-                        }
-                      }}
                     >
                       <div className="bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative">
                         {/* Poster with Overlay Badges */}
@@ -1143,11 +992,6 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                       href={`/series/${item.slug}`}
                       key={`series-${item.id}`}
                       className="group flex-shrink-0 w-40 sm:w-48"
-                      onClick={(e) => {
-                        if (clickDisabled) {
-                          e.preventDefault()
-                        }
-                      }}
                     >
                       <div className="bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative">
                         {/* Poster with Overlay Badges */}

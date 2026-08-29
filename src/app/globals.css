@@ -1020,6 +1020,27 @@ select option {
 }
 
 
+/* Horizontal scroll — native GPU-accelerated scroll.
+   touch-action:pan-x prevents vertical-page-scroll conflict on touch devices.
+   scroll-snap-type:x mandatory snaps each card column to the start edge. */
+.horizontal-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  will-change: transform;
+  touch-action: pan-x;
+  cursor: grab;
+}
+.horizontal-scroll:active { cursor: grabbing; }
+
+/* Snap each card column to the left/start edge of the visible area */
+.horizontal-scroll > * {
+  scroll-snap-align: start;
+}
+
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
