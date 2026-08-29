@@ -88,11 +88,11 @@ export default {
 // Server catalogue — mirrors src/services/streamService.ts
 // ------------------------------------------------------------------
 const SERVERS = [
-  { id: 'vidsrc_vip',   name: 'VidSrc',    base: 'https://vidrock.net/embed' },
-  { id: '111movies',    name: '111Movies', base: 'https://111movies.com' },
-  { id: 'vidsrc_me',    name: 'VidSrc.me', base: 'https://vidsrc.me/embed' },
   { id: 'vidlink',      name: 'VidLink',   base: 'https://vidlink.pro' },
+  { id: 'vidsrc_me',    name: 'VidSrc.me', base: 'https://vidsrc.me/embed' },
+  { id: 'vidsrc_vip',   name: 'VidSrc',    base: 'https://vidrock.net/embed' },
   { id: 'videasy',      name: 'Videasy',   base: 'https://player.videasy.net' },
+  { id: '111movies',    name: '111Movies', base: 'https://111movies.com' },
   { id: 'autoembed_co', name: 'AutoEmbed', base: 'https://autoembed.co' },
 ];
 
@@ -606,9 +606,9 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .info-chip{display:inline-flex;align-items:center;gap:4px;padding:3.6px 12px;border-radius:999px;font-size:14.4px;font-weight:700;background:rgba(255,255,255,.1);color:#e4e4e7;white-space:nowrap}
 .info-chip-rating{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.2);color:#eab308}
 .info-sep{width:1px;height:16px;background:rgba(255,255,255,.15);flex-shrink:0}
-.fav-btn{width:68px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:#18181b;cursor:pointer;transition:border-color .15s;color:#a1a1aa}
-.fav-btn:hover{border-color:rgba(255,255,255,.3)}
-.fav-ico{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#27272a;color:#a1a1aa}
+.fav-btn{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;padding:3.6px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);cursor:pointer;transition:background .15s,border-color .15s;color:#a1a1aa}
+.fav-btn:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3)}
+.fav-ico{display:flex;align-items:center;justify-content:center}
 .fav-ico svg{width:24px;height:24px;fill:none;stroke:currentColor}
 .fav-btn[data-state="favorite"] .fav-ico{color:#ef4444}
 .fav-btn[data-state="favorite"] .fav-ico svg,.fav-btn[data-state="completed"] .fav-ico svg{fill:currentColor}
@@ -631,8 +631,8 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 .server-tab{flex-shrink:0;padding:8.4px 16.8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.55);color:#e5e7eb;font-size:14.4px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
 .server-tab:hover{border-color:var(--red);color:#fff}
 .server-tab.active{background:linear-gradient(135deg,var(--red),var(--orange));border-color:transparent;color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.35)}
-.back-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:8.4px 16.8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.55);color:#e5e7eb;font-size:14.4px;font-weight:700;font-family:inherit;text-decoration:none;transition:all .2s;white-space:nowrap}
-.back-btn:hover{border-color:var(--red);color:#fff}
+.back-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:8.4px 16.8px;border-radius:8px;border:1px solid transparent;background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;font-size:14.4px;font-weight:800;font-family:inherit;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35)}
+.back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 .layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers servers" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
 .server-row{grid-area:servers}
 .player-wrap{grid-area:player;position:relative;display:flex;min-height:0;min-width:0}
@@ -667,6 +667,7 @@ iframe{width:100%;height:100%;border:none;display:block;background:#000}
 .menu-user-btn{width:26px;height:26px;flex-shrink:0;border:none;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .menu-user-btn svg{width:14px;height:14px}
 .menu-dropdown{position:absolute;top:calc(100% + 6px);right:0;min-width:160px;background:#0a0c11;border:1px solid rgba(255,255,255,.12);border-radius:10px;overflow:hidden;z-index:1400;display:flex;flex-direction:column;padding:4px}
+.menu-dropdown[hidden]{display:none}
 .menu-drop-link{display:flex;align-items:center;gap:8px;padding:9px 10px;color:#e5e7eb;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px}
 .menu-drop-link:hover{background:rgba(255,255,255,.08);color:#fff}
 .menu-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;border-radius:8px;background:transparent;color:#fff;font-size:18px;cursor:pointer}
@@ -810,8 +811,8 @@ ${menuHtml}
       // Visitor-facing label only — real server names stay in D.servers
       // (used by selectServer/srcFor) but are never rendered.
       btn.textContent = 'سيرفر ' + (idx + 1);
-      // +18 warning triangle badge on AutoEmbed (last server) only.
-      if (s.id === 'autoembed_co') {
+      // +18 warning triangle badge on 111movies (server 5) and AutoEmbed (server 6).
+      if (s.id === 'autoembed_co' || s.id === '111movies') {
         var badge = document.createElement('span');
         badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;vertical-align:middle';
         badge.title = '+18';
