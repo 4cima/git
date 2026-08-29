@@ -626,11 +626,27 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .info-titles-movie .info-title-en{color:#f87171}
 .info-titles-tv .info-title-en{color:#22d3ee}
 main{flex:1;display:flex;flex-direction:column;min-height:0}
-.server-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
-.server-bar{flex:1 1 auto;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#333 transparent;padding-bottom:2px}
-.server-tab{flex-shrink:0;padding:8.4px 16.8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.55);color:#e5e7eb;font-size:14.4px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s}
-.server-tab:hover{border-color:var(--red);color:#fff}
-.server-tab.active{background:linear-gradient(135deg,var(--red),var(--orange));border-color:transparent;color:#fff;box-shadow:0 4px 12px rgba(220,38,38,.35)}
+.server-row{display:flex;flex-wrap:wrap;align-items:center;gap:18px;padding:10px 16px;background:rgba(0,0,0,.4);border-bottom:1px solid var(--border)}
+/* --- Advanced servers dropdown --- */
+.srv-dd{position:relative;flex-shrink:0}
+.srv-dd-btn{display:inline-flex;align-items:center;gap:10px;padding:8.4px 16.8px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,rgba(220,38,38,.18),rgba(249,115,22,.12));color:#fff;font-size:14.4px;font-weight:800;font-family:inherit;cursor:pointer;transition:all .2s;white-space:nowrap}
+.srv-dd-btn:hover{border-color:var(--red);box-shadow:0 4px 14px rgba(220,38,38,.25)}
+.srv-dd-btn[aria-expanded="true"]{border-color:var(--red);background:linear-gradient(135deg,rgba(220,38,38,.3),rgba(249,115,22,.2))}
+.srv-dd-btn .srv-live{width:8px;height:8px;border-radius:999px;background:#22c55e;box-shadow:0 0 6px #22c55e;flex-shrink:0;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.srv-dd-chev{width:16px;height:16px;transition:transform .2s}
+.srv-dd-btn[aria-expanded="true"] .srv-dd-chev{transform:rotate(180deg)}
+.srv-dd-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:230px;background:rgba(10,12,17,.97);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden;z-index:1500;box-shadow:0 18px 40px rgba(0,0,0,.6);padding:6px;animation:srvIn .18s ease-out}
+.srv-dd-menu[hidden]{display:none}
+@keyframes srvIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.srv-dd-head{padding:6px 10px 8px;font-size:11px;font-weight:800;color:#71717a;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px}
+.srv-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:none;border-radius:9px;background:transparent;color:#e5e7eb;font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;text-align:right;transition:background .15s,color .15s}
+.srv-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.srv-item.active{background:linear-gradient(135deg,rgba(220,38,38,.25),rgba(249,115,22,.15));color:#fff}
+.srv-num{width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(255,255,255,.08);font-size:11px;font-weight:900;color:#a1a1aa}
+.srv-item.active .srv-num{background:linear-gradient(135deg,var(--red),var(--orange));color:#fff}
+.srv-item .srv-check{margin-right:auto;width:16px;height:16px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.srv-item.active .srv-check{opacity:1;color:#22c55e}
 .back-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:8.4px 16.8px;border-radius:8px;border:1px solid transparent;background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;font-size:14.4px;font-weight:800;font-family:inherit;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35)}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 .layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers servers" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
@@ -700,7 +716,14 @@ ${menuHtml}
   ${infoRowHtml}
   <div class="layout">
     <div class="server-row">
-      <div class="server-bar" id="serverBar" aria-label="مصادر المشاهدة"></div>
+      <div class="srv-dd" id="serverBar" aria-label="مصادر المشاهدة">
+        <button type="button" id="srvDdBtn" class="srv-dd-btn" aria-expanded="false">
+          <span class="srv-live" aria-hidden="true"></span>
+          <span id="srvDdLabel">اختر السيرفر</span>
+          <svg class="srv-dd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="srv-dd-menu" id="srvDdMenu" hidden></div>
+      </div>
       <a class="back-btn" href="${esc(refUrl)}">↩ ${backLabel}</a>
     </div>
     <div class="player-wrap">
@@ -795,39 +818,80 @@ ${menuHtml}
 
   function selectServer(btn, s) {
     active = s;
-    var tabs = B.querySelectorAll('button');
-    for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
-    btn.classList.add('active');
+    var items = B.querySelectorAll('.srv-item');
+    for (var i = 0; i < items.length; i++) items[i].classList.remove('active');
+    if (btn) btn.classList.add('active');
+    var label = document.getElementById('srvDdLabel');
+    if (label) label.textContent = btn ? btn.getAttribute('data-label') : 'اختر السيرفر';
     load(s.src || srcFor(s));
+    closeSrvDd();
+  }
+
+  function badgeSvg() {
+    return '<svg viewBox="0 0 24 24" style="width:12px;height:12px;flex-shrink:0" aria-hidden="true"><path d="M12 2.5 22 21H2Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="14.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.3" fill="#fff"/></svg>';
   }
 
   function renderTabs() {
     if (!B) return;
-    B.innerHTML = '';
+    var menu = document.getElementById('srvDdMenu');
+    if (!menu) return;
+    menu.innerHTML = '';
+    if (!D.servers.length) {
+      menu.innerHTML = '<div class="srv-dd-head">⚠ لا توجد مصادر متاحة الآن</div>';
+      return;
+    }
+    var head = document.createElement('div');
+    head.className = 'srv-dd-head';
+    head.textContent = 'مصادر المشاهدة';
+    menu.appendChild(head);
+    var checkSvg = '<svg class="srv-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
     D.servers.forEach(function (s, idx) {
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'server-tab';
-      // Visitor-facing label only — real server names stay in D.servers
-      // (used by selectServer/srcFor) but are never rendered.
-      btn.textContent = 'سيرفر ' + (idx + 1);
+      btn.className = 'srv-item';
+      btn.setAttribute('data-label', 'سيرفر ' + (idx + 1));
+      var num = document.createElement('span');
+      num.className = 'srv-num';
+      num.textContent = String(idx + 1);
+      btn.appendChild(num);
+      var name = document.createElement('span');
+      name.textContent = 'سيرفر ' + (idx + 1);
+      btn.appendChild(name);
       // +18 warning triangle badge on 111movies (server 5) and AutoEmbed (server 6).
       if (s.id === 'autoembed_co' || s.id === '111movies') {
-        var badge = document.createElement('span');
-        badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0;vertical-align:middle';
-        badge.title = '+18';
-        badge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px" aria-hidden="true"><path d="M12 2.5 22 21H2Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5" stroke-linejoin="round"/><line x1="12" y1="9" x2="12" y2="14.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.3" fill="#fff"/></svg>';
-        btn.appendChild(badge);
+        var b = document.createElement('span');
+        b.style.cssText = 'display:inline-flex;align-items:center;flex-shrink:0';
+        b.title = '+18';
+        b.innerHTML = badgeSvg();
+        btn.appendChild(b);
       }
+      btn.insertAdjacentHTML('beforeend', checkSvg);
       btn.addEventListener('click', function () { selectServer(btn, s); });
-      B.appendChild(btn);
+      menu.appendChild(btn);
     });
-    if (D.servers.length) {
-      var first = B.querySelector('button');
-      if (first) selectServer(first, D.servers[0]);
-    } else {
-      B.innerHTML = '<span class="error-msg">⚠ لا توجد مصادر متاحة الآن</span>';
-    }
+    var first = menu.querySelector('.srv-item');
+    if (first) selectServer(first, D.servers[0]);
+  }
+
+  function closeSrvDd() {
+    var btn = document.getElementById('srvDdBtn');
+    var menu = document.getElementById('srvDdMenu');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+    if (menu) menu.hidden = true;
+  }
+
+  function initSrvDd() {
+    var btn = document.getElementById('srvDdBtn');
+    var menu = document.getElementById('srvDdMenu');
+    if (!btn || !menu) return;
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = !menu.hidden;
+      menu.hidden = open;
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+    });
+    menu.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener('click', closeSrvDd);
   }
 
   function renderEpSelect() {
@@ -912,6 +976,7 @@ ${menuHtml}
   renderTabs();
   renderSeasonSelect();
   renderEpSelect();
+  initSrvDd();
   initMenu();
   initFav();
   initUserMenu();
