@@ -21,7 +21,10 @@
  */
 
 const PLAY_BASE = 'https://4cima.com';
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/original/';
+// Optimized TMDB sizes: w780 for the backdrop (LCP), w500 for poster fallback —
+// both far lighter than /original/ and visually identical at player sizes.
+const TMDB_BACKDROP_BASE = 'https://image.tmdb.org/t/p/w780/';
+const TMDB_POSTER_BASE = 'https://image.tmdb.org/t/p/w500/';
 
 // Functional headers only (no security restrictions).
 const COMMON_HEADERS = {
@@ -31,6 +34,10 @@ const COMMON_HEADERS = {
 
 const HTML_HEADERS = {
   'Content-Type': 'text/html; charset=utf-8',
+  // Allow the player pages to be framed only by our own domains (4cima.com
+  // embeds the player in its iframe). Upstream video servers and the embed
+  // proxy stay untouched — this only governs who can frame OUR pages.
+  'Content-Security-Policy': "frame-ancestors 'self' https://4cima.com https://www.4cima.com https://*.4cima.stream",
   ...COMMON_HEADERS,
 };
 
@@ -48,6 +55,9 @@ export default {
     try {
       if (path === '/api/embed-proxy') return await handleEmbedProxy(url);
       if (path === '/healthz') return new Response('ok', { status: 200 });
+      // Favicon: the worker has no icon of its own — answer 204 immediately so
+      // crawlers/browsers stop hammering /favicon.ico with 404s every day.
+      if (path === '/favicon.ico') return new Response(null, { status: 204, headers: { 'Cache-Control': 'public, max-age=86400' } });
 
       // Legacy query-based fallback: /watch?type=tv&id=94997&season=3&episode=4
       if (path === '/watch') return await handleWatchFallback(url);
@@ -374,8 +384,8 @@ async function handlePlayer(url, slug, mediaType, season = 1, episode = 1, preRe
   }
 
   const backdropUrl = backdrop
-    ? `${TMDB_IMAGE_BASE}${backdrop}`
-    : poster ? `${TMDB_IMAGE_BASE}${poster}` : '';
+    ? `${TMDB_BACKDROP_BASE}${backdrop}`
+    : poster ? `${TMDB_POSTER_BASE}${poster}` : '';
 
   const backUrl = mediaType === 'movie'
     ? `${PLAY_BASE}/movies/${encodeURIComponent(slug)}`
@@ -727,8 +737,10 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 .layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers servers" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
 .server-row{grid-area:servers}
-.player-wrap{grid-area:player;position:relative;display:flex;min-height:0;min-width:0}
-iframe{width:100%;height:100%;border:none;display:block;background:#000}
+.player-wrap{grid-area:player;position:relative;display:flex;min-height:0;min-width:0;aspect-ratio:16/9;min-height:300px;contain:layout}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:none;display:block;background:#000}
+/* Reserve the exact final box before the iframe src is set — kills layout shift. */
+.player-wrap::before{content:'';display:block;width:100%;padding-top:56.25%}
 .ad-col{grid-area:ad;width:180px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02);display:block}
 .sub-hint{grid-area:hint}
 @media(max-width:860px){
