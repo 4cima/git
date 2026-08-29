@@ -92,7 +92,7 @@ const SERVERS = [
   { id: 'vidsrc_me',    name: 'VidSrc.me', short: 'VS',  base: 'https://vidsrc.me/embed' },
   { id: 'vidsrc_vip',   name: 'VidSrc',    short: 'VR',  base: 'https://vidrock.net/embed' },
   { id: 'videasy',      name: 'Videasy',   short: 'VY',  base: 'https://player.videasy.net' },
-  { id: '111movies',    name: '111Movies', short: '111', base: 'https://111movies.com' },
+  { id: '111movies',    name: '111Movies', short: '11', base: 'https://111movies.com' },
   { id: 'autoembed_co', name: 'AutoEmbed', short: 'AE',  base: 'https://autoembed.co' },
 ];
 
@@ -661,6 +661,9 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 .srv-item.active .srv-num{background:linear-gradient(135deg,var(--red),var(--orange));color:#fff}
 .srv-item .srv-check{width:16px;height:16px;flex-shrink:0;opacity:0;transition:opacity .15s}
 .srv-item.active .srv-check{opacity:1;color:#22c55e}
+/* Compact season/episode selects inside the server bar row */
+.server-row .dd-wrap{height:40px;width:92px}
+.server-row .dd-select{font-size:13px;border-radius:8px;padding-inline-start:10px;padding-inline-end:26px}
 .srv-dd-legend{display:flex;align-items:center;gap:8px;padding:8px 10px 6px;font-size:12px;font-weight:700;color:#a1a1aa;border-top:1px solid rgba(255,255,255,.08);margin-top:4px}
 .back-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:8.4px 16.8px;border-radius:8px;border:1px solid transparent;background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;font-size:14.4px;font-weight:800;font-family:inherit;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35)}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
@@ -730,6 +733,7 @@ ${titlesBar}
   ${infoRowHtml}
   <div class="layout">
     <div class="server-row">
+      ${seasonSelect}${episodeSelect}
       <div class="srv-dd" id="serverBar" aria-label="مصادر المشاهدة">
         <button type="button" id="srvDdBtn" class="srv-dd-btn" aria-expanded="false">
           <span class="srv-live" aria-hidden="true"></span>
@@ -738,7 +742,6 @@ ${titlesBar}
         </button>
         <div class="srv-dd-menu" id="srvDdMenu" hidden></div>
       </div>
-      ${seasonSelect}${episodeSelect}
       <a class="back-btn" href="${esc(refUrl)}">↩ ${backLabel}</a>
     </div>
     <div class="player-wrap">
@@ -889,7 +892,7 @@ ${titlesBar}
     // and AutoEmbed, so users understand what it means.
     var legend = document.createElement('div');
     legend.className = 'srv-dd-legend';
-    legend.innerHTML = badgeSvg() + '<span>إعلانات +18</span>';
+    legend.innerHTML = badgeSvg() + '<span>إعلانات للكبار</span>';
     menu.appendChild(legend);
     var first = menu.querySelector('.srv-item');
     if (first) selectServer(first, D.servers[0]);
