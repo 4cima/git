@@ -498,8 +498,8 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     : '4cima Player';
 
   const bgStyle = backdropUrl
-    ? `background:linear-gradient(to bottom,rgba(10,12,17,.55),#0a0c11),url('${esc(backdropUrl)}') center/cover no-repeat fixed;`
-    : `background:linear-gradient(to bottom,rgba(10,12,17,.75),#0a0c11),url('https://4cima.com/6565.jpg') center/cover no-repeat fixed;`;
+    ? `background:linear-gradient(to bottom,rgba(10,12,17,.6),rgba(10,12,17,.92)),url('${esc(backdropUrl)}') center/cover no-repeat fixed,url('https://4cima.com/6565.jpg') center/cover no-repeat fixed;`
+    : `background:linear-gradient(to bottom,rgba(10,12,17,.75),rgba(10,12,17,.9)),url('https://4cima.com/6565.jpg') center/cover no-repeat fixed;`;
 
   const boot = jsonForScript({
     slug, mediaType, tmdbId, season, episode,

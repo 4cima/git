@@ -173,7 +173,7 @@ html {
 
 
 body {
-  background: var(--lumen-void);
+  background: linear-gradient(rgba(8,8,12,.86),rgba(8,8,12,.92)), url('/6565.jpg') center/cover no-repeat fixed var(--lumen-void);
   font-family: 'Cairo', 'DM Sans', system-ui, sans-serif;
   overflow-x: hidden;
   overflow-y: auto;
