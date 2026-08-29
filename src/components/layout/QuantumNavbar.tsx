@@ -87,9 +87,9 @@ export const QuantumNavbar = memo(() => {
               <Menu size={26} className="relative z-10" />
             </button>
 
-            {/* Logo with Rope */}
-            <Link href="/" className="group flex items-center cursor-pointer transition-transform relative flex-shrink-0" style={{ marginTop: '5px' }}>
-              <div className={`relative ${logoScrolled ? 'logo-pulled-up' : 'logo-drop-animation'}`}>
+            {/* Logo with Rope — flex-shrink-0 + w-max make it impossible to compress or wrap at any viewport width */}
+            <Link href="/" className="group flex items-center cursor-pointer transition-transform relative shrink-0 grow-0" style={{ marginTop: '5px' }}>
+              <div className={`relative shrink-0 ${logoScrolled ? 'logo-pulled-up' : 'logo-drop-animation'}`}>
                 {/* Realistic Rope with stretch animation */}
                 <div className={`absolute left-1/2 -translate-x-1/2 -top-16 w-1 ${logoScrolled ? 'rope-pulled-up' : 'rope-stretch-animation'}`} 
                   style={{
@@ -102,19 +102,19 @@ export const QuantumNavbar = memo(() => {
                 ></div>
                 
                 <div className="relative flex items-center justify-center">
-                  <div className="relative z-10 font-black text-3xl sm:text-4xl tracking-tighter lowercase transition-transform duration-300 flex flex-nowrap items-center gap-0.5" dir="ltr">
-                    <span 
-                      className="text-red-600 text-4xl sm:text-5xl animate-wiggle drop-shadow-[0_0_12px_rgba(220,38,38,0.9)]"
-                      style={{ 
-                        display: 'inline-block', 
+                  <div className="relative z-10 font-black text-3xl sm:text-4xl tracking-tighter lowercase transition-transform duration-300 flex flex-nowrap items-center gap-0.5 whitespace-nowrap shrink-0 w-max" dir="ltr">
+                    <span
+                      className="text-red-600 text-4xl sm:text-5xl animate-wiggle drop-shadow-[0_0_12px_rgba(220,38,38,0.9)] shrink-0"
+                      style={{
+                        display: 'inline-block',
                         transformOrigin: 'center',
                         WebkitTextStroke: '1px black'
                       }}
                     >
                       4
                     </span>
-                    <span 
-                      className="animate-neon-flicker-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.6)] relative"
+                    <span
+                      className="animate-neon-flicker-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.6)] relative shrink-0 whitespace-nowrap"
                       style={{ 
                         fontFamily: '"Brush Script MT", cursive',
                         fontStyle: 'italic',
@@ -140,8 +140,8 @@ export const QuantumNavbar = memo(() => {
             </Link>
           </div>
 
-          {/* Search and actions */}
-          <div className="flex items-center gap-3 ml-1 flex-shrink
+          {/* Search and actions — min-w-0 lets it absorb all squeezing so the logo side never shrinks */}
+          <div className="flex items-center gap-2 sm:gap-3 ml-1 min-w-0 justify-end">
             {/* Search Box */}
             <SearchBox />
           </div>

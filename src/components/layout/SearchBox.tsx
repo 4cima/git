@@ -479,8 +479,8 @@ export function SearchBox() {
 
   return (
     <div ref={searchRef} className="relative flex items-center gap-3">
-      {/* Android App Button - Coming Soon (يظهر فقط عند عدم التمرير) */}
-      {!isOpen && !isCollapsed && (
+      {/* Android App Button - Coming Soon (يختفي فقط أثناء فتح البحث — يظهر دائماً في كل المقاسات) */}
+      {!isOpen && (
         <motion.button
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -494,7 +494,7 @@ export function SearchBox() {
             <svg className="w-6 h-6 text-green-400 group-hover:text-green-300 transition-colors" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5"/>
             </svg>
-            <span className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">قريباً</span>
+            <span className="hidden sm:inline text-sm font-semibold text-slate-200 group-hover:text-white transition-colors whitespace-nowrap">قريباً</span>
           </div>
         </motion.button>
       )}

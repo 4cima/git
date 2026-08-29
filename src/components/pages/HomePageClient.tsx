@@ -239,6 +239,64 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
     setHeroIndex(newIndex)
     resetAutoRotate() // إعادة تشغيل المهلة
   }, [resetAutoRotate])
+
+  // سحب الخلفية/المساحة الفارغة لتغيير عمل الهيرو (ماوس) — يُتجاهل على عناصر المعلومات والمربع الملحوظ بـ data-hero-no-swipe
+  const beginHeroMouseSwipe = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (target.closest('[data-hero-no-swipe]')) return
+    // منع تحديد النص فقط عند بدء السحب من المساحة الفارغة — النصوص تبقى قابلة للتحديد والنسخ
+    e.preventDefault()
+
+    const startX = e.clientX
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const diffX = moveEvent.clientX - startX
+      if (Math.abs(diffX) > 50) {
+        if (diffX > 0) {
+          const newIndex = (heroIndex - 1 + heroItems.length) % heroItems.length
+          handleHeroChange(newIndex, 'right')
+        } else {
+          const newIndex = (heroIndex + 1) % heroItems.length
+          handleHeroChange(newIndex, 'left')
+        }
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [heroIndex, heroItems.length, handleHeroChange])
+
+  // سحب الخلفية/المساحة الفارغة لتغيير عمل الهيرو (لمس) — نفس الاستثناءات
+  const beginHeroTouchSwipe = useCallback((e: React.TouchEvent) => {
+    const target = e.target as HTMLElement
+    if (target.closest('[data-hero-no-swipe]')) return
+
+    const startX = e.touches[0].clientX
+    const handleTouchMove = (moveEvent: TouchEvent) => {
+      const diffX = moveEvent.touches[0].clientX - startX
+      if (Math.abs(diffX) > 50) {
+        if (diffX > 0) {
+          const newIndex = (heroIndex - 1 + heroItems.length) % heroItems.length
+          handleHeroChange(newIndex, 'right')
+        } else {
+          const newIndex = (heroIndex + 1) % heroItems.length
+          handleHeroChange(newIndex, 'left')
+        }
+        document.removeEventListener('touchmove', handleTouchMove)
+        document.removeEventListener('touchend', handleTouchEnd)
+      }
+    }
+    const handleTouchEnd = () => {
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
+    }
+    document.addEventListener('touchmove', handleTouchMove)
+    document.addEventListener('touchend', handleTouchEnd)
+  }, [heroIndex, heroItems.length, handleHeroChange])
   
   const retryFetch = useCallback(() => {
     setError(null)
@@ -512,7 +570,12 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
       {heroItem && (
         <section className="w-full bg-slate-950">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
-            <div className="relative w-full h-[70vh] md:h-[80vh] flex items-end overflow-hidden rounded-2xl border-2 border-amber-400/50 bg-slate-950 shadow-2xl shadow-amber-500/30" style={{ boxShadow: '0 0 30px rgba(251, 191, 36, 0.4), inset 0 0 20px rgba(251, 191, 36, 0.1)' }}>
+            <div
+              className="relative w-full h-[70vh] md:h-[80vh] flex items-end overflow-hidden rounded-2xl border-2 border-amber-400/50 bg-slate-950 shadow-2xl shadow-amber-500/30"
+              style={{ boxShadow: '0 0 30px rgba(251, 191, 36, 0.4), inset 0 0 20px rgba(251, 191, 36, 0.1)' }}
+              onMouseDown={beginHeroMouseSwipe}
+              onTouchStart={beginHeroTouchSwipe}
+            >
               {/* Meteor Shower Effect - مطر الشهب الملتهب */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-50">
                 <div className="meteor-shower">
@@ -529,14 +592,14 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
               {/* Backdrop Background with transition */}
               <div
                 key={`backdrop-${heroItem.id}`}
-                className="absolute inset-0 bg-cover transition-all duration-1000"
+                className="absolute inset-0 bg-cover cursor-grab active:cursor-grabbing transition-all duration-1000"
                 style={{
                   backgroundImage: `url(/tmdb/w780${heroItem.backdrop_path || heroItem.poster_path})`,
                   backgroundPosition: 'center 30%'
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-l from-slate-950/80 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent cursor-grab" />
+              <div className="absolute inset-0 bg-gradient-to-l from-slate-950/80 via-transparent to-transparent cursor-grab" />
 
               {/* Hero Content */}
               <div className="relative w-full h-full pt-8 pb-6 md:pb-8 z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 md:px-8">
@@ -545,7 +608,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                   {/* Top Section: Badges, Titles, Description */}
                   <div className="space-y-3">
                     {/* Badge row - Fixed at Top */}
-                    <div className="flex flex-wrap gap-2 items-center text-xs">
+                    <div className="flex flex-wrap gap-2 items-center text-xs" data-hero-no-swipe>
                       {(() => {
                         const mediaColorScheme = getMediaTypeColor(heroItem.media_type)
                         return (
@@ -570,12 +633,12 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                     </div>
 
                     {/* Arabic Title */}
-                    <h1 className="text-3xl md:text-5xl font-black text-slate-100 tracking-tight leading-none animate-slideInRight" key={`title-ar-${heroItem.id}`}>
+                    <h1 className="text-3xl md:text-5xl font-black text-slate-100 tracking-tight leading-none animate-slideInRight" data-hero-no-swipe key={`title-ar-${heroItem.id}`}>
                       {sanitizeTitle(heroItem.title_ar)}
                     </h1>
                     
                     {/* English Title - 35% larger with professional effects and color based on media type */}
-                    <div className="relative inline-block" key={`title-en-wrapper-${heroItem.id}`}>
+                    <div className="relative inline-block" data-hero-no-swipe key={`title-en-wrapper-${heroItem.id}`}>
                       <p 
                         className={`text-lg md:text-xl font-bold italic animate-slideInRight relative z-10 ${
                           heroItem.media_type === 'movie' 
@@ -605,7 +668,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                     </div>
 
                     {/* Description with Limited Width */}
-                    <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-sm line-clamp-7" style={{ animationDelay: '0.2s' }}>
+                    <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-sm line-clamp-7" data-hero-no-swipe style={{ animationDelay: '0.2s' }}>
                       {sanitizeOverview(heroItem.overview_ar)}
                     </p>
                   </div>
@@ -613,7 +676,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                   {/* Bottom Section: Buttons */}
                   <div className="space-y-4">
                     {/* Action Buttons Row */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3" data-hero-no-swipe>
                       <Link
                         href={`${
                           heroItem.media_type === 'movie'
@@ -659,8 +722,9 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
 
                 {/* Animated Poster Thumbnail with Swipe Gesture */}
                 <div className="hidden lg:flex lg:col-span-4 items-center justify-center">
-                  <div 
+                  <div
                     className="relative w-64 aspect-[2/3] cursor-grab active:cursor-grabbing select-none hover:animate-wiggle"
+                    data-hero-no-swipe
                     onMouseDown={(e) => {
                       const startX = e.clientX
                       const handleMouseMove = (moveEvent: MouseEvent) => {
