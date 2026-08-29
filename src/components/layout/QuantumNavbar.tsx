@@ -88,7 +88,7 @@ export const QuantumNavbar = memo(() => {
             </button>
 
             {/* Logo with Rope */}
-            <Link href="/" className="group flex items-center cursor-pointer transition-transform relative" style={{ marginTop: '5px' }}>
+            <Link href="/" className="group flex items-center cursor-pointer transition-transform relative flex-shrink-0" style={{ marginTop: '5px' }}>
               <div className={`relative ${logoScrolled ? 'logo-pulled-up' : 'logo-drop-animation'}`}>
                 {/* Realistic Rope with stretch animation */}
                 <div className={`absolute left-1/2 -translate-x-1/2 -top-16 w-1 ${logoScrolled ? 'rope-pulled-up' : 'rope-stretch-animation'}`} 
@@ -141,7 +141,7 @@ export const QuantumNavbar = memo(() => {
           </div>
 
           {/* Search and actions */}
-          <div className="flex items-center gap-3 ml-1">
+          <div className="flex items-center gap-3 ml-1 flex-shrink
             {/* Search Box */}
             <SearchBox />
           </div>
