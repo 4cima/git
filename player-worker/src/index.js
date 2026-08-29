@@ -737,14 +737,16 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 .layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers servers" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
 .server-row{grid-area:servers}
-.player-wrap{grid-area:player;position:relative;display:flex;min-height:0;min-width:0;aspect-ratio:16/9;min-height:300px;contain:layout}
+.player-wrap{grid-area:player;position:relative;display:block;width:100%;max-width:100%;min-width:0;min-height:0;box-sizing:border-box;overflow:hidden;contain:layout}
 iframe{position:absolute;inset:0;width:100%;height:100%;border:none;display:block;background:#000}
-/* Reserve the exact final box before the iframe src is set — kills layout shift. */
-.player-wrap::before{content:'';display:block;width:100%;padding-top:56.25%}
+/* Reserve the exact final 16/9 box before the iframe src is set — kills layout
+   shift. Padding-top spacer (not aspect-ratio) so the box is always exactly the
+   grid-column width and can never overflow the viewport in RTL/mobile. */
+.player-wrap::before{content:'';display:block;width:100%;max-width:100%;padding-top:56.25%}
 .ad-col{grid-area:ad;width:180px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02);display:block}
 .sub-hint{grid-area:hint}
 @media(max-width:860px){
-  .layout{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;grid-template-areas:"servers" "player" "hint"}
+  .layout{grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto;grid-template-areas:"servers" "player" "hint";overflow-x:hidden;max-width:100%}
   .ad-col{display:none}
   .server-row{flex-wrap:wrap}
   .back-btn{margin-right:auto}
