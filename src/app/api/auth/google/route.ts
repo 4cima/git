@@ -7,10 +7,11 @@ export async function GET(req: NextRequest) {
   const res    = NextResponse.redirect(auth.url);
   const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
 
-  // Optional post-login redirect target: only 4cima.stream origins are
-  // accepted (the player). Stored in a short-lived httpOnly cookie.
+  // Optional post-login redirect target. Allowed: 4cima.stream, 4cima.com
+  // (absolute) or a relative path starting with "/" — anything else is
+  // rejected (open-redirect protection). Stored in a short-lived httpOnly cookie.
   const next = req.nextUrl.searchParams.get('next') || '';
-  if (next && /^https:\/\/(www\.)?4cima\.stream\//.test(next)) {
+  if (next && /^(https:\/\/(www\.)?4cima\.(stream|com)\/|\/)/i.test(next)) {
     res.cookies.set('auth_next', next, {
       httpOnly: true,
       secure:   !isLocalhost,

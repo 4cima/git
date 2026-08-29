@@ -18,6 +18,14 @@ export const QuantumNavbar = memo(() => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, profile, signOut } = useAuth()
+  // Full current path (+query) so the login link returns to the same page.
+  // Resolved client-side only (useSearchParams would force a CSR bailout and
+  // break static prerendering of pages using the navbar).
+  const [loginHref, setLoginHref] = useState('/login')
+  useEffect(() => {
+    const next = (window.location.pathname + window.location.search) || '/'
+    setLoginHref(`/login?next=${encodeURIComponent(next)}`)
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -257,7 +265,7 @@ export const QuantumNavbar = memo(() => {
                     </div>
                   ) : (
                     <Link
-                      href="/login"
+                      href={loginHref}
                       onClick={() => setSidebarOpen(false)}
                       className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors group ${
                         pathname?.startsWith('/login') ? 'bg-emerald-500/20 text-emerald-400' : 'text-white hover:text-emerald-400'

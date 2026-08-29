@@ -98,8 +98,13 @@ export function toPlayerUrl(target: WatchTarget): string {
  * Watch flow required by 4cima.com:
  *  1) open the pop-under ad first (background tab),
  *  2) then open the player page on 4cima.stream passing the movie/series id.
+ *
+ * When the visitor has a session, a short-lived signed player bridge token
+ * (HMAC, no secrets in it) is fetched same-origin and appended as ?pt= so the
+ * player can sync the favorite heart. On failure the player still opens —
+ * just without the bridge.
  */
-export function openWatchWithPlayer(target: WatchTarget): void {
+export async function openWatchWithPlayer(target: WatchTarget): Promise<void> {
   if (cachedAdUrl) {
     // Open behind the current tab (classic pop-under), then hand focus back.
     const pop = window.open(cachedAdUrl, '_blank')
@@ -112,5 +117,20 @@ export function openWatchWithPlayer(target: WatchTarget): void {
     }
     window.focus()
   }
-  window.location.href = toPlayerUrl(target)
+  let url = toPlayerUrl(target)
+  try {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 1500)
+    const res = await fetch('/api/player/token', { signal: ctrl.signal })
+    clearTimeout(timer)
+    if (res.ok) {
+      const data = await res.json()
+      if (data?.token) {
+        url += (url.includes('?') ? '&' : '?') + `pt=${encodeURIComponent(data.token)}`
+      }
+    }
+  } catch {
+    /* bridge unavailable — watch without it */
+  }
+  window.location.href = url
 }

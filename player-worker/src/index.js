@@ -348,6 +348,23 @@ async function handlePlayer(url, slug, mediaType, season = 1, episode = 1, preRe
   const { tmdbId, title, backdrop, poster } = resolved;
   const servers = buildServerSources(mediaType, tmdbId, season, episode);
 
+  // Short-lived signed player bridge token (?pt=…). Verified server-side
+  // against 4cima.com (worker never checks signatures locally); on failure
+  // the page still works — just without the favorites bridge.
+  const pt = url.searchParams.get('pt') || '';
+  let bridge = null;
+  if (pt) {
+    try {
+      const vRes = await fetch(
+        `https://4cima.com/api/player/verify?type=${encodeURIComponent(mediaType)}&id=${encodeURIComponent(tmdbId)}`,
+        { headers: { Authorization: `Bearer ${pt}` } },
+      );
+      if (vRes.ok) bridge = await vRes.json();
+    } catch {
+      bridge = null;
+    }
+  }
+
   let seasonsList = [];
   let epList = [];
   if (mediaType === 'tv') {
@@ -370,12 +387,26 @@ async function handlePlayer(url, slug, mediaType, season = 1, episode = 1, preRe
 
   // Full current watch URL — used as the `next` target for login/logout links.
   const selfUrl = url.toString();
+  // Same URL minus session params (who/avatar/pt) — used for the logout
+  // redirect so no stale identity remains after signing out.
+  const cleanSelf = (() => {
+    try {
+      const u = new URL(selfUrl);
+      u.searchParams.delete('who');
+      u.searchParams.delete('avatar');
+      u.searchParams.delete('pt');
+      return u.toString();
+    } catch {
+      return selfUrl;
+    }
+  })();
 
   return new Response(
     htmlPage({
       slug, mediaType, tmdbId, title, titleEn: resolved.latinTitle, season, episode,
       servers, seasons: seasonsList, episodes: epList,
-      backdropUrl, backUrl, refUrl, who, avatar, selfUrl,
+      backdropUrl, backUrl, refUrl, who, avatar, selfUrl, cleanSelf,
+      bridge, pt, posterPath: poster,
       year: resolved.year, runtime: resolved.runtime, rating: resolved.rating, genres: resolved.genres,
     }),
     {
@@ -448,14 +479,18 @@ function genreChipStyle(genre) {
   return `background:${bg};border:1px solid ${bd};color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.3);`;
 }
 
-function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, servers, seasons, episodes, backdropUrl, backUrl, refUrl, who, avatar, selfUrl, year, runtime, rating, genres }) {
+function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, servers, seasons, episodes, backdropUrl, backUrl, refUrl, who, avatar, selfUrl, cleanSelf, bridge, pt, posterPath, year, runtime, rating, genres }) {
   const isTv = mediaType === 'tv';
-  const displayName = safeDecode(who || '').trim();
-  const avatarUrl = safeDecode(avatar || '').trim();
+  // Active player session = a valid bridge token verified against 4cima.com.
+  // Identity shown in the menu comes from the token first, then ?who/?avatar.
+  const sessionUser = (bridge && bridge.user) || null;
+  const displayName = (sessionUser?.name || safeDecode(who || '')).trim();
+  const avatarUrl = (sessionUser?.avatar || safeDecode(avatar || '')).trim();
+  const heartState = (bridge && bridge.heartState) || 'neutral';
   // Login/logout target back to this exact watch URL (4cima.stream only).
   const nextParam = encodeURIComponent(selfUrl || 'https://4cima.stream/');
   const loginUrl = `https://4cima.com/login?next=${nextParam}`;
-  const logoutUrl = `https://4cima.com/api/auth/logout?next=${nextParam}`;
+  const logoutUrl = `https://4cima.com/api/auth/logout?next=${encodeURIComponent(cleanSelf || selfUrl || 'https://4cima.stream/')}`;
   const pageTitle = title
     ? (isTv
         ? `مشاهدة ${title} — موسم ${season} حلقة ${episode}`
@@ -468,8 +503,8 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
 
   const boot = jsonForScript({
     slug, mediaType, tmdbId, season, episode,
-    servers, seasons, episodes, who: displayName, avatar: safeDecode(avatar || '').trim(),
-    loginUrl,
+    servers, seasons, episodes, who: displayName, avatar: avatarUrl,
+    loginUrl, pt, heartState, title, posterPath: posterPath || '',
   });
 
   // Work info row (above the player): only render a chip when the API
@@ -486,8 +521,11 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
   const headerBadge = (arHtml || enHtml)
     ? `<span class="info-badge info-badge-${isTv ? 'tv' : 'movie'}">${isTv ? 'مسلسل' : 'فيلم'}</span>` : '';
   // Action controls (details-page style, ported to CSS here).
-  // Heart opens the real login page on 4cima.com; no cross-domain favorites API.
-  const heartBtn = `<button type="button" id="favBtn" class="fav-btn" title="إضافة للمفضلة" aria-label="إضافة للمفضلة"><span class="fav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span></button>`;
+  // The heart renders ONLY for an active verified player session and toggles
+  // the same favorites state as the work page via the signed bridge token.
+  const heartBtn = sessionUser
+    ? `<button type="button" id="favBtn" class="fav-btn" data-state="${esc(heartState)}" title="إضافة للمفضلة" aria-label="إضافة للمفضلة"><span class="fav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span></button>`
+    : '';
   // Titles bar: a full-width second row under the header carrying the type
   // badge, AR/EN titles and the favorite heart beside the name.
   const titlesBar = (arHtml || enHtml || heartBtn)
@@ -514,9 +552,9 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
   // Menu links — absolute URLs on 4cima.com (mirror of QuantumNavbar sidebar,
   // minus SearchBox). Login is not synchronized across domains this round.
   const menuNav = [
-    { to: '/', label: 'الرئيسية' },
-    { to: '/movies', label: 'أفلام' },
-    { to: '/series', label: 'مسلسلات' },
+    { to: '/', label: 'الرئيسية', color: '#00ffcc', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>' },
+    { to: '/movies', label: 'أفلام', color: '#00ccff', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="17" y2="20"/><line x1="3" y1="9" x2="7" y2="9"/><line x1="3" y1="15" x2="7" y2="15"/><line x1="17" y1="9" x2="21" y2="9"/><line x1="17" y1="15" x2="21" y2="15"/></svg>' },
+    { to: '/series', label: 'مسلسلات', color: '#aa00ff', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>' },
   ];
   const menuLangs = [
     { code: 'ar', label: 'عربي', filter: 'ar' },
@@ -555,11 +593,14 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
          <button type="button" id="menuUserToggle" class="menu-user-btn" aria-label="حساب المستخدم" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
          <div class="menu-dropdown" id="menuDropdown" hidden>
            <a href="https://4cima.com/profile" target="_blank" rel="noopener" class="menu-drop-link">الملف الشخصي</a>
-           <a href="${logoutUrl}" class="menu-drop-link">تسجيل الخروج</a>
+           ${(sessionUser && (sessionUser.role === 'admin' || sessionUser.role === 'supervisor'))
+             ? `<a href="https://4cima.com/admin" target="_blank" rel="noopener" class="menu-drop-link menu-drop-admin">لوحة التحكم</a>`
+             : ''}
+           <a href="${logoutUrl}" class="menu-drop-link menu-drop-danger">تسجيل الخروج</a>
          </div>
        </div>`
     : `<a href="${loginUrl}" class="menu-login">${loginSvg}<span>الدخول</span></a>`;
-  const menuNavHtml = `<div class="menu-grid-3">${menuNav.map((l) => `<a href="https://4cima.com${l.to}" target="_blank" rel="noopener">${l.label}</a>`).join('')}</div>`;
+  const menuNavHtml = `<div class="menu-grid-3">${menuNav.map((l) => `<a href="https://4cima.com${l.to}" target="_blank" rel="noopener" style="flex-direction:column;gap:4px"><span style="display:inline-flex;width:18px;height:18px;color:${l.color}">${l.svg}</span>${l.label}</a>`).join('')}</div>`;
   const menuLangsHtml = `<div class="menu-grid-2">${menuLangs.map((l) => `<a href="https://4cima.com/movies?language=${encodeURIComponent(l.filter)}" target="_blank" rel="noopener">${l.label}</a>`).join('')}</div>`;
   const menuGenresHtml = `<div class="menu-grid-2">${menuGenres.map((g) => `<a href="https://4cima.com/movies/genres/${encodeURIComponent(g.slug)}" target="_blank" rel="noopener">${g.label}</a>`).join('')}</div>`;
   const menuHtml = `<div class="menu-backdrop" id="menuBackdrop" hidden></div>
@@ -603,9 +644,9 @@ header{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgb
 .logo-wrap{display:flex;align-items:center;gap:8px;height:44px}
 .logo{display:inline-flex;align-items:center;gap:8px;font-size:26px;font-weight:900;line-height:1.2;background:linear-gradient(135deg,var(--red),var(--orange));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap;text-decoration:none;cursor:pointer;transition:transform .15s;flex-shrink:0}
 .logo:hover{transform:scale(1.05)}
-.menu-btn{width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:none;border-radius:10px;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;transition:background .15s}
-.menu-btn:hover{background:rgba(255,255,255,.16)}
-.menu-btn svg{width:22px;height:22px}
+.menu-btn{width:auto;height:36px;padding:0 8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid rgba(148,163,184,.5);border-radius:6px;background:linear-gradient(135deg,rgba(30,41,59,.95),rgba(51,65,85,.95));color:#22d3ee;cursor:pointer;transition:all .2s;box-shadow:0 4px 10px rgba(0,0,0,.35)}
+.menu-btn:hover{background:linear-gradient(135deg,rgba(51,65,85,.95),rgba(71,85,105,.95));color:#67e8f9;border-color:rgba(148,163,184,.8)}
+.menu-btn svg{width:26px;height:26px}
 .title-col{display:flex;flex-direction:column;justify-content:center;min-width:0}
 .title-ar{font-size:14px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
 .title-en{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;line-height:1.2}
@@ -699,7 +740,7 @@ iframe{width:100%;height:100%;border:none;display:block;background:#000}
 .menu-login{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.35);color:#34d399;font-weight:700;font-size:14px;text-decoration:none}
 .menu-login svg{width:18px;height:18px;flex-shrink:0}
 .menu-user{display:flex;align-items:center;gap:8px;position:relative;min-width:0;flex:1}
-.menu-avatar{width:28px;height:28px;flex-shrink:0;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--red),var(--orange));object-fit:cover}
+.menu-avatar{width:24px;height:24px;flex-shrink:0;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--red),var(--orange));object-fit:cover}
 .menu-user-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:700;color:#fff}
 .menu-user-btn{width:26px;height:26px;flex-shrink:0;border:none;border-radius:6px;background:rgba(255,255,255,.1);color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .menu-user-btn svg{width:14px;height:14px}
@@ -707,6 +748,10 @@ iframe{width:100%;height:100%;border:none;display:block;background:#000}
 .menu-dropdown[hidden]{display:none}
 .menu-drop-link{display:flex;align-items:center;gap:8px;padding:9px 10px;color:#e5e7eb;font-size:13px;font-weight:600;text-decoration:none;border-radius:6px}
 .menu-drop-link:hover{background:rgba(255,255,255,.08);color:#fff}
+.menu-drop-danger{color:#f87171}
+.menu-drop-danger:hover{background:rgba(239,68,68,.12);color:#ef4444}
+.menu-drop-admin{color:#67e8f9}
+.menu-drop-admin:hover{background:rgba(34,211,238,.12);color:#22d3ee}
 .menu-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;border-radius:8px;background:transparent;color:#fff;font-size:18px;cursor:pointer}
 .menu-close:hover{color:#ef4444}
 .menu-body{flex:1;overflow-y:auto;padding:12px}
@@ -978,16 +1023,29 @@ ${titlesBar}
 
   function initFav() {
     if (!favBtn) return;
-    favBtn.addEventListener('click', function () {
-      // No cross-domain favorites API this round. The heart routes to the real
-      // account page on 4cima.com: profile when logged in (?who= present),
-      // otherwise the login page WITH ?next= pointing back to this exact watch
-      // URL so the user returns here after signing in — never the homepage.
-      if (D.who) {
-        window.open('https://4cima.com/profile', '_blank');
-      } else {
-        window.location.href = D.loginUrl || 'https://4cima.com/login';
+    var apply = function (state) {
+      if (state === 'favorite' || state === 'completed' || state === 'neutral') {
+        favBtn.setAttribute('data-state', state);
       }
+    };
+    apply(D.heartState);
+    favBtn.addEventListener('click', function () {
+      // Toggle the same favorites state as the work page via the signed
+      // player bridge. Never navigates and never opens the profile — on
+      // failure it silently keeps the current state.
+      if (!D.pt) return;
+      fetch('https://4cima.com/api/player/card-action', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + D.pt, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content_type: D.mediaType,
+          tmdb_id: D.tmdbId,
+          title: D.title || '',
+          poster_path: D.posterPath || '',
+        }),
+      }).then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { if (j && j.newState) apply(j.newState); })
+        .catch(function () { /* keep current state */ });
     });
   }
 

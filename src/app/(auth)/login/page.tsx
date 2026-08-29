@@ -6,9 +6,10 @@ export default function LoginPage() {
   const [googleUrl, setGoogleUrl] = useState('/api/auth/google');
 
   useEffect(() => {
-    // Forward a player ?next= target (4cima.stream only) to the OAuth route.
+    // Forward a ?next= target to the OAuth route. Allowed: 4cima.stream,
+    // 4cima.com, or a relative path starting with "/" (open-redirect guard).
     const next = new URLSearchParams(window.location.search).get('next');
-    if (next && /^https:\/\/(www\.)?4cima\.stream\//.test(next)) {
+    if (next && /^(https:\/\/(www\.)?4cima\.(stream|com)\/|\/)/i.test(next)) {
       setGoogleUrl(`/api/auth/google?next=${encodeURIComponent(next)}`);
     }
   }, []);
