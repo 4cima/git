@@ -557,28 +557,29 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     { to: '/series', label: 'مسلسلات', color: '#aa00ff', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>' },
   ];
   const menuLangs = [
-    { code: 'ar', label: 'عربي', filter: 'ar' },
-    { code: 'en', label: 'أجنبي', filter: 'en' },
-    { code: 'tr', label: 'تركي', filter: 'tr' },
-    { code: 'hi', label: 'هندي', filter: 'hi' },
-    { code: 'ko', label: 'كوري', filter: 'ko' },
-    { code: 'zh', label: 'صيني', filter: 'zh,cn' },
-    { code: 'ja', label: 'ياباني', filter: 'ja' },
-    { code: 'fr', label: 'فرنسي', filter: 'fr' },
-    { code: 'es', label: 'إسباني', filter: 'es' },
-    { code: 'de', label: 'ألماني', filter: 'de' },
+    { code: 'ar', label: 'عربي', filter: 'ar', flag: '🇸🇦' },
+    { code: 'en', label: 'أجنبي', filter: 'en', flag: '🇺🇸' },
+    { code: 'tr', label: 'تركي', filter: 'tr', flag: '🇹🇷' },
+    { code: 'hi', label: 'هندي', filter: 'hi', flag: '🇮🇳' },
+    { code: 'ko', label: 'كوري', filter: 'ko', flag: '🇰🇷' },
+    { code: 'zh', label: 'صيني', filter: 'zh,cn', flag: '🇨🇳' },
+    { code: 'ja', label: 'ياباني', filter: 'ja', flag: '🇯🇵' },
+    { code: 'fr', label: 'فرنسي', filter: 'fr', flag: '🇫🇷' },
+    { code: 'es', label: 'إسباني', filter: 'es', flag: '🇪🇸' },
+    { code: 'de', label: 'ألماني', filter: 'de', flag: '🇩🇪' },
   ];
+  const genreSvg = (inner) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
   const menuGenres = [
-    { slug: 'action', label: 'أكشن' },
-    { slug: 'comedy', label: 'كوميديا' },
-    { slug: 'drama', label: 'دراما' },
-    { slug: 'romance', label: 'رومانسي' },
-    { slug: 'thriller', label: 'إثارة' },
-    { slug: 'horror', label: 'رعب' },
-    { slug: 'crime', label: 'جريمة' },
-    { slug: 'adventure', label: 'مغامرات' },
-    { slug: 'fantasy', label: 'فانتازيا' },
-    { slug: 'animation', label: 'أنمي' },
+    { slug: 'action', label: 'أكشن', color: '#ef4444', svg: genreSvg('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>') },
+    { slug: 'comedy', label: 'كوميديا', color: '#facc15', svg: genreSvg('<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>') },
+    { slug: 'drama', label: 'دراما', color: '#94a3b8', svg: genreSvg('<path d="M2 10s1-1 4-1 4 1 4 1v4a4 4 0 0 1-8 0z"/><path d="M14 10s1-1 4-1 4 1 4 1v4a4 4 0 0 1-8 0z"/><path d="M6 5c2-1.5 10-1.5 12 0"/>') },
+    { slug: 'romance', label: 'رومانسي', color: '#f472b6', svg: genreSvg('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7z"/>') },
+    { slug: 'thriller', label: 'إثارة', color: '#f97316', svg: genreSvg('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>') },
+    { slug: 'horror', label: 'رعب', color: '#b91c1c', svg: genreSvg('<circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/><path d="M12 2a8 8 0 0 0-8 8v6l2 2 2-2 2 2 2-2 2 2 2-2 2 2 2-2v-6a8 8 0 0 0-8-8z"/><path d="M9 15h6"/>') },
+    { slug: 'crime', label: 'جريمة', color: '#9ca3af', svg: genreSvg('<rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="4" x2="7" y2="20"/><line x1="17" y1="4" x2="17" y2="20"/><line x1="3" y1="9" x2="7" y2="9"/><line x1="3" y1="15" x2="7" y2="15"/><line x1="17" y1="9" x2="21" y2="9"/><line x1="17" y1="15" x2="21" y2="15"/>') },
+    { slug: 'adventure', label: 'مغامرات', color: '#4ade80', svg: genreSvg('<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>') },
+    { slug: 'fantasy', label: 'فانتازيا', color: '#c084fc', svg: genreSvg('<path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/>') },
+    { slug: 'animation', label: 'أنمي', color: '#22d3ee', svg: genreSvg('<rect x="2" y="7" width="20" height="14" rx="2"/><polyline points="17 2 12 7 7 2"/>') },
   ];
   const loginSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>';
   // Header: login link when anonymous; a user chip + profile/logout when a
@@ -601,8 +602,9 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
        </div>`
     : `<a href="${loginUrl}" class="menu-login">${loginSvg}<span>الدخول</span></a>`;
   const menuNavHtml = `<div class="menu-grid-3">${menuNav.map((l) => `<a href="https://4cima.com${l.to}" target="_blank" rel="noopener" style="flex-direction:column;gap:4px"><span style="display:inline-flex;width:18px;height:18px;color:${l.color}">${l.svg}</span>${l.label}</a>`).join('')}</div>`;
-  const menuLangsHtml = `<div class="menu-grid-2">${menuLangs.map((l) => `<a href="https://4cima.com/movies?language=${encodeURIComponent(l.filter)}" target="_blank" rel="noopener">${l.label}</a>`).join('')}</div>`;
-  const menuGenresHtml = `<div class="menu-grid-2">${menuGenres.map((g) => `<a href="https://4cima.com/movies/genres/${encodeURIComponent(g.slug)}" target="_blank" rel="noopener">${g.label}</a>`).join('')}</div>`;
+  const menuLangsHtml = `<div class="menu-grid-2">${menuLangs.map((l) => `<a href="https://4cima.com/movies?language=${encodeURIComponent(l.filter)}" target="_blank" rel="noopener" title="${l.label}"><span class="menu-flag">${l.flag}</span><span>${l.label}</span></a>`).join('')}</div>`;
+  const menuGenresHtml = `<div class="menu-grid-2 menu-genres">${menuGenres.map((g) => `<a href="https://4cima.com/movies/genres/${encodeURIComponent(g.slug)}" target="_blank" rel="noopener"><span class="menu-genre-ic" style="color:${g.color}">${g.svg}</span><span class="menu-genre-lb">${g.label}</span></a>`).join('')}</div>
+  <div class="menu-hint">💡 التصنيفات تتغير حسب الصفحة (أفلام/مسلسلات)</div>`;
   const menuHtml = `<div class="menu-backdrop" id="menuBackdrop" hidden></div>
 <aside class="menu-panel" id="menuPanel" aria-hidden="true">
   <div class="menu-head">
@@ -610,16 +612,15 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     <button type="button" id="menuClose" class="menu-close" aria-label="إغلاق">✕</button>
   </div>
   <div class="menu-body">
-    <div class="menu-section">
-      <div class="menu-label">القائمة</div>
+    <div class="menu-section menu-section-nav">
       ${menuNavHtml}
     </div>
     <div class="menu-section">
-      <div class="menu-label">اللغات</div>
+      <div class="menu-label"><span>🌍</span><span>اللغات</span></div>
       ${menuLangsHtml}
     </div>
     <div class="menu-section">
-      <div class="menu-label">التصنيفات</div>
+      <div class="menu-label"><span>🎬</span><span>التصنيفات</span></div>
       ${menuGenresHtml}
     </div>
   </div>
@@ -756,11 +757,18 @@ iframe{width:100%;height:100%;border:none;display:block;background:#000}
 .menu-close:hover{color:#ef4444}
 .menu-body{flex:1;overflow-y:auto;padding:12px}
 .menu-section{margin-bottom:16px}
-.menu-label{font-size:11px;font-weight:700;color:#71717a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.menu-label{font-size:10px;font-weight:800;color:#71717a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.menu-section-nav{padding:8px 0 12px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:4px}
 .menu-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .menu-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.menu-grid-3 a,.menu-grid-2 a{display:flex;align-items:center;justify-content:center;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,.06);color:#d4d4d8;font-size:12px;font-weight:700;text-decoration:none;text-align:center;transition:background .15s}
-.menu-grid-3 a:hover,.menu-grid-2 a:hover{background:rgba(255,255,255,.14);color:#fff}
+.menu-grid-3 a,.menu-grid-2 a{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#d4d4d8;font-size:12px;font-weight:700;text-decoration:none;text-align:center;transition:background .15s}
+.menu-grid-3 a:hover,.menu-grid-2 a:hover{background:rgba(255,255,255,.12);color:#fff}
+.menu-flag{font-size:14px;line-height:1}
+.menu-genres a{justify-content:flex-start;padding:8px 10px;overflow:hidden}
+.menu-genre-ic{display:inline-flex;width:14px;height:14px;flex-shrink:0}
+.menu-genre-ic svg{width:100%;height:100%}
+.menu-genre-lb{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.menu-hint{margin-top:8px;font-size:9px;color:#52525b;text-align:center}
 @media(max-width:860px){.ad-col{display:none}}
 @media(min-width:861px){.ad-col{display:block}}
 footer{padding:10px;text-align:center;font-size:11px;color:#4b5563;border-top:1px solid var(--border)}
