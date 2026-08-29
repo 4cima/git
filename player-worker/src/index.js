@@ -90,10 +90,10 @@ export default {
 const SERVERS = [
   { id: 'vidlink',      name: 'VidLink',   short: 'VL',  base: 'https://vidlink.pro' },
   { id: 'vidsrc_me',    name: 'VidSrc.me', short: 'VS',  base: 'https://vidsrc.me/embed' },
-  { id: 'vidsrc_vip',   name: 'VidSrc',    short: 'VR',  base: 'https://vidrock.net/embed' },
+  { id: 'vidsrc_vip',   name: 'VidRock',   short: 'VM',  base: 'https://vidrock.net/embed' },
   { id: 'videasy',      name: 'Videasy',   short: 'VY',  base: 'https://player.videasy.net' },
-  { id: '111movies',    name: '111Movies', short: '11', base: 'https://111movies.com' },
-  { id: 'autoembed_co', name: 'AutoEmbed', short: 'AE',  base: 'https://autoembed.co' },
+  { id: '111movies',    name: '111Movies', short: '1M', base: 'https://111movies.com' },
+  { id: 'autoembed_co', name: 'AutoEmbed', short: 'AM',  base: 'https://autoembed.co' },
 ];
 
 const BASE_OVERRIDES = {
