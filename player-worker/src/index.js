@@ -88,12 +88,12 @@ export default {
 // Server catalogue — mirrors src/services/streamService.ts
 // ------------------------------------------------------------------
 const SERVERS = [
-  { id: 'vidlink',      name: 'VidLink',   base: 'https://vidlink.pro' },
-  { id: 'vidsrc_me',    name: 'VidSrc.me', base: 'https://vidsrc.me/embed' },
-  { id: 'vidsrc_vip',   name: 'VidSrc',    base: 'https://vidrock.net/embed' },
-  { id: 'videasy',      name: 'Videasy',   base: 'https://player.videasy.net' },
-  { id: '111movies',    name: '111Movies', base: 'https://111movies.com' },
-  { id: 'autoembed_co', name: 'AutoEmbed', base: 'https://autoembed.co' },
+  { id: 'vidlink',      name: 'VidLink',   short: 'VL',  base: 'https://vidlink.pro' },
+  { id: 'vidsrc_me',    name: 'VidSrc.me', short: 'VS',  base: 'https://vidsrc.me/embed' },
+  { id: 'vidsrc_vip',   name: 'VidSrc',    short: 'VR',  base: 'https://vidrock.net/embed' },
+  { id: 'videasy',      name: 'Videasy',   short: 'VY',  base: 'https://player.videasy.net' },
+  { id: '111movies',    name: '111Movies', short: '111', base: 'https://111movies.com' },
+  { id: 'autoembed_co', name: 'AutoEmbed', short: 'AE',  base: 'https://autoembed.co' },
 ];
 
 const BASE_OVERRIDES = {
@@ -484,6 +484,9 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     ? `<span class="info-titles info-titles-${isTv ? 'tv' : 'movie'}">${arHtml}${enHtml}</span>` : '';
   const headerBadge = (arHtml || enHtml)
     ? `<span class="info-badge info-badge-${isTv ? 'tv' : 'movie'}">${isTv ? 'مسلسل' : 'فيلم'}</span>` : '';
+  // Action controls (details-page style, ported to CSS here).
+  // Heart opens the real login page on 4cima.com; no cross-domain favorites API.
+  const heartBtn = `<button type="button" id="favBtn" class="fav-btn" title="إضافة للمفضلة" aria-label="إضافة للمفضلة"><span class="fav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span></button>`;
   // Titles bar: a full-width second row under the header carrying the type
   // badge, AR/EN titles and the favorite heart beside the name.
   const titlesBar = (arHtml || enHtml || heartBtn)
@@ -496,9 +499,6 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     (runtimeLabel ? `<span class="info-chip info-chip-runtime">${runtimeLabel}</span>` : ''),
     (rating ? `<span class="info-chip info-chip-rating" dir="ltr">★ ${esc(rating)}</span>` : ''),
   ].filter(Boolean).join('');
-  // Action controls for the info row (details-page style, ported to CSS here).
-  // Heart opens the real login page on 4cima.com; no cross-domain favorites API.
-  const heartBtn = `<button type="button" id="favBtn" class="fav-btn" title="إضافة للمفضلة" aria-label="إضافة للمفضلة"><span class="fav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span></button>`;
   const chevSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
   const seasonSelect = isTv
     ? `<div class="dd-wrap"><select id="seasonSelect" class="dd-select" aria-label="اختر الموسم"></select>${chevSvg}</div>`
@@ -507,8 +507,8 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
     ? `<div class="dd-wrap"><select id="episodeSelect" class="dd-select" aria-label="اختر الحلقة"></select>${chevSvg}</div>`
     : '';
   const backLabel = isTv ? 'العودة لصفحة المسلسل' : 'العودة لصفحة الفيلم';
-  const infoRowHtml = (infoGenres || infoRight || seasonSelect || episodeSelect)
-    ? `<div class="info-row">${infoGenres}${infoRight}${seasonSelect}${episodeSelect}</div>` : '';
+  const infoRowHtml = (infoGenres || infoRight)
+    ? `<div class="info-row">${infoGenres}${infoRight}</div>` : '';
 
   // Menu links — absolute URLs on 4cima.com (mirror of QuantumNavbar sidebar,
   // minus SearchBox). Login is not synchronized across domains this round.
@@ -661,6 +661,7 @@ main{flex:1;display:flex;flex-direction:column;min-height:0}
 .srv-item.active .srv-num{background:linear-gradient(135deg,var(--red),var(--orange));color:#fff}
 .srv-item .srv-check{width:16px;height:16px;flex-shrink:0;opacity:0;transition:opacity .15s}
 .srv-item.active .srv-check{opacity:1;color:#22c55e}
+.srv-dd-legend{display:flex;align-items:center;gap:8px;padding:8px 10px 6px;font-size:12px;font-weight:700;color:#a1a1aa;border-top:1px solid rgba(255,255,255,.08);margin-top:4px}
 .back-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:8.4px 16.8px;border-radius:8px;border:1px solid transparent;background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;font-size:14.4px;font-weight:800;font-family:inherit;text-decoration:none;transition:all .2s;white-space:nowrap;box-shadow:0 4px 12px rgba(220,38,38,.35)}
 .back-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 .layout{flex:1;display:grid;grid-template-columns:1fr 180px;grid-template-rows:auto 1fr auto;grid-template-areas:"servers servers" "player ad" "hint .";gap:10px 12px;padding:0 16px;min-height:0;min-width:0}
@@ -737,6 +738,7 @@ ${titlesBar}
         </button>
         <div class="srv-dd-menu" id="srvDdMenu" hidden></div>
       </div>
+      ${seasonSelect}${episodeSelect}
       <a class="back-btn" href="${esc(refUrl)}">↩ ${backLabel}</a>
     </div>
     <div class="player-wrap">
@@ -859,16 +861,17 @@ ${titlesBar}
     menu.appendChild(head);
     var checkSvg = '<svg class="srv-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
     D.servers.forEach(function (s, idx) {
+      var shortName = s.short || s.name || ('سيرفر ' + (idx + 1));
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'srv-item';
-      btn.setAttribute('data-label', 'سيرفر ' + (idx + 1));
+      btn.setAttribute('data-label', 'سيرفر ' + shortName);
       var num = document.createElement('span');
       num.className = 'srv-num';
       num.textContent = String(idx + 1);
       btn.appendChild(num);
       var name = document.createElement('span');
-      name.textContent = 'سيرفر ' + (idx + 1);
+      name.textContent = 'سيرفر ' + shortName;
       btn.appendChild(name);
       // +18 warning triangle badge on 111movies (server 5) and AutoEmbed (server 6).
       if (s.id === 'autoembed_co' || s.id === '111movies') {
@@ -882,6 +885,12 @@ ${titlesBar}
       btn.addEventListener('click', function () { selectServer(btn, s); });
       menu.appendChild(btn);
     });
+    // Legend row: explain the red triangle (+18 ads) badge used on 111Movies
+    // and AutoEmbed, so users understand what it means.
+    var legend = document.createElement('div');
+    legend.className = 'srv-dd-legend';
+    legend.innerHTML = badgeSvg() + '<span>إعلانات +18</span>';
+    menu.appendChild(legend);
     var first = menu.querySelector('.srv-item');
     if (first) selectServer(first, D.servers[0]);
   }
