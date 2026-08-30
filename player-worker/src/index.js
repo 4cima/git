@@ -612,7 +612,7 @@ function htmlPage({ slug, mediaType, tmdbId, title, titleEn, season, episode, se
        </div>`
     : `<a href="${loginUrl}" class="menu-login">${loginSvg}<span>الدخول</span></a>`;
   const menuNavHtml = `<div class="menu-grid-3">${menuNav.map((l) => `<a href="https://4cima.com${l.to}" target="_blank" rel="noopener" style="flex-direction:column;gap:4px"><span style="display:inline-flex;width:18px;height:18px;color:${l.color}">${l.svg}</span>${l.label}</a>`).join('')}</div>`;
-  const menuLangsHtml = `<div class="menu-grid-2">${menuLangs.map((l) => `<a href="https://4cima.com/movies?language=${encodeURIComponent(l.filter)}" target="_blank" rel="noopener" title="${l.label}"><span class="menu-flag">${l.flag}</span><span>${l.label}</span></a>`).join('')}</div>`;
+  const menuLangsHtml = `<div class="menu-grid-2 menu-langs">${menuLangs.map((l) => `<a href="https://4cima.com/movies?language=${encodeURIComponent(l.filter)}" target="_blank" rel="noopener" title="${l.label}"><span>${l.label}</span></a>`).join('')}</div>`;
   const menuGenresHtml = `<div class="menu-grid-2 menu-genres">${menuGenres.map((g) => `<a href="https://4cima.com/movies/genres/${encodeURIComponent(g.slug)}" target="_blank" rel="noopener"><span class="menu-genre-ic" style="color:${g.color}">${g.svg}</span><span class="menu-genre-lb">${g.label}</span></a>`).join('')}</div>
   <div class="menu-hint">💡 التصنيفات تتغير حسب الصفحة (أفلام/مسلسلات)</div>`;
   const menuHtml = `<div class="menu-backdrop" id="menuBackdrop" hidden></div>
@@ -766,7 +766,7 @@ iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;display
 .sub-hint svg.ico-gear{fill:url(#gearGrad);stroke:none}
 .sub-hint svg.ico-gear path{stroke:none}
 .menu-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1200}
-.menu-panel{position:fixed;top:0;right:0;height:100%;width:240px;background:rgba(0,0,0,.95);border-left:1px solid rgba(255,255,255,.1);z-index:1300;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.4)}
+.menu-panel{position:fixed;top:68px;right:0;height:calc(100% - 68px);width:240px;background:rgba(0,0,0,.95);border-left:1px solid rgba(255,255,255,.1);z-index:1300;display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.4)}
 .menu-panel[aria-hidden="true"]{display:none}
 .menu-head{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--border)}
 .menu-login{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.35);color:#34d399;font-weight:700;font-size:14px;text-decoration:none}
@@ -792,10 +792,11 @@ iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;display
 .menu-section-nav{padding:8px 0 12px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:4px}
 .menu-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .menu-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.menu-grid-3 a,.menu-grid-2 a{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 6px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#d4d4d8;font-size:12px;font-weight:700;text-decoration:none;text-align:center;transition:background .15s}
-.menu-grid-3 a:hover,.menu-grid-2 a:hover{background:rgba(255,255,255,.12);color:#fff}
-.menu-flag{font-size:14px;line-height:1}
-.menu-genres a{justify-content:flex-start;padding:8px 10px;overflow:hidden}
+.menu-grid-3 a,.menu-grid-2 a{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 6px;border-radius:8px;background:transparent;color:#d4d4d8;font-size:12px;font-weight:600;text-decoration:none;text-align:center;transition:background .15s,color .15s}
+.menu-grid-3 a:hover,.menu-grid-2 a:hover{background:rgba(255,255,255,.1);color:#fff}
+.menu-langs a{font-size:12px;font-weight:600;color:#d4d4d8}
+.menu-langs a:hover{color:#fff}
+.menu-genres a{justify-content:flex-start;padding:8px 10px;overflow:hidden;font-weight:500}
 .menu-genre-ic{display:inline-flex;width:14px;height:14px;flex-shrink:0}
 .menu-genre-ic svg{width:100%;height:100%}
 .menu-genre-lb{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
