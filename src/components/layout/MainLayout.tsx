@@ -26,7 +26,7 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         <div className="sticky top-0 z-[100] w-full">
           <QuantumNavbar />
         </div>
-      
+
         <AnimatePresence mode="wait">
           <ErrorBoundary>
             <motion.main

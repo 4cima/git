@@ -3,7 +3,7 @@ import { executeAll } from '@/lib/db'
 import { SeriesPageClient } from '@/components/pages/SeriesPageClient'
 
 export const metadata: Metadata = {
-  title: 'مسلسلات | فور سيما',
+  title: 'المسلسلات المترجمة',
   description: 'استكشف آلاف المسلسلات المترجمة بجودة عالية - دراما، أكشن، كوميديا، وأكثر',
   alternates: { canonical: 'https://4cima.com/series' }
 }

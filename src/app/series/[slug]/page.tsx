@@ -40,11 +40,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   } catch {}
   
+  const posterImage = series.poster_path
+    ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
+    : undefined
+  const pageUrl = `https://4cima.com/series/${slug}`
+
   return {
     title: `${title} | فور سيما`,
     description,
     keywords,
-    alternates: { canonical: `https://4cima.com/series/${slug}` }
+    alternates: { canonical: pageUrl },
+    openGraph: {
+      type: 'video.tv_show' as const,
+      url: pageUrl,
+      title,
+      description,
+      siteName: 'فور سيما',
+      images: posterImage ? [{ url: posterImage, width: 500, height: 750, alt: title }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image' as const,
+      title,
+      description,
+      images: posterImage ? [posterImage] : undefined,
+    },
   }
 }
 
@@ -73,21 +92,32 @@ export default async function SeriesDetails({ params }: PageProps) {
     name:             series.name_ar || series.name_en || 'مسلسل',
     alternateName:    series.name_en || undefined,
     description:      series.overview_ar || series.overview || undefined,
-    image:            series.poster_path ? `https://image.tmdb.org/t/p/w500${series.poster_path}` : undefined,
+    image:            series.poster_path ? `https://4cima.com/tmdb/w500${series.poster_path}` : undefined,
     datePublished:    series.first_air_date || undefined,
     genre:            series.genres_json ? JSON.parse(String(series.genres_json)).map((g: any) => g.name_ar || g.name_en) : undefined,
     inLanguage:       series.original_language || 'ar',
     numberOfSeasons:  series.number_of_seasons || seasons.length,
     numberOfEpisodes: series.number_of_episodes || undefined,
+    url:              `https://4cima.com/series/${slug}`,
     aggregateRating:  series.vote_average ? {
       '@type': 'AggregateRating', ratingValue: series.vote_average,
       ratingCount: series.vote_count || 0, bestRating: 10, worstRating: 0
     } : undefined
   }
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: 'https://4cima.com/' },
+      { '@type': 'ListItem', position: 2, name: 'مسلسلات', item: 'https://4cima.com/series' },
+      { '@type': 'ListItem', position: 3, name: series.name_ar || series.name_en || 'مسلسل', item: `https://4cima.com/series/${slug}` },
+    ],
+  }
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <SeriesDetailsClient series={series} seasons={seasons} />
     </>
   )

@@ -425,7 +425,7 @@ export const MovieCard = memo(({
 
             {/* Top Right - Media Type Badge */}
             <div className="absolute top-2 right-2 z-20">
-              <span className={`${mediaTypeColorScheme.bg} ${mediaTypeColorScheme.text} ${mediaTypeColorScheme.border} border px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+              <span className={`${mediaTypeColorScheme.bg} ${mediaTypeColorScheme.text} ${mediaTypeColorScheme.border} border px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
                 {mediaTypeColorScheme.label}
               </span>
             </div>
@@ -462,7 +462,7 @@ export const MovieCard = memo(({
 
             {/* Top Right - Media Type Badge */}
             <div className="absolute top-2 right-2 z-20">
-              <span className={`${mediaTypeColorScheme.bg} ${mediaTypeColorScheme.text} ${mediaTypeColorScheme.border} border px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+              <span className={`${mediaTypeColorScheme.bg} ${mediaTypeColorScheme.text} ${mediaTypeColorScheme.border} border px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
                 {mediaTypeColorScheme.label}
               </span>
             </div>
@@ -470,7 +470,7 @@ export const MovieCard = memo(({
             {/* Bottom Right - Genre Badge */}
             {genre && (
               <div className="absolute bottom-2 right-2 z-20">
-                <span className={`${genreColorScheme.bg} ${genreColorScheme.text} ${genreColorScheme.border} border px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg`}>
+                <span className={`${genreColorScheme.bg} ${genreColorScheme.text} ${genreColorScheme.border} border px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
                   {genre}
                 </span>
               </div>
@@ -481,11 +481,11 @@ export const MovieCard = memo(({
               {rating != null && (
                 <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
                   <Star size={11} fill="currentColor" className="shrink-0" />
-                  <span className="text-[9px] font-bold">{rating}</span>
+                  <span className="text-[12px] font-bold">{rating}</span>
                 </span>
               )}
               {year && (
-                <span className={`px-2 py-1 rounded-lg text-[9px] font-bold backdrop-blur-md shadow-lg ${getYearStyle(year)}`}>
+                <span className={`px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg ${getYearStyle(year)}`}>
                   {year}
                 </span>
               )}
@@ -533,7 +533,7 @@ export const MovieCard = memo(({
                   transition={{ duration: 0.2 }}
                   className="absolute inset-0 p-2.5 flex items-center"
                 >
-                  <p className="text-[9px] leading-relaxed text-zinc-300 line-clamp-3">
+                  <p className="text-[12px] leading-relaxed text-zinc-300 line-clamp-3">
                     {movie.overview_ar || movie.overview || 'لا يوجد وصف متاح'}
                   </p>
                 </motion.div>

@@ -7,6 +7,14 @@ import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ClientInit } from './ClientInit'
 
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'فور سيما',
+  alternateName: '4cima',
+  url: 'https://4cima.com',
+}
+
 const cairo = Cairo({ 
   subsets: ['arabic', 'latin'],
   display: 'swap',
@@ -15,8 +23,8 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   metadataBase: new URL('https://4cima.com'),
   title: {
-    default: '4cima - مشاهدة افلام ومسلسلات مترجمة اون لاين بجودة عالية',
-    template: '%s | 4cima',
+    default: 'فور سيما - مشاهدة افلام ومسلسلات مترجمة اون لاين بجودة عالية',
+    template: '%s | فور سيما',
   },
   description: 'مشاهدة وتحميل احدث الافلام والمسلسلات المترجمة والمدبلجة بجودة عالية HD و 4K مجاناً. افلام اجنبية، مسلسلات تركية، دراما كورية، وأكثر.',
   keywords: [
@@ -36,10 +44,15 @@ export const metadata: Metadata = {
   creator: '4cima',
   publisher: '4cima',
   icons: {
-    icon: '/icons/favicon.ico?v=3',
+    icon: [
+      { url: '/icons/favicon.svg?v=4', type: 'image/svg+xml' },
+      { url: '/icons/favicon-32x32.png?v=4', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon.ico?v=3', sizes: 'any' },
+    ],
     shortcut: '/icons/favicon.ico?v=3',
-    apple: '/icons/favicon.ico?v=3',
+    apple: '/icons/apple-touch-icon.png?v=4',
   },
+  manifest: '/manifest.webmanifest',
   formatDetection: {
     email: false,
     address: false,
@@ -92,6 +105,10 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" data-scroll-behavior="smooth">
       <body className={`${cairo.className} bg-black text-white min-h-screen`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
         <AuthProvider>
           <ClientInit />
           <Providers>

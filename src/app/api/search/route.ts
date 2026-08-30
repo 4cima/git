@@ -92,15 +92,16 @@ export async function GET(request: NextRequest) {
     
     const queryLength = q.length
     
-    // 1-char: short_titles_lookup
-    if (queryLength === 1) {
+    // 1-char & 2-char: short_titles_lookup (pre-indexed lists — instant, no full table scans)
+    if (queryLength <= 2) {
       const results = await executeAll(
-        `SELECT source_id as id, tmdb_id, media_type, slug,
+        `SELECT source_id as id, media_type, slug,
                 title_ar, title_en, name_ar, name_en,
                 poster_path, release_year, first_air_year,
                 vote_average, popularity, filter_status
          FROM short_titles_lookup
-         WHERE (LOWER(title_ar) LIKE LOWER(?) || '%' OR LOWER(title_en) LIKE LOWER(?) || '%'
+         WHERE title_length = ?
+           AND (LOWER(title_ar) LIKE LOWER(?) || '%' OR LOWER(title_en) LIKE LOWER(?) || '%'
              OR LOWER(name_ar)  LIKE LOWER(?) || '%' OR LOWER(name_en)  LIKE LOWER(?) || '%')
            AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
          ORDER BY
@@ -109,14 +110,9 @@ export async function GET(request: NextRequest) {
                 ELSE 2 END,
            popularity DESC
          LIMIT 50`,
-        [q, q, q, q, q, q, q, q]
+        [queryLength, q, q, q, q, q, q, q, q]
       )
       return NextResponse.json({ results, totalFound: results.length, searchStrategy: 'short-title-lookup' })
-    }
-    
-    // 2-char minimum for FTS
-    if (queryLength < 2) {
-      return NextResponse.json({ results: [], searchStrategy: 'min-2-char' })
     }
     
     const allResults = await cascadingSearch(q, queryLength)

@@ -354,6 +354,9 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
 
+      {/* Single page H1 for SEO (visually hidden) */}
+      <h1 className="sr-only">الأفلام المترجمة</h1>
+
       {/* Cinema Banner */}
       <section className="w-full bg-slate-950">
         <div className="max-w-[1920px] mx-auto px-3 sm:px-5 md:px-8 lg:px-12 mb-6">

@@ -5,6 +5,7 @@ import { HomePageClient } from '@/components/pages/HomePageClient'
 export const metadata: Metadata = {
   title: 'فور سيما | شاهد أحدث الأفلام والمسلسلات المترجمة',
   description: 'موقع فور سيما لمشاهدة أحدث الأفلام والمسلسلات المترجمة بجودة عالية - أكشن، دراما، كوميديا، رعب، وأكثر',
+  alternates: { canonical: 'https://4cima.com/' },
 }
 
 export const dynamic    = 'force-static'

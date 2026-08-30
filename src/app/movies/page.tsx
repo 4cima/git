@@ -3,7 +3,7 @@ import { executeAll } from '@/lib/db'
 import { MoviesPageClient } from '@/components/pages/MoviesPageClient'
 
 export const metadata: Metadata = {
-  title: 'أفلام | فور سيما',
+  title: 'الأفلام المترجمة',
   description: 'استكشف آلاف الأفلام المترجمة بجودة عالية - أفلام أكشن، كوميديا، دراما، رعب، وأكثر',
   alternates: { canonical: 'https://4cima.com/movies' }
 }

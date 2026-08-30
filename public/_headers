@@ -18,3 +18,8 @@
 
 /*.css
   Cache-Control: public, max-age=31536000, immutable
+
+# TMDB proxies images (rewritten via /tmdb/*) — cached at the edge to cut origin hits & TTFB
+/tmdb/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  CDN-Cache-Control: public, max-age=604800

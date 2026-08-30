@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
 import { Star, Clock, Calendar, Tv, Heart, Play, ChevronDown } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
@@ -562,11 +561,11 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
   return (
     <div className="min-h-screen bg-zinc-800 text-white relative overflow-hidden">
-      {/* Backdrop with Adaptive Overlay */}
-      <div className="absolute top-0 left-0 right-0 h-[70vh]">
+      {/* Backdrop with Adaptive Overlay - يغطي الشاشة كاملة من أول بكسل */}
+      <div className="absolute inset-0 h-screen">
         {backdrop && (
           <div className="absolute inset-0">
-            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="eager" fetchPriority="high" style={{aspectRatio: '16/9'}} />
+            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="eager" fetchPriority="high" />
             {/* Adaptive gradient based on image brightness */}
             <div className={`absolute inset-0 ${overlayConfig.gradient}`} />
             {/* Bottom fade for smooth transition - last 25% fades to background */}
@@ -575,24 +574,10 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
         )}
       </div>
 
-      <div className="relative z-10 page-container pt-4 pb-20">
+      <div className="relative z-10 page-container pt-24 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
-          {/* Left: Poster */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-16"
-          >
-            {/* Series Badge - Above poster, aligned to right edge, same level as title */}
-            <div className="flex items-center justify-end mb-4 -mt-14">
-              <span className="flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-500/20 px-4 py-2 rounded-full text-cyan-400 text-base font-bold shadow-lg whitespace-nowrap">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                </svg>
-                مسلسل
-              </span>
-            </div>
-            
+          {/* Right (First in RTL): Poster with badge on corner */}
+          <div className="relative">
             <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group">
               {poster && (
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
@@ -615,7 +600,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
 
           {/* Right: Info */}
           <div className="space-y-4">
@@ -624,7 +609,15 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
               <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="flex-1">
-                    <h1 className="text-xl md:text-2xl font-black text-zinc-100">{title}</h1>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full text-cyan-400 text-sm font-bold whitespace-nowrap">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm12.553 1.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                        </svg>
+                        مسلسل
+                      </span>
+                      <h1 className="text-xl md:text-2xl font-black text-zinc-100">{title}</h1>
+                    </div>
                     {titleEn && titleEn !== title && (
                       <h2 className="text-xl text-zinc-400 mt-2 font-medium tracking-wide text-left">{titleEn}</h2>
                     )}
@@ -787,7 +780,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                         {/* Play Button Overlay */}
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                           <div className="relative">
-                            <div className="absolute inset-0 bg-red-600/30 blur-3xl animate-pulse"></div>
+                            <div className="absolute inset-0 bg-red-600/30 blur-3xl"></div>
                             <button className="relative w-20 h-20 rounded-full bg-red-600 group-hover:bg-red-500 group-hover:scale-110 transition-all flex items-center justify-center shadow-2xl">
                               <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"/>

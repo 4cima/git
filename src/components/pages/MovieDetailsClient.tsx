@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
 import { Star, Calendar, Clock, Film, Heart, Play } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
@@ -348,11 +347,11 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
   return (
     <div className="min-h-screen bg-zinc-800 text-white relative overflow-hidden">
-      {/* Backdrop with Adaptive Overlay */}
-      <div className="absolute top-0 left-0 right-0 h-[70vh]">
+      {/* Backdrop with Adaptive Overlay - يغطي الشاشة كاملة من أول بكسل */}
+      <div className="absolute inset-0 h-screen">
         {backdrop && (
           <div className="absolute inset-0">
-            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="eager" fetchPriority="high" style={{aspectRatio: '16/9'}} />
+            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="eager" fetchPriority="high" />
             {/* Adaptive gradient based on image brightness */}
             <div className={`absolute inset-0 ${overlayConfig.gradient}`} />
             {/* Bottom fade for smooth transition - last 25% fades to background */}
@@ -361,24 +360,10 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
         )}
       </div>
 
-      <div className="relative z-10 page-container pt-4 pb-20">
+      <div className="relative z-10 page-container pt-24 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
-          {/* Left: Poster */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-16"
-          >
-            {/* Film Badge - Above poster, aligned to right edge, same level as title */}
-            <div className="flex items-center justify-end mb-4 -mt-14">
-              <span className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-4 py-2 rounded-full text-red-400 text-base font-bold shadow-lg whitespace-nowrap">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v4H7V5zm8 8v2h1v-2h-1zm-2-2H7v4h6v-4zm2 0h1V9h-1v2zm1-4V5h-1v2h1zM5 5v2H4V5h1zm0 4H4v2h1V9zm-1 4h1v2H4v-2z" clipRule="evenodd" />
-                </svg>
-                فيلم
-              </span>
-            </div>
-            
+          {/* Right (First in RTL): Poster with badge on corner */}
+          <div className="relative">
             <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group">
               {poster && (
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
@@ -401,7 +386,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
 
           {/* Right: Info */}
           <div className="space-y-4">
@@ -410,7 +395,15 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
               <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="flex-1">
-                    <h1 className="text-xl md:text-2xl font-black text-zinc-100">{title}</h1>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 px-3 py-1 rounded-full text-red-400 text-sm font-bold whitespace-nowrap">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v4H7V5zm8 8v2h1v-2h-1zm-2-2H7v4h6v-4zm2 0h1V9h-1v2zm1-4V5h-1v2h1zM5 5v2H4V5h1zm0 4H4v2h1V9zm-1 4h1v2H4v-2z" clipRule="evenodd" />
+                        </svg>
+                        فيلم
+                      </span>
+                      <h1 className="text-xl md:text-2xl font-black text-zinc-100">{title}</h1>
+                    </div>
                     {titleEn && titleEn !== title && (
                       <h2 className="text-xl text-zinc-400 mt-2 font-medium tracking-wide text-left">{titleEn}</h2>
                     )}
@@ -531,11 +524,11 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                     {trailerKey && backdrop ? (
                       <>
                         {/* Backdrop Image */}
-                        <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="eager" fetchPriority="high" style={{aspectRatio: '16/9'}} />
+                        <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" style={{aspectRatio: '16/9'}} />
                         {/* Play Button Overlay */}
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                           <div className="relative">
-                            <div className="absolute inset-0 bg-red-600/30 blur-3xl animate-pulse"></div>
+                            <div className="absolute inset-0 bg-red-600/30 blur-3xl"></div>
                             <button className="relative w-20 h-20 rounded-full bg-red-600 group-hover:bg-red-500 group-hover:scale-110 transition-all flex items-center justify-center shadow-2xl">
                               <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"/>
@@ -548,7 +541,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                         </div>
                       </>
                     ) : backdrop ? (
-                      <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="eager" fetchPriority="high" style={{aspectRatio: '16/9'}} />
+                      <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" style={{aspectRatio: '16/9'}} />
                     ) : null}
                   </div>
                 </div>

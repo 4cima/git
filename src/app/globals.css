@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
 /* -------------------------------------------------------------------------- */
+/*  Performance helpers — reduce render cost of offscreen rows (INP/CLS)       */
+/* -------------------------------------------------------------------------- */
+.horizontal-scroll {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 300px;
+}
+
+/* -------------------------------------------------------------------------- */
 /*  LUMEN Design System — CSS Custom Properties (Design Tokens)              */
 /* -------------------------------------------------------------------------- */
 :root {
@@ -10,14 +18,14 @@
   --lumen-surface: #0F0F14;
   --lumen-muted: #1C1B1F;
   --lumen-cream: #E8E4DC;
-  --lumen-silver: #A8A5A0;
-  --lumen-gold: #C9A962;
+  --lumen-silver: #B3AFAA;
+  --lumen-gold: #D4B26E;
   --lumen-gold-dim: rgba(201, 169, 98, 0.2);
   --glass-border: rgba(255, 255, 255, 0.06);
   --glass-bg: rgba(0, 0, 0, 0.25);
   --deep-space: #08080C;
   --neon-primary: #C9A962;
-  --neon-secondary: #A8A5A0;
+  --neon-secondary: #B3AFAA;
 
   --color-primary: #C9A962;
   --color-primary-light: #E8D5A3;
@@ -31,7 +39,7 @@
   --color-raised: #1C1B1F;
   --color-overlay: rgba(8, 8, 12, 0.9);
   --color-text-primary: #E8E4DC;
-  --color-text-secondary: #A8A5A0;
+  --color-text-secondary: #B3AFAA;
   --color-text-tertiary: #71717A;
   --color-border-default: rgba(255, 255, 255, 0.15);
   --color-border-muted: rgba(255, 255, 255, 0.08);

@@ -72,11 +72,11 @@ export const QuantumNavbar = memo(() => {
   return (
     <>
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-[1000] transition-all duration-300 bg-transparent border-b border-transparent">
+      <nav className="fixed top-0 left-0 right-0 z-[9999] transition-all duration-300 bg-transparent border-b border-transparent">
         <div className="max-w-[1920px] mx-auto px-6 sm:px-8 md:px-12 lg:px-16 flex items-center justify-between h-16">
 
           {/* Right: Menu + Logo */}
-          <div className="flex items-center gap-3 mr-1">
+          <div className="flex items-center gap-4 mr-1">
             {/* Menu Button */}
             <button
               type="button"
@@ -88,7 +88,7 @@ export const QuantumNavbar = memo(() => {
             </button>
 
             {/* Logo with Rope — flex-shrink-0 + w-max make it impossible to compress or wrap at any viewport width */}
-            <Link href="/" className="group flex items-center cursor-pointer transition-transform relative shrink-0 grow-0" style={{ marginTop: '5px' }}>
+            <Link href="/" className="group flex items-center cursor-pointer transition-transform relative shrink-0 grow-0" style={{ marginTop: '30px' }}>
               <div className={`relative shrink-0 ${logoScrolled ? 'logo-pulled-up' : 'logo-drop-animation'}`}>
                 {/* Realistic Rope with stretch animation */}
                 <div className={`absolute left-1/2 -translate-x-1/2 -top-16 w-1 ${logoScrolled ? 'rope-pulled-up' : 'rope-stretch-animation'}`} 
@@ -102,9 +102,9 @@ export const QuantumNavbar = memo(() => {
                 ></div>
                 
                 <div className="relative flex items-center justify-center">
-                  <div className="relative z-10 font-black text-3xl sm:text-4xl tracking-tighter lowercase transition-transform duration-300 flex flex-nowrap items-center gap-0.5 whitespace-nowrap shrink-0 w-max" dir="ltr">
+                  <div className="relative z-10 font-black text-4xl sm:text-5xl tracking-tighter lowercase transition-transform duration-300 flex flex-nowrap items-center gap-0.5 whitespace-nowrap shrink-0 w-max" dir="ltr">
                     <span
-                      className="text-red-600 text-4xl sm:text-5xl animate-wiggle drop-shadow-[0_0_12px_rgba(220,38,38,0.9)] shrink-0"
+                      className="text-red-600 text-5xl sm:text-6xl animate-wiggle drop-shadow-[0_0_12px_rgba(220,38,38,0.9)] shrink-0"
                       style={{
                         display: 'inline-block',
                         transformOrigin: 'center',
@@ -167,7 +167,7 @@ export const QuantumNavbar = memo(() => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 h-full w-60 z-[1200] bg-black/95 backdrop-blur-xl border-l border-white/10 shadow-2xl flex flex-col"
+              className="fixed top-16 right-0 h-[calc(100%-4rem)] w-60 z-[1200] bg-black/95 backdrop-blur-xl border-l border-white/10 shadow-2xl flex flex-col"
             >
               {/* Header */}
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/10 flex-shrink-0">

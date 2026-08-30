@@ -170,6 +170,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
             <img
               src={poster}
               alt={title || 'Card poster'}
+              decoding='async'
               className={`
                 w-full h-full object-cover
                 transition-opacity duration-300

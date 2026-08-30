@@ -334,9 +334,67 @@ function buildSeriesInsert(tmdb_id) {
 ON CONFLICT(tmdb_id) DO UPDATE SET ${upsertCols.map(c => `${c}=excluded.${c}`).join(',')}`;
 }
 
+// ── short_titles_lookup rebuild (1-2 char search lists) ───────────────────────
+
+async function rebuildShortTitles() {
+  console.log('\n📋 إعادة بناء short_titles_lookup ...');
+
+  // Pull short-title rows (length 1-2, any language) from the authoritative D1 copy
+  const pull = (sql) => d1Query(sql).then(r => (Array.isArray(r) ? r[0]?.results : []) || []);
+
+  const moviesShort = await pull(`
+    SELECT tmdb_id, 'movie' AS media_type, slug, title_ar, title_en,
+           poster_path, release_year, vote_average, popularity, filter_status,
+           MIN(LENGTH(title_ar), LENGTH(title_en)) AS len_ar_en
+    FROM movies
+    WHERE (LENGTH(title_ar) BETWEEN 1 AND 2 OR LENGTH(title_en) BETWEEN 1 AND 2)
+      AND (filter_status IN ('clean','reviewed_approved') OR filter_status IS NULL)
+  `).catch(() => []);
+
+  const seriesShort = await pull(`
+    SELECT tmdb_id, 'tv' AS media_type, slug, name_ar, name_en,
+           poster_path, first_air_year, vote_average, popularity, filter_status,
+           MIN(LENGTH(name_ar), LENGTH(name_en)) AS len_ar_en
+    FROM tv_series
+    WHERE (LENGTH(name_ar) BETWEEN 1 AND 2 OR LENGTH(name_en) BETWEEN 1 AND 2)
+      AND (filter_status IN ('clean','reviewed_approved') OR filter_status IS NULL)
+  `).catch(() => []);
+
+  // Normalize to lookup-table columns (title_* for both media types, source_id = tmdb_id)
+  const toRow = (r) => {
+    const titleAr = r.media_type === 'movie' ? r.title_ar : r.name_ar;
+    const titleEn = r.media_type === 'movie' ? r.title_en : r.name_en;
+    const titleLength = Math.min(
+      ...[titleAr, titleEn].filter(t => t && t.length > 0).map(t => t.length),
+      2
+    );
+    return `(${r.tmdb_id}, '${r.media_type}', ${esc(titleAr)}, ${esc(titleEn)}, ${esc(titleAr)}, ${esc(titleEn)}, ${esc(r.poster_path)}, ${r.release_year ?? 'NULL'}, ${r.first_air_year ?? 'NULL'}, ${r.vote_average ?? 'NULL'}, ${r.popularity ?? 'NULL'}, ${esc(r.filter_status)}, ${esc(r.slug)}, ${titleLength})`;
+  };
+
+  const values = [...moviesShort, ...seriesShort].filter(r => r.slug).map(toRow);
+  if (values.length === 0) {
+    console.log('   ⚠ لا توجد عناوين قصيرة — تخطي');
+    return;
+  }
+
+  await d1Query('DELETE FROM short_titles_lookup');
+  // Insert in chunks to stay under D1 statement limits
+  for (let i = 0; i < values.length; i += 100) {
+    await d1Query(`INSERT INTO short_titles_lookup (source_id, media_type, title_ar, title_en, name_ar, name_en, poster_path, release_year, first_air_year, vote_average, popularity, filter_status, slug, title_length) VALUES ${values.slice(i, i + 100).join(',')}`);
+  }
+  console.log(`   ✅ ${values.length} صف (قوائم الحرف والحرفين محدثة)`);
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
+  // Standalone mode: rebuild short-title search lists only, no content sync
+  if (process.argv.includes('--rebuild-short-titles')) {
+    await rebuildShortTitles();
+    localDb.close();
+    return;
+  }
+
   console.log('🚀 بدء المزامنة من Local DB → Cloudflare D1\n');
 
   const syncFilter = FORCE_ALL ? '' : 'AND synced_to_d1 = 0';
@@ -459,6 +517,9 @@ async function main() {
     failed.slice(0, 5).forEach(f => console.log(`      ${f.table} tmdb_id=${f.tmdb_id}`));
   }
   console.log('═══════════════════════════════════════════');
+
+  // Rebuild short-title search lists so 1-2 char searches stay in sync with the catalog
+  await rebuildShortTitles();
 
   localDb.close();
 }

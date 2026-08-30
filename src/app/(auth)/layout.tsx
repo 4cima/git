@@ -7,6 +7,12 @@
 
 import { Sparkles, BookMarked, Play, Star } from 'lucide-react'
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'تسجيل الدخول',
+  robots: { index: false, follow: false },
+}
 
 export default function AuthLayout({
   children,
