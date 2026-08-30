@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Standalone video player Worker for 4cima.stream (dedicated account)",
   "scripts": {
-    "deploy": "wrangler deploy"
+    "deploy": "node scripts/deploy-player.cjs",
+    "deploy:check": "node scripts/deploy-player.cjs --check"
   },
   "devDependencies": {
     "wrangler": "^3.99.0"
