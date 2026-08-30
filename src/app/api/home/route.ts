@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
 
-export const dynamic = 'force-static'
-export const revalidate = 300 // 5 minutes
+export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
 export async function GET() {
   try {

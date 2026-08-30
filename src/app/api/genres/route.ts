@@ -1,10 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { getGenresWithCounts } from '@/lib/genres'
 
-// Safe for force-static - uses precomputed genre_counts table (fast JOIN on primary key)
+// Safe for dynamic - uses precomputed genre_counts table (fast JOIN on primary key)
 // Instead of expensive json_each() on 321k rows
-export const dynamic = 'force-static'
-export const revalidate = 7200 // 2 hours
+export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
 export async function GET(request: NextRequest) {
   try {

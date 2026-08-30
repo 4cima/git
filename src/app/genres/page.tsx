@@ -11,8 +11,7 @@ export const metadata: Metadata = {
 
 // Now safe for static generation - uses direct DB query via shared function
 // Fast query on genre_counts table (JOIN on primary key, ~75ms)
-export const dynamic = 'force-static'
-export const revalidate = 7200 // 2 hours
+export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
 export default async function GenresPage() {
   const genres = await getGenresWithCounts()
