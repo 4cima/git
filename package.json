@@ -20,7 +20,7 @@
     "setup-secrets": "node scripts/setup-secrets.js",
     "predeploy:production": "node scripts/check-secrets.js",
     "deploy:production": "node -e \"const {execSync}=require('child_process');execSync('npx wrangler deploy',{cwd:process.cwd(),stdio:'inherit',env:{...process.env,OPEN_NEXT_DEPLOY:'true'}})\"",
-    "build:cloudflare": "opennextjs-cloudflare build",
+    "build:cloudflare": "node -e \"fs.rmSync('.next',{recursive:true,force:true})\" && opennextjs-cloudflare build",
     "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --name 4cima-staging",
     "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
