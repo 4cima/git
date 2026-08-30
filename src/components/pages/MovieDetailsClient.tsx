@@ -11,6 +11,7 @@ import { useImageBrightness } from '@/utils/imageAnalysis'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
+import { firePopunderOnClick } from '@/components/features/system/adsClick'
 
 interface MovieDetailsClientProps {
   movie: any
@@ -252,6 +253,8 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
     // player (hosted on 4cima.stream) passing the film's TMDB id.
     const id = Number(effectiveId)
     if (!(Number.isFinite(id) && id > 0)) return
+    // user-click popunder — fail-open, never blocks opening the player
+    firePopunderOnClick()
     logWatch()
     openWatchWithPlayer({
       type: 'movie',

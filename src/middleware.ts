@@ -9,6 +9,11 @@ export async function middleware(request: NextRequest) {
   });
   response.headers.set('x-build-sha', BUILD_SHA);
 
+  // Ad endpoints must never be cached — kill switch must be instant.
+  if (request.nextUrl.pathname.startsWith('/api/ads')) {
+    response.headers.set('Cache-Control', 'private, no-store');
+  }
+
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') ||
                        request.nextUrl.pathname.startsWith('/api/admin');
   if (!isAdminRoute) return response;

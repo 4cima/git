@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { executeAll, executeFirst } from '@/lib/db'
+import { requireAdmin } from '@/lib/requireAdmin'
+
+export const dynamic = 'force-dynamic'
 
 type AdRow = {
   id: number
@@ -13,7 +16,9 @@ type AdRow = {
   created_at?: string | null
 }
 
-// GET - Fetch single ad
+const NO_STORE = { 'Cache-Control': 'private, no-store' }
+
+// GET - Fetch single ad (read stays temporarily compatible, never cached)
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -26,21 +31,23 @@ export async function GET(
     )
 
     if (!ad) {
-      return NextResponse.json({ error: 'Ad not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Ad not found' }, { status: 404, headers: NO_STORE })
     }
 
-    return NextResponse.json({ data: ad })
+    return NextResponse.json({ data: ad }, { headers: NO_STORE })
   } catch (error) {
     console.error('Error fetching ad:', error)
-    return NextResponse.json({ error: 'Failed to fetch ad' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch ad' }, { status: 500, headers: NO_STORE })
   }
 }
 
-// PUT - Update ad
+// PUT - LOCKED: 401 unless admin. Admin CRUD moved to /api/admin/ads/house.
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(request)
+  if (denied) return denied
   try {
     const { id } = await params
     const body = await request.json()
@@ -72,7 +79,7 @@ export async function PUT(
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400, headers: NO_STORE })
     }
 
     values.push(parseInt(id))
@@ -80,25 +87,28 @@ export async function PUT(
 
     await executeAll(sql, values)
 
-    return NextResponse.json({ success: true, message: 'Ad updated successfully' })
+    return NextResponse.json({ success: true, message: 'Ad updated successfully' }, { headers: NO_STORE })
   } catch (error) {
     console.error('Error updating ad:', error)
-    return NextResponse.json({ error: 'Failed to update ad' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to update ad' }, { status: 500, headers: NO_STORE })
   }
 }
 
-// DELETE - Delete ad
+// DELETE - LOCKED: 401 unless admin. Admin CRUD moved to /api/admin/ads/house.
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(request)
+  if (denied) return denied
+
   try {
     const { id } = await params
     await executeAll('DELETE FROM ads WHERE id = ?', [parseInt(id)])
 
-    return NextResponse.json({ success: true, message: 'Ad deleted successfully' })
+    return NextResponse.json({ success: true, message: 'Ad deleted successfully' }, { headers: NO_STORE })
   } catch (error) {
     console.error('Error deleting ad:', error)
-    return NextResponse.json({ error: 'Failed to delete ad' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to delete ad' }, { status: 500, headers: NO_STORE })
   }
 }

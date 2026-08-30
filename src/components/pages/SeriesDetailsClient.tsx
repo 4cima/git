@@ -11,6 +11,7 @@ import { useImageBrightness } from '@/utils/imageAnalysis'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
+import { firePopunderOnClick } from '@/components/features/system/adsClick'
 
 interface SeriesDetailsClientProps {
   series: any
@@ -347,6 +348,8 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     // player (hosted on 4cima.stream) passing series id + season/episode.
     const id = Number(series?.tmdb_id)
     if (!(Number.isFinite(id) && id > 0)) return
+    // user-click popunder — fail-open, never blocks opening the player
+    firePopunderOnClick()
     logWatch()
     openWatchWithPlayer({
       type: 'tv',

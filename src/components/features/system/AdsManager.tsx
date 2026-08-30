@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FLAGS } from '../../../lib/constants'
-import { errorLogger } from '../../../services/errorLogging'
 
 type AdRow = {
   id: number
@@ -9,8 +8,18 @@ type AdRow = {
   content: string
   position?: 'top' | 'bottom' | 'sidebar' | 'player' | 'global' | string | null
   active?: boolean | null
-  impressions?: number | null
-  clicks?: number | null
+}
+
+type ServeResponse = {
+  source?: 'network' | 'house' | null
+  slot?: string
+  integration?: 'script' | 'html' | 'click_url' | 'vast_url' | null
+  script_url?: string | null
+  html?: string | null
+  click_url?: string | null
+  vast_url?: string | null
+  ad_id?: number | null
+  provider_slug?: string | null
 }
 
 type Props = {
@@ -45,28 +54,44 @@ function sanitizeAdHtml(input: string) {
   }
 }
 
-function extractSafeAdUrl(input: string) {
-  const fromHref = input.match(/href\s*=\s*["'](https?:\/\/[^"']+)["']/i)?.[1]
-  const fromRaw = input.match(/https?:\/\/[^\s"'<>]+/i)?.[0]
-  const candidate = fromHref || fromRaw
-  if (!candidate) return null
-  try {
-    const url = new URL(candidate)
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
-    return url.toString()
-  } catch {
-    return null
+/**
+ * Ad fetch — mediation first, legacy fallback, never throws:
+ *  1) GET /api/ads/serve?slot=<position> (waterfall: network → house → null)
+ *  2) legacy GET /api/ads (house table, banner compatibility)
+ *  3) null → nothing rendered, page stays normal
+ * NOTE: no impression/click calls anywhere — visitors never write to the DB.
+ * script/click_url/vast_url integrations are NOT mounted in this task — only html.
+ */
+async function fetchAd(type: AdRow['type'], position?: string): Promise<AdRow | null> {
+  // 1) mediation serve
+  if (position) {
+    try {
+      const res = await fetch(`/api/ads/serve?slot=${encodeURIComponent(position)}`)
+      if (res.ok) {
+        const data: ServeResponse = await res.json()
+        if (data?.source === 'network') {
+          if (data.integration === 'html' && data.html) {
+            return { id: 0, title: `network:${data.provider_slug || 'zone'}`, type, content: data.html, position }
+          }
+          // script / click_url / vast_url are not mounted in this task
+          return null
+        }
+        if (data?.source === 'house' && data.html) {
+          return { id: data.ad_id ?? 0, title: 'house', type, content: data.html, position }
+        }
+        // source null → fall through to legacy endpoint quietly
+      }
+    } catch {
+      // serve failed → legacy fallback
+    }
   }
-}
 
-async function fetchAd(type: AdRow['type'], position?: string) {
+  // 2) legacy house endpoint (current home banner compatibility)
   try {
-    const params = new URLSearchParams({ active: 'true', type })
+    const params = new URLSearchParams({ type })
     if (position) params.append('position', position)
-    
     const response = await fetch(`/api/ads?${params.toString()}`)
     if (!response.ok) return null
-    
     const data = await response.json()
     const ads = data.data || data
     return Array.isArray(ads) ? ads[0] || null : null
@@ -75,66 +100,25 @@ async function fetchAd(type: AdRow['type'], position?: string) {
   }
 }
 
-async function incImpression(ad: AdRow) {
-  try {
-    await fetch(`/api/ads/${ad.id}/impression`, { method: 'POST' })
-  } catch (err: any) {
-    errorLogger.logError({
-      message: 'Failed to increment ad impression',
-      severity: 'low',
-      category: 'ads',
-      context: { adId: ad.id, error: err }
-    })
-  }
-}
-
-async function incClick(ad: AdRow) {
-  try {
-    await fetch(`/api/ads/${ad.id}/click`, { method: 'POST' })
-  } catch (err: any) {
-    errorLogger.logError({
-      message: 'Failed to increment ad click',
-      severity: 'low',
-      category: 'ads',
-      context: { adId: ad.id, error: err }
-    })
-  }
-}
-
 export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Props) => {
   const [ad, setAd] = useState<AdRow | null>(null)
   const [countdown, setCountdown] = useState(durationSeconds)
-  const onceRef = useRef(false)
 
   // Reset countdown when ad changes
   useEffect(() => {
     setCountdown(durationSeconds)
-  }, [ad?.id, durationSeconds])
+  }, [durationSeconds, ad])
 
-
-  // 1. Fetch Ad
+  // 1. Fetch ad — skipped entirely when ads are disabled
   useEffect(() => {
-    if (!FLAGS.ADS_ENABLED) {
-      if (type === 'preroll') onDone?.()
-      return
-    }
-
+    if (!FLAGS.ADS_ENABLED) return
     let cancelled = false
     ;(async () => {
-      try {
-        const a = await fetchAd(type, position)
-        if (!cancelled) {
-          setAd(a)
-          if (!a && type === 'preroll') {
-            onDone?.()
-          }
-        }
-      } catch {
-        if (!cancelled) {
-          setAd(null)
-          if (type === 'preroll') {
-            onDone?.()
-          }
+      const a = await fetchAd(type, position)
+      if (!cancelled) {
+        setAd(a)
+        if (!a && type === 'preroll') {
+          onDone?.()
         }
       }
     })()
@@ -143,31 +127,9 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
     }
   }, [type, position])
 
-  // 2. Impressions
-  useEffect(() => {
-    if (!ad) return
-    incImpression(ad).catch(() => {})
-  }, [ad])
+  // 2. Popunder — NOT mounted in this task (no listener anywhere, no visitor writes)
 
-  // 3. Popunder Logic
-  useEffect(() => {
-    if (type !== 'popunder' || !ad) return
-    const key = 'cinma_popunder_once'
-    if (sessionStorage.getItem(key) === '1') return
-    const handler = () => {
-      if (onceRef.current) return
-      onceRef.current = true
-      sessionStorage.setItem(key, '1')
-      const safeUrl = extractSafeAdUrl(ad.content || '')
-      if (!safeUrl) return
-      const w = window.open(safeUrl, '_blank', 'noopener,noreferrer')
-      if (w) incImpression(ad).catch(() => {})
-    }
-    document.addEventListener('click', handler, { once: true })
-    return () => document.removeEventListener('click', handler)
-  }, [type, ad])
-
-  // 4. Preroll Logic (Timer)
+  // 3. Preroll Logic (Timer)
   useEffect(() => {
     if (type !== 'preroll' || !ad) return
 
@@ -197,10 +159,7 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
   if (type === 'banner') {
     const sanitizedCode = sanitizeAdHtml(ad?.content || '')
     return (
-      <div
-        className={`rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden`}
-        onClick={() => ad && incClick(ad)}
-      >
+      <div className={`rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden`}>
         <iframe 
             srcDoc={sanitizedCode} 
             className="w-full h-24 border-0" 

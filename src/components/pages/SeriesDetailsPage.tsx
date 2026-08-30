@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { Star, Heart, Play, Calendar, Clock } from 'lucide-react'
 import { MovieCard } from '../features/media/MovieCard'
 import { SectionHeader } from '../common/SectionHeader'
+import { firePopunderOnClick } from '../features/system/adsClick'
 import { Loading } from '../common/Loading'
 import ReactPlayer from 'react-player'
 import clsx from 'clsx'
@@ -207,13 +208,16 @@ export const SeriesDetailsPage = ({ slug }: { slug: string }) => {
             </button>
 
             <button
-              onClick={() => openWatchWithPlayer({
-                type: 'tv',
-                id: series?.tmdb_id || series?.id,
-                slug: series?.slug || slug,
-                season: selectedSeason,
-                episode: 1,
-              })}
+              onClick={() => {
+                firePopunderOnClick()
+                openWatchWithPlayer({
+                  type: 'tv',
+                  id: series?.tmdb_id || series?.id,
+                  slug: series?.slug || slug,
+                  season: selectedSeason,
+                  episode: 1,
+                })
+              }}
               className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center gap-2 font-bold hover:scale-105 transition-transform"
             >
               <Play className="fill-current" />
