@@ -24,6 +24,8 @@ tsconfig.tsbuildinfo
 # Logs
 *.log
 npm-debug.log*
+dev-log.out
+dev-log.pending-delete
 
 # OS
 .DS_Store
@@ -36,8 +38,6 @@ Thumbs.db
 *.swo
 
 # Large binary/data backups (> 50MB, not useful in git history)
-BACKUP-tv_series-turso.csv
-BACKUP-movies-turso.json
 BACKUP-movies-slugs-*.json
 BACKUP-*.json
 BACKUP-*.csv

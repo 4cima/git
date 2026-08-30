@@ -1,5 +1,5 @@
 -- Add username change tracking to profiles table
--- This should be run on Supabase, not Turso
+-- This should be run on Supabase, not D1
 
 -- Add column to track when username was last changed
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS username_last_changed TIMESTAMP WITH TIME ZONE;

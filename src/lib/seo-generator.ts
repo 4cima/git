@@ -2,7 +2,7 @@
  * ============================================
  * 🎯 DYNAMIC SEO GENERATOR FOR NEXT.JS
  * ============================================
- * Purpose: Generate SEO data on-the-fly without storing in Turso
+ * Purpose: Generate SEO data on-the-fly without storing in D1
  * Saves 30M writes per month!
  * ============================================
  */

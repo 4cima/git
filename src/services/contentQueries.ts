@@ -129,12 +129,12 @@ function buildQueryString(filters: ContentFilters, pagination: PaginationOptions
 }
 
 // ==========================================
-// Movies Queries (Turso)
+// Movies Queries (D1)
 // ==========================================
 
 /**
  * جلب الأفلام مع الفلاتر والترتيب
- * Fetch movies with filters and sorting from Turso
+ * Fetch movies with filters and sorting from D1
  */
 export async function getMovies(
   filters: ContentFilters = {},
@@ -174,7 +174,7 @@ export async function getMovies(
 
 /**
  * جلب المسلسلات مع الفلاتر والترتيب
- * Fetch TV series with filters and sorting from Turso
+ * Fetch TV series with filters and sorting from D1
  * 
  * CRITICAL: Always uses DISTINCT queries to prevent duplicates
  * CRITICAL: Supports language filtering including exclusion (e.g., '!ar')
@@ -217,7 +217,7 @@ export async function getTVSeries(
 
 /**
  * جلب المسرحيات العربية
- * Fetch Arabic plays from Turso
+ * Fetch Arabic plays from D1
  */
 export async function getPlays(
   subCategory?: 'adel-imam' | 'classics' | 'gulf' | 'masrah-masr',
@@ -238,7 +238,7 @@ export async function getPlays(
 
 /**
  * جلب الملخصات
- * Fetch summaries from Turso
+ * Fetch summaries from D1
  */
 export async function getSummaries(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -252,7 +252,7 @@ export async function getSummaries(
 
 /**
  * جلب الأفلام الكلاسيكية
- * Fetch classic movies from Turso
+ * Fetch classic movies from D1
  */
 export async function getClassics(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -268,7 +268,7 @@ export async function getClassics(
 
 /**
  * جلب المسلسلات الكورية
- * Fetch Korean dramas from Turso
+ * Fetch Korean dramas from D1
  * CRITICAL: Uses DISTINCT to prevent duplicates
  */
 export async function getKDramas(
@@ -283,7 +283,7 @@ export async function getKDramas(
 
 /**
  * جلب المسلسلات التركية
- * Fetch Turkish series from Turso
+ * Fetch Turkish series from D1
  */
 export async function getTurkishSeries(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -297,7 +297,7 @@ export async function getTurkishSeries(
 
 /**
  * جلب المسلسلات الصينية
- * Fetch Chinese series from Turso
+ * Fetch Chinese series from D1
  */
 export async function getChineseSeries(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -311,7 +311,7 @@ export async function getChineseSeries(
 
 /**
  * جلب المسلسلات العربية
- * Fetch Arabic series from Turso
+ * Fetch Arabic series from D1
  */
 export async function getArabicSeries(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -325,7 +325,7 @@ export async function getArabicSeries(
 
 /**
  * جلب مسلسلات رمضان
- * Fetch Ramadan series from Turso
+ * Fetch Ramadan series from D1
  * CRITICAL: Only Arabic series (language='ar')
  */
 export async function getRamadanSeries(
@@ -341,7 +341,7 @@ export async function getRamadanSeries(
 
 /**
  * جلب المسلسلات الأجنبية (غير عربية)
- * Fetch foreign (non-Arabic) series from Turso
+ * Fetch foreign (non-Arabic) series from D1
  */
 export async function getForeignSeries(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -354,7 +354,7 @@ export async function getForeignSeries(
 }
 
 /**
- * جلب تفاصيل فيلم من Turso
+ * جلب تفاصيل فيلم من D1
  */
 export async function getMovieDetails(slug: string): Promise<Movie | null> {
   try {
@@ -367,7 +367,7 @@ export async function getMovieDetails(slug: string): Promise<Movie | null> {
 }
 
 /**
- * جلب تفاصيل مسلسل من Turso
+ * جلب تفاصيل مسلسل من D1
  */
 export async function getTVSeriesDetails(slug: string): Promise<TVSeries | null> {
   try {
@@ -380,7 +380,7 @@ export async function getTVSeriesDetails(slug: string): Promise<TVSeries | null>
 }
 
 /**
- * البحث في الأفلام والمسلسلات من Turso
+ * البحث في الأفلام والمسلسلات من D1
  */
 export async function searchContent(
   query: string,
@@ -417,7 +417,7 @@ export async function searchContent(
 }
 
 /**
- * جلب المحتوى الشائع من Turso
+ * جلب المحتوى الشائع من D1
  */
 export async function getTrending(
   contentType: 'movie' | 'tv' | 'all' = 'all',
@@ -454,7 +454,7 @@ export async function getTrending(
 }
 
 /**
- * جلب الأعلى تقييماً من Turso
+ * جلب الأعلى تقييماً من D1
  */
 export async function getTopRated(
   contentType: 'movie' | 'tv' = 'movie',
@@ -486,7 +486,7 @@ export async function getTopRated(
 
 /**
  * جلب البرامج مع الفلاتر والترتيب
- * Fetch software with filters and sorting from Turso
+ * Fetch software with filters and sorting from D1
  */
 export async function getSoftware(
   filters: ContentFilters = {},
@@ -525,7 +525,7 @@ export async function getSoftware(
 
 /**
  * جلب برامج Windows
- * Fetch Windows software from Turso
+ * Fetch Windows software from D1
  */
 export async function getWindowsSoftware(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -539,7 +539,7 @@ export async function getWindowsSoftware(
 
 /**
  * جلب برامج Mac
- * Fetch Mac software from Turso
+ * Fetch Mac software from D1
  */
 export async function getMacSoftware(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -553,7 +553,7 @@ export async function getMacSoftware(
 
 /**
  * جلب برامج Linux
- * Fetch Linux software from Turso
+ * Fetch Linux software from D1
  */
 export async function getLinuxSoftware(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -567,7 +567,7 @@ export async function getLinuxSoftware(
 
 /**
  * جلب برامج Android
- * Fetch Android software from Turso
+ * Fetch Android software from D1
  */
 export async function getAndroidSoftware(
   pagination: PaginationOptions = { page: 1, limit: 20 }
@@ -581,7 +581,7 @@ export async function getAndroidSoftware(
 
 /**
  * جلب برامج iOS
- * Fetch iOS software from Turso
+ * Fetch iOS software from D1
  */
 export async function getIOSSoftware(
   pagination: PaginationOptions = { page: 1, limit: 20 }

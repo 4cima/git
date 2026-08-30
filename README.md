@@ -1,6 +1,6 @@
 # 🎬 4CIMA Data Ingestion System
 
-Clean, production-ready data ingestion from TMDB to Turso.
+Clean, production-ready data ingestion from TMDB to Cloudflare D1.
 
 ## 📁 Project Structure
 
@@ -10,7 +10,7 @@ Clean, production-ready data ingestion from TMDB to Turso.
 │   ├── 0-download-ids.js         # Download IDs from TMDB exports
 │   ├── 1-fetch-and-enrich.js     # Fetch full data from TMDB
 │   ├── 2-enrich-incomplete.js    # Update incomplete records
-│   ├── 3-sync-to-turso.js        # Sync to Turso production
+│   ├── 3-sync-to-d1.js           # Sync to Cloudflare D1 production
 │   └── services/
 │       ├── local-db.js           # SQLite setup
 │       ├── slug-generator.js     # Atomic slug generation
@@ -44,7 +44,7 @@ npm run download-ids
 npm run fetch
 ```
 
-### 5. Sync to Turso
+### 5. Sync to D1
 ```bash
 npm run sync
 ```
@@ -84,7 +84,7 @@ GROQ_API_KEY=...
 ### 5. Clean Architecture
 - `tmdb_id` as PRIMARY KEY
 - No legacy `id != tmdb_id` issues
-- Normalized locally, JSON in Turso
+- Normalized locally, JSON in D1
 
 ## 📊 Schema Highlights
 
@@ -139,7 +139,7 @@ sqlite3 data/4cima-local.db "SELECT * FROM ingestion_progress"
 
 1. **No async in transactions**: better-sqlite3 is synchronous
 2. **TMDB translations first**: Save ~60% on AI costs
-3. **Movies use title_*, Series use name_***: Match Turso schema
+3. **Movies use title_*, Series use name_***: Match D1 schema
 4. **tmdb_id is PK**: Eliminates id!=tmdb_id bugs forever
 
 ## 📚 Documentation

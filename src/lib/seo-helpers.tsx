@@ -3,7 +3,7 @@
  * 🎯 SEO HELPERS FOR NEXT.JS
  * ============================================
  * Purpose: Helper functions to use SEO data in Next.js pages
- * Strategy: Generate SEO dynamically to save Turso writes
+ * Strategy: Generate SEO dynamically to save D1 writes
  * ============================================
  */
 
@@ -22,7 +22,7 @@ export interface SEOContent extends ContentData {
 
 /**
  * توليد Metadata لصفحة فيلم أو مسلسل
- * يولد SEO ديناميكياً بدون الحاجة لتخزينه في Turso
+ * يولد SEO ديناميكياً بدون الحاجة لتخزينه في D1
  */
 export function generateContentMetadata(content: SEOContent): Metadata {
   // توليد SEO ديناميكياً

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 // Updated: Card layout redesign with overview on hover
@@ -176,11 +175,6 @@ export const MovieCard = memo(({
   const hasPosterPath = Boolean(movie.poster_path && movie.poster_path.trim())
   const hasValidTitle = Boolean(mainTitle && mainTitle !== 'Untitled')
 
-  // Debug log
-  if (typeof window !== 'undefined') {
-    console.log('🎬 MovieCard rendered:', mainTitle)
-  }
-
   useEffect(() => {
     let mounted = true
 
@@ -198,8 +192,8 @@ export const MovieCard = memo(({
             }
           } else {
             // Fetch from API if not available
-            const apiType = mediaType === 'movies' ? 'movies' : 
-                           (mediaType === 'series' || mediaType === 'tv') ? 'series' : 
+            const apiType = mediaType === 'movies' ? 'movies' :
+                           mediaType === 'series' ? 'series' :
                            mediaType
             const endpoint = `/api/${apiType}/${movie.slug}`
             const response = await fetch(endpoint)
@@ -395,7 +389,7 @@ export const MovieCard = memo(({
                 >
                   <Suspense fallback={null}>
                     <LazyReactPlayer
-                      url={`https://www.youtube.com/watch?v=${trailerKey}`}
+                      src={`https://www.youtube.com/watch?v=${trailerKey}`}
                       width="100%"
                       height="100%"
                       playing
@@ -403,16 +397,10 @@ export const MovieCard = memo(({
                       loop
                       config={{
                         youtube: {
-                          playerVars: {
-                            autoplay: 1,
-                            controls: 0,
-                            showinfo: 0,
-                            modestbranding: 1,
-                            rel: 0,
-                            iv_load_policy: 3
-                          }
+                          rel: 0,
+                          iv_load_policy: 3
                         }
-                      } as any}
+                      }}
                       className="pointer-events-none scale-150"
                     />
                   </Suspense>
@@ -459,13 +447,6 @@ export const MovieCard = memo(({
                 </button>
               </div>
             )}
-
-            {/* Top Right - Media Type Badge */}
-            <div className="absolute top-2 right-2 z-20">
-              <span className={`${mediaTypeColorScheme.bg} ${mediaTypeColorScheme.text} ${mediaTypeColorScheme.border} border px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
-                {mediaTypeColorScheme.label}
-              </span>
-            </div>
 
             {/* Bottom Right - Genre Badge */}
             {genre && (

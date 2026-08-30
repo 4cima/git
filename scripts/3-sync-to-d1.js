@@ -10,7 +10,7 @@
  *
  * Filter:  is_complete = 1
  *          AND filter_status IN ('clean', 'reviewed_approved')
- *          AND synced_to_d1 = 0   (tracks D1 sync — separate from old turso flag)
+ *          AND synced_to_d1 = 0   (tracks D1 sync — separate from legacy synced_to_turso column)
  *
  * Auth:    CLOUDFLARE_D1_TOKEN from .env.local (D1:Edit, never expires)
  *

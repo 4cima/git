@@ -1,6 +1,6 @@
 -- =============================================================================
 -- 4cima D1 Schema
--- Source: Local DB (36 movies cols, 39 tv_series cols) + Turso JSON columns
+-- Source: Local DB (36 movies cols, 39 tv_series cols) + JSON columns (legacy pre-D1 merge)
 -- FTS5 trigram: VERIFIED working on D1 (tested 2026-08-20)
 -- =============================================================================
 
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS movies (
   -- Legacy field from Local DB (kept for ingestion script compatibility)
   production_companies TEXT,
 
-  -- JSON columns (source: Turso, merged via tmdb_id)
+  -- JSON columns (merged from legacy DB via tmdb_id)
   genres_json      TEXT,   -- [{"id":28,"name":"Action","name_ar":"أكشن"}]
   cast_json        TEXT,   -- [{"name":"...","character":"...","profile_path":"..."}]
   countries_json   TEXT,   -- [{"iso_3166_1":"US","name":"United States"}]
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS movies (
   is_complete      INTEGER DEFAULT 0,
   filter_status    TEXT    DEFAULT 'clean',
   sync_priority    INTEGER DEFAULT 5,
-  synced_to_turso  INTEGER DEFAULT 0,
+  synced_to_turso  INTEGER DEFAULT 0,  -- legacy column name (pre-D1), kept for compatibility
   synced_at        TEXT,
 
   -- Timestamps
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS tv_series (
   seo_keywords_json TEXT,
   canonical_url    TEXT,
 
-  -- JSON columns (source: Turso, merged via tmdb_id)
+  -- JSON columns (merged from legacy DB via tmdb_id)
   genres_json      TEXT,   -- [{"id":18,"name":"Drama","name_ar":"دراما"}]
   cast_json        TEXT,
   countries_json   TEXT,
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS tv_series (
   is_complete      INTEGER DEFAULT 0,
   filter_status    TEXT    DEFAULT 'clean',
   sync_priority    INTEGER DEFAULT 5,
-  synced_to_turso  INTEGER DEFAULT 0,
+  synced_to_turso  INTEGER DEFAULT 0,  -- legacy column name (pre-D1), kept for compatibility
   synced_at        TEXT,
 
   -- Timestamps
@@ -225,7 +225,7 @@ CREATE TABLE IF NOT EXISTS operations_log (
 );
 
 -- ---------------------------------------------------------------------------
--- USER TABLES (schema only — data is empty in Turso)
+-- USER TABLES (schema only — no production data)
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS favorites (

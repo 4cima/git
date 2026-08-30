@@ -7,7 +7,7 @@
  * @version 2.0.0
  */
 
-// Note: No Supabase import needed - content is in Turso via API
+// Note: No Supabase import needed - content is served from Cloudflare D1 via API
 
 // ==========================================
 // Types

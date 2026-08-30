@@ -1,6 +1,6 @@
 /**
  * Genre Types and Interfaces
- * Used for dynamic genre filtering from Turso
+ * Used for dynamic genre filtering from D1
  */
 
 export type ContentType = 'movie' | 'tv' | 'anime' | 'play'
