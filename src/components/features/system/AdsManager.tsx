@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FLAGS } from '../../../lib/constants'
+import { DIRECT_AD_FALLBACKS } from '../../../lib/directAds'
 
 type AdRow = {
   id: number
@@ -145,7 +146,7 @@ function DirectAd({
  * script/click_url/vast_url integrations are NOT mounted in this task — only html.
  */
 async function fetchAd(type: AdRow['type'], position?: string): Promise<AdRow | null> {
-  // 1) mediation serve
+  // 1) mediation serve — admin-configured network zone / house ad takes precedence
   if (position) {
     try {
       const res = await fetch(`/api/ads/serve?slot=${encodeURIComponent(position)}`)
@@ -170,14 +171,31 @@ async function fetchAd(type: AdRow['type'], position?: string): Promise<AdRow | 
         if (data?.source === 'house' && data.html) {
           return { id: data.ad_id ?? 0, title: 'house', type, content: data.html, position }
         }
-        // source null → fall through to legacy endpoint quietly
+        // source: null → fall through to code-level direct snippets below
       }
     } catch {
-      // serve failed → legacy fallback
+      // serve failed → fall through to code-level direct snippets below
     }
   }
 
-  // 2) legacy house endpoint (current home banner compatibility)
+  // 2) code-level direct Adsterra snippets — last-resort fallback so the three
+  //    banner zones (admin 728×90 / direct 300×250 / direct 160×600) always
+  //    render on home even before admin mediation is configured.
+  const fallback = position ? DIRECT_AD_FALLBACKS[position] : undefined
+  if (fallback?.html) {
+    return {
+      id: 0,
+      title: `direct:${position}`,
+      type,
+      content: fallback.html,
+      position,
+      isNetwork: true,
+      width: fallback.width,
+      height: fallback.height,
+    }
+  }
+
+  // 3) legacy house endpoint (current home banner compatibility)
   try {
     const params = new URLSearchParams({ type })
     if (position) params.append('position', position)

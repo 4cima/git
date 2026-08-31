@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic';
 const VALID_SLOTS = new Set([
   'home-after-hero',
   'home-in-feed',
+  'home-feed-side',
   'home-footer',
   'details-below-player',
   'details-sidebar',
@@ -25,6 +26,7 @@ const VALID_SLOTS = new Set([
 const HOUSE_FALLBACK: Record<string, { type: string; position?: string }> = {
   'home-after-hero':      { type: 'banner',   position: 'home-after-hero' },
   'home-in-feed':         { type: 'banner',   position: 'home-in-feed' },
+  'home-feed-side':       { type: 'banner',   position: 'home-feed-side' },
   'home-footer':          { type: 'banner',   position: 'home-footer' },
   'details-below-player': { type: 'banner',   position: 'details-below-player' },
   'details-sidebar':      { type: 'banner',   position: 'details-sidebar' },

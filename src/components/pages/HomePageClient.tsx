@@ -744,9 +744,15 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
             toggleCardState={toggleCardState}
           />
 
-          {/* In-feed ad — mid page, after the first content rows (300×250) */}
-          <div className="flex justify-center py-2">
-            <AdsManager type="banner" position="home-in-feed" />
+          {/* In-feed ads — mid page, after the first content rows:
+              300×250 centered unit + 160×600 skyscraper side column (desktop only) */}
+          <div className="flex items-start justify-center gap-6 py-2">
+            <div className="flex shrink-0 items-center justify-center">
+              <AdsManager type="banner" position="home-in-feed" />
+            </div>
+            <div className="hidden shrink-0 lg:block">
+              <AdsManager type="banner" position="home-feed-side" />
+            </div>
           </div>
 
           {/* CTA Buttons Section */}
