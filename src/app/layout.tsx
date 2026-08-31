@@ -95,6 +95,12 @@ export const metadata: Metadata = {
     // TODO: أضف كود التحقق من Google Search Console
     // google: 'YOUR_GOOGLE_VERIFICATION_CODE',
   },
+  // Monetag publisher verification — renders as:
+  // <meta name="monetag" content="3e29c37aa4e9905e68def8c15741a614" />
+  // in the <head> of every page (global layout => all routes).
+  other: {
+    monetag: '3e29c37aa4e9905e68def8c15741a614',
+  },
 }
 
 export default function RootLayout({
