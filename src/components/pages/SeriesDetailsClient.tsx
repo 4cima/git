@@ -11,7 +11,7 @@ import { useImageBrightness } from '@/utils/imageAnalysis'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
-import { firePopunderOnClick } from '@/components/features/system/adsClick'
+import { preparePopunder, firePopunderOnClick } from '@/components/features/system/adsClick'
 
 interface SeriesDetailsClientProps {
   series: any
@@ -364,7 +364,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   }
   // Preload the pop-under URL once so it can fire synchronously on click.
   useEffect(() => {
-    prefetchWatchAd()
+    preparePopunder()
   }, [])
 
   const toggleCardState = async () => {

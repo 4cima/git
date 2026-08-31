@@ -13,7 +13,7 @@ export const NETWORK_HOSTS: Record<string, string[]> = {
   popcash:       ['popcash.net', 'popcashworld.com'],
   hilltopads:    ['hilltopads.net', 'hilltopads.com', 'highrevenuecpm.com'],
   trafficstars:  ['traffic-stars.com', 'trafficjunky.com', 'tsyndicate.com'],
-  custom:        [], // admin-registered hosts (added from the admin panel)
+  custom:        ['al5sm.com', 'www.al5sm.com', 'monetag.com', 'www.monetag.com'], // admin-registered hosts (added from the admin panel)
 };
 
 /** Extra hosts registered by admin for Custom providers (runtime-extensible). */

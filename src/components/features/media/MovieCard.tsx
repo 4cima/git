@@ -10,7 +10,6 @@ import { TmdbImage } from '../../common/TmdbImage'
 import { translateGenre } from '../../../utils/genreTranslator'
 import { getGenreColor, getMediaTypeColor } from '../../../utils/genreColors'
 import { useAuth } from '@/hooks/useAuth'
-import { firePopunderOnClick } from '../system/adsClick'
 
 const LazyReactPlayer = lazy(() => import('react-player'))
 
@@ -345,7 +344,6 @@ export const MovieCard = memo(({
     >
       <Link
         href={watchUrl}
-        onClick={() => firePopunderOnClick()}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         draggable={false}
