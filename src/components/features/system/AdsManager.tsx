@@ -258,15 +258,41 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
     // Desktop-only formats never show on mobile (no horizontal scroll / dead space)
     const w = Number(ad?.width) || 0
     const adH = Number(ad?.height) || 0
-    const mobileClass = w >= 600 ? 'hidden md:block' : w <= 300 && adH >= 400 ? 'hidden lg:block' : ''
+    const isWide = w >= 600
+    const mobileClass = isWide ? 'hidden md:block' : w <= 300 && adH >= 400 ? 'hidden lg:block' : ''
+    // Wide leaderboards (728×90) fill the row with TWO units side by side on
+    // desktop — one centered unit leaves >50% of the screen empty.
+    if (isWide) {
+      return (
+        <div
+          data-ad-slot={position || 'banner'}
+          className="hidden w-full flex-row items-stretch justify-center gap-2 md:flex"
+        >
+          <DirectAd
+            code={code}
+            isNetwork={ad?.isNetwork}
+            minHeight={h}
+            frameClass="min-w-0 flex-1 rounded-md border border-zinc-800 bg-zinc-900 p-2 text-center overflow-hidden flex justify-center"
+          />
+          <DirectAd
+            code={code}
+            isNetwork={ad?.isNetwork}
+            minHeight={h}
+            frameClass="min-w-0 flex-1 rounded-md border border-zinc-800 bg-zinc-900 p-2 text-center overflow-hidden flex justify-center"
+          />
+        </div>
+      )
+    }
     return (
-      <DirectAd
-        code={code}
-        isNetwork={ad?.isNetwork}
-        minHeight={h}
-        frameClass="rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden flex justify-center"
-        mobileClass={mobileClass}
-      />
+      <div data-ad-slot={position || 'banner'}>
+        <DirectAd
+          code={code}
+          isNetwork={ad?.isNetwork}
+          minHeight={h}
+          frameClass="rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden flex justify-center"
+          mobileClass={mobileClass}
+        />
+      </div>
     )
   }
 
