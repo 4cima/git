@@ -224,8 +224,8 @@ export async function GET(request: Request) {
               zone_key: null,
               width: null,
               height: null,
-              frequency_cap: Number(ad.frequency_cap) || 1,
-              frequency_hours: Number(ad.frequency_hours) || 24,
+              frequency_cap: Number.isFinite(Number(ad.frequency_cap)) ? Number(ad.frequency_cap) : 1,
+              frequency_hours: Number.isFinite(Number(ad.frequency_hours)) ? Number(ad.frequency_hours) : 24,
             },
             { headers: { 'Cache-Control': 'private, no-store' } },
           );

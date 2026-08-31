@@ -76,8 +76,8 @@ export async function POST(request: Request) {
           Number.isFinite(priority) && priority > 0 ? priority : 1,
           Number.isFinite(weight) && weight > 0 ? weight : 1,
           device, startAt, endAt,
-          Number.isFinite(freqCap) && freqCap > 0 ? freqCap : 1,
-          Number.isFinite(freqHours) && freqHours > 0 ? freqHours : 24,
+          Number.isFinite(freqCap) && freqCap >= 0 ? freqCap : 1,
+          Number.isFinite(freqHours) && freqHours >= 0 ? freqHours : 24,
           active,
         ],
       )
@@ -133,8 +133,8 @@ export async function PUT(request: Request) {
     }
     if (body.start_at !== undefined) { updates.push('start_at = ?'); values.push(body.start_at ? String(body.start_at) : null) }
     if (body.end_at !== undefined) { updates.push('end_at = ?'); values.push(body.end_at ? String(body.end_at) : null) }
-    if (body.frequency_cap !== undefined) { updates.push('frequency_cap = ?'); values.push(Number(body.frequency_cap) || 1) }
-    if (body.frequency_hours !== undefined) { updates.push('frequency_hours = ?'); values.push(Number(body.frequency_hours) || 24) }
+    if (body.frequency_cap !== undefined) { const cap = Number(body.frequency_cap); updates.push('frequency_cap = ?'); values.push(Number.isFinite(cap) && cap >= 0 ? cap : 1) }
+    if (body.frequency_hours !== undefined) { const hrs = Number(body.frequency_hours); updates.push('frequency_hours = ?'); values.push(Number.isFinite(hrs) && hrs >= 0 ? hrs : 24) }
     if (body.active !== undefined) { updates.push('active = ?'); values.push(body.active ? 1 : 0) }
 
     if (updates.length === 0) {

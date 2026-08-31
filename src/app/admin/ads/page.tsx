@@ -7,6 +7,7 @@ import {
   EyeOff,
   Power,
   Plus,
+  Pencil,
   RefreshCw,
   ShieldAlert,
   Trash2,
@@ -548,7 +549,9 @@ function MediationTab() {
     frequency_cap: '1',
     frequency_hours: '24',
     active: 1,
+    noCap: false,
   })
+  const [editingId, setEditingId] = useState<number | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -573,14 +576,11 @@ function MediationTab() {
   useEffect(() => {
     load()
   }, [])
+const emptyForm = { slot_key: 'home-after-hero', zone_id: 0, priority: '1', weight: '1', device: 'all', start_at: '', end_at: '', frequency_cap: '1', frequency_hours: '24', active: 1, noCap: false }
 const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.zone_id) return void toast.error('اختر منطقة أولًا')
-    try {
-      const res = await fetch('/api/admin/ads/assignments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    const payload = {
           slot_key: form.slot_key,
           zone_id: Number(form.zone_id),
           priority: Number(form.priority),
@@ -588,19 +588,44 @@ const submit = async (e: React.FormEvent) => {
           device: form.device,
           start_at: form.start_at || null,
           end_at: form.end_at || null,
-          frequency_cap: Number(form.frequency_cap),
-          frequency_hours: Number(form.frequency_hours),
+          // noCap => 0/0 = بلا كاب (يظهر دائمًا)
+          frequency_cap: form.noCap ? 0 : Number(form.frequency_cap),
+          frequency_hours: form.noCap ? 0 : Number(form.frequency_hours),
           active: form.active,
-        }),
+    }
+    try {
+      const res = await fetch('/api/admin/ads/assignments', {
+        method: editingId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingId ? { id: editingId, ...payload } : payload),
       })
       const data = await res.json()
-      if (!res.ok) return void toast.error(data?.error || 'فشل الإضافة')
-      toast.success('تمت إضافة السكة إلى الـ waterfall')
-      setForm({ slot_key: 'home-after-hero', zone_id: 0, priority: '1', weight: '1', device: 'all', start_at: '', end_at: '', frequency_cap: '1', frequency_hours: '24', active: 1 })
+      if (!res.ok) return void toast.error(data?.error || (editingId ? 'فشل حفظ التعديل' : 'فشل الإضافة'))
+      toast.success(editingId ? 'تم حفظ تعديل السكة' : 'تمت إضافة السكة إلى الـ waterfall')
+      setEditingId(null)
+      setForm({ ...emptyForm })
       await load()
     } catch (err: any) {
-      toast.error(err?.message || 'فشل الإضافة')
+      toast.error(err?.message || (editingId ? 'فشل حفظ التعديل' : 'فشل الإضافة'))
     }
+  }
+
+  const startEdit = (a: Assignment) => {
+    setEditingId(a.id)
+    setForm({
+      slot_key: a.slot_key,
+      zone_id: a.zone_id,
+      priority: String(a.priority),
+      weight: String(a.weight),
+      device: a.device,
+      start_at: a.start_at ? a.start_at.slice(0, 16) : '',
+      end_at: a.end_at ? a.end_at.slice(0, 16) : '',
+      frequency_cap: String(a.frequency_cap ?? 1),
+      frequency_hours: String(a.frequency_hours ?? 24),
+      active: a.active ? 1 : 0,
+      noCap: !a.frequency_cap || !a.frequency_hours,
+    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const remove = async (a: Assignment) => {
@@ -660,7 +685,9 @@ return (
       )}
 
       <form onSubmit={submit} className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-        <h3 className="mb-3 flex items-center gap-2 font-semibold"><Plus size={16} /> سكة جديدة</h3>
+        <h3 className="mb-3 flex items-center gap-2 font-semibold">
+          {editingId ? <><Pencil size={16} /> تعديل السكة #{editingId}</> : <><Plus size={16} /> سكة جديدة</>}
+        </h3>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <label className="text-sm">
             السكة (Slot)
@@ -694,9 +721,13 @@ return (
           <label className="text-sm">
             التكرار (مرات/ساعات)
             <div className="flex gap-2">
-              <input value={form.frequency_cap} onChange={(e) => setForm({ ...form, frequency_cap: e.target.value })} inputMode="numeric" className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2" title="عدد المرات" />
-              <input value={form.frequency_hours} onChange={(e) => setForm({ ...form, frequency_hours: e.target.value })} inputMode="numeric" className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2" title="خلال ساعات" />
+              <input value={form.noCap ? '' : form.frequency_cap} onChange={(e) => setForm({ ...form, frequency_cap: e.target.value })} disabled={form.noCap} placeholder="∞" inputMode="numeric" className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 disabled:opacity-40" title="عدد المرات" />
+              <input value={form.noCap ? '' : form.frequency_hours} onChange={(e) => setForm({ ...form, frequency_hours: e.target.value })} disabled={form.noCap} placeholder="∞" inputMode="numeric" className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 disabled:opacity-40" title="خلال ساعات" />
             </div>
+            <label className="mt-2 flex items-center gap-2 text-xs text-zinc-300">
+              <input type="checkbox" checked={form.noCap} onChange={(e) => setForm({ ...form, noCap: e.target.checked })} className="h-4 w-4" />
+              دائم (بدون حد للتكرار — يظهر دائمًا)
+            </label>
           </label>
           <label className="text-sm">
             البداية (اختياري)
@@ -710,7 +741,14 @@ return (
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.active === 1} onChange={(e) => setForm({ ...form, active: e.target.checked ? 1 : 0 })} className="h-4 w-4" /> نشطة
             </label>
-            <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">إضافة</button>
+            <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
+              {editingId ? 'حفظ التعديل' : 'إضافة'}
+            </button>
+            {editingId && (
+              <button type="button" onClick={() => { setEditingId(null); setForm({ ...emptyForm }) }} className="rounded-lg border border-zinc-600 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
+                إلغاء
+              </button>
+            )}
           </div>
         </div>
       </form>
@@ -771,14 +809,19 @@ return (
                           <td className="px-3 py-2 text-xs text-zinc-400">
                             {a.start_at ? `${a.start_at.slice(0, 10)} → ${a.end_at ? a.end_at.slice(0, 10) : '...'}` : 'دائم'}
                           </td>
-                          <td className="px-3 py-2 text-xs text-zinc-400">{a.frequency_cap}× / {a.frequency_hours}h</td>
+                          <td className="px-3 py-2 text-xs text-zinc-400">
+                            {!a.frequency_cap || !a.frequency_hours ? <span className="text-emerald-400">دائم (∞)</span> : `${a.frequency_cap}× / ${a.frequency_hours}h`}
+                          </td>
                           <td className="px-3 py-2">
                             <button onClick={() => toggle(a)} className={`text-xs font-medium ${a.active ? 'text-emerald-400' : 'text-zinc-500'}`}>
                               {a.active ? 'نشطة' : 'موقوفة'}
                             </button>
                           </td>
                           <td className="px-3 py-2">
-                            <button onClick={() => remove(a)} className="text-red-400 hover:text-red-300" title="حذف"><Trash2 size={15} /></button>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => startEdit(a)} className="text-zinc-400 hover:text-blue-400" title="تعديل"><Pencil size={15} /></button>
+                              <button onClick={() => remove(a)} className="text-red-400 hover:text-red-300" title="حذف"><Trash2 size={15} /></button>
+                            </div>
                           </td>
                         </tr>
                       ))}

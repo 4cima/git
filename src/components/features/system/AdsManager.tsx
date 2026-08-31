@@ -64,6 +64,15 @@ function sanitizeAdHtml(input: string) {
 }
 
 /**
+ * Wrap ad snippet in a complete HTML document so the sandboxed iframe has a
+ * proper document — prevents the blank/white box (browsers render srcDoc
+ * fragments with default white background and no centering).
+ */
+function wrapAdDoc(code: string) {
+  return `<!DOCTYPE html><html dir="auto"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;display:flex;align-items:center;justify-content:center}iframe,ins,img{max-width:100%}</style></head><body>${code}</body></html>`
+}
+
+/**
  * Ad fetch — mediation first, legacy fallback, never throws:
  *  1) GET /api/ads/serve?slot=<position> (waterfall: network → house → null)
  *  2) legacy GET /api/ads (house table, banner compatibility)
@@ -188,8 +197,8 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
     return (
       <div className={`rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden`}>
         <iframe
-            srcDoc={code}
-            style={{ height: h }}
+            srcDoc={wrapAdDoc(code)}
+            style={{ height: h, backgroundColor: 'transparent' }}
             className="w-full border-0"
             sandbox={sandbox}
             title={`ad-${ad.id}`}
@@ -217,7 +226,8 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
         </div>
         <div className="max-w-3xl rounded-md border border-zinc-700 bg-zinc-900 p-4 w-full h-[60vh]">
           <iframe
-            srcDoc={code}
+            srcDoc={wrapAdDoc(code)}
+            style={{ backgroundColor: 'transparent' }}
             className="w-full h-full border-0"
             sandbox={sandbox}
             title={`ad-preroll-${ad.id}`}
