@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { FLAGS } from '../../../lib/constants'
 
 type AdRow = {
@@ -64,13 +64,56 @@ function sanitizeAdHtml(input: string) {
 }
 
 /**
- * Wrap ad snippet in a complete HTML document so the sandboxed iframe has a
- * proper document — prevents the blank/white box (browsers render srcDoc
- * fragments with default white background and no centering).
+ * Mount an ad snippet DIRECTLY into the page DOM — no iframe, no srcdoc.
+ * Ad networks (Adsterra, PropellerAds…) validate the request origin/referer;
+ * a sandboxed srcdoc iframe has a null origin and sends no referer, so the
+ * network refuses to fill → blank box. Scripts never execute via innerHTML,
+ * so they are re-created as live <script> elements in document order.
+ * Snippets come from the admin-configured mediation panel (trusted source).
  */
-function wrapAdDoc(code: string) {
-  return `<!DOCTYPE html><html dir="auto"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;width:100%;height:100%;background:transparent;overflow:hidden;display:flex;align-items:center;justify-content:center}iframe,ins,img{max-width:100%}</style></head><body>${code}</body></html>`
+function mountAdInto(container: HTMLElement, raw: string) {
+  container.innerHTML = ''
+  let doc: Document
+  try {
+    doc = new DOMParser().parseFromString(raw, 'text/html')
+  } catch {
+    container.innerHTML = raw
+    return
+  }
+  Array.from(doc.body.childNodes).forEach((node) => {
+    if (node.nodeName === 'SCRIPT') {
+      const old = node as HTMLScriptElement
+      const s = document.createElement('script')
+      Array.from(old.attributes).forEach((a) => s.setAttribute(a.name, a.value))
+      s.text = old.text || ''
+      container.appendChild(s)
+    } else {
+      container.appendChild(document.importNode(node, true))
+    }
+  })
 }
+/**
+ * Renders an ad snippet directly in the page DOM. Network snippets (admin
+ * configured) mount their live <script> tags so the ad network sees the real
+ * page origin/referer; house ads stay sanitized HTML.
+ */
+function DirectAd({ code, isNetwork, minHeight }: { code: string; isNetwork?: boolean; minHeight?: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (isNetwork) {
+      mountAdInto(el, code)
+    } else {
+      el.innerHTML = sanitizeAdHtml(code)
+    }
+    return () => {
+      el.innerHTML = ''
+    }
+  }, [code, isNetwork])
+  return <div ref={ref} style={minHeight ? { minHeight } : undefined} />
+}
+
 
 /**
  * Ad fetch — mediation first, legacy fallback, never throws:
@@ -186,23 +229,14 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
   if (type === 'banner') {
     const raw = ad?.content || ''
     // Network snippets come from the admin-configured mediation panel and must
-    // run their scripts (e.g. Adsterra banners) — mounted inside an opaque-
-    // origin sandboxed iframe: scripts + popups allowed, same-origin access and
-    // top-navigation (page hijack) blocked. House ads stay sanitized.
+    // run their scripts IN THE PAGE (e.g. Adsterra banners) — the network
+    // validates origin/referer, so iframe/srcdoc mounting gets rejected
+    // (blank box). Mounted directly; house ads stay sanitized.
     const code = ad?.isNetwork ? raw : sanitizeAdHtml(raw)
-    const sandbox = ad?.isNetwork
-      ? 'allow-scripts allow-popups allow-popups-to-escape-sandbox'
-      : 'allow-popups'
     const h = ad?.height ? Math.max(60, Math.min(Number(ad.height), 600)) : 96
     return (
-      <div className={`rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden`}>
-        <iframe
-            srcDoc={wrapAdDoc(code)}
-            style={{ height: h, backgroundColor: 'transparent' }}
-            className="w-full border-0"
-            sandbox={sandbox}
-            title={`ad-${ad.id}`}
-        />
+      <div className="rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden">
+        <DirectAd code={code} isNetwork={ad?.isNetwork} minHeight={h} />
       </div>
     )
   }
@@ -210,9 +244,6 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
   if (type === 'preroll') {
     const raw = ad?.content || '<div>إعلان</div>'
     const code = ad?.isNetwork ? raw : sanitizeAdHtml(raw)
-    const sandbox = ad?.isNetwork
-      ? 'allow-scripts allow-popups allow-popups-to-escape-sandbox'
-      : 'allow-popups'
     return (
       <div className="relative z-10 flex h-full w-full items-center justify-center bg-black/90">
         <div className="absolute right-3 top-3 text-xs text-white/80">ينتهي خلال {countdown}s</div>
@@ -225,13 +256,7 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
           </button>
         </div>
         <div className="max-w-3xl rounded-md border border-zinc-700 bg-zinc-900 p-4 w-full h-[60vh]">
-          <iframe
-            srcDoc={wrapAdDoc(code)}
-            style={{ backgroundColor: 'transparent' }}
-            className="w-full h-full border-0"
-            sandbox={sandbox}
-            title={`ad-preroll-${ad.id}`}
-          />
+          <DirectAd code={code} isNetwork={ad?.isNetwork} />
         </div>
       </div>
     )

@@ -52,53 +52,62 @@ function BannerAdRectangle() {
   )
 }
 
-/** 
- * كومبوننت عام لعرض كود إعلان سكريبت (atOptions/invoke.js وغيره) جوه iframe معزول
- * السكريبتات اللي بتستخدم document.write بتتشغل هنا بأمان
+/**
+ * كومبوننت عام لعرض كود إعلان سكريبت (atOptions/invoke.js وغيره) مباشرة في صفحة 4cima.com
+ * الشبكات الإعلانية (Adsterra) بتتحقق من origin/referer — التركيب جوه iframe srcdoc
+ * بيعطي origin فارغ ومن غير Referer فالشبكة بترفض يملأ (مربع أبيض).
+ * السكريبتات بتتعاد كعناصر <script> حية بالترتيب (innerHTML مش بينفذ سكريبتات).
  */
-function AdScriptIframe({ 
-  scriptHtml, 
-  width, 
-  height, 
+function AdScriptIframe({
+  scriptHtml,
+  width,
+  height,
   label,
-  adNumber 
-}: { 
+  adNumber
+}: {
   scriptHtml: string
   width: number
   height: number
   label: string
   adNumber: number
 }) {
-  const srcDoc = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>body{margin:0;padding:0;display:flex;justify-content:center;align-items:center;overflow:hidden;background:transparent}</style>
-</head>
-<body>
-${scriptHtml.replace(/https:\/\/(www\.)?highrevenueformat\.com\//g, '/api/ads-proxy?url=https://www.highrevenueformat.com/')}
-</body>
-</html>`
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.innerHTML = ''
+    try {
+      const doc = new DOMParser().parseFromString(scriptHtml, 'text/html')
+      Array.from(doc.body.childNodes).forEach((node) => {
+        if (node.nodeName === 'SCRIPT') {
+          const old = node as HTMLScriptElement
+          const s = document.createElement('script')
+          Array.from(old.attributes).forEach((a) => s.setAttribute(a.name, a.value))
+          s.text = old.text || ''
+          el.appendChild(s)
+        } else {
+          el.appendChild(document.importNode(node, true))
+        }
+      })
+    } catch { /* ignore */ }
+    return () => {
+      el.innerHTML = ''
+    }
+  }, [scriptHtml])
 
   return (
     <div className="w-full flex flex-col items-center gap-2">
-      <div 
-        className="relative rounded-xl border border-zinc-700 bg-zinc-900/30 overflow-hidden"
-        style={{ width: '100%', maxWidth: width, height }}
+      <div
+        className="relative rounded-xl border border-zinc-700 bg-zinc-900/30 overflow-hidden flex items-center justify-center"
+        style={{ width: '100%', maxWidth: width, minHeight: height }}
       >
         {/* رقم الإعلان — للمرجعية عند التجربة */}
         <div className="absolute top-2 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded shadow-lg pointer-events-none">
           إعلان #{adNumber}
         </div>
-        <iframe
-          srcDoc={srcDoc}
-          width={width}
-          height={height}
-          className="border-0"
-          sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin"
-          title={`ad-${label}`}
-          loading="lazy"
-        />
+        {/* الإعلان بيتنفذ في الصفحة مباشرة — نفس origin وreferer موقعنا */}
+        <div ref={ref} style={{ width, height: height }} />
       </div>
       <span className="text-[10px] text-zinc-600">#{adNumber} {label} — {width}x{height}</span>
     </div>
@@ -426,32 +435,28 @@ function VideoPlayer() {
 /* ============================================================ */
 /* #4 — إعلان زر المشاهدة (PropellerAds OnClick — نفس سكريبت الإنتاج) */
 /* السكريبت بيتجهز مع فتح الصفحة (async من غير lazy)، والضغطة الأولى بتشغّل الإعلان. */
-/* السكريبت جوه iframe شفاف فوق الزر بالظبط — من غير allow-top-navigation */
-/* عشان ميقدرش يوجّه الصفحة نفسها: الإعلان بيفتح في تاب جديد وصفحتنا بتفضل مكانها. */
+/* بيتحمّل في الصفحة مباشرة (نفس origin وreferer) — نفس أسلوب الإنتاج بالظبط. */
 /* ============================================================ */
-
-/** iframe إعلاني عام — بيستقبل مفتاح أي zone ومقاسها */
-function AdScriptIframeDirect({ apiKey, width, height }: { apiKey: string; width: number; height: number }) {
-  const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body><script>
-    atOptions = { 'key' : '${apiKey}', 'format' : 'iframe', 'height' : ${height}, 'width' : ${width}, 'params' : {} };
-  </script><script src="/api/ads-proxy?url=https://www.highrevenueformat.com/${apiKey}/invoke.js"></script></body></html>`
-  return (
-    <iframe
-      title={`ad-${width}x${height}`}
-      width={width}
-      height={height}
-      sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-forms allow-top-navigation-by-user-activation"
-      loading="lazy"
-      className="block max-w-full"
-      srcDoc={doc}
-    />
-  )
-}
 
 /** إعلان #4 — PropellerAds OnClick (سكريبت الإنتاج الفعلي: al5sm.com/tag.min.js + zone 11691417) — مركب فوق زر المشاهدة */
 function ProductionOnClickAd() {
   const ref = useRef<HTMLDivElement>(null)
+  const scriptRef = useRef<HTMLDivElement>(null)
   const firedRef = useRef(false)
+
+  // تحميل سكريبت الإنتاج في الصفحة مباشرة (نفس origin وreferer) — بدون iframe ولا proxy
+  useEffect(() => {
+    const el = scriptRef.current
+    if (!el) return
+    const s = document.createElement('script')
+    s.src = 'https://al5sm.com/tag.min.js'
+    s.setAttribute('data-zone', '11691417')
+    s.async = true
+    el.appendChild(s)
+    return () => {
+      el.innerHTML = ''
+    }
+  }, [])
 
   useEffect(() => {
     const el = ref.current
@@ -476,15 +481,12 @@ function ProductionOnClickAd() {
       className="relative inline-block cursor-pointer select-none"
       style={{ minWidth: 260 }}
     >
-      {/* طبقة السكريبت الشفافة — بتغطي الزر بالظبط فأي ضغطة على الزر بتشغّل الإعلان */}
-      {/* السكريبت بيتحمل مع فتح الصفحة (يتجهز قبل الضغط) — ومن غير allow-top-navigation */}
-      {/* عشان ميقدرش يخطف الصفحة نفسها: بيفتح الإعلان في تاب جديد بس */}
-      <iframe
-        title="production-onclick-ad"
+      {/* سكريبت الإنتاج بيتحمّل في الصفحة مباشرة (نفس origin وreferer موقعنا) — */}
+      {/* الضغطة الأولى على الزر (أي مكان في الصفحة) بتشغّل الإعلان في تاب جديد */}
+      <div
+        ref={scriptRef}
         aria-hidden="true"
-        className="absolute inset-0 w-full h-full border-0 opacity-[0.01]"
-        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-forms"
-        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body><script src="/api/ads-proxy?url=https://al5sm.com/tag.min.js" data-zone="11691417" async></script></body></html>`}
+        className="absolute inset-0 opacity-[0.01] pointer-events-none"
       />
       {/* زر المشاهدة الظاهر للمستخدم */}
       <button className="relative z-0 px-10 py-4 rounded-xl bg-gradient-to-l from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-lg font-bold shadow-lg shadow-blue-900/40 transition-all flex items-center gap-3">
