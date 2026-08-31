@@ -7,7 +7,13 @@ type AdRow = {
   type: 'popunder' | 'banner' | 'preroll' | 'midroll'
   content: string
   position?: 'top' | 'bottom' | 'sidebar' | 'player' | 'global' | string | null
-  active?: boolean | null
+  /** network-sourced snippets are admin-configured and may contain scripts */
+  isNetwork?: boolean
+  integration?: 'script' | 'html' | 'click_url' | 'vast_url' | null
+  scriptUrl?: string | null
+  zoneKey?: string | null
+  width?: number | null
+  height?: number | null
 }
 
 type ServeResponse = {
@@ -20,6 +26,9 @@ type ServeResponse = {
   vast_url?: string | null
   ad_id?: number | null
   provider_slug?: string | null
+  zone_key?: string | null
+  width?: number | null
+  height?: number | null
 }
 
 type Props = {
@@ -71,7 +80,16 @@ async function fetchAd(type: AdRow['type'], position?: string): Promise<AdRow | 
         const data: ServeResponse = await res.json()
         if (data?.source === 'network') {
           if (data.integration === 'html' && data.html) {
-            return { id: 0, title: `network:${data.provider_slug || 'zone'}`, type, content: data.html, position }
+            return {
+              id: 0,
+              title: `network:${data.provider_slug || 'zone'}`,
+              type,
+              content: data.html,
+              position,
+              isNetwork: true,
+              width: data.width ?? null,
+              height: data.height ?? null,
+            }
           }
           // script / click_url / vast_url are not mounted in this task
           return null
@@ -157,13 +175,23 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
   }
 
   if (type === 'banner') {
-    const sanitizedCode = sanitizeAdHtml(ad?.content || '')
+    const raw = ad?.content || ''
+    // Network snippets come from the admin-configured mediation panel and must
+    // run their scripts (e.g. Adsterra banners) — mounted inside an opaque-
+    // origin sandboxed iframe: scripts + popups allowed, same-origin access and
+    // top-navigation (page hijack) blocked. House ads stay sanitized.
+    const code = ad?.isNetwork ? raw : sanitizeAdHtml(raw)
+    const sandbox = ad?.isNetwork
+      ? 'allow-scripts allow-popups allow-popups-to-escape-sandbox'
+      : 'allow-popups'
+    const h = ad?.height ? Math.max(60, Math.min(Number(ad.height), 600)) : 96
     return (
       <div className={`rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden`}>
-        <iframe 
-            srcDoc={sanitizedCode} 
-            className="w-full h-24 border-0" 
-            sandbox="allow-popups"
+        <iframe
+            srcDoc={code}
+            style={{ height: h }}
+            className="w-full border-0"
+            sandbox={sandbox}
             title={`ad-${ad.id}`}
         />
       </div>
@@ -171,7 +199,11 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
   }
 
   if (type === 'preroll') {
-    const sanitizedCode = sanitizeAdHtml(ad?.content || '<div>إعلان</div>')
+    const raw = ad?.content || '<div>إعلان</div>'
+    const code = ad?.isNetwork ? raw : sanitizeAdHtml(raw)
+    const sandbox = ad?.isNetwork
+      ? 'allow-scripts allow-popups allow-popups-to-escape-sandbox'
+      : 'allow-popups'
     return (
       <div className="relative z-10 flex h-full w-full items-center justify-center bg-black/90">
         <div className="absolute right-3 top-3 text-xs text-white/80">ينتهي خلال {countdown}s</div>
@@ -184,10 +216,10 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
           </button>
         </div>
         <div className="max-w-3xl rounded-md border border-zinc-700 bg-zinc-900 p-4 w-full h-[60vh]">
-          <iframe 
-            srcDoc={sanitizedCode} 
+          <iframe
+            srcDoc={code}
             className="w-full h-full border-0"
-            sandbox="allow-popups"
+            sandbox={sandbox}
             title={`ad-preroll-${ad.id}`}
           />
         </div>
