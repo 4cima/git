@@ -1,22 +1,73 @@
 'use client'
 
 import { isHostAllowed } from '@/lib/adsAllowlist'
+import { FLAGS } from '@/lib/constants'
 
 const SLOT = 'global-popunder'
 const CACHE_KEY = `ads_serve_${SLOT}`
 const CACHE_TTL = 10 * 60 * 1000 // 10 minutes
 const ZONE_KEY = '11691417'
+const FALLBACK_SCRIPT = 'https://al5sm.com/tag.min.js'
 const POPUP_COOLDOWN = 20000 // 20 seconds between popups
 const CLICK_COOLDOWN = 2000 // 2 clicks in 2 seconds = 1 popup
 
+let scriptInjected = false
+
+function injectScript(config: any) {
+  if (typeof window === 'undefined') return
+  if (scriptInjected) return
+  if (sessionStorage.getItem('ads_script_injected')) {
+    scriptInjected = true
+    return
+  }
+
+  if (!config || config.integration !== 'script') return
+
+  const zoneKey = config.zone_key || ZONE_KEY
+  let scriptUrl = config.script_url
+
+  if (!scriptUrl || !isHostAllowed('propellerads', scriptUrl)) {
+    scriptUrl = FALLBACK_SCRIPT
+  }
+
+  try {
+    const url = new URL(scriptUrl)
+    if (url.protocol !== 'https:') return
+  } catch {
+    return
+  }
+
+  scriptInjected = true
+  sessionStorage.setItem('ads_script_injected', '1')
+
+  try {
+    const script = document.createElement('script')
+    script.src = scriptUrl
+    script.setAttribute('data-zone', zoneKey)
+    script.async = true
+    document.body.appendChild(script)
+  } catch {
+    // Silent fail - fail-open
+  }
+}
+
 export function preparePopunder() {
   if (typeof window === 'undefined') return
+
+  if (!FLAGS.ADS_ENABLED) return
+
+  if (scriptInjected) return
+  if (sessionStorage.getItem('ads_script_injected')) {
+    scriptInjected = true
+    return
+  }
 
   try {
     const cached = sessionStorage.getItem(CACHE_KEY)
     if (cached) {
       const { data, timestamp } = JSON.parse(cached)
       if (Date.now() - timestamp < CACHE_TTL) {
+        injectScript(data)
         return
       }
     }
@@ -25,12 +76,14 @@ export function preparePopunder() {
       .then(res => res.json())
       .then(data => {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }))
+        injectScript(data)
       })
       .catch(() => {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: null, timestamp: Date.now() }))
+        injectScript({ integration: 'script', zone_key: ZONE_KEY, script_url: FALLBACK_SCRIPT })
       })
   } catch {
-    // Silent fail - fail-open
+    injectScript({ integration: 'script', zone_key: ZONE_KEY, script_url: FALLBACK_SCRIPT })
   }
 }
 
@@ -48,49 +101,6 @@ export function firePopunderOnClick() {
   if (now - lastClick < CLICK_COOLDOWN) return
   localStorage.setItem('ads_last_click', now.toString())
 
-  // Read cached ad config
-  let cachedData: any = null
-  try {
-    const cached = sessionStorage.getItem(CACHE_KEY)
-    if (cached) {
-      const { data } = JSON.parse(cached)
-      cachedData = data
-    }
-  } catch {
-    return
-  }
-
-  if (!cachedData) return
-  if (cachedData.integration !== 'script') return
-
-  const zoneKey = cachedData.zone_key || ZONE_KEY
-  let scriptUrl = cachedData.script_url
-
-  // Validate: use response URL only if https and allowed, otherwise fallback
-  if (!scriptUrl || !isHostAllowed('propellerads', scriptUrl)) {
-    scriptUrl = 'https://al5sm.com/tag.min.js'
-  }
-
-  // Final https check
-  try {
-    const url = new URL(scriptUrl)
-    if (url.protocol !== 'https:') return
-  } catch {
-    return
-  }
-
-  // Inject script once per session
-  if (sessionStorage.getItem('ads_script_injected')) return
-  sessionStorage.setItem('ads_script_injected', '1')
-
-  try {
-    const script = document.createElement('script')
-    script.src = scriptUrl
-    script.setAttribute('data-zone', zoneKey)
-    script.async = true
-    document.body.appendChild(script)
-    localStorage.setItem('ads_last_popup', now.toString())
-  } catch {
-    // Silent fail - fail-open
-  }
+  // Update last popup time - script is already loaded and handles the actual popup
+  localStorage.setItem('ads_last_popup', now.toString())
 }
