@@ -2,9 +2,9 @@
  * بروكسي سكريبتات الإعلانات — يمرر السكريبت من نفس الدومين
  * عشان يتجاوز حجب الـ DNS / الإضافات اللي بتحجب دومينات الإعلانات المعروفة.
  * في الإنتاج على Cloudflare بيشتغل من نفس الدومين (same-origin).
+ * ملاحظة: بدون runtime='edge' — OpenNext على Cloudflare يرفض edge runtime
+ * داخل الدالة الرئيسية (Build كان بيفشل بـ "cannot use the edge runtime").
  */
-export const runtime = 'edge'
-
 const ALLOWED_HOSTS = [
   'www.highrevenueformat.com',
   'highrevenueformat.com',
