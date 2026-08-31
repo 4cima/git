@@ -425,9 +425,9 @@ function VideoPlayer() {
 
 /* ============================================================ */
 /* #4 — إعلان زر المشاهدة (PropellerAds OnClick — نفس سكريبت الإنتاج) */
-/* السكريبت بيتجهز مع فتح الصفحة، والضغطة الأولى بتشغّل الإعلان. */
-/* هنا بنحط السكريبت جوه iframe شفاف فوق الزر بالظبط — فالضغطة */
-/* على الزر بس هي اللي بتخطف الإعلان (مش أي ضغطة في الصفحة). */
+/* السكريبت بيتجهز مع فتح الصفحة (async من غير lazy)، والضغطة الأولى بتشغّل الإعلان. */
+/* السكريبت جوه iframe شفاف فوق الزر بالظبط — من غير allow-top-navigation */
+/* عشان ميقدرش يوجّه الصفحة نفسها: الإعلان بيفتح في تاب جديد وصفحتنا بتفضل مكانها. */
 /* ============================================================ */
 
 /** iframe إعلاني عام — بيستقبل مفتاح أي zone ومقاسها */
@@ -477,11 +477,13 @@ function ProductionOnClickAd() {
       style={{ minWidth: 260 }}
     >
       {/* طبقة السكريبت الشفافة — بتغطي الزر بالظبط فأي ضغطة على الزر بتشغّل الإعلان */}
+      {/* السكريبت بيتحمل مع فتح الصفحة (يتجهز قبل الضغط) — ومن غير allow-top-navigation */}
+      {/* عشان ميقدرش يخطف الصفحة نفسها: بيفتح الإعلان في تاب جديد بس */}
       <iframe
         title="production-onclick-ad"
         aria-hidden="true"
         className="absolute inset-0 w-full h-full border-0 opacity-[0.01]"
-        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-forms allow-top-navigation-by-user-activation"
+        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-forms"
         srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body><script src="/api/ads-proxy?url=https://al5sm.com/tag.min.js" data-zone="11691417" async></script></body></html>`}
       />
       {/* زر المشاهدة الظاهر للمستخدم */}
