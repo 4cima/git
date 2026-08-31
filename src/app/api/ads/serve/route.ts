@@ -12,7 +12,11 @@ export const dynamic = 'force-dynamic';
 
 const VALID_SLOTS = new Set([
   'home-after-hero',
+  'home-in-feed',
+  'home-footer',
   'details-below-player',
+  'details-sidebar',
+  'global-header',
   'watch-preroll',
   'watch-midroll',
   'global-popunder',
@@ -20,7 +24,11 @@ const VALID_SLOTS = new Set([
 
 const HOUSE_FALLBACK: Record<string, { type: string; position?: string }> = {
   'home-after-hero':      { type: 'banner',   position: 'home-after-hero' },
+  'home-in-feed':         { type: 'banner',   position: 'home-in-feed' },
+  'home-footer':          { type: 'banner',   position: 'home-footer' },
   'details-below-player': { type: 'banner',   position: 'details-below-player' },
+  'details-sidebar':      { type: 'banner',   position: 'details-sidebar' },
+  'global-header':        { type: 'banner',   position: 'global-header' },
   'watch-preroll':        { type: 'preroll' },
   'watch-midroll':        { type: 'midroll' },
   'global-popunder':      { type: 'popunder' },

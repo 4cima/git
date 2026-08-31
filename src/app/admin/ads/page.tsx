@@ -76,7 +76,7 @@ type HouseAd = {
 
 const ZONE_TYPES = ['popunder', 'banner', 'native', 'push', 'preroll_vast', 'midroll_vast', 'interstitial']
 const INTEGRATIONS = ['script', 'html', 'click_url', 'vast_url']
-const SLOT_KEYS = ['home-after-hero', 'details-below-player', 'watch-preroll', 'watch-midroll', 'global-popunder']
+const SLOT_KEYS = ['home-after-hero', 'home-in-feed', 'home-footer', 'details-below-player', 'details-sidebar', 'global-header', 'watch-preroll', 'watch-midroll', 'global-popunder']
 const DEVICES = ['all', 'mobile', 'desktop']
 
 export default function AdsPage() {
