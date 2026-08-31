@@ -12,6 +12,7 @@ import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
 import { preparePopunder, firePopunderOnClick } from '@/components/features/system/adsClick'
+import { AdsManager } from '@/components/features/system/AdsManager'
 
 interface SeriesDetailsClientProps {
   series: any
@@ -927,6 +928,11 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                     </div>
                   </div>
                 )}
+
+                {/* Desktop sidebar ad (160×600) — desktop only, hidden on mobile */}
+                <div className="hidden lg:flex justify-center pt-4">
+                  <AdsManager type="banner" position="details-sidebar" />
+                </div>
               </div>
             </div>
 
@@ -935,6 +941,11 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
             {/* Watch CTA moved under the titles above genres */}
           </div>
         </div>
+      </div>
+
+      {/* Ad banner below the player/story (details-below-player) */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-6 flex justify-center">
+        <AdsManager type="banner" position="details-below-player" />
       </div>
 
       {/* Similar Series Section */}

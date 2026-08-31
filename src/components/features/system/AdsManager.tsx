@@ -67,51 +67,72 @@ function sanitizeAdHtml(input: string) {
  * Mount an ad snippet DIRECTLY into the page DOM — no iframe, no srcdoc.
  * Ad networks (Adsterra, PropellerAds…) validate the request origin/referer;
  * a sandboxed srcdoc iframe has a null origin and sends no referer, so the
- * network refuses to fill → blank box. Scripts never execute via innerHTML,
- * so they are re-created as live <script> elements in document order.
+ * network refuses to fill → blank box.
+ * Uses <template>.innerHTML so top-level <script> tags (Adsterra snippets
+ * start with one) are captured — DOMParser().body would drop them into <head>.
+ * Scripts are re-created as live <script> elements so they execute.
  * Snippets come from the admin-configured mediation panel (trusted source).
  */
-function mountAdInto(container: HTMLElement, raw: string) {
-  container.innerHTML = ''
-  let doc: Document
-  try {
-    doc = new DOMParser().parseFromString(raw, 'text/html')
-  } catch {
-    container.innerHTML = raw
-    return
-  }
-  Array.from(doc.body.childNodes).forEach((node) => {
-    if (node.nodeName === 'SCRIPT') {
-      const old = node as HTMLScriptElement
-      const s = document.createElement('script')
-      Array.from(old.attributes).forEach((a) => s.setAttribute(a.name, a.value))
-      s.text = old.text || ''
-      container.appendChild(s)
-    } else {
-      container.appendChild(document.importNode(node, true))
-    }
+function mountAdInto(container: HTMLElement, html: string) {
+  container.replaceChildren()
+  const tpl = document.createElement('template')
+  tpl.innerHTML = html.trim()
+  tpl.content.querySelectorAll('script').forEach((old) => {
+    const s = document.createElement('script')
+    for (const a of Array.from(old.attributes)) s.setAttribute(a.name, a.value)
+    s.textContent = old.textContent
+    old.replaceWith(s)
   })
+  container.appendChild(tpl.content)
 }
 /**
  * Renders an ad snippet directly in the page DOM. Network snippets (admin
  * configured) mount their live <script> tags so the ad network sees the real
  * page origin/referer; house ads stay sanitized HTML.
  */
-function DirectAd({ code, isNetwork, minHeight }: { code: string; isNetwork?: boolean; minHeight?: number }) {
+function DirectAd({
+  code,
+  isNetwork,
+  minHeight,
+  frameClass,
+  mobileClass,
+}: {
+  code: string
+  isNetwork?: boolean
+  minHeight?: number
+  frameClass?: string
+  /** e.g. 'hidden md:block' for 728×90, 'hidden lg:block' for 160×600 */
+  mobileClass?: string
+}) {
   const ref = useRef<HTMLDivElement>(null)
+  const [empty, setEmpty] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    setEmpty(false)
     if (isNetwork) {
       mountAdInto(el, code)
     } else {
       el.innerHTML = sanitizeAdHtml(code)
     }
+    // No creative within 4s → hide the slot entirely (no empty/white box)
+    const t = setTimeout(() => {
+      const filled =
+        el.querySelector('iframe,ins,img,a,video,embed,object') ||
+        (el.firstElementChild && el.firstElementChild.tagName !== 'SCRIPT')
+      if (!filled) setEmpty(true)
+    }, 4000)
     return () => {
-      el.innerHTML = ''
+      clearTimeout(t)
+      el.replaceChildren()
     }
   }, [code, isNetwork])
-  return <div ref={ref} style={minHeight ? { minHeight } : undefined} />
+  if (empty) return null
+  return (
+    <div className={`${frameClass || ''} ${mobileClass || ''}`.trim() || undefined}>
+      <div ref={ref} style={minHeight ? { minHeight } : undefined} />
+    </div>
+  )
 }
 
 
@@ -234,10 +255,18 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
     // (blank box). Mounted directly; house ads stay sanitized.
     const code = ad?.isNetwork ? raw : sanitizeAdHtml(raw)
     const h = ad?.height ? Math.max(60, Math.min(Number(ad.height), 600)) : 96
+    // Desktop-only formats never show on mobile (no horizontal scroll / dead space)
+    const w = Number(ad?.width) || 0
+    const adH = Number(ad?.height) || 0
+    const mobileClass = w >= 600 ? 'hidden md:block' : w <= 300 && adH >= 400 ? 'hidden lg:block' : ''
     return (
-      <div className="rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden">
-        <DirectAd code={code} isNetwork={ad?.isNetwork} minHeight={h} />
-      </div>
+      <DirectAd
+        code={code}
+        isNetwork={ad?.isNetwork}
+        minHeight={h}
+        frameClass="rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden flex justify-center"
+        mobileClass={mobileClass}
+      />
     )
   }
 

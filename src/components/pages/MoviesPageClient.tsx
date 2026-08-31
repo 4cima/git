@@ -10,6 +10,7 @@ import { sanitizeTitle } from '@/utils/textSanitizer'
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
+import { AdsManager } from '@/components/features/system/AdsManager'
 
 const GENRES = [
   { name: 'دراما',        slug: 'drama',            emoji: '🎭' },
@@ -356,6 +357,13 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
 
       {/* Single page H1 for SEO (visually hidden) */}
       <h1 className="sr-only">الأفلام المترجمة</h1>
+
+      {/* Header banner — 728×90 desktop / hidden on mobile */}
+      <div className="w-full bg-slate-950" style={{ minHeight: '88px' }}>
+        <div className="max-w-[1920px] mx-auto px-3 sm:px-5 md:px-8 lg:px-12 py-3">
+          <AdsManager type="banner" position="global-header" />
+        </div>
+      </div>
 
       {/* Cinema Banner */}
       <section className="w-full bg-slate-950">

@@ -744,6 +744,11 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
             toggleCardState={toggleCardState}
           />
 
+          {/* In-feed ad — mid page, after the first content rows (300×250) */}
+          <div className="flex justify-center py-2">
+            <AdsManager type="banner" position="home-in-feed" />
+          </div>
+
           {/* CTA Buttons Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
             {/* Movies CTA */}
@@ -785,6 +790,13 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
 
         </div>
       </section>
+
+      {/* Footer banner — end of home, before footer (728×90) */}
+      <div className="w-full bg-slate-950" style={{ minHeight: '88px' }}>
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-4">
+          <AdsManager type="banner" position="home-footer" />
+        </div>
+      </div>
 
       {/* Footer Component */}
       <Footer />

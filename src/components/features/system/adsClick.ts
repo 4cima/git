@@ -13,7 +13,7 @@ const CLICK_COOLDOWN = 2000 // 2 clicks in 2 seconds = 1 popup
 
 let scriptInjected = false
 
-function injectScript(config: any) {
+function injectScript(config?: any) {
   if (typeof window === 'undefined') return
   if (scriptInjected) return
   if (sessionStorage.getItem('ads_script_injected')) {
@@ -21,20 +21,22 @@ function injectScript(config: any) {
     return
   }
 
-  if (!config || config.integration !== 'script') return
-
-  const zoneKey = config.zone_key || ZONE_KEY
-  let scriptUrl = config.script_url
-
-  if (!scriptUrl || !isHostAllowed('propellerads', scriptUrl)) {
-    scriptUrl = FALLBACK_SCRIPT
-  }
+  // Server config is used only when it is a valid https script integration;
+  // ANYTHING else (source:null, html integration, bad host) → fallback zone
+  // 11691417 loaded directly from al5sm.com. We never treat an empty serve
+  // response as "success" — the popunder must always be armed.
+  let scriptUrl: string | undefined =
+    config && config.integration === 'script' && typeof config.script_url === 'string'
+      ? config.script_url
+      : undefined
+  if (scriptUrl && !isHostAllowed('propellerads', scriptUrl)) scriptUrl = undefined
+  const zoneKey = scriptUrl ? config.zone_key || ZONE_KEY : ZONE_KEY
+  if (!scriptUrl) scriptUrl = FALLBACK_SCRIPT
 
   try {
-    const url = new URL(scriptUrl)
-    if (url.protocol !== 'https:') return
+    if (new URL(scriptUrl).protocol !== 'https:') scriptUrl = FALLBACK_SCRIPT
   } catch {
-    return
+    scriptUrl = FALLBACK_SCRIPT
   }
 
   scriptInjected = true

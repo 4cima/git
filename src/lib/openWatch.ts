@@ -132,5 +132,15 @@ export async function openWatchWithPlayer(target: WatchTarget): Promise<void> {
   } catch {
     /* bridge unavailable — watch without it */
   }
-  window.location.href = url
+  // Give the network's click-captured pop-under time to fire BEFORE we
+  // navigate in the same tab — navigating in the same tick kills the pending
+  // window.open (popunder never opens). 2 rAF + 400ms is enough; the viewer
+  // barely notices, and the current tab still goes to the player (no hijack).
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.location.href = url
+      }, 400)
+    })
+  )
 }

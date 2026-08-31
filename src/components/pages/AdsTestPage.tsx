@@ -76,23 +76,24 @@ function AdScriptIframe({
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    el.innerHTML = ''
+    el.replaceChildren()
     try {
-      const doc = new DOMParser().parseFromString(scriptHtml, 'text/html')
-      Array.from(doc.body.childNodes).forEach((node) => {
-        if (node.nodeName === 'SCRIPT') {
-          const old = node as HTMLScriptElement
-          const s = document.createElement('script')
-          Array.from(old.attributes).forEach((a) => s.setAttribute(a.name, a.value))
-          s.text = old.text || ''
-          el.appendChild(s)
-        } else {
-          el.appendChild(document.importNode(node, true))
-        }
+      // <template>.innerHTML captures top-level <script> tags (Adsterra
+      // snippets start with one) — DOMParser().body drops them into <head>.
+      // Scripts are re-created as live <script> elements so they execute in
+      // the page itself (real origin/referer — no iframe/sandbox/proxy).
+      const tpl = document.createElement('template')
+      tpl.innerHTML = scriptHtml.trim()
+      tpl.content.querySelectorAll('script').forEach((old) => {
+        const s = document.createElement('script')
+        for (const a of Array.from(old.attributes)) s.setAttribute(a.name, a.value)
+        s.textContent = old.textContent
+        old.replaceWith(s)
       })
+      el.appendChild(tpl.content)
     } catch { /* ignore */ }
     return () => {
-      el.innerHTML = ''
+      el.replaceChildren()
     }
   }, [scriptHtml])
 

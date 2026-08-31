@@ -8,6 +8,7 @@ import { Star, Clock, TrendingUp, SearchX } from 'lucide-react'
 import { SectionHeader } from '../common/SectionHeader'
 import { UnifiedFilters } from '../unified/UnifiedFilters'
 import { Footer } from '../layout/Footer'
+import { AdsManager } from '@/components/features/system/AdsManager'
 import type { ContentType } from '../../types/unified-section'
 
 const CATEGORY_MAP: Record<string, any> = {
@@ -213,6 +214,10 @@ export const CategoryHub = ({ type = 'movie', category }: CategoryHubProps) => {
 
   return (
     <div className="min-h-screen pt-16 page-container pb-8">
+      {/* Ad banner under the header (global-header) */}
+      <div className="mb-4 flex justify-center">
+        <AdsManager type="banner" position="global-header" />
+      </div>
       <div className="mb-6 relative">
         <h1 className="text-2xl md:text-4xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500 font-cairo">
           {type === 'movie' ? 'أفلام' : 'مسلسلات'}
