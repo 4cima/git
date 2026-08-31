@@ -434,7 +434,7 @@ function VideoPlayer() {
 function AdScriptIframeDirect({ apiKey, width, height }: { apiKey: string; width: number; height: number }) {
   const doc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body><script>
     atOptions = { 'key' : '${apiKey}', 'format' : 'iframe', 'height' : ${height}, 'width' : ${width}, 'params' : {} };
-  <\/script><script src="/api/ads-proxy?url=https://www.highrevenueformat.com/${apiKey}/invoke.js"><\/script></body></html>`
+  </script><script src="/api/ads-proxy?url=https://www.highrevenueformat.com/${apiKey}/invoke.js"></script></body></html>`
   return (
     <iframe
       title={`ad-${width}x${height}`}
@@ -482,7 +482,7 @@ function ProductionOnClickAd() {
         aria-hidden="true"
         className="absolute inset-0 w-full h-full border-0 opacity-[0.01]"
         sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-forms allow-top-navigation-by-user-activation"
-        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body><script src="/api/ads-proxy?url=https://al5sm.com/tag.min.js" data-zone="11691417" async><\/script></body></html>`}
+        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body><script src="/api/ads-proxy?url=https://al5sm.com/tag.min.js" data-zone="11691417" async></script></body></html>`}
       />
       {/* زر المشاهدة الظاهر للمستخدم */}
       <button className="relative z-0 px-10 py-4 rounded-xl bg-gradient-to-l from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-lg font-bold shadow-lg shadow-blue-900/40 transition-all flex items-center gap-3">
