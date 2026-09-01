@@ -46,6 +46,17 @@ const nextConfig: NextConfig = {
         destination: '/series/:slug',
         permanent: true,
       },
+      // Permanent redirects for renamed movie slugs (old → current)
+      {
+        source: '/movies/spider-man-brand-new-day',
+        destination: '/movies/spider-man-brand-new-day-2026',
+        permanent: true,
+      },
+      {
+        source: '/movies/the-death-of-robin-hood',
+        destination: '/movies/death-of-robin-hood',
+        permanent: true,
+      },
     ]
   },
   // Proxy TMDB images to bypass ISP blocks and AdBlockers
