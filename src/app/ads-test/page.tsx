@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { AdsTestPage } from '@/components/pages/AdsTestPage'
+import AdsTestPage from '@/components/pages/AdsTestPage'
 
 export const metadata: Metadata = {
   title: 'صفحة تجربة الإعلانات | فور سيما',

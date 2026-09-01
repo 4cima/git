@@ -1,670 +1,275 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward } from 'lucide-react'
 
-// ============================================================
-// بانرات مونتاج الحية (Monetag — zone 11699161)
-// ============================================================
+// =============================================================
+// بانر Adsterra — 3 مقاسات مختلفة
+// =============================================================
+type AdsterraKey = 'a-728-90' | 'a-300-250' | 'a-160-600'
 
-/**
- * كومبوننت عام لعرض سكريبت مونتاج مباشر في صفحة التجربة.
- * سكريبت مونتاج بيعمل append لنفسه في الـ DOM — بنحقنه كـ <script> حي
- * جوه الحاوية بالمقاس المطلوب.
- */
-function MonetagLiveAd({
-  width,
-  height,
-  label,
-  adNumber
-}: {
-  width: number
-  height: number
-  label: string
-  adNumber: number
-}) {
+const ADSTERRA_BANNERS: Record<AdsterraKey, { key: string; w: number; h: number; label: string }> = {
+  'a-728-90':    { key: '0532fea1f51bb90a981bb89fb414869d', w: 728,  h: 90,  label: 'Adsterra 728×90' },
+  'a-300-250':   { key: '9a07073ebf48b3d7d98cf315a469e7c2', w: 300,  h: 250, label: 'Adsterra 300×250' },
+  'a-160-600':   { key: '538636ef4b7a5d451e5c038b418c921e', w: 160,  h: 600, label: 'Adsterra 160×600' },
+}
+
+function AdsterraBanner({ id }: { id: AdsterraKey }) {
   const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    // نفس سكريبت مونتاج — zone 11699161
-    const s = document.createElement('script')
-    s.dataset.zone = '11699161'
-    s.src = 'https://nap5k.com/tag.min.js'
-    el.appendChild(s)
-    return () => {
-      el.replaceChildren()
-    }
-  }, [])
-
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex items-center gap-2">
-        <span className="px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded">MONETAG LIVE #{adNumber}</span>
-        <span className="text-[11px] text-zinc-500">{label} — {width}×{height}</span>
-      </div>
-      <div
-        ref={ref}
-        style={{ width: `${width}px`, height: `${height}px`, maxWidth: '100%' }}
-        className="rounded-lg border border-blue-500/30 bg-blue-950/20 overflow-hidden"
-      />
-    </div>
-  )
-}
-
-// ============================================================
-// مكونات الإعلانات الفارغة (Placeholders)
-// ============================================================
-
-/** مربع الهيرو - إعلان مربع كبير */
-function HeroAdSquare() {
-  return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div className="relative aspect-square max-h-[500px] w-full rounded-2xl border-2 border-dashed border-zinc-700 bg-zinc-900/50 flex flex-col items-center justify-center gap-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
-        <div className="relative z-10 text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span>إعلان الهيرو</span>
-          </div>
-          <h3 className="text-xl font-bold text-zinc-300">مربع الهيرو الإعلاني</h3>
-          <p className="text-sm text-zinc-500">الأبعاد: 1:1 (مربع)</p>
-          <p className="text-xs text-zinc-600">يُستخدم للإعلانات البارزة في أعلى الصفحة</p>
-        </div>
-        <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-cyan-500/30 rounded-tr-lg" />
-        <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-cyan-500/30 rounded-tl-lg" />
-        <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-cyan-500/30 rounded-br-lg" />
-        <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-cyan-500/30 rounded-bl-lg" />
-      </div>
-    </div>
-  )
-}
-
-/** المستطيل الإعلاني - إعلان أفقي رئيسي */
-function BannerAdRectangle() {
-  return (
-    <div className="w-full max-w-5xl mx-auto">
-      <div className="relative w-full h-32 sm:h-40 rounded-xl border-2 border-dashed border-zinc-700 bg-zinc-900/50 flex flex-col items-center justify-center gap-3 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5" />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
-        <div className="relative z-10 text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span>إعلان رئيسي</span>
-          </div>
-          <h3 className="text-lg font-bold text-zinc-300">المستطيل الإعلاني الرئيسي</h3>
-          <p className="text-xs text-zinc-500">الأبعاد: أفقي عريض (Leaderboard 728x90 أو 970x90)</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/**
- * كومبوننت عام لعرض كود إعلان سكريبت (atOptions/invoke.js وغيره) مباشرة في صفحة 4cima.com
- * الشبكات الإعلانية (Adsterra) بتتحقق من origin/referer — التركيب جوه iframe srcdoc
- * بيعطي origin فارغ ومن غير Referer فالشبكة بترفض يملأ (مربع أبيض).
- * السكريبتات بتتعاد كعناصر <script> حية بالترتيب (innerHTML مش بينفذ سكريبتات).
- */
-function AdScriptIframe({
-  scriptHtml,
-  width,
-  height,
-  label,
-  adNumber
-}: {
-  scriptHtml: string
-  width: number
-  height: number
-  label: string
-  adNumber: number
-}) {
-  const ref = useRef<HTMLDivElement>(null)
+  const cfg = ADSTERRA_BANNERS[id]
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
     el.replaceChildren()
-    try {
-      // <template>.innerHTML captures top-level <script> tags (Adsterra
-      // snippets start with one) — DOMParser().body drops them into <head>.
-      // Scripts are re-created as live <script> elements so they execute in
-      // the page itself (real origin/referer — no iframe/sandbox/proxy).
-      const tpl = document.createElement('template')
-      tpl.innerHTML = scriptHtml.trim()
-      tpl.content.querySelectorAll('script').forEach((old) => {
-        const s = document.createElement('script')
-        for (const a of Array.from(old.attributes)) s.setAttribute(a.name, a.value)
-        s.textContent = old.textContent
-        old.replaceWith(s)
-      })
-      el.appendChild(tpl.content)
-    } catch { /* ignore */ }
-    return () => {
-      el.replaceChildren()
+    // الحقن المباشر في DOM — الطلب يطلع من نفس origin/referer الموقع
+    ;(window as any).atOptions = {
+      key: cfg.key,
+      format: 'iframe',
+      height: cfg.h,
+      width: cfg.w,
+      params: {},
     }
-  }, [scriptHtml])
-
-  return (
-    <div className="w-full flex flex-col items-center gap-2">
-      <div
-        className="relative rounded-xl border border-zinc-700 bg-zinc-900/30 overflow-hidden flex items-center justify-center"
-        style={{ width: '100%', maxWidth: width, minHeight: height }}
-      >
-        {/* رقم الإعلان — للمرجعية عند التجربة */}
-        <div className="absolute top-2 right-2 z-10 px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded shadow-lg pointer-events-none">
-          إعلان #{adNumber}
-        </div>
-        {/* الإعلان بيتنفذ في الصفحة مباشرة — نفس origin وreferer موقعنا */}
-        <div ref={ref} style={{ width, height: height }} />
-      </div>
-      <span className="text-[10px] text-zinc-600">#{adNumber} {label} — {width}x{height}</span>
-    </div>
-  )
-}
-
-/** الإعلان رقم 1 — Adsterra 728x90 Banner */
-function LiveAdBanner728x90() {
-  const scriptHtml = `<script>
-  atOptions = {
-    'key' : '0532fea1f51bb90a981bb89fb414869d',
-    'format' : 'iframe',
-    'height' : 90,
-    'width' : 728,
-    'params' : {}
-  };
-</script>
-<script src="https://www.highrevenueformat.com/0532fea1f51bb90a981bb89fb414869d/invoke.js"></script>`
-
-  return (
-    <AdScriptIframe 
-      scriptHtml={scriptHtml} 
-      width={728} 
-      height={90} 
-      label="Adsterra Banner" 
-      adNumber={1}
-    />
-  )
-}
-
-/** الإعلان رقم 2 — Adsterra 300x250 Medium Rectangle */
-function LiveAd300x250() {
-  const scriptHtml = `<script>
-  atOptions = {
-    'key' : '9a07073ebf48b3d7d98cf315a469e7c2',
-    'format' : 'iframe',
-    'height' : 250,
-    'width' : 300,
-    'params' : {}
-  };
-</script>
-<script src="https://www.highrevenueformat.com/9a07073ebf48b3d7d98cf315a469e7c2/invoke.js"></script>`
-
-  return (
-    <AdScriptIframe 
-      scriptHtml={scriptHtml} 
-      width={300} 
-      height={250} 
-      label="Adsterra Medium Rectangle" 
-      adNumber={2}
-    />
-  )
-}
-
-/** الإعلان رقم 3 — Adsterra 160x600 Skyscraper */
-function LiveAd160x600() {
-  const scriptHtml = `<script>
-  atOptions = {
-    'key' : '538636ef4b7a5d451e5c038b418c921e',
-    'format' : 'iframe',
-    'height' : 600,
-    'width' : 160,
-    'params' : {}
-  };
-</script>
-<script src="https://www.highrevenueformat.com/538636ef4b7a5d451e5c038b418c921e/invoke.js"></script>`
-
-  return (
-    <AdScriptIframe 
-      scriptHtml={scriptHtml} 
-      width={160} 
-      height={600} 
-      label="Adsterra Skyscraper" 
-      adNumber={3}
-    />
-  )
-}
-
-/** إعلان طولي (سكاي سكرابر) */
-function SkyscraperAd({ side }: { side: 'right' | 'left' }) {
-  return (
-    <div className="w-full max-w-[160px] mx-auto">
-      <div className="relative w-full h-[600px] rounded-xl border-2 border-dashed border-zinc-700 bg-zinc-900/50 flex flex-col items-center justify-center gap-3 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-purple-500/5 via-transparent to-purple-500/5" />
-        <div className="relative z-10 text-center space-y-2 px-2">
-          <div className="inline-flex items-center gap-2 px-2 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px]">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-            <span>إعلان طولي</span>
-          </div>
-          <h3 className="text-sm font-bold text-zinc-300">
-            {side === 'right' ? 'عمود يمين' : 'عمود يسار'}
-          </h3>
-          <p className="text-[10px] text-zinc-500">160x600</p>
-          <p className="text-[10px] text-zinc-600">Skyscraper</p>
-        </div>
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-          <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
-            <span className="text-purple-400 text-lg">{side === 'right' ? '←' : '→'}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/** إعلان زر المشاهدة */
-function WatchButtonAd() {
-  return (
-    <div className="w-full max-w-md mx-auto">
-      <div className="relative rounded-xl border-2 border-dashed border-zinc-700 bg-zinc-900/50 p-6 flex flex-col items-center justify-center gap-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-500/5" />
-        <div className="relative z-10 text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span>إعلان زر المشاهدة</span>
-          </div>
-          <button className="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 rounded-xl text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/25">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-              <Play className="w-5 h-5 fill-white" />
-            </div>
-            <span>شاهد الآن</span>
-            <div className="absolute -top-2 -right-2 px-2 py-0.5 bg-red-500 rounded-full text-[10px] font-bold">
-              AD
-            </div>
-          </button>
-          <p className="text-xs text-zinc-500">إعلان تفاعلي مع زر مشاهدة</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/** إعلان داخل المحتوى (In-Content) */
-function InContentAd() {
-  return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="relative w-full h-24 rounded-xl border-2 border-dashed border-zinc-700 bg-zinc-900/50 flex flex-col items-center justify-center gap-2 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-rose-500/5 via-transparent to-rose-500/5" />
-        <div className="relative z-10 text-center space-y-1">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
-            <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
-            <span>إعلان داخل المحتوى</span>
-          </div>
-          <p className="text-xs text-zinc-500">300x250 أو 336x280 (Medium Rectangle)</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ============================================================
-// مشغل الفيديو
-// ============================================================
-
-function VideoPlayer() {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isMuted, setIsMuted] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause()
-      } else {
-        videoRef.current.play()
-      }
-      setIsPlaying(!isPlaying)
-    }
-  }
-
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted
-      setIsMuted(!isMuted)
-    }
-  }
-
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime)
-    }
-  }
-
-  const handleLoadedMetadata = () => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration)
-    }
-  }
-
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value)
-    if (videoRef.current) {
-      videoRef.current.currentTime = time
-      setCurrentTime(time)
-    }
-  }
-
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60)
-    const seconds = Math.floor(time % 60)
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`
-  }
-
-  return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div className="relative rounded-2xl border-2 border-dashed border-zinc-700 bg-zinc-900/50 overflow-hidden">
-        {/* عنوان القسم */}
-        <div className="absolute top-0 left-0 right-0 z-20 p-4 bg-gradient-to-b from-black/80 to-transparent">
-          <div className="flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-              <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-              <span>مشغل الفيديو</span>
-            </div>
-            <span className="text-xs text-zinc-500">للتجربة والاختبار</span>
-          </div>
-        </div>
-
-        {/* منطقة الفيديو */}
-        <div
-          className="relative aspect-video bg-black flex items-center justify-center cursor-pointer"
-          onClick={togglePlay}
-        >
-          <video
-            ref={videoRef}
-            className="w-full h-full object-contain"
-            onTimeUpdate={handleTimeUpdate}
-            onLoadedMetadata={handleLoadedMetadata}
-            onEnded={() => setIsPlaying(false)}
-            muted={isMuted}
-            playsInline
-          >
-            <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4" />
-          </video>
-
-          {/* زر التشغيل المركزي */}
-          {!isPlaying && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-              <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
-                <Play className="w-10 h-10 text-white fill-white ml-1" />
-              </div>
-            </div>
-          )}
-
-          {/* شريط التحكم */}
-          <div
-            className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4"
-          >
-            {/* شريط التقدم */}
-            <div className="mb-3">
-              <input
-                type="range"
-                min={0}
-                max={duration || 0}
-                value={currentTime}
-                onChange={handleSeek}
-                className="w-full h-1 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-500"
-              />
-            </div>
-
-            {/* أزرار التحكم */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    togglePlay()
-                  }}
-                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                >
-                  {isPlaying ? (
-                    <Pause className="w-5 h-5 text-white" />
-                  ) : (
-                    <Play className="w-5 h-5 text-white fill-white ml-0.5" />
-                  )}
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (videoRef.current) {
-                      videoRef.current.currentTime += 10
-                    }
-                  }}
-                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                >
-                  <SkipForward className="w-5 h-5 text-white" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleMute()
-                  }}
-                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                >
-                  {isMuted ? (
-                    <VolumeX className="w-5 h-5 text-white" />
-                  ) : (
-                    <Volume2 className="w-5 h-5 text-white" />
-                  )}
-                </button>
-                <span className="text-sm text-white/80">
-                  {formatTime(currentTime)} / {formatTime(duration)}
-                </span>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (videoRef.current?.requestFullscreen) {
-                    videoRef.current.requestFullscreen()
-                  }
-                }}
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-              >
-                <Maximize className="w-5 h-5 text-white" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ============================================================ */
-/* #4 — إعلان زر المشاهدة (PropellerAds OnClick — نفس سكريبت الإنتاج) */
-/* السكريبت بيتجهز مع فتح الصفحة (async من غير lazy)، والضغطة الأولى بتشغّل الإعلان. */
-/* بيتحمّل في الصفحة مباشرة (نفس origin وreferer) — نفس أسلوب الإنتاج بالظبط. */
-/* ============================================================ */
-
-/** إعلان #4 — PropellerAds OnClick (سكريبت الإنتاج الفعلي: al5sm.com/tag.min.js + zone 11691417) — مركب فوق زر المشاهدة */
-function ProductionOnClickAd() {
-  const ref = useRef<HTMLDivElement>(null)
-  const scriptRef = useRef<HTMLDivElement>(null)
-  const firedRef = useRef(false)
-
-  // تحميل سكريبت الإنتاج في الصفحة مباشرة (نفس origin وreferer) — بدون iframe ولا proxy
-  useEffect(() => {
-    const el = scriptRef.current
-    if (!el) return
     const s = document.createElement('script')
-    s.src = 'https://al5sm.com/tag.min.js'
-    s.setAttribute('data-zone', '11691417')
+    s.src = `https://www.highrevenueformat.com/${cfg.key}/invoke.js`
     s.async = true
     el.appendChild(s)
-    return () => {
-      el.innerHTML = ''
-    }
-  }, [])
+    return () => { el.replaceChildren() }
+  }, [id])
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div
+        ref={ref}
+        style={{ width: cfg.w, height: cfg.h, maxWidth: '100%' }}
+        className="rounded border border-red-500/30 bg-red-950/10 overflow-hidden"
+      />
+      <span className="text-[10px] text-zinc-500">{cfg.label}</span>
+    </div>
+  )
+}
+
+// =============================================================
+// بانر Monetag (zone 11699161) — 3 مقاسات مختلفة
+// =============================================================
+const MONETAG_BANNERS = {
+  'm-728-90':  { w: 728, h: 90,  label: 'Monetag 728×90' },
+  'm-300-250': { w: 300, h: 250, label: 'Monetag 300×250' },
+  'm-160-600': { w: 160, h: 600, label: 'Monetag 160×600' },
+} as const
+
+type MonetagId = keyof typeof MONETAG_BANNERS
+
+function MonetagBanner({ id }: { id: MonetagId }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const cfg = MONETAG_BANNERS[id]
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const handle = () => {
-      if (firedRef.current) return
-      firedRef.current = true
-      // تسجيل الـ cooldowns نفس ما production بيعمل (20 ثانية بين الإعلانات)
-      try {
-        const now = Date.now()
-        localStorage.setItem('ads_last_popup', now.toString())
-        localStorage.setItem('ads_last_click', now.toString())
-      } catch { /* ignore */ }
-    }
-    el.addEventListener('click', handle)
-    return () => el.removeEventListener('click', handle)
-  }, [])
+    el.replaceChildren()
+    const s = document.createElement('script')
+    s.dataset.zone = '11699161'
+    s.src = 'https://nap5k.com/tag.min.js'
+    s.async = true
+    el.appendChild(s)
+    return () => { el.replaceChildren() }
+  }, [id])
 
   return (
-    <div
-      ref={ref}
-      className="relative inline-block cursor-pointer select-none"
-      style={{ minWidth: 260 }}
-    >
-      {/* سكريبت الإنتاج بيتحمّل في الصفحة مباشرة (نفس origin وreferer موقعنا) — */}
-      {/* الضغطة الأولى على الزر (أي مكان في الصفحة) بتشغّل الإعلان في تاب جديد */}
+    <div className="flex flex-col items-center gap-1">
       <div
-        ref={scriptRef}
-        aria-hidden="true"
-        className="absolute inset-0 opacity-[0.01] pointer-events-none"
+        ref={ref}
+        style={{ width: cfg.w, height: cfg.h, maxWidth: '100%' }}
+        className="rounded border border-blue-500/30 bg-blue-950/10 overflow-hidden"
       />
-      {/* زر المشاهدة الظاهر للمستخدم */}
-      <button className="relative z-0 px-10 py-4 rounded-xl bg-gradient-to-l from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-lg font-bold shadow-lg shadow-blue-900/40 transition-all flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-        شاهد الآن
-      </button>
-      <div className="mt-2 text-[10px] text-red-400 font-bold">#4 — PropellerAds OnClick فوق الزر (سكريبت الإنتاج الفعلي)</div>
+      <span className="text-[10px] text-zinc-500">{cfg.label}</span>
     </div>
   )
 }
 
-// ============================================================
-// الصفحة الرئيسية للتجربة
-// ============================================================
-// ============================================================
-// الصفحة الرئيسية للتجربة
-// ============================================================
-
-export function AdsTestPage() {
+// =============================================================
+// زر المشاهدة (onclick popunder)
+// =============================================================
+function WatchButton() {
+  const handleClick = () => {
+    // السكريبت بيتجهز من الـ layout (preparePopunder) — الضغطة بتلتقطها الشبكة
+    setTimeout(() => {
+      window.location.href = '/'
+    }, 400)
+  }
   return (
-    <div className="min-h-screen bg-black text-white py-12 px-4">
-      {/* عنوان الصفحة */}
-      <div className="text-center mb-12 space-y-4">
-        <h1 className="text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-          صفحة تجربة الإعلانات
-        </h1>
-        <p className="text-zinc-400 max-w-2xl mx-auto">
-          هذه الصفحة لاختبار جميع مخططات الإعلانات المختلفة قبل تفعيلها على الموقع
-        </p>
+    <button
+      onClick={handleClick}
+      className="group flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 rounded-xl text-white font-bold text-lg transition-all hover:scale-105"
+    >
+      <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+        <Play className="w-5 h-5 fill-white" />
+      </div>
+      <span>شاهد الآن</span>
+    </button>
+  )
+}
+
+// =============================================================
+// مشغل الفيديو
+// =============================================================
+function VideoPlayer() {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [playing, setPlaying] = useState(false)
+  const [muted, setMuted] = useState(true)
+  const [progress, setProgress] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    const onTime = () => {
+      setCurrentTime(v.currentTime)
+      setProgress((v.currentTime / v.duration) * 100)
+    }
+    const onDur = () => setDuration(v.duration)
+    const onEnd = () => setPlaying(false)
+    v.addEventListener('timeupdate', onTime)
+    v.addEventListener('loadedmetadata', onDur)
+    v.addEventListener('ended', onEnd)
+    return () => {
+      v.removeEventListener('timeupdate', onTime)
+      v.removeEventListener('loadedmetadata', onDur)
+      v.removeEventListener('ended', onEnd)
+    }
+  }, [])
+
+  const togglePlay = () => {
+    const v = videoRef.current
+    if (!v) return
+    if (v.paused) { v.play(); setPlaying(true) } else { v.pause(); setPlaying(false) }
+  }
+  const toggleMute = () => {
+    const v = videoRef.current
+    if (!v) return
+    v.muted = !v.muted
+    setMuted(v.muted)
+  }
+  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const v = videoRef.current
+    if (!v) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const pct = (e.clientX - rect.left) / rect.width
+    v.currentTime = pct * v.duration
+  }
+  const skip = () => {
+    const v = videoRef.current
+    if (v) v.currentTime = Math.min(v.duration, v.currentTime + 10)
+  }
+  const fullscreen = () => {
+    const v = videoRef.current
+    if (v?.requestFullscreen) v.requestFullscreen()
+  }
+  const fmt = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <div className="relative w-full max-w-3xl mx-auto aspect-video bg-black rounded-xl overflow-hidden">
+      <video
+        ref={videoRef}
+        className="w-full h-full"
+        src="https://www.w3schools.com/html/mov_bbb.mp4"
+        muted
+        playsInline
+      />
+      {!playing && (
+        <button onClick={togglePlay} className="absolute inset-0 flex items-center justify-center bg-black/40">
+          <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+            <Play className="w-10 h-10 fill-white text-white ml-1" />
+          </div>
+        </button>
+      )}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+        <div className="h-1 bg-white/20 rounded-full mb-3 cursor-pointer" onClick={seek}>
+          <div className="h-full bg-red-500 rounded-full" style={{ width: `${progress}%` }} />
+        </div>
+        <div className="flex items-center gap-3 text-white">
+          <button onClick={togglePlay}>
+            {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+          </button>
+          <button onClick={skip}><SkipForward className="w-5 h-5" /></button>
+          <button onClick={toggleMute}>
+            {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          </button>
+          <span className="text-xs">{fmt(currentTime)} / {fmt(duration)}</span>
+          <div className="flex-1" />
+          <button onClick={fullscreen}><Maximize className="w-5 h-5" /></button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// =============================================================
+// الصفحة الرئيسية
+// =============================================================
+export default function AdsTestPage() {
+  return (
+    <div dir="rtl" className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+      <header className="max-w-7xl mx-auto mb-10 text-center">
+        <h1 className="text-3xl font-bold mb-2">صفحة تجربة الإعلانات</h1>
+        <p className="text-zinc-500 text-sm">6 بانرات حقيقية — 3 من Adsterra + 3 من Monetag</p>
+      </header>
+
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-6 items-start">
+        {/* العمود الأيسر: Adsterra — 300 فوق، 160 تحته */}
+        <aside className="flex flex-col gap-6 items-center order-2 lg:order-1">
+          <AdsterraBanner id="a-300-250" />
+          <AdsterraBanner id="a-160-600" />
+        </aside>
+
+        {/* العمود الأوسط: المحتوى */}
+        <main className="order-1 lg:order-2 space-y-8">
+          {/* بانر تحت الهيرو — Adsterra + Monetag جنب بعض */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 justify-items-center">
+            <AdsterraBanner id="a-728-90" />
+            <MonetagBanner id="m-728-90" />
+          </div>
+
+          {/* المحتوى + زر المشاهدة + مشغل الفيديو */}
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-8 space-y-8">
+            <div className="text-center space-y-2">
+              <h2 className="text-xl font-semibold text-zinc-300">المحتوى الرئيسي</h2>
+              <p className="text-zinc-500 text-sm">إعلانان جانبيان + بانر أعلى المحتوى</p>
+            </div>
+
+            <div className="flex flex-col items-center gap-3 py-4">
+              <span className="text-xs text-zinc-500">اختبر زر المشاهدة (البوبندر يتفتح قبل الانتقال بـ 400ms)</span>
+              <WatchButton />
+            </div>
+
+            <div className="pt-4 border-t border-zinc-800">
+              <h3 className="text-sm text-zinc-500 mb-3 text-center">مشغل فيديو تجريبي</h3>
+              <VideoPlayer />
+            </div>
+          </div>
+
+          {/* بانر تحت المحتوى — 300×250 من كل شبكة */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 justify-items-center">
+            <AdsterraBanner id="a-300-250" />
+            <MonetagBanner id="m-300-250" />
+          </div>
+        </main>
+
+        {/* العمود الأيمن: Monetag — 300 فوق، 160 تحته */}
+        <aside className="flex flex-col gap-6 items-center order-3">
+          <MonetagBanner id="m-300-250" />
+          <MonetagBanner id="m-160-600" />
+        </aside>
       </div>
 
-      {/* القسم 1: مربع الهيرو */}
-      <section className="mb-16">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-1 h-8 bg-cyan-500 rounded-full" />
-          <h2 className="text-2xl font-bold text-zinc-200">1. مربع الهيرو الإعلاني</h2>
-        </div>
-        <HeroAdSquare />
-      </section>
-
-      {/* القسم 2: المستطيل الإعلاني الرئيسي */}
-      <section className="mb-16">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-1 h-8 bg-amber-500 rounded-full" />
-          <h2 className="text-2xl font-bold text-zinc-200">2. المستطيل الإعلاني الرئيسي</h2>
-        </div>
-        <BannerAdRectangle />
-        <div className="mt-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">LIVE</div>
-            <span className="text-sm text-zinc-400">إعلان حقيقي شغال — Adsterra</span>
-          </div>
-          <LiveAdBanner728x90 />
-        </div>
-        <div className="mt-6">
-          <MonetagLiveAd width={728} height={90} label="Leaderboard" adNumber={1} />
-        </div>
-      </section>
-
-      {/* القسم 3: الإعلانات الطولية (Skyscrapers) + بانرات مونتاج */}
-      <section className="mb-16">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-1 h-8 bg-purple-500 rounded-full" />
-          <h2 className="text-2xl font-bold text-zinc-200">3. الإعلانات الطولية (Skyscrapers) — 6 بانرات (3 أدسترا + 3 مونتاج)</h2>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr_160px] gap-6 items-start">
-          {/* العمود الأيسر: مربع → عامود → عامود → مربع */}
-          <div className="order-2 lg:order-1 space-y-6">
-            <MonetagLiveAd width={300} height={250} label="Square" adNumber={2} />
-            <MonetagLiveAd width={160} height={600} label="Skyscraper" adNumber={3} />
-            <div className="flex flex-col items-center gap-2">
-              <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">LIVE</div>
-              <LiveAd160x600 />
-            </div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">LIVE</div>
-              <LiveAd300x250 />
-            </div>
-          </div>
-
-          {/* المحتوى المركزي */}
-          <div className="order-1 lg:order-2 space-y-8">
-            <div className="text-center p-8 rounded-xl bg-zinc-900/30 border border-zinc-800">
-              <p className="text-zinc-400 text-sm">المحتوى الرئيسي للصفحة</p>
-              <p className="text-zinc-600 text-xs mt-2">يظهر هنا المحتوى الفعلي بين العمودين الإعلانيين</p>
-            </div>
-            <InContentAd />
-          </div>
-
-          {/* العمود الأيمن */}
-          <div className="order-3 space-y-6">
-            <SkyscraperAd side="right" />
-            <SkyscraperAd side="left" />
-          </div>
-        </div>
-      </section>
-
-      {/* القسم 4: إعلان زر المشاهدة */}
-      <section className="mb-16">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-1 h-8 bg-green-500 rounded-full" />
-          <h2 className="text-2xl font-bold text-zinc-200">4. إعلان زر المشاهدة</h2>
-        </div>
-        <WatchButtonAd />
-        <div className="mt-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">LIVE</div>
-            <span className="text-sm text-zinc-400">إعلان #4 — سكريبت الإنتاج الفعلي فوق زر المشاهدة (بيتجهز مع فتح الصفحة، والضغطة على الزر بتشغّله)</span>
-          </div>
-          <ProductionOnClickAd />
-        </div>
-      </section>
-
-      {/* القسم 5: مشغل الفيديو */}
-      <section className="mb-16">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-1 h-8 bg-red-500 rounded-full" />
-          <h2 className="text-2xl font-bold text-zinc-200">5. مشغل الفيديو</h2>
-        </div>
-        <VideoPlayer />
-      </section>
-
-      {/* الفوتر */}
-      <footer className="text-center py-8 border-t border-zinc-800">
-        <p className="text-zinc-600 text-sm">
-          صفحة تجريبية لاختبار الإعلانات • فور سيما
-        </p>
+      <footer className="max-w-7xl mx-auto mt-12 text-center text-zinc-600 text-xs">
+        صفحة تجريبية — 4cima
       </footer>
     </div>
   )
