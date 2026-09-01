@@ -68,9 +68,8 @@ function queueBannerLoad(banner: BannerDef, container: HTMLElement) {
     container.appendChild(s)
   }))
 }
-function BannerSlot({ banner, onDragStart, isDragging }: { banner: BannerDef; onDragStart: () => void; isDragging: boolean }) {
+function BannerSlotContent({ banner }: { banner: BannerDef }) {
   const ref = useRef<HTMLDivElement>(null)
-  const rootRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -78,27 +77,49 @@ function BannerSlot({ banner, onDragStart, isDragging }: { banner: BannerDef; on
     queueBannerLoad(banner, el)
     return () => { el.replaceChildren() }
   }, [banner.id])
+  return <div ref={ref} className="w-full h-full" />
+}
+
+function AdFrameCinematic({ banner, color = 'orange', onDragStart, isDragging, draggable = true }: { banner: BannerDef; color?: 'orange'|'blue'|'red'; onDragStart?: () => void; isDragging?: boolean; draggable?: boolean }) {
+  const colorClass = color === 'blue' ? 'blue' : color === 'red' ? 'red' : ''
+  const rootRef = useRef<HTMLDivElement>(null)
+  const frame = (
+    <div className={`ad-frame-cinematic ${colorClass} ${isDragging ? 'opacity-60' : ''}`} style={{ cursor: draggable ? 'grab' : 'default' }}>
+      <div className="ad-spotlight" />
+      <div className="ad-frame-label">SCREEN {banner.label}</div>
+      <div className="ad-frame-id">{banner.zoneId}</div>
+      <div className="ad-screen-wrap">
+        <div className="ad-screen">
+          <BannerSlotContent banner={banner} />
+        </div>
+      </div>
+      <span className="ad-corner tl" />
+      <span className="ad-corner tr" />
+      <span className="ad-corner bl" />
+      <span className="ad-corner br" />
+      <div className="ad-frame-status">LIVE<span className="dot" /></div>
+    </div>
+  )
+  if (!draggable) {
+    return <div ref={rootRef}>{frame}</div>
+  }
   return (
-    <div ref={rootRef} draggable
+    <div
+      ref={rootRef}
+      draggable
       onDragStart={(e) => {
+        if (!onDragStart) return
         e.dataTransfer.setData('text/plain', banner.id)
         e.dataTransfer.effectAllowed = 'move'
         onDragStart()
-        if (rootRef.current) e.dataTransfer.setDragImage(rootRef.current, 20, 14)
+        if (rootRef.current) e.dataTransfer.setDragImage(rootRef.current, 30, 20)
       }}
-      className={`group flex flex-col rounded-lg overflow-hidden border-2 transition-colors ${isDragging ? 'border-blue-400 opacity-50' : 'border-amber-500/60'}`}
-      style={{ width: banner.width, height: banner.height + 28, maxWidth: '100%', cursor: 'grab' }}
     >
-      <div className="flex items-center justify-between px-2 bg-amber-500/90 text-zinc-900 text-[11px] font-bold select-none flex-shrink-0" style={{ height: 28 }} title="اسحب من هنا">
-        <div className="flex items-center gap-1"><GripVertical className="w-3 h-3" /><span>اسحب من هنا</span></div>
-        <div className="flex items-center gap-2"><span className="font-mono">{banner.zoneId}</span><span className="px-1.5 py-0.5 rounded bg-zinc-900/20 font-mono">{banner.label}</span></div>
-      </div>
-      <div className="flex-1 bg-transparent overflow-hidden" style={{ width: banner.width, height: banner.height, pointerEvents: isDragging ? 'none' : 'auto' }}>
-        <div ref={ref} className="w-full h-full" />
-      </div>
+      {frame}
     </div>
   )
 }
+
 function VideoPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -145,6 +166,34 @@ function VideoPlayer() {
     </div>
   )
 }
+function BannerStripSelector({ account, accountBanners, draggingBanner, setDraggingBanner }: { account: 'home'|'player'; accountBanners: BannerDef[]; draggingBanner: AdsterraKey | null; setDraggingBanner: (k: AdsterraKey | null) => void }) {
+  const color = account === 'home' ? 'orange' : 'blue'
+  return (
+    <div className="theatre-backdrop p-4 mb-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-[3px] ribbon-shimmer" />
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${account === 'home' ? 'bg-red-500' : 'bg-blue-500'} live-live-pulse`} />
+          <h3 className="text-sm font-bold text-white tracking-wider">لوحة البنرات — اسحب لأي سلوت</h3>
+        </div>
+        <span className="text-[10px] text-zinc-400 font-mono">{accountBanners.length} بنر متاح</span>
+      </div>
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+        {accountBanners.map((b) => (
+          <div key={b.id} className="flex justify-center">
+            <AdFrameCinematic
+              banner={b}
+              color={color}
+              isDragging={draggingBanner === b.id}
+              onDragStart={() => setDraggingBanner(b.id)}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function AdSection({ title, account, slots, defaultPlacements, storageKey, hasPlayer, bgClass, placements, setPlacements }: { title: string; account: 'home'|'player'; slots: SlotDef[]; defaultPlacements: BannerPlacement[]; storageKey: string; hasPlayer?: boolean; bgClass: string; placements: BannerPlacement[]; setPlacements: (p: BannerPlacement[]) => void }) {
   const [current, setCurrent] = useState<BannerPlacement[]>(placements)
   const [draggingBanner, setDraggingBanner] = useState<AdsterraKey | null>(null)
@@ -172,6 +221,8 @@ function AdSection({ title, account, slots, defaultPlacements, storageKey, hasPl
   const totalAds = current.length
   const totalSlots = slots.length
   return (
+    <>
+    <BannerStripSelector account={account} accountBanners={accountBanners} draggingBanner={draggingBanner} setDraggingBanner={setDraggingBanner} />
     <div className={`rounded-2xl p-4 ${bgClass} border border-zinc-700`}>
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
@@ -204,7 +255,7 @@ function AdSection({ title, account, slots, defaultPlacements, storageKey, hasPl
             >
               <div className="absolute top-1 left-1 z-10 bg-zinc-700/90 text-zinc-200 text-[10px] font-mono px-1.5 py-0.5 rounded">#{slotNum}</div>
               {banner ? (
-                <BannerSlot banner={banner} isDragging={draggingBanner === banner.id} onDragStart={() => setDraggingBanner(banner.id)} />
+                <AdFrameCinematic banner={banner} color={account === 'home' ? 'orange' : 'blue'} isDragging={draggingBanner === banner.id} draggable={false} />
               ) : (
                 <div className="text-zinc-500 text-xs text-center px-2 pointer-events-none"><div className="font-bold mb-1">{slot.name}</div><div className="mt-1 text-zinc-600">اسحب بنر هنا</div></div>
               )}
@@ -213,6 +264,7 @@ function AdSection({ title, account, slots, defaultPlacements, storageKey, hasPl
         })}
       </div>
     </div>
+    </>
   )
 }
 function mergePlacements(saved: BannerPlacement[] | null, defaults: BannerPlacement[], accountBanners: BannerDef[]): BannerPlacement[] {
