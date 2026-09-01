@@ -1719,6 +1719,85 @@ input[type="range"].slider::-moz-range-track {
   .grid-responsive {
     grid-template-columns: repeat(8, minmax(0, 1fr));
   }
+
+/* ============================================================
+   Ads Lab — إطار البنر داخل الـ canvas
+   ============================================================ */
+.adframe {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(249, 115, 22, 0.45);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(10, 12, 22, 0.92);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 0 18px rgba(249, 115, 22, 0.18);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.adframe:hover {
+  border-color: rgba(249, 115, 22, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 0 28px rgba(249, 115, 22, 0.35);
+}
+
+/* الشريط العلوي — مقبض السحب */
+.adframe-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 8px;
+  min-height: 20px;
+  cursor: grab;
+  user-select: none;
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.25), rgba(239, 68, 68, 0.15));
+  border-bottom: 1px solid rgba(249, 115, 22, 0.3);
+}
+.adframe-bar:active { cursor: grabbing; }
+.adframe-num {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fb923c;
+  font-family: monospace;
+}
+.adframe-size {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: monospace;
+}
+.adframe-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  overflow: hidden;
+}
+
+/* إطار الشاشة الكبير */
+.screen-frame {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 40px rgba(249, 115, 22, 0.08),
+    inset 0 0 80px rgba(0, 0, 0, 0.5);
+}
+
+/* شبكة خلفية خفيفة داخل الـ canvas */
+.canvas-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 10px 10px;
+}
+
+/* مقابض التحجيم — ظاهرة عند hover */
+.react-grid-item .react-resizable-handle {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.react-grid-item:hover .react-resizable-handle { opacity: 1; }
+.react-grid-item .react-resizable-handle::after {
+  border-color: #fb923c !important;
+}
+
 }
 
 /* -------------------------------------------------------------------------- */
