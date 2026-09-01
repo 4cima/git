@@ -22,21 +22,21 @@ const BANNERS: BannerDef[] = [
   { id: 'player-320-50',  account: 'player', zoneId: '31024510', key: '57877d62319a7f78e0d12672140d9af3', src: 'https://professionalsusceptible.com/57877d62319a7f78e0d12672140d9af3/invoke.js',  width: 320, height: 50,  label: '320x50' },
 ]
 const HOME_SLOTS: SlotDef[] = [
-  { id: 'home-under-hero', name: 'ØªØ­Øª Ø§Ù„Ù‡ÙŠØ±Ùˆ', rect: { x: 0,   y: 0,    w: 1200, h: 100 } },
-  { id: 'home-side-1',     name: 'Ø¬Ù†Ø¨ ÙŠÙ…ÙŠÙ†',   rect: { x: 1030,y: 110,  w: 170,  h: 620 } },
-  { id: 'home-side-2',     name: 'Ø¬Ù†Ø¨ ÙŠØ³Ø§Ø±',   rect: { x: 0,   y: 110,  w: 170,  h: 340 } },
-  { id: 'home-middle',     name: 'ÙˆØ³Ø· Ø§Ù„ØµÙÙˆÙ', rect: { x: 190, y: 130,  w: 820,  h: 280 } },
-  { id: 'home-row',        name: 'ØµÙ',         rect: { x: 190, y: 430,  w: 820,  h: 80  } },
-  { id: 'home-bottom',     name: 'Ø£Ø³ÙÙ„',       rect: { x: 0,   y: 1110, w: 1200, h: 70  } },
+  { id: 'home-under-hero', name: 'تحت الهيرو', rect: { x: 0,   y: 0,    w: 1200, h: 100 } },
+  { id: 'home-side-1',     name: 'جنب يمين',   rect: { x: 1030,y: 110,  w: 170,  h: 620 } },
+  { id: 'home-side-2',     name: 'جنب يسار',   rect: { x: 0,   y: 110,  w: 170,  h: 340 } },
+  { id: 'home-middle',     name: 'وسط الصفوف', rect: { x: 190, y: 130,  w: 820,  h: 280 } },
+  { id: 'home-row',        name: 'صف',         rect: { x: 190, y: 430,  w: 820,  h: 80  } },
+  { id: 'home-bottom',     name: 'أسفل',       rect: { x: 0,   y: 1110, w: 1200, h: 70  } },
 ]
 const PLAYER_SLOTS: SlotDef[] = [
-  { id: 'player-top',     name: 'ÙÙˆÙ‚ Ø§Ù„Ù…Ø´ØºÙ‘Ù„', rect: { x: 0,    y: 0,    w: 1200, h: 100 } },
-  { id: 'player-right',   name: 'ÙŠÙ…ÙŠÙ†',         rect: { x: 1030, y: 110,  w: 170,  h: 320 } },
-  { id: 'player-left',    name: 'Ø´Ù…Ø§Ù„',         rect: { x: 0,    y: 110,  w: 170,  h: 320 } },
-  { id: 'player-video',   name: 'Ø§Ù„Ù…Ø´ØºÙ‘Ù„',      rect: { x: 200,  y: 130,  w: 800,  h: 450 }, isPlayerSlot: true },
-  { id: 'player-300-250', name: 'ØªØ­Øª ÙŠÙ…ÙŠÙ†',     rect: { x: 1030, y: 450,  w: 170,  h: 270 } },
-  { id: 'player-bottom',  name: 'ØªØ­Øª Ø§Ù„Ù…Ø´ØºÙ‘Ù„',  rect: { x: 200,  y: 600,  w: 800,  h: 90  } },
-  { id: 'player-footer',  name: 'Ø£Ø³ÙÙ„',         rect: { x: 0,    y: 970,  w: 1200, h: 70  } },
+  { id: 'player-top',     name: 'فوق المشغّل', rect: { x: 0,    y: 0,    w: 1200, h: 100 } },
+  { id: 'player-right',   name: 'يمين', rect: { x: 1030, y: 110,  w: 170,  h: 320 } },
+  { id: 'player-left',    name: 'شمال', rect: { x: 0,    y: 110,  w: 170,  h: 320 } },
+  { id: 'player-video',   name: 'المشغّل', rect: { x: 200,  y: 130,  w: 800,  h: 450 }, isPlayerSlot: true },
+  { id: 'player-300-250', name: 'تحت يمين', rect: { x: 1030, y: 450,  w: 170,  h: 270 } },
+  { id: 'player-bottom',  name: 'تحت المشغّل', rect: { x: 200,  y: 600,  w: 800,  h: 90  } },
+  { id: 'player-footer',  name: 'أسفل', rect: { x: 0,    y: 970,  w: 1200, h: 70  } },
 ]
 const DEFAULT_HOME_PLACEMENTS: BannerPlacement[] = [
   { bannerId: 'home-728-90',    slotId: 'home-under-hero' },
@@ -89,8 +89,8 @@ function BannerSlot({ banner, onDragStart, isDragging }: { banner: BannerDef; on
       className={`group flex flex-col rounded-lg overflow-hidden border-2 transition-colors ${isDragging ? 'border-blue-400 opacity-50' : 'border-amber-500/60'}`}
       style={{ width: banner.width, height: banner.height + 28, maxWidth: '100%', cursor: 'grab' }}
     >
-      <div className="flex items-center justify-between px-2 bg-amber-500/90 text-zinc-900 text-[11px] font-bold select-none flex-shrink-0" style={{ height: 28 }} title="Ø§Ø³Ø­Ø¨ Ù…Ù† Ù‡Ù†Ø§">
-        <div className="flex items-center gap-1"><GripVertical className="w-3 h-3" /><span>Ø§Ø³Ø­Ø¨ Ù…Ù† Ù‡Ù†Ø§</span></div>
+      <div className="flex items-center justify-between px-2 bg-amber-500/90 text-zinc-900 text-[11px] font-bold select-none flex-shrink-0" style={{ height: 28 }} title="اسحب من هنا">
+        <div className="flex items-center gap-1"><GripVertical className="w-3 h-3" /><span>اسحب من هنا</span></div>
         <div className="flex items-center gap-2"><span className="font-mono">{banner.zoneId}</span><span className="px-1.5 py-0.5 rounded bg-zinc-900/20 font-mono">{banner.label}</span></div>
       </div>
       <div className="flex-1 bg-transparent overflow-hidden" style={{ width: banner.width, height: banner.height, pointerEvents: isDragging ? 'none' : 'auto' }}>
@@ -179,18 +179,20 @@ function AdSection({ title, account, slots, defaultPlacements, storageKey, hasPl
           <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${account === 'home' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'}`}>{account === 'home' ? '4cima.com' : '4cima.stream'}</span>
         </div>
         <div className="flex items-center gap-2 text-[11px] text-zinc-400">
-          <span>Ø§Ù„Ø¨Ù†Ø±Ø§Øª: {totalAds}/{accountBanners.length}</span>
-          <span>Ø§Ù„Ø³Ù„ÙˆØªØ§Øª: {totalSlots}</span>
-          <button onClick={reset} className="flex items-center gap-1 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200" title="Ø¥Ø¹Ø§Ø¯Ø© Ù„Ù„ØªØ±ØªÙŠØ¨ Ø§Ù„Ø§ÙØªØ±Ø§Ø¶ÙŠ"><RotateCcw className="w-3 h-3" />Ø±Ø¬ÙˆØ¹ Ù„Ù„Ø§ÙØªØ±Ø§Ø¶ÙŠ</button>
+          <span>البنرات: {totalAds}/{accountBanners.length}</span>
+          <span>السلوتات: {totalSlots}</span>
+          <button onClick={reset} className="flex items-center gap-1 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200" title="إعادة للترتيب الافتراضي"><RotateCcw className="w-3 h-3" />رجوع للافتراضي</button>
         </div>
       </div>
       <div className="relative bg-zinc-900/40 rounded-xl border border-dashed border-zinc-700" style={{ minHeight: account === 'home' ? 1200 : 1060, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
-        {slots.map((slot) => {
+        {slots.map((slot, idx) => {
+          const slotNum = idx + 1
           const banner = slot.isPlayerSlot ? null : bannerInSlot(slot.id)
           const isHover = hoverSlot === slot.id
           if (slot.isPlayerSlot) {
             return (
               <div key={slot.id} className="absolute rounded-lg border-2 border-emerald-500/50 bg-zinc-900/80 flex items-center justify-center overflow-hidden" style={{ left: slot.rect.x, top: slot.rect.y, width: slot.rect.w, height: slot.rect.h }}>
+                <div className="absolute top-1 left-1 z-10 bg-emerald-600/90 text-white text-[10px] font-mono px-1.5 py-0.5 rounded">#{slotNum}</div>
                 <div className="w-full h-full p-1"><VideoPlayer /></div>
               </div>
             )
@@ -200,10 +202,11 @@ function AdSection({ title, account, slots, defaultPlacements, storageKey, hasPl
               className={`absolute rounded-lg border-2 transition-colors flex items-center justify-center overflow-hidden ${isHover ? 'border-emerald-400 bg-emerald-500/10' : 'border-zinc-700 bg-zinc-900/60'}`}
               style={{ left: slot.rect.x, top: slot.rect.y, width: slot.rect.w, height: slot.rect.h }}
             >
+              <div className="absolute top-1 left-1 z-10 bg-zinc-700/90 text-zinc-200 text-[10px] font-mono px-1.5 py-0.5 rounded">#{slotNum}</div>
               {banner ? (
                 <BannerSlot banner={banner} isDragging={draggingBanner === banner.id} onDragStart={() => setDraggingBanner(banner.id)} />
               ) : (
-                <div className="text-zinc-500 text-xs text-center px-2 pointer-events-none"><div className="font-bold mb-1">{slot.name}</div><div>Ø§Ø³Ø­Ø¨ Ø¨Ù†Ø± Ù‡Ù†Ø§</div></div>
+                <div className="text-zinc-500 text-xs text-center px-2 pointer-events-none"><div className="font-bold mb-1">{slot.name}</div><div className="mt-1 text-zinc-600">اسحب بنر هنا</div></div>
               )}
             </div>
           )
@@ -244,12 +247,12 @@ export default function AdsLabPage() {
     <main className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8" dir="rtl">
       <div className="max-w-[1280px] mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Ù…Ø®ØªØ¨Ø± ØªØ±ØªÙŠØ¨ Ø§Ù„Ø¥Ø¹Ù„Ø§Ù†Ø§Øª</h1>
-          <p className="text-zinc-400 text-sm">Ø§Ø³Ø­Ø¨ Ø§Ù„Ø¨Ù†Ø± Ù…Ù† <span className="text-amber-400 font-bold">Ø§Ù„Ø´Ø±ÙŠØ· Ø§Ù„Ø¨Ø±ØªÙ‚Ø§Ù„ÙŠ</span> ÙÙŠ Ø§Ù„Ø£Ø¹Ù„Ù‰ Ø¥Ù„Ù‰ Ø£ÙŠ Ø³Ù„ÙˆØª. Ø§Ù„ØªØ±ØªÙŠØ¨ Ø¨ÙŠØªØ­ÙØ¸ ÙÙŠ Ø§Ù„Ù…ØªØµÙØ­.</p>
+          <h1 className="text-3xl font-bold text-white mb-2">مختبر ترتيب الإعلانات</h1>
+          <p className="text-zinc-400 text-sm">اسحب البنر من <span className="text-amber-400 font-bold">الشريط البرتقالي</span> في الأعلى إلى أي سلوت. الترتيب بيتحفظ في المتصفح.</p>
         </div>
         <div className="space-y-6">
-          <AdSection title="Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠ (4cima.com)" account="home" slots={HOME_SLOTS} defaultPlacements={DEFAULT_HOME_PLACEMENTS} storageKey={STORAGE_KEY_HOME} bgClass="bg-zinc-900" placements={homePlacements} setPlacements={setHomePlacements} />
-          <AdSection title="Ù…Ù†ØµØ© Ø§Ù„Ù…Ø´Ø§Ù‡Ø¯Ø© (4cima.stream)" account="player" slots={PLAYER_SLOTS} defaultPlacements={DEFAULT_PLAYER_PLACEMENTS} storageKey={STORAGE_KEY_PLAYER} hasPlayer bgClass="bg-zinc-900" placements={playerPlacements} setPlacements={setPlayerPlacements} />
+          <AdSection title="الموقع الرئيسي (4cima.com)" account="home" slots={HOME_SLOTS} defaultPlacements={DEFAULT_HOME_PLACEMENTS} storageKey={STORAGE_KEY_HOME} bgClass="bg-zinc-900" placements={homePlacements} setPlacements={setHomePlacements} />
+          <AdSection title="منصة المشاهدة (4cima.stream)" account="player" slots={PLAYER_SLOTS} defaultPlacements={DEFAULT_PLAYER_PLACEMENTS} storageKey={STORAGE_KEY_PLAYER} hasPlayer bgClass="bg-zinc-900" placements={playerPlacements} setPlacements={setPlayerPlacements} />
         </div>
       </div>
     </main>
