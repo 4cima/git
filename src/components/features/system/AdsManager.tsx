@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useRef, useState } from 'react'
 import { FLAGS } from '../../../lib/constants'
 import { DIRECT_AD_FALLBACKS } from '../../../lib/directAds'
