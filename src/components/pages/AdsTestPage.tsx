@@ -4,6 +4,56 @@ import { useState, useRef, useEffect } from 'react'
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward } from 'lucide-react'
 
 // ============================================================
+// بانرات مونتاج الحية (Monetag — zone 11699161)
+// ============================================================
+
+/**
+ * كومبوننت عام لعرض سكريبت مونتاج مباشر في صفحة التجربة.
+ * سكريبت مونتاج بيعمل append لنفسه في الـ DOM — بنحقنه كـ <script> حي
+ * جوه الحاوية بالمقاس المطلوب.
+ */
+function MonetagLiveAd({
+  width,
+  height,
+  label,
+  adNumber
+}: {
+  width: number
+  height: number
+  label: string
+  adNumber: number
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    // نفس سكريبت مونتاج — zone 11699161
+    const s = document.createElement('script')
+    s.dataset.zone = '11699161'
+    s.src = 'https://nap5k.com/tag.min.js'
+    el.appendChild(s)
+    return () => {
+      el.replaceChildren()
+    }
+  }, [])
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex items-center gap-2">
+        <span className="px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded">MONETAG LIVE #{adNumber}</span>
+        <span className="text-[11px] text-zinc-500">{label} — {width}×{height}</span>
+      </div>
+      <div
+        ref={ref}
+        style={{ width: `${width}px`, height: `${height}px`, maxWidth: '100%' }}
+        className="rounded-lg border border-blue-500/30 bg-blue-950/20 overflow-hidden"
+      />
+    </div>
+  )
+}
+
+// ============================================================
 // مكونات الإعلانات الفارغة (Placeholders)
 // ============================================================
 
@@ -542,21 +592,29 @@ export function AdsTestPage() {
           </div>
           <LiveAdBanner728x90 />
         </div>
+        <div className="mt-6">
+          <MonetagLiveAd width={728} height={90} label="Leaderboard" adNumber={1} />
+        </div>
       </section>
 
-      {/* القسم 3: العمودين الإعلانيين (يمين وشمال) */}
+      {/* القسم 3: الإعلانات الطولية (Skyscrapers) + بانرات مونتاج */}
       <section className="mb-16">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-1 h-8 bg-purple-500 rounded-full" />
-          <h2 className="text-2xl font-bold text-zinc-200">3. الإعلانات الطولية (Skyscrapers)</h2>
+          <h2 className="text-2xl font-bold text-zinc-200">3. الإعلانات الطولية (Skyscrapers) — 6 بانرات (3 أدسترا + 3 مونتاج)</h2>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[160px_1fr_160px] gap-6 items-start">
-          {/* العمود الأيمن */}
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr_160px] gap-6 items-start">
+          {/* العمود الأيسر: مربع → عامود → عامود → مربع */}
           <div className="order-2 lg:order-1 space-y-6">
-            <SkyscraperAd side="right" />
+            <MonetagLiveAd width={300} height={250} label="Square" adNumber={2} />
+            <MonetagLiveAd width={160} height={600} label="Skyscraper" adNumber={3} />
             <div className="flex flex-col items-center gap-2">
               <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">LIVE</div>
               <LiveAd160x600 />
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">LIVE</div>
+              <LiveAd300x250 />
             </div>
           </div>
 
@@ -567,15 +625,11 @@ export function AdsTestPage() {
               <p className="text-zinc-600 text-xs mt-2">يظهر هنا المحتوى الفعلي بين العمودين الإعلانيين</p>
             </div>
             <InContentAd />
-            <div className="flex items-center gap-3">
-              <div className="px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded">LIVE</div>
-              <span className="text-sm text-zinc-400">إعلان حقيقي شغال — داخل المحتوى</span>
-            </div>
-            <LiveAd300x250 />
           </div>
 
-          {/* العمود الأيسر */}
-          <div className="order-3">
+          {/* العمود الأيمن */}
+          <div className="order-3 space-y-6">
+            <SkyscraperAd side="right" />
             <SkyscraperAd side="left" />
           </div>
         </div>
