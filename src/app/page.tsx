@@ -14,18 +14,24 @@ async function getHomeData() {
   try {
     const [movies, series] = await Promise.all([
       executeAll(
-        `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
-                vote_average, printf('%04d-01-01', release_year) AS release_date, overview_ar, genres_json
-         FROM list_movies_popular
-         ORDER BY rank
+        `SELECT l.id, l.tmdb_id,
+                COALESCE(m.slug, l.slug) AS slug,
+                l.title_ar, l.title_en, l.poster_path, l.backdrop_path,
+                l.vote_average, printf('%04d-01-01', l.release_year) AS release_date, l.overview_ar, l.genres_json
+         FROM list_movies_popular l
+         LEFT JOIN movies m ON m.tmdb_id = l.tmdb_id
+         ORDER BY l.rank
          LIMIT 100`,
         []
       ),
       executeAll(
-        `SELECT id, tmdb_id, slug, name_ar AS title_ar, name_en AS title_en, poster_path, backdrop_path,
-                vote_average, printf('%04d-01-01', first_air_year) AS first_air_date, overview_ar, genres_json
-         FROM list_series_popular
-         ORDER BY rank
+        `SELECT l.id, l.tmdb_id,
+                COALESCE(t.slug, l.slug) AS slug,
+                l.name_ar AS title_ar, l.name_en AS title_en, l.poster_path, l.backdrop_path,
+                l.vote_average, printf('%04d-01-01', l.first_air_year) AS first_air_date, l.overview_ar, l.genres_json
+         FROM list_series_popular l
+         LEFT JOIN tv_series t ON t.tmdb_id = l.tmdb_id
+         ORDER BY l.rank
          LIMIT 100`,
         []
       )

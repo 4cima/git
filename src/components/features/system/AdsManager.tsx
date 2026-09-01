@@ -66,25 +66,111 @@ function sanitizeAdHtml(input: string) {
 
 /**
  * Mount an ad snippet DIRECTLY into the page DOM — no iframe, no srcdoc.
- * Ad networks (Adsterra, PropellerAds…) validate the request origin/referer;
- * a sandboxed srcdoc iframe has a null origin and sends no referer, so the
- * network refuses to fill → blank box.
- * Uses <template>.innerHTML so top-level <script> tags (Adsterra snippets
- * start with one) are captured — DOMParser().body would drop them into <head>.
- * Scripts are re-created as live <script> elements so they execute.
- * Snippets come from the admin-configured mediation panel (trusted source).
+ *
+ * CRITICAL — multiple Adsterra zones on the same page:
+ * Every Adsterra inline snippet assigns the GLOBAL `atOptions` variable, so if
+ * two snippets are mounted at the same time they overwrite each other and the
+ * later invoke.js reads the wrong config → blank/white box. Only the first zone
+ * (hero leaderboard) worked for this exact reason.
+ *
+ * Fix: run every snippet sequentially through a per-tab queue:
+ *   1) set window.atOptions = this zone's config
+ *   2) append THIS zone's invoke.js
+ *   3) await its load (the async script reads atOptions right when it runs)
+ *   4) move to the next snippet
+ * Each invoke.js therefore still sees its own atOptions.
+ *
+ * Snippets without atOptions (simple HTML/scripts) are appended as plain nodes.
  */
+let adsterraQueue: Promise<void> = Promise.resolve()
+
 function mountAdInto(container: HTMLElement, html: string) {
   container.replaceChildren()
+
+  // Parse the snippet into ordered { atOptions? | src? | raw? } segments.
+  type Segment =
+    | { atOptions: Record<string, unknown> }
+    | { src: string; atOptions?: Record<string, unknown> }
+    | { raw: string }
+  const segments: Segment[] = []
   const tpl = document.createElement('template')
   tpl.innerHTML = html.trim()
   tpl.content.querySelectorAll('script').forEach((old) => {
-    const s = document.createElement('script')
-    for (const a of Array.from(old.attributes)) s.setAttribute(a.name, a.value)
-    s.textContent = old.textContent
-    old.replaceWith(s)
+    const src = old.getAttribute('src')
+    const text = old.textContent || ''
+    if (src) {
+      segments.push({ src, atOptions: undefined })
+      return
+    }
+    if (/atOptions\s*=/.test(text)) {
+      const eq = text.match(/atOptions\s*=\s*/)
+      if (eq) {
+        // Balanced-brace scan: extract the object after `atOptions =` even when
+        // it nests (e.g. `'params' : {}`) — the old non-greedy regex stopped at
+        // the first `}` and produced invalid JS.
+        let i = (eq.index ?? 0) + eq[0].length
+        while (i < text.length && /\s/.test(text[i])) i++
+        if (text[i] === '{') {
+          let depth = 0
+          let j = i
+          for (; j < text.length; j++) {
+            if (text[j] === '{') depth++
+            else if (text[j] === '}') {
+              depth--
+              if (depth === 0) break
+            }
+          }
+          if (depth === 0) {
+            const rawObj = text.slice(i, j + 1)
+            try {
+              // eslint-disable-next-line no-new-func
+              const parsed = new Function(`return (${rawObj});`)() as Record<string, unknown>
+              segments.push({ atOptions: parsed })
+              return
+            } catch {
+              // malformed — fall through and keep raw
+            }
+          }
+        }
+      }
+    }
+    segments.push({ raw: text })
   })
-  container.appendChild(tpl.content)
+  if (segments.length === 0) {
+    container.appendChild(tpl.content)
+    return
+  }
+
+  const engine = async () => {
+    for (const seg of segments) {
+      if ('atOptions' in seg && seg.atOptions) {
+        // Shield parallel invokes: each invoke.js sees its own zone config
+        ;(window as unknown as { atOptions: Record<string, unknown> }).atOptions = seg.atOptions
+        continue
+      }
+      if ('src' in seg) {
+        await new Promise<void>((resolve) => {
+          const s = document.createElement('script')
+          s.src = seg.src!
+          s.async = true
+          s.onload = () => resolve()
+          s.onerror = () => resolve()
+          container.appendChild(s)
+          // Failsafe: never block the queue forever
+          window.setTimeout(resolve, 8000)
+        })
+        continue
+      }
+      if ('raw' in seg && seg.raw.trim()) {
+        const s = document.createElement('script')
+        s.textContent = seg.raw
+        container.appendChild(s)
+      }
+    }
+  }
+
+  // Serialize across every AdsManager on the page (hero + side + footer…)
+  adsterraQueue = adsterraQueue.then(engine)
 }
 /**
  * Renders an ad snippet directly in the page DOM. Network snippets (admin
@@ -96,41 +182,27 @@ function DirectAd({
   isNetwork,
   minHeight,
   frameClass,
-  mobileClass,
 }: {
   code: string
   isNetwork?: boolean
   minHeight?: number
   frameClass?: string
-  /** e.g. 'hidden md:block' for 728×90, 'hidden lg:block' for 160×600 */
-  mobileClass?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [empty, setEmpty] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    setEmpty(false)
     if (isNetwork) {
       mountAdInto(el, code)
     } else {
       el.innerHTML = sanitizeAdHtml(code)
     }
-    // No creative within 4s → hide the slot entirely (no empty/white box)
-    const t = setTimeout(() => {
-      const filled =
-        el.querySelector('iframe,ins,img,a,video,embed,object') ||
-        (el.firstElementChild && el.firstElementChild.tagName !== 'SCRIPT')
-      if (!filled) setEmpty(true)
-    }, 4000)
     return () => {
-      clearTimeout(t)
       el.replaceChildren()
     }
   }, [code, isNetwork])
-  if (empty) return null
   return (
-    <div className={`${frameClass || ''} ${mobileClass || ''}`.trim() || undefined}>
+    <div className={frameClass?.trim() || undefined}>
       <div ref={ref} style={minHeight ? { minHeight } : undefined} />
     </div>
   )
@@ -273,42 +345,14 @@ export const AdsManager = ({ type, position, onDone, durationSeconds = 8 }: Prop
     // (blank box). Mounted directly; house ads stay sanitized.
     const code = ad?.isNetwork ? raw : sanitizeAdHtml(raw)
     const h = ad?.height ? Math.max(60, Math.min(Number(ad.height), 600)) : 96
-    // Desktop-only formats never show on mobile (no horizontal scroll / dead space)
-    const w = Number(ad?.width) || 0
-    const adH = Number(ad?.height) || 0
-    const isWide = w >= 600
-    const mobileClass = isWide ? 'hidden md:block' : w <= 300 && adH >= 400 ? 'hidden lg:block' : ''
-    // Wide leaderboards (728×90) fill the row with TWO units side by side on
-    // desktop — one centered unit leaves >50% of the screen empty.
-    if (isWide) {
-      return (
-        <div
-          data-ad-slot={position || 'banner'}
-          className="hidden w-full flex-row items-stretch justify-center gap-2 md:flex"
-        >
-          <DirectAd
-            code={code}
-            isNetwork={ad?.isNetwork}
-            minHeight={h}
-            frameClass="min-w-0 flex-1 rounded-md border border-zinc-800 bg-zinc-900 p-2 text-center overflow-hidden flex justify-center"
-          />
-          <DirectAd
-            code={code}
-            isNetwork={ad?.isNetwork}
-            minHeight={h}
-            frameClass="min-w-0 flex-1 rounded-md border border-zinc-800 bg-zinc-900 p-2 text-center overflow-hidden flex justify-center"
-          />
-        </div>
-      )
-    }
+    // No device hiding — every format renders on every screen size.
     return (
       <div data-ad-slot={position || 'banner'}>
         <DirectAd
           code={code}
           isNetwork={ad?.isNetwork}
           minHeight={h}
-          frameClass="rounded-md border border-zinc-800 bg-zinc-900 p-3 text-center overflow-hidden flex justify-center"
-          mobileClass={mobileClass}
+          frameClass="overflow-hidden flex justify-center"
         />
       </div>
     )

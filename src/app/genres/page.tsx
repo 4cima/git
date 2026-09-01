@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Film, Tv } from 'lucide-react'
 import { getGenreColor } from '@/utils/genreColors'
 import { getGenresWithCounts } from '@/lib/genres'
+import { AdsManager } from '@/components/features/system/AdsManager'
 
 export const metadata: Metadata = {
   title: 'التصنيفات | فور سيما',
@@ -19,6 +20,11 @@ export default async function GenresPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="page-container py-12">
+        {/* Ad banner under the header (global-header) */}
+        <div className="mb-6 flex justify-center">
+          <AdsManager type="banner" position="global-header" />
+        </div>
+
         {/* Header */}
         <div className="mb-12 text-center">
           <h1 className="text-4xl md:text-6xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-400">

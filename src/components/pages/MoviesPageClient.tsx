@@ -358,42 +358,20 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
       {/* Single page H1 for SEO (visually hidden) */}
       <h1 className="sr-only">الأفلام المترجمة</h1>
 
-      {/* Header banner — 728×90 desktop / hidden on mobile */}
-      <div className="w-full bg-slate-950" style={{ minHeight: '88px' }}>
-        <div className="max-w-[1920px] mx-auto px-3 sm:px-5 md:px-8 lg:px-12 py-3">
+      {/* Header banner — 728×90 */}
+      <div className="w-full bg-slate-950">
+        <div className="w-full flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 py-3">
           <AdsManager type="banner" position="global-header" />
         </div>
       </div>
 
-      {/* Cinema Banner */}
-      <section className="w-full bg-slate-950">
-        <div className="max-w-[1920px] mx-auto px-3 sm:px-5 md:px-8 lg:px-12 mb-6">
-          <div className="relative bg-slate-950/80 backdrop-blur-sm rounded-lg border-2 border-slate-800 shadow-2xl overflow-hidden" style={{ height: '56px' }}>
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'url(/banner.png)', backgroundSize: '2000px 100%', backgroundRepeat: 'repeat-x', backgroundPosition: '0 center', animation: 'banner-scroll 40s linear infinite' }} />
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-0 left-0 right-0 h-2 bg-slate-950/90 flex justify-around items-center px-2">
-                  {[...Array(25)].map((_, i) => <div key={i} className="w-1.5 h-1.5 bg-slate-800 rounded-sm" />)}
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 h-2 bg-slate-950/90 flex justify-around items-center px-2">
-                  {[...Array(25)].map((_, i) => <div key={i} className="w-1.5 h-1.5 bg-slate-800 rounded-sm" />)}
-                </div>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-950/30 via-transparent to-slate-950/30" />
-            </div>
-            <div className="absolute top-0 left-0 w-3 h-full bg-slate-950/95 border-r border-amber-500/40 flex flex-col justify-around py-1 z-10">
-              {[...Array(5)].map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_#fbbf24] mx-auto" style={{ animation: 'pulse-glow 1.5s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />)}
-            </div>
-            <div className="absolute top-0 right-0 w-3 h-full bg-slate-950/95 border-l border-amber-500/40 flex flex-col justify-around py-1 z-10">
-              {[...Array(5)].map((_, i) => <div key={i} className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_#fbbf24] mx-auto" style={{ animation: 'pulse-glow 1.5s ease-in-out infinite', animationDelay: `${i * 0.2}s` }} />)}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Main Content */}
       <section className="w-full bg-slate-950">
-        <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 space-y-6">
+        <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4">
+          <div className="flex flex-col lg:flex-row gap-6">
+
+            {/* Main column — filters + grid (appears on the RIGHT in RTL) */}
+            <div className="flex-1 min-w-0 space-y-6">
 
           {/* Search & Filters */}
           <div ref={filtersRef} className="flex flex-col md:flex-row items-stretch md:items-center gap-4 bg-slate-800/40 border border-slate-700 p-4 rounded-xl">
@@ -576,6 +554,15 @@ export function MoviesPageClient({ initialMovies = [] }: { initialMovies?: any[]
               <p className="text-slate-500">جرب تغيير الفلاتر أو البحث</p>
             </div>
           )}
+            </div>
+
+            {/* Side ads column — last child in RTL => appears on the LEFT of the grid: 300×250 then 160×600 stacked */}
+            <aside className="flex w-full flex-col items-center gap-6 lg:w-[300px] lg:shrink-0 lg:self-start">
+              <AdsManager type="banner" position="home-in-feed" />
+              <AdsManager type="banner" position="home-feed-side" />
+            </aside>
+
+          </div>
         </div>
       </section>
 

@@ -5,6 +5,7 @@ import { Tv } from 'lucide-react'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { getGenreColor } from '@/utils/genreColors'
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid'
+import { AdsManager } from '@/components/features/system/AdsManager'
 
 const SORT_OPTIONS = [
   { value: 'popularity',   order: 'desc', label: 'الأكثر شهرة',     icon: '🔥' },
@@ -128,6 +129,11 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
   return (
     <div className="min-h-screen bg-black text-white pt-20 pb-12">
       <div className="page-container">
+        {/* Ad banner under the header (global-header) */}
+        <div className="mb-6 flex justify-center">
+          <AdsManager type="banner" position="global-header" />
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">

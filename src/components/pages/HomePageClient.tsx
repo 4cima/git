@@ -720,17 +720,19 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
         </section>
       )}
 
-      {/* Ad Banner after Hero — reserved min-height so the ad slot never shifts layout */}
-      <div className="w-full bg-slate-950" style={{ minHeight: '88px' }}>
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-4">
-          <AdsManager type="banner" position="home-after-hero" />
-        </div>
+      {/* Ad Banner after Hero — single centered 728×90 leaderboard, container hugs the ad (no big background) */}
+      <div className="w-full flex justify-center px-4 sm:px-6 md:px-8 lg:px-12 py-3">
+        <AdsManager type="banner" position="home-after-hero" />
       </div>
 
 
           {/* 3. Trending Content Sections — lazy client chunk (off critical path) */}
       <section className="w-full bg-slate-950">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8 space-y-12">
+        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
+          <div className="flex flex-col lg:flex-row gap-8">
+
+            {/* Main content column (appears on the RIGHT in RTL) */}
+            <div className="flex-1 min-w-0 space-y-12">
 
           <HomeTrendingSections
             data={data}
@@ -743,17 +745,6 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
             isCardLoading={isCardLoading}
             toggleCardState={toggleCardState}
           />
-
-          {/* In-feed ads — mid page, after the first content rows:
-              300×250 centered unit + 160×600 skyscraper side column (desktop only) */}
-          <div className="flex items-start justify-center gap-6 py-2">
-            <div className="flex shrink-0 items-center justify-center">
-              <AdsManager type="banner" position="home-in-feed" />
-            </div>
-            <div className="hidden shrink-0 lg:block">
-              <AdsManager type="banner" position="home-feed-side" />
-            </div>
-          </div>
 
           {/* CTA Buttons Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
@@ -794,6 +785,16 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
             </Link>
           </div>
 
+            </div>
+
+            {/* Side ads column — LAST child in RTL flex row => appears on the LEFT
+                of the content sections, stacked: 300×250 then 160×600 below it */}
+            <aside className="flex w-full flex-col items-center gap-6 lg:w-[300px] lg:shrink-0 lg:self-start">
+              <AdsManager type="banner" position="home-in-feed" />
+              <AdsManager type="banner" position="home-feed-side" />
+            </aside>
+
+          </div>
         </div>
       </section>
 
