@@ -52,7 +52,6 @@
     "p-limit": "^7.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-grid-layout": "^1.4.4",
     "react-hot-toast": "^2.6.0",
     "react-player": "^3.4.0",
     "react-resizable": "^3.0.4",

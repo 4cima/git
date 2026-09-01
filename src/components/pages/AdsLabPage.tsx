@@ -1,14 +1,12 @@
-﻿'use client'
+'use client'
 import { useEffect, useRef, useState } from 'react'
-import GridLayout, { Layout } from 'react-grid-layout'
-import 'react-grid-layout/css/styles.css'
-import 'react-resizable/css/styles.css'
 import { RotateCcw, Download, MonitorPlay, Globe } from 'lucide-react'
 
 /* ============================================================
-   مختبر الإعلانات — صفحة واحدة بسيطة
-   قسمين تحت بعض: الرئيسية (4cima.com) + المشاهدة (4cima.stream)
-   كل قسم: مخطط شبيه بالصفحة الحقيقية + 6 بنرات Adsterra قابلة للسحب بحرية
+   مختبر الإعلانات — سحب حر بالبكسل (بدون شبكة وبدون محاذاة إجبارية)
+   - كل كارت بيتحرك 1:1 مع الماوس (Pointer Events + تحديث DOM مباشر)
+   - مفيش حدود: الكارت يتحرك في أي مكان حتى بره إطار المخطط
+   - مكوّنات الصفحة الوهمية (هيدر/هيرو/صفوف/مشغّل) كمان تتحرك وتتكبّر
    ============================================================ */
 
 type Account = 'home' | 'player'
@@ -40,46 +38,65 @@ const ADS: Ad[] = [
   { id: 'player-320x50',  account: 'player', zoneId: '31024510', key: '57877d62319a7f78e0d12672140d9af3', width: 320, height: 50,  label: '320x50' },
 ]
 
-/* هندسة الـ canvas: 1 وحدة = 10px — 120 وحدة عرض = 1200px — 120 صف ارتفاع = 1200px */
-const COLS = 120
-const ROW_H = 10
-const ROWS = 130
-
+/* عنصر واحد على المخطط: إما بنر إعلاني أو مكوّن وهمي من الصفحة — كلها بنفس النظام */
 interface Item {
-  i: string
-  adId?: string      // لو بنر
-  x: number; y: number; w: number; h: number
-}
-
-/* الترتيب الافتراضي — تقريب لحجم البنر الحقيقي على مخطط الصفحة */
-function defaultItems(account: Account): Item[] {
-  if (account === 'home') {
-    return [
-      { i: 'home-160x600', adId: 'home-160x600', x: 104, y: 10,  w: 16, h: 60 },
-      { i: 'home-160x300', adId: 'home-160x300', x: 104, y: 72,  w: 16, h: 30 },
-      { i: 'home-728x90',  adId: 'home-728x90',  x: 26,  y: 12,  w: 73, h: 9 },
-      { i: 'home-300x250', adId: 'home-300x250', x: 26,  y: 40,  w: 30, h: 25 },
-      { i: 'home-468x60',  adId: 'home-468x60',  x: 58,  y: 42,  w: 47, h: 6 },
-      { i: 'home-320x50',  adId: 'home-320x50',  x: 26,  y: 118, w: 32, h: 5 },
-    ]
-  }
-  return [
-    { i: 'player-728x90',  adId: 'player-728x90',  x: 26,  y: 12, w: 73, h: 9 },
-    { i: 'player-160x600', adId: 'player-160x600', x: 104, y: 10, w: 16, h: 60 },
-    { i: 'player-160x300', adId: 'player-160x300', x: 0,   y: 10, w: 16, h: 30 },
-    { i: 'player-300x250', adId: 'player-300x250', x: 0,   y: 42, w: 30, h: 25 },
-    { i: 'player-468x60',  adId: 'player-468x60',  x: 26,  y: 76, w: 73, h: 6 },
-    { i: 'player-320x50',  adId: 'player-320x50',  x: 26,  y: 120, w: 32, h: 5 },
-  ]
+  id: string
+  kind: 'ad' | 'mock'
+  mockId?: string
+  x: number
+  y: number
+  w: number
+  h: number
 }
 
 const STORAGE_KEYS: Record<Account, string> = {
-  home: 'ads-lab-home-v4',
-  player: 'ads-lab-player-v4',
+  home: 'ads-lab-home-v5',
+  player: 'ads-lab-player-v5',
+}
+
+const CANVAS_H = 1300
+
+/* الترتيب الافتراضي — بالبكسل على canvas عرضه 1200 */
+function defaultItems(account: Account): Item[] {
+  const ad = (id: string, x: number, y: number): Item => {
+    const a = ADS.find((z) => z.id === id)!
+    return { id, kind: 'ad', x, y, w: a.width, h: a.height + 24 }
+  }
+  if (account === 'home') {
+    return [
+      { id: 'home-mock-header', kind: 'mock', mockId: 'header', x: 0,   y: 0,    w: 1200, h: 56 },
+      { id: 'home-mock-hero',   kind: 'mock', mockId: 'hero',   x: 32,  y: 84,   w: 1136, h: 256 },
+      { id: 'home-mock-row1',   kind: 'mock', mockId: 'row',    x: 32,  y: 372,  w: 1136, h: 216 },
+      { id: 'home-mock-row2',   kind: 'mock', mockId: 'row',    x: 32,  y: 612,  w: 1136, h: 216 },
+      { id: 'home-mock-row3',   kind: 'mock', mockId: 'row',    x: 32,  y: 852,  w: 1136, h: 216 },
+      { id: 'home-mock-row4',   kind: 'mock', mockId: 'row',    x: 32,  y: 1092, w: 1136, h: 216 },
+      ad('home-728x90',  236,  120),
+      ad('home-300x250', 236,  400),
+      ad('home-468x60',  560,  420),
+      ad('home-160x600', 1028, 100),
+      ad('home-160x300', 1028, 724),
+      ad('home-320x50',  236,  1176),
+    ]
+  }
+  return [
+    { id: 'player-mock-header',  kind: 'mock', mockId: 'header',  x: 0,   y: 0,   w: 1200, h: 56 },
+    { id: 'player-mock-player',  kind: 'mock', mockId: 'player',  x: 32,  y: 84,  w: 1136, h: 480 },
+    { id: 'player-mock-info',    kind: 'mock', mockId: 'info',    x: 32,  y: 590, w: 1136, h: 130 },
+    { id: 'player-mock-similar', kind: 'mock', mockId: 'similar', x: 32,  y: 745, w: 1136, h: 210 },
+    ad('player-728x90',  236,  120),
+    ad('player-300x250', 236,  400),
+    ad('player-468x60',  560,  430),
+    ad('player-160x600', 1028, 100),
+    ad('player-160x300', 12,   100),
+    ad('player-320x50',  236,  1180),
+  ]
 }
 
 /* ------------------------------------------------------------
-   مكوّن البنر — iframe Adsterra حقيقي
+   بنر Adsterra حقيقي (iframe)
+   ملاحظة: المحتوى كله pointer-events:none عشان
+   1) السحب يشتغل من أي نقطة في الكارت بدون ما الـ iframe يخطف الحدث
+   2) ما يحصلش كليكات غير مقصودة على الإعلانات أثناء التجربة
    ------------------------------------------------------------ */
 function AdBanner({ ad }: { ad: Ad }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -112,30 +129,12 @@ function AdBanner({ ad }: { ad: Ad }) {
 }
 
 /* ------------------------------------------------------------
-   إطار البنر داخل الـ canvas — عنوان صغير + البنر
+   محتوى المكوّنات الوهمية اللي شبه صفحات الموقع
    ------------------------------------------------------------ */
-function BannerItem({ ad }: { ad: Ad }) {
-  return (
-    <div className="adframe group h-full w-full">
-      <div className="adframe-bar">
-        <span className="adframe-num">#{ad.zoneId}</span>
-        <span className="adframe-size">{ad.label}</span>
-      </div>
-      <div className="adframe-body">
-        <AdBanner ad={ad} />
-      </div>
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------
-   مخطط صفحة الرئيسية (خلفية ثابتة — غير قابلة للسحب)
-   ------------------------------------------------------------ */
-function HomeMock() {
-  return (
-    <div className="pointer-events-none absolute inset-0 select-none opacity-40">
-      {/* هيدر */}
-      <div className="flex h-14 items-center justify-between border-b border-white/10 bg-white/5 px-8">
+function MockContent({ mockId }: { mockId?: string }) {
+  if (mockId === 'header') {
+    return (
+      <div className="flex h-full w-full items-center justify-between border-b border-white/10 bg-white/5 px-8">
         <div className="flex items-center gap-6">
           <div className="h-8 w-24 rounded bg-orange-500/60" />
           <div className="h-3 w-16 rounded bg-white/20" />
@@ -144,97 +143,150 @@ function HomeMock() {
         </div>
         <div className="h-8 w-56 rounded-full bg-white/10" />
       </div>
-      {/* هيرو */}
-      <div className="mx-8 mt-6 flex h-64 items-end rounded-2xl bg-gradient-to-l from-orange-600/50 via-red-900/40 to-purple-900/40 p-8">
+    )
+  }
+  if (mockId === 'hero') {
+    return (
+      <div className="flex h-full w-full items-end rounded-2xl bg-gradient-to-l from-orange-600/50 via-red-900/40 to-purple-900/40 p-8">
         <div>
           <div className="mb-3 h-8 w-72 rounded bg-white/30" />
           <div className="mb-2 h-3 w-96 rounded bg-white/20" />
           <div className="h-3 w-64 rounded bg-white/20" />
         </div>
       </div>
-      {/* صفوف أفلام */}
-      {[0, 1, 2, 3].map((row) => (
-        <div key={row} className="mx-8 mt-8">
-          <div className="mb-3 h-4 w-40 rounded bg-white/25" />
-          <div className="flex gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-44 w-32 shrink-0 rounded-xl bg-white/10" />
-            ))}
-          </div>
+    )
+  }
+  if (mockId === 'row') {
+    return (
+      <div className="h-full w-full">
+        <div className="mb-3 h-4 w-40 rounded bg-white/25" />
+        <div className="flex gap-4 overflow-hidden">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-40 w-32 shrink-0 rounded-xl bg-white/10" />
+          ))}
         </div>
+      </div>
+    )
+  }
+  if (mockId === 'player') {
+    return (
+      <div className="flex h-full w-full items-center justify-center rounded-2xl bg-black/60 ring-1 ring-white/10">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-4xl">▶</div>
+      </div>
+    )
+  }
+  if (mockId === 'info') {
+    return (
+      <div className="h-full w-full space-y-3">
+        <div className="h-7 w-80 rounded bg-white/25" />
+        <div className="h-3 w-full rounded bg-white/15" />
+        <div className="h-3 w-4/5 rounded bg-white/15" />
+        <div className="h-3 w-3/5 rounded bg-white/15" />
+      </div>
+    )
+  }
+  if (mockId === 'similar') {
+    return (
+      <div className="h-full w-full">
+        <div className="mb-3 h-4 w-48 rounded bg-white/25" />
+        <div className="flex gap-4 overflow-hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-40 w-28 shrink-0 rounded-xl bg-white/10" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+  return <div className="h-full w-full rounded bg-white/10" />
+}
+
+/* ------------------------------------------------------------
+   نظام السحب والتحجيم الحر — كل كارت absolute بالبكسل،
+   أثناء السحب بنحدّث style الـ DOM مباشرة (بدون re-render)
+   عشان الحركة تطلع 1:1 مع الماوس بالظبط، وبعدين نحفظ الحالة النهائية.
+   ------------------------------------------------------------ */
+type Mode = 'move' | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw'
+
+const HANDLES: { mode: Mode; cls: string }[] = [
+  { mode: 'n',  cls: '-top-1 left-4 right-4 h-2 cursor-ns-resize' },
+  { mode: 's',  cls: '-bottom-1 left-4 right-4 h-2 cursor-ns-resize' },
+  { mode: 'e',  cls: '-right-1 top-4 bottom-4 w-2 cursor-ew-resize' },
+  { mode: 'w',  cls: '-left-1 top-4 bottom-4 w-2 cursor-ew-resize' },
+  { mode: 'ne', cls: '-top-1.5 -right-1.5 h-3.5 w-3.5 cursor-nesw-resize' },
+  { mode: 'nw', cls: '-top-1.5 -left-1.5 h-3.5 w-3.5 cursor-nwse-resize' },
+  { mode: 'se', cls: '-bottom-1.5 -right-1.5 h-3.5 w-3.5 cursor-nwse-resize' },
+  { mode: 'sw', cls: '-bottom-1.5 -left-1.5 h-3.5 w-3.5 cursor-nesw-resize' },
+]
+
+function Card({
+  item,
+  ad,
+  onStart,
+  register,
+}: {
+  item: Item
+  ad?: Ad
+  onStart: (e: React.PointerEvent, item: Item, mode: Mode) => void
+  register: (id: string, el: HTMLDivElement | null) => void
+}) {
+  return (
+    <div
+      ref={(el) => register(item.id, el)}
+      onPointerDown={(e) => onStart(e, item, 'move')}
+      className="group absolute cursor-grab touch-none select-none rounded-lg border border-orange-500/40 bg-[#0d1119] shadow-lg ring-orange-400/60 hover:border-orange-400/70 active:cursor-grabbing"
+      style={{ left: item.x, top: item.y, width: item.w, height: item.h, zIndex: item.kind === 'ad' ? 20 : 10 }}
+    >
+      {ad ? (
+        <>
+          <div className="flex h-6 items-center justify-between rounded-t-lg bg-orange-600/25 px-2 text-[10px] font-bold text-orange-300">
+            <span>#{ad.zoneId}</span>
+            <span>{ad.label}</span>
+          </div>
+          <div className="pointer-events-none flex h-[calc(100%-24px)] w-full items-center justify-center overflow-hidden rounded-b-lg">
+            <AdBanner ad={ad} />
+          </div>
+        </>
+      ) : (
+        <div className="pointer-events-none h-full w-full overflow-hidden rounded-lg opacity-50">
+          <MockContent mockId={item.mockId} />
+        </div>
+      )}
+
+      {/* مقابض التحجيم — 8 اتجاهات */}
+      {HANDLES.map((h) => (
+        <div
+          key={h.mode}
+          onPointerDown={(e) => onStart(e, item, h.mode)}
+          className={`absolute z-30 rounded-sm bg-orange-400 opacity-0 shadow ring-1 ring-black/40 transition-opacity group-hover:opacity-90 ${h.cls}`}
+        />
       ))}
     </div>
   )
 }
 
 /* ------------------------------------------------------------
-   مخطط صفحة المشاهدة (خلفية ثابتة — غير قابلة للسحب)
-   ------------------------------------------------------------ */
-function WatchMock() {
-  return (
-    <div className="pointer-events-none absolute inset-0 select-none opacity-40">
-      {/* هيدر */}
-      <div className="flex h-14 items-center justify-between border-b border-white/10 bg-white/5 px-8">
-        <div className="flex items-center gap-6">
-          <div className="h-8 w-24 rounded bg-orange-500/60" />
-          <div className="h-3 w-16 rounded bg-white/20" />
-          <div className="h-3 w-16 rounded bg-white/20" />
-        </div>
-        <div className="h-8 w-56 rounded-full bg-white/10" />
-      </div>
-      {/* المشغّل */}
-      <div className="mx-8 mt-6 flex h-[480px] items-center justify-center rounded-2xl bg-black/60 ring-1 ring-white/10">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-4xl">▶</div>
-      </div>
-      {/* معلومات الفيلم */}
-      <div className="mx-8 mt-6 space-y-3">
-        <div className="h-7 w-80 rounded bg-white/25" />
-        <div className="h-3 w-full rounded bg-white/15" />
-        <div className="h-3 w-4/5 rounded bg-white/15" />
-        <div className="h-3 w-3/5 rounded bg-white/15" />
-      </div>
-      {/* أفلام مشابهة */}
-      <div className="mx-8 mt-8">
-        <div className="mb-3 h-4 w-48 rounded bg-white/25" />
-        <div className="flex gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-40 w-28 shrink-0 rounded-xl bg-white/10" />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------
-   قسم تجربة كامل — canvas واحد حر داخل مخطط صفحة
+   قسم تجربة كامل — canvas حر بكل عناصره قابلة للسحب والتحجيم
    ------------------------------------------------------------ */
 function LabSection({ account }: { account: Account }) {
   const ads = ADS.filter((a) => a.account === account)
-  const [items, setItems] = useState<Item[]>(() => {
-    if (typeof window === 'undefined') return defaultItems(account)
+  const [items, setItems] = useState<Item[]>(() => defaultItems(account))
+  const [mounted, setMounted] = useState(false)
+  const nodes = useRef(new Map<string, HTMLDivElement>())
+  const zRef = useRef(10)
+
+  /* تحميل الحفظ بعد الـ mount (عشان الـ hydration) */
+  useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS[account])
       if (raw) {
         const saved = JSON.parse(raw) as Item[]
-        /* كل البنرات موجودة؟ */
-        const missing = ads.some((a) => !saved.some((s) => s.i === a.id))
-        if (!missing && Array.isArray(saved) && saved.length === ads.length) return saved
+        const expected = defaultItems(account).map((d) => d.id).sort().join(',')
+        const ok = Array.isArray(saved) && saved.map((s) => s.id).sort().join(',') === expected
+        if (ok) setItems(saved)
       }
     } catch { /* تجاهل */ }
-    return defaultItems(account)
-  })
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-
-  const onLayoutChange = (layout: Layout[]) => {
-    setItems((prev) =>
-      prev.map((p) => {
-        const l = layout.find((x) => x.i === p.i)
-        return l ? { ...p, x: l.x, y: l.y, w: l.w, h: l.h } : p
-      }),
-    )
-  }
+    setMounted(true)
+  }, [account])
 
   /* حفظ تلقائي */
   useEffect(() => {
@@ -242,19 +294,83 @@ function LabSection({ account }: { account: Account }) {
     localStorage.setItem(STORAGE_KEYS[account], JSON.stringify(items))
   }, [items, mounted, account])
 
+  const register = (id: string, el: HTMLDivElement | null) => {
+    if (el) nodes.current.set(id, el)
+    else nodes.current.delete(id)
+  }
+
+  const startDrag = (e: React.PointerEvent, item: Item, mode: Mode) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    e.preventDefault()
+    const node = nodes.current.get(item.id)
+    if (!node) return
+
+    /* يطلع لقدام دايماً */
+    zRef.current += 1
+    node.style.zIndex = String(zRef.current)
+    node.style.boxShadow = '0 0 0 2px #f97316, 0 12px 40px rgba(249,115,22,.35)'
+
+    const st = {
+      sx: e.clientX, sy: e.clientY,
+      ox: item.x, oy: item.y, ow: item.w, oh: item.h,
+      cx: item.x, cy: item.y, cw: item.w, ch: item.h,
+    }
+    const MIN = 60
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - st.sx
+      const dy = ev.clientY - st.sy
+      let x = st.ox
+      let y = st.oy
+      let w = st.ow
+      let h = st.oh
+      if (mode === 'move') {
+        x = st.ox + dx
+        y = st.oy + dy
+      } else {
+        if (mode.includes('e')) w = Math.max(MIN, st.ow + dx)
+        if (mode.includes('s')) h = Math.max(MIN, st.oh + dy)
+        if (mode.includes('w')) { w = Math.max(MIN, st.ow - dx); x = st.ox + st.ow - w }
+        if (mode.includes('n')) { h = Math.max(MIN, st.oh - dy); y = st.oy + st.oh - h }
+      }
+      st.cx = x; st.cy = y; st.cw = w; st.ch = h
+      node.style.left = x + 'px'
+      node.style.top = y + 'px'
+      node.style.width = w + 'px'
+      node.style.height = h + 'px'
+    }
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      node.style.boxShadow = ''
+      setItems((prev) =>
+        prev.map((p) => (p.id === item.id ? { ...p, x: st.cx, y: st.cy, w: st.cw, h: st.ch } : p)),
+      )
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  }
+
   const reset = () => setItems(defaultItems(account))
 
-  /* تصدير JSON — px حقيقية عشان أطبقها على الموقع لاحقاً */
+  /* تصدير JSON — أماكن حقيقية بالبكسل لكل عنصر */
   const exportJson = () => {
     const data = items.map((it) => {
-      const ad = ads.find((a) => a.id === it.adId)
+      const ad = ads.find((a) => a.id === it.id)
       return {
-        id: it.i,
+        id: it.id,
+        kind: it.kind,
+        component: it.mockId ?? null,
         zoneId: ad?.zoneId ?? null,
         size: ad?.label ?? null,
         key: ad?.key ?? null,
         invokeJs: ad ? `https://professionalsusceptible.com/${ad.key}/invoke.js` : null,
-        px: { x: it.x * 10, y: it.y * 10, w: it.w * 10, h: it.h * 10 },
+        px: { x: it.x, y: it.y, w: it.w, h: it.h },
       }
     })
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -283,48 +399,34 @@ function LabSection({ account }: { account: Account }) {
         </div>
       </div>
 
-      {/* إطار الشاشة */}
-      <div className="screen-frame relative overflow-hidden rounded-2xl bg-[#0b0e17]" style={{ height: ROWS * ROW_H }}>
-        {account === 'home' ? <HomeMock /> : <WatchMock />}
-
-        {/* شبكة خلفية خفيفة */}
-        <div className="canvas-grid pointer-events-none absolute inset-0" />
-
-        {mounted && (
-          <GridLayout
-            className="layout relative"
-            layout={items.map(({ i, x, y, w, h }) => ({ i, x, y, w, h }))}
-            cols={COLS}
-            rowHeight={ROW_H}
-            width={1200}
-            margin={[0, 0]}
-            containerPadding={[0, 0]}
-            allowOverlap={true}
-            preventCollision={false}
-            compactType={null}
-            isBounded={false}
-            draggableHandle=".adframe-bar"
-            resizeHandles={['se', 'sw', 'ne', 'nw', 'e', 'w', 's']}
-            onLayoutChange={onLayoutChange}
-          >
-            {items.map((it) => {
-              const ad = ads.find((a) => a.id === it.adId)
-              return (
-                <div key={it.i}>
-                  {ad ? (
-                    <BannerItem ad={ad} />
-                  ) : (
-                    <div className="h-full w-full rounded bg-white/10" />
-                  )}
-                </div>
-              )
-            })}
-          </GridLayout>
-        )}
+      {/* إطار المخطط — بدون overflow hidden عشان الكروت تقدر تتحرك بره الإطار برضه */}
+      <div className="overflow-x-auto pb-2">
+        <div
+          className="relative rounded-2xl border border-white/15 bg-[#0b0e17]"
+          style={{
+            width: 1200,
+            height: CANVAS_H,
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }}
+        >
+          {mounted &&
+            items.map((it) => (
+              <Card
+                key={it.id}
+                item={it}
+                ad={ads.find((a) => a.id === it.id)}
+                onStart={startDrag}
+                register={register}
+              />
+            ))}
+        </div>
       </div>
 
       <p className="mt-2 text-xs text-white/40">
-        اسحب من الشريط العلوي لأي بنر لتحريكه — واسحب من الحواف/الزوايا للتحجيم. كل شيء حر تماماً ويمكن التداخل.
+        اسحب أي كارت من أي مكان جوّه — حتى أجزاء الصفحة نفسها (الهيدر، الهيرو، صفوف الأفلام، المشغّل) تتحرك وتتكبّر من الحواف.
+        مفيش أي محاذاة إجبارية ولا حدود — الحركة 1:1 مع الماوس ويمكن تحرّك الكارت بره الإطار.
       </p>
     </section>
   )
@@ -336,12 +438,11 @@ function LabSection({ account }: { account: Account }) {
 export default function AdsLabPage() {
   return (
     <main className="min-h-screen bg-[#05070d] py-10">
-      {/* العنوان */}
       <div className="mx-auto mb-10 max-w-[1300px]">
         <h1 className="text-3xl font-extrabold text-white">مختبر الإعلانات</h1>
         <p className="mt-2 text-sm text-white/50">
           قسمين تحت بعض — كل قسم محاكاة كاملة لصفحة من الموقع بداخلها الـ 6 بنرات Adsterra.
-          اسحب وارتب بحرية تامة، ولتطبيق الترتيب على الموقع الحقيقي اضغط «تحميل layout (JSON)».
+          كل حاجة قابلة للسحب والتحجيم بحرية تامة، ولتطبيق الترتيب على الموقع الحقيقي اضغط «تحميل layout (JSON)».
         </p>
       </div>
 
@@ -349,4 +450,7 @@ export default function AdsLabPage() {
       <LabSection account="player" />
     </main>
   )
-}
+}
+
+
+
