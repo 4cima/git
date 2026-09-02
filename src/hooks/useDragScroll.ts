@@ -2,28 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-// هوك مشترك للسحب بالماوس + قفل اتجاه للمس.
-// الماوس: سحب أفقي للصف مع منع فتح العمل بعد السحب (consumeIfDragged) — زي ما هو.
-// التاتش: يتميّز الاتجاه بعد عتبة 8px:
-//   - أفقي (|dx| > |dy|) ← نحرّك الصف scrollLeft بأنفسنا عبر rAF واحد ونمنع الافتراضي.
-//   - رأسي (|dy| > |dx|) ← لا نمنع أي حاجة، فالصفحة تسكرول طبيعي حتى لو اليد على الكارت.
-//   - الاتجاه يتقفل بعد أول قرار ولا ينقلب في نفس الإيماءة.
-const TOUCH_AXIS_THRESHOLD = 8
+// هوك مشترك للسحب بالماوس + تتبع خفيف للمس.
+// الماوس: سحب أفقي للصف (scrollLeft) مع منع فتح العمل بعد السحب (consumeIfDragged).
+// التاتش: سيّب السحب أفقي native للمتصفح (touch-action: auto). إحنا بس نتتبّع المسافة
+//         الأفقية عشان نمنع click لو كانت ضغطة سحب فعلية. ممنوع preventDefault ولا scrollLeft.
 const TOUCH_CLICK_THRESHOLD = 5
 
 export function useDragScroll<T extends HTMLElement>() {
   const ref = useRef<T>(null)
   const dragState = useRef({ startX: 0, scrollLeft: 0, moved: false })
-  const touchState = useRef<{
-    startX: number
-    startY: number
-    scrollLeft: number
-    identifier: number | null
-    axis: 'x' | 'y' | null
-    horizontalMoved: boolean
-    latestX: number
-  } | null>(null)
-  const rafId = useRef<number | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const touchMovedHorizontally = useRef(false)
   const [isDragging, setIsDragging] = useState(false)
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -54,75 +43,34 @@ export function useDragScroll<T extends HTMLElement>() {
     }
   }, [isDragging])
 
-  // تاتش: قفل اتجاه — أفقي يشغّل سحب الصف عبر rAF، رأسي يعدّي للسكرول الطبيعي للصفحة
+  // تاتش: native بالكامل — تتبع بس لمنع click بعد سحب أفقي
   useEffect(() => {
     const el = ref.current
     if (!el || typeof window === 'undefined') return
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
     if (!isTouch) return
 
-    const originalSnap = el.style.scrollSnapType
-
-    const onTouchStart = (e: TouchEvent) => {
+    const onTouchStartEvt = (e: TouchEvent) => {
       const t = e.touches[0]
       if (!t) return
-      touchState.current = {
-        startX: t.clientX,
-        startY: t.clientY,
-        scrollLeft: el.scrollLeft,
-        identifier: t.identifier,
-        axis: null,
-        horizontalMoved: false,
-        latestX: t.clientX,
-      }
+      touchStart.current = { x: t.clientX, y: t.clientY }
+      touchMovedHorizontally.current = false
     }
 
-    const onTouchMove = (e: TouchEvent) => {
-      const st = touchState.current
-      if (!st || e.touches.length !== 1) return
+    const onTouchMoveEvt = (e: TouchEvent) => {
+      const start = touchStart.current
+      if (!start || e.touches.length !== 1) return
       const t = e.touches[0]
-      const dx = t.clientX - st.startX
-      const dy = t.clientY - st.startY
-
-      // حدّث آخر موقع معروف — الـ rAF هيقرأه
-      st.latestX = t.clientX
-
-      if (st.axis === null) {
-        if (Math.abs(dx) < TOUCH_AXIS_THRESHOLD && Math.abs(dy) < TOUCH_AXIS_THRESHOLD) return
-        st.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
-        if (st.axis === 'x') {
-          // عطّل scroll-snap أثناء السحب الأفقي عشان ما يتقطعش
-          el.style.scrollSnapType = 'none'
-        }
-      }
-
-      if (st.axis === 'y') return // رأسي → لا نمنع شيئًا، الصفحة تسكرول طبيعي (حتى على الكارت)
-
-      // أفقي → نمنع سلوك المتصفح الافتراضي
-      e.preventDefault()
-
-      if (Math.abs(dx) > TOUCH_CLICK_THRESHOLD) {
-        st.horizontalMoved = true
-      }
-
-      // rAF واحد لكل فريم: scrollLeft يُحسب من نقطة اللمس الأولى (startX, scrollLeft)
-      if (rafId.current === null) {
-        rafId.current = requestAnimationFrame(() => {
-          rafId.current = null
-          const stNow = touchState.current
-          if (!stNow || stNow.axis !== 'x') return
-          const dxNow = stNow.latestX - stNow.startX
-          el.scrollLeft = stNow.scrollLeft - dxNow
-        })
+      const dx = Math.abs(t.clientX - start.x)
+      const dy = Math.abs(t.clientY - start.y)
+      // لو الحركة أفقية بزيادة — سجّل إنها سحب (بس منمنعش المتصفح ولا نلمس scrollLeft)
+      if (dx > dy && dx > TOUCH_CLICK_THRESHOLD) {
+        touchMovedHorizontally.current = true
       }
     }
 
     const onTouchEnd = () => {
-      // رجّع scroll-snap زي ما كانت
-      el.style.scrollSnapType = originalSnap
-
-      // لو سحب أفقي فوق العتبة → امنع click اللي بعد الإفلات
-      if (touchState.current?.horizontalMoved) {
+      if (touchMovedHorizontally.current) {
         const preventClick = (ev: MouseEvent) => {
           ev.preventDefault()
           ev.stopPropagation()
@@ -130,31 +78,23 @@ export function useDragScroll<T extends HTMLElement>() {
         }
         el.addEventListener('click', preventClick, true)
       }
-
-      touchState.current = null
-      if (rafId.current !== null) {
-        cancelAnimationFrame(rafId.current)
-        rafId.current = null
-      }
+      touchStart.current = null
+      touchMovedHorizontally.current = false
     }
 
-    el.addEventListener('touchstart', onTouchStart, { passive: true })
-    el.addEventListener('touchmove', onTouchMove, { passive: false })
-    el.addEventListener('touchend', onTouchEnd)
-    el.addEventListener('touchcancel', onTouchEnd)
+    el.addEventListener('touchstart', onTouchStartEvt, { passive: true })
+    el.addEventListener('touchmove', onTouchMoveEvt, { passive: true })
+    el.addEventListener('touchend', onTouchEnd, { passive: true })
+    el.addEventListener('touchcancel', onTouchEnd, { passive: true })
     return () => {
-      el.removeEventListener('touchstart', onTouchStart)
-      el.removeEventListener('touchmove', onTouchMove)
+      el.removeEventListener('touchstart', onTouchStartEvt)
+      el.removeEventListener('touchmove', onTouchMoveEvt)
       el.removeEventListener('touchend', onTouchEnd)
       el.removeEventListener('touchcancel', onTouchEnd)
-      if (rafId.current !== null) {
-        cancelAnimationFrame(rafId.current)
-        rafId.current = null
-      }
     }
   }, [])
 
-  // استخدمها جوه onClick: لو رجعت true معناها كان سحب فعلي، امنع الفعل الافتراضي
+  // استخدمها جوه onClick: لو رجعت true معناها كان سحب فعلي (ماوس)، امنع الفعل الافتراضي
   const consumeIfDragged = () => {
     if (dragState.current.moved) {
       dragState.current.moved = false

@@ -4,10 +4,11 @@
 /*  Performance helpers — reduce render cost of offscreen rows (INP/CLS)       */
 /* -------------------------------------------------------------------------- */
 .horizontal-scroll {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 300px;
-  touch-action: pan-y;
+  overflow-x: auto;
+  overflow-y: hidden;
+  touch-action: auto;
   overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* -------------------------------------------------------------------------- */
