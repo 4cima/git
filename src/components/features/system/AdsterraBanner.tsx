@@ -33,7 +33,14 @@ export const AdsterraBanner = ({ ad, className }: { ad: AdRecord; className?: st
       data-ad-slot={ad.id}
       data-ad-num={ad.num}
       className={className}
-      style={{ minHeight: ad.height, width: '100%', maxWidth: ad.width, marginInline: 'auto' }}
+      style={{
+        width: '100%',
+        maxWidth: ad.width,
+        height: ad.height,
+        minHeight: ad.height,
+        marginInline: 'auto',
+        overflow: 'hidden',
+      }}
     />
   )
 }

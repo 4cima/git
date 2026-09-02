@@ -286,7 +286,7 @@ export function HomeTrendingSections({
           <div
             ref={setMoviesRef}
             onMouseDown={moviesDrag.handleMouseDown}
-            className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing"
+            className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing min-h-[318px] sm:min-h-[356px]"
             tabIndex={0}
             style={{ userSelect: 'none' }}
           >
@@ -495,7 +495,7 @@ export function HomeTrendingSections({
           <div
             ref={setSeriesRef}
             onMouseDown={seriesDrag.handleMouseDown}
-            className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing"
+            className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing min-h-[318px] sm:min-h-[356px]"
             tabIndex={0}
             style={{ userSelect: 'none' }}
           >

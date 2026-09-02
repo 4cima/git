@@ -220,7 +220,7 @@ function ExtraRow({ section }: { section: ExtraSectionDef }) {
       <div
         ref={setRef}
         onMouseDown={drag.handleMouseDown}
-        className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing"
+        className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing min-h-[318px] sm:min-h-[356px]"
         tabIndex={0}
         style={{ userSelect: 'none' }}
       >
