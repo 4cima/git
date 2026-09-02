@@ -1029,8 +1029,12 @@ select option {
 
 
 /* Horizontal scroll — native GPU-accelerated scroll.
-   touch-action:pan-x prevents vertical-page-scroll conflict on touch devices.
-   scroll-snap-type:x mandatory snaps each card column to the start edge. */
+   touch-action:manipulation lets the browser drive BOTH axes natively:
+   horizontal pan scrolls this row, while vertical pan scrolls the page even
+   when the finger starts on a card (the JS direction-lock in useDragScroll
+   keeps gestures from flip-flopping and manually drives the row only when the
+   gesture is horizontal). scroll-snap-type:x mandatory snaps each card column
+   to the start edge. */
 .horizontal-scroll {
   overflow-x: auto;
   overflow-y: hidden;
@@ -1038,7 +1042,7 @@ select option {
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
   will-change: transform;
-  touch-action: pan-x;
+  touch-action: manipulation;
   cursor: grab;
 }
 .horizontal-scroll:active { cursor: grabbing; }
