@@ -615,7 +615,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
       <div className="relative z-10 page-container pt-24 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
           {/* Right (First in RTL): Poster with badge on corner */}
-          <div className="relative">
+          <div className="relative" ref={posterRef}>
             <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group">
               {poster && (
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
@@ -651,9 +651,8 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
           {/* Right: Info */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_160px] gap-4">
-              {/* Left side: Title, Info, Genres, Description */}
-              <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl max-h-[364px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            {/* صندوق البيانات - كامل العرض */}
+            <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl max-h-[364px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -814,180 +813,80 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                   </p>
                 </div>
               </div>
-              {/* Ads column: 160x600 (sidebar) */}
-              <div className="hidden lg:flex flex-col items-center gap-3">
-                <div className="rounded-2xl bg-gradient-to-b from-blue-500/60 via-slate-700/70 to-red-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
-                  <div className="rounded-[14.5px] bg-slate-950 p-1">
-                    <AdsterraBanner ad={AD_SIDE} />
-                  </div>
-                </div>
-              </div>
 
-              {/* Right side: Trailer or Backdrop */}
-              <div className="space-y-4">
-                <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
-                  {/* Trailer Thumbnail with Play Button */}
-                  <div className="aspect-video rounded-xl overflow-hidden bg-black/50 border border-white/10 relative group cursor-pointer" onClick={handleOpenTrailer}>
-                    {trailerKey && backdrop ? (
-                      <>
-                        {/* Backdrop Image */}
-                        <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
-                        {/* Play Button Overlay */}
-                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-red-600/30 blur-3xl"></div>
-                            <button className="relative w-20 h-20 rounded-full bg-red-600 group-hover:bg-red-500 group-hover:scale-110 transition-all flex items-center justify-center shadow-2xl">
-                              <svg className="w-10 h-10 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z"/>
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                        <div className="absolute bottom-3 left-3 bg-black/80 px-3 py-1.5 rounded-lg text-white text-sm font-bold">
-                          🎬 شاهد التريلر
-                        </div>
-                      </>
-                    ) : backdrop ? (
-                      <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* Trailer Modal */}
-                {isModalOpen && trailerUrl && (
-                  <div 
-                    className="fixed inset-0 z-[100] bg-black flex items-center justify-center trailer-modal"
-                    onClick={handleCloseTrailer}
-                  >
-                    <div 
-                      className="relative w-full h-full flex items-center justify-center p-1 sm:p-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {/* YouTube iframe */}
-                      <div 
-                        className="w-full h-full max-w-full overflow-hidden relative"
-                        style={{aspectRatio: '16/9', maxHeight: '100vh'}}
-                      >
-                        <iframe
-                          ref={iframeRef}
-                          src={trailerUrl}
-                          className="absolute inset-0 w-full h-full"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          style={{border: 'none'}}
-                        />
-                        {/* Black overlay on top to hide YouTube title and block clicks - responsive height */}
-                        <div className="absolute top-0 left-0 right-0 h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black via-black to-transparent z-[10]" />
-                        
-                        {/* Black overlay on bottom to hide everything below progress bar - responsive height */}
-                        <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-14 md:h-16 bg-black z-[3]" />
-                      </div>
-                      
-                      {/* Close button - right side for Arabic RTL */}
-                      <button
-                        onClick={handleCloseTrailer}
-                        className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-all flex items-center gap-1.5 sm:gap-2 z-50 shadow-lg text-xs sm:text-sm font-bold"
-                      >
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        <span>إغلاق</span>
-                      </button>
-                      
-                      {/* Fullscreen button - left side for Arabic RTL */}
-                      <button
-                        onClick={toggleFullscreen}
-                        className="absolute bottom-2 sm:bottom-3 md:bottom-4 left-2 sm:left-3 md:left-4 w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-all flex items-center justify-center z-50 shadow-lg"
-                        title="ملء الشاشة"
-                        aria-label="ملء الشاشة"
-                      >
-                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-                        </svg>
-                      </button>
-                      
-                      {/* Volume Control - next to close button, slider appears to the left */}
-                      <div 
-                        className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-[100px] sm:right-[120px] md:right-[140px] z-50 flex items-center-reverse gap-2"
-                        onMouseEnter={() => setShowVolumeSlider(true)}
-                        onMouseLeave={() => setShowVolumeSlider(false)}
-                        dir="ltr"
-                      >
-                        {/* Volume Button */}
-                        <button
-                          onClick={toggleMute}
-                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-all flex items-center justify-center shadow-lg"
-                          title={isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
-                          aria-label={isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
-                        >
-                          {isMuted || volume === 0 ? (
-                            // Muted icon
-                            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
-                            </svg>
-                          ) : volume < 50 ? (
-                            // Low volume icon
-                            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M7 9v6h4l5 5V4l-5 5H7z"/>
-                            </svg>
-                          ) : (
-                            // High volume icon
-                            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-                            </svg>
+            {/* Grid: كاست (يمين) + تريلر (يسار) */}
+            <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-4">
+              {/* كاست - عامود يمين */}
+              {cast.length > 0 && (
+                <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" style={{maxHeight: '220px'}}>
+                  <h3 className="text-xs font-bold text-purple-400 mb-3">فريق العمل</h3>
+                  <div className="flex flex-col gap-2">
+                    {cast.map((person: any, idx: number) => (
+                      <div key={person.tmdb_id || person.id || `cast-${idx}`} className="flex items-center gap-2 min-w-0">
+                        <div className="rounded-full overflow-hidden bg-zinc-800 flex-shrink-0" style={{width: '28px', height: '28px'}}>
+                          {person.profile_path && (
+                            <img src={`/tmdb/w45${person.profile_path}`} alt={person.name_ar || person.name_en} className="w-full h-full object-cover" loading="lazy" />
                           )}
-                        </button>
-                        
-                        {/* Volume Slider - appears on hover to the left */}
-                        <div className={`transition-all duration-200 overflow-hidden ${showVolumeSlider ? 'w-24 opacity-100' : 'w-0 opacity-0'}`}>
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={isMuted ? 0 : volume}
-                            onChange={handleVolumeChange}
-                            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
-                            style={{
-                              background: `linear-gradient(to right, #fff ${isMuted ? 0 : volume}%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume}%)`
-                            }}
-                          />
+                        </div>
+                        <p className="text-[10px] text-zinc-300 leading-tight truncate">{person.name_ar || person.name_en}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* تريلر - عامود يسار */}
+              <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
+                <div className="aspect-video rounded-xl overflow-hidden bg-black/50 border border-white/10 relative group cursor-pointer" onClick={handleOpenTrailer}>
+                  {trailerKey && backdrop ? (
+                    <>
+                      <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-red-600/30 blur-3xl"></div>
+                          <button className="relative w-16 h-16 rounded-full bg-red-600 group-hover:bg-red-500 group-hover:scale-110 transition-all flex items-center justify-center shadow-2xl">
+                            <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                          </button>
                         </div>
                       </div>
-
-                    </div>
-                  </div>
-                )}
-
-                {/* Cast under trailer/backdrop */}
-                {cast.length > 0 && (
-                  <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900 -mx-4 px-4" style={{maxWidth: 'calc(100% + 2rem)'}}>
-                      {cast.map((person: any, idx: number) => (
-                        <div key={person.tmdb_id || person.id || `cast-${idx}`} className="flex-shrink-0 text-center" style={{width: '31px'}}>
-                          <div className="rounded-full overflow-hidden bg-zinc-800 mb-1" style={{width: '31px', height: '31px'}}>
-                            {person.profile_path && (
-                              <img
-                                src={`/tmdb/w45${person.profile_path}`}
-                                alt={person.name_ar || person.name_en}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            )}
-                          </div>
-                          <p className="text-[7px] text-zinc-300 truncate leading-tight">{person.name_ar || person.name_en}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Desktop sidebar ad (160×600) — desktop only, hidden on mobile */}
+                      <div className="absolute bottom-3 left-3 bg-black/80 px-2 py-1 rounded-lg text-white text-xs font-bold">🎬 شاهد التريلر</div>
+                    </>
+                  ) : backdrop ? (
+                    <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                  ) : null}
+                </div>
               </div>
             </div>
 
-            {/* Seasons/episodes selection moved to dropdowns in the action row. */}
-
-            {/* Watch CTA moved under the titles above genres */}
+            {/* Trailer Modal */}
+            {isModalOpen && trailerUrl && (
+              <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center trailer-modal" onClick={handleCloseTrailer}>
+                <div className="relative w-full h-full flex items-center justify-center p-1 sm:p-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="w-full h-full max-w-full overflow-hidden relative" style={{aspectRatio: '16/9', maxHeight: '100vh'}}>
+                    <iframe ref={iframeRef} src={trailerUrl} className="absolute inset-0 w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{border: 'none'}} />
+                    <div className="absolute top-0 left-0 right-0 h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black via-black to-transparent z-[10]" />
+                    <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-14 md:h-16 bg-black z-[3]" />
+                  </div>
+                  <button onClick={handleCloseTrailer} className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-all flex items-center gap-1.5 z-50 shadow-lg text-xs sm:text-sm font-bold">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <span>إغلاق</span>
+                  </button>
+                  <div className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-[100px] sm:right-[120px] md:right-[140px] z-50 flex items-center gap-2" onMouseEnter={() => setShowVolumeSlider(true)} onMouseLeave={() => setShowVolumeSlider(false)} dir="ltr">
+                    <button onClick={toggleMute} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center shadow-lg">
+                      {isMuted || volume === 0 ? (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>)
+                      : volume < 50 ? (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 9v6h4l5 5V4l-5 5H7z"/></svg>)
+                      : (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>)}
+                    </button>
+                    <div className={`transition-all duration-200 overflow-hidden ${showVolumeSlider ? 'w-24 opacity-100' : 'w-0 opacity-0'}`}>
+                      <input type="range" min="0" max="100" value={isMuted ? 0 : volume} onChange={handleVolumeChange} className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, #fff ${isMuted ? 0 : volume}%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume}%)`}} />
+                    </div>
+                  </div>
+                  <button onClick={toggleFullscreen} className="absolute bottom-2 sm:bottom-3 md:bottom-4 left-2 sm:left-3 md:left-4 w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center z-50 shadow-lg">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
