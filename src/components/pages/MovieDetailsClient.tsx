@@ -416,8 +416,8 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
                 {/* Watch + favorite row — directly under the titles, above genres */}
                 <div className="mb-5">
-                  <div className="mx-auto flex w-full max-w-2xl flex-wrap items-stretch justify-center gap-3">
-                    <div className="relative flex-1 min-w-[140px] max-w-[260px] group">
+                  <div className="mx-auto flex w-full max-w-2xl flex-wrap items-stretch justify-center gap-3 min-h-[56px]">
+                    <div className="relative flex-1 min-w-[180px] max-w-[300px] group">
                       <div
                         aria-hidden="true"
                         className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 opacity-60 blur-lg transition-opacity duration-300 group-hover:opacity-100"
@@ -425,13 +425,13 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                       <button
                         type="button"
                         onClick={handleWatch}
-                        className="relative flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 px-5 py-3 text-white shadow-xl transition-transform duration-200 active:scale-95"
+                        className="relative flex w-full h-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 px-6 py-3 text-white shadow-xl transition-transform duration-200 active:scale-95"
                       >
                         <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/25 ring-2 ring-white/30">
                           <Play className="ml-0.5 h-5 w-5 fill-current" />
                         </span>
                         <span className="flex flex-col text-right">
-                          <span className="text-base sm:text-lg leading-tight font-black">مشاهدة الفيلم</span>
+                          <span className="text-base sm:text-lg leading-tight font-black whitespace-nowrap">مشاهدة الفيلم</span>
                           <span className="text-xs font-medium leading-tight text-white/85">تشغيل فوري بجودة عالية</span>
                         </span>
                       </button>
@@ -441,7 +441,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                         onClick={toggleCardState}
                         disabled={stateLoading}
                         className={clsx(
-                          "group relative flex w-[68px] flex-shrink-0 items-center justify-center self-stretch rounded-xl border border-white/15 bg-zinc-900 text-white shadow-xl transition-transform duration-200 active:scale-95",
+                          "group relative flex w-[56px] flex-shrink-0 items-center justify-center self-stretch rounded-xl border border-white/15 bg-zinc-900 text-white shadow-xl transition-transform duration-200 active:scale-95",
                           stateLoading && "opacity-60 cursor-not-allowed"
                         )}
                         title={
