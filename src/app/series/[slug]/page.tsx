@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch {}
   
   const posterImage = series.poster_path
-    ? `https://image.tmdb.org/t/p/w500${series.poster_path}`
+    ? `https://4cima.com/tmdb/w500${series.poster_path}`
     : undefined
   const pageUrl = `https://4cima.com/series/${slug}`
 
@@ -94,7 +94,13 @@ export default async function SeriesDetails({ params }: PageProps) {
     description:      series.overview_ar || series.overview || undefined,
     image:            series.poster_path ? `https://4cima.com/tmdb/w500${series.poster_path}` : undefined,
     datePublished:    series.first_air_date || undefined,
-    genre:            series.genres_json ? JSON.parse(String(series.genres_json)).map((g: any) => g.name_ar || g.name_en) : undefined,
+    genre:            (() => {
+      try {
+        return series.genres_json ? JSON.parse(String(series.genres_json)).map((g: any) => g.name_ar || g.name_en) : undefined
+      } catch {
+        return undefined
+      }
+    })(),
     inLanguage:       series.original_language || 'ar',
     numberOfSeasons:  series.number_of_seasons || seasons.length,
     numberOfEpisodes: series.number_of_episodes || undefined,

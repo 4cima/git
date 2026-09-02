@@ -12,7 +12,17 @@ import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
 import { preparePopunder, firePopunderOnClick } from '@/components/features/system/adsClick'
-import { AdsManager } from '@/components/features/system/AdsManager'
+import { AdsterraBanner } from '@/components/features/system/AdsterraBanner'
+import { getAdByNum } from '@/data/ads/4cima.com'
+
+/* الإعلانات المرجعية لصفحة تفاصيل المسلسل — أرقام ثابتة من ملف بيانات 4cima.com:
+   1 = 728×90 تحت الهيرو | 2 = 300×250 بعد المشغّال | 3 = 160×600 سايدبار
+   4 = 468×60 بين الأقسام | 6 = 320×50 فوتر موبايل */
+const AD_UNDER_HERO = getAdByNum(1)!
+const AD_AFTER_PLAYER = getAdByNum(2)!
+const AD_SIDE = getAdByNum(3)!
+const AD_BETWEEN = getAdByNum(4)!
+const AD_FOOTER = getAdByNum(6)!
 
 interface SeriesDetailsClientProps {
   series: any
@@ -43,6 +53,30 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const playerRef = useRef<HTMLDivElement>(null)
   const progressInterval = useRef<NodeJS.Timeout | null>(null)
+  const posterRef = useRef<HTMLDivElement>(null)
+  const [infoMaxHeight, setInfoMaxHeight] = useState<number | null>(null)
+
+  // Measure the poster height to constrain the info card to 85% of it (15% less).
+  useEffect(() => {
+    const measure = () => {
+      const node = posterRef.current
+      if (!node) return
+      const h = node.getBoundingClientRect().height
+      if (h > 0) {
+        setInfoMaxHeight(Math.round(h * 0.85))
+      }
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    // Also re-measure shortly after mount to catch images that affect layout.
+    const t1 = window.setTimeout(measure, 100)
+    const t2 = window.setTimeout(measure, 500)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+    }
+  }, [series?.id, series?.poster_path, series?.poster_url])
 
   const title = sanitizeTitle(series?.name_ar || series?.name || series?.original_name || 'مسلسل')
   const titleEn = sanitizeTitle(series?.name_en || series?.name || series?.original_name)
@@ -588,6 +622,15 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
               )}
             </div>
 
+            {/* إعلان 300×250 تحت البوستر */}
+            <div className="mt-3 flex justify-center">
+              <div className="rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
+                <div className="rounded-[14.5px] bg-slate-950 p-1">
+                  <AdsterraBanner ad={AD_AFTER_PLAYER} />
+                </div>
+              </div>
+            </div>
+
             {/* Keywords under poster */}
             {keywords.length > 0 && (
               <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl mt-4">
@@ -608,9 +651,9 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
           {/* Right: Info */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_160px] gap-4">
               {/* Left side: Title, Info, Genres, Description */}
-              <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl">
+              <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl max-h-[364px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -630,7 +673,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
                 {/* Watch + favorite + season/episode dropdowns — directly under the titles, above genres */}
                 <div className="mb-5">
-                  <div className="mx-auto flex w-full max-w-2xl flex-wrap items-stretch justify-center gap-3">
+                  <div className="mx-auto flex w-full max-w-2xl flex-wrap items-stretch justify-center gap-3 min-h-[48px]">
                     <div className="relative flex-1 min-w-[140px] max-w-[260px] group">
                       <div
                         aria-hidden="true"
@@ -684,12 +727,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                       </button>
                     )}
                     {seasons.length > 0 && (
-                      <div className="relative h-16 flex-1 min-w-[110px] max-w-[150px]">
+                      <div className="relative flex-1 min-w-[120px] max-w-[180px] group/dd">
                         <select
                           value={selectedSeason}
                           onChange={(e) => setSelectedSeason(Number(e.target.value))}
                           aria-label="اختر الموسم"
-                          className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 pr-4 pl-9 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
+                          className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 px-3 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
                         >
                           {seasons
                             .filter((s: any) => s.season_number > 0)
@@ -699,19 +742,19 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                                 value={season.season_number}
                                 className="bg-zinc-900 text-white"
                               >
-                                الموسم {season.season_number}
+                                موسم {season.season_number}
                               </option>
                             ))}
                         </select>
-                        <ChevronDown aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                        <ChevronDown aria-hidden="true" className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                       </div>
                     )}
-                    <div className="relative h-16 flex-1 min-w-[110px] max-w-[150px]">
+                    <div className="relative flex-1 min-w-[120px] max-w-[180px] group/dd">
                       <select
                         value={selectedEpisode}
                         onChange={(e) => setSelectedEpisode(Number(e.target.value))}
                         aria-label="اختر الحلقة"
-                        className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 pr-4 pl-9 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
+                        className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 px-3 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
                       >
                         {episodes.map((ep) => (
                           <option key={ep} value={ep} className="bg-zinc-900 text-white">
@@ -719,7 +762,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                           </option>
                         ))}
                       </select>
-                      <ChevronDown aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                      <ChevronDown aria-hidden="true" className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     </div>
                   </div>
                 </div>
@@ -769,6 +812,14 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                     {overview}
                     <span className="font-bold text-blue-600">"</span>
                   </p>
+                </div>
+              </div>
+              {/* Ads column: 160x600 (sidebar) */}
+              <div className="hidden lg:flex flex-col items-center gap-3">
+                <div className="rounded-2xl bg-gradient-to-b from-blue-500/60 via-slate-700/70 to-red-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
+                  <div className="rounded-[14.5px] bg-slate-950 p-1">
+                    <AdsterraBanner ad={AD_SIDE} />
+                  </div>
                 </div>
               </div>
 
@@ -832,10 +883,10 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                         <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-14 md:h-16 bg-black z-[3]" />
                       </div>
                       
-                      {/* Close button - on top of bottom black overlay - responsive size and position */}
+                      {/* Close button - right side for Arabic RTL */}
                       <button
                         onClick={handleCloseTrailer}
-                        className="absolute bottom-2 sm:bottom-3 md:bottom-4 left-2 sm:left-3 md:left-4 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-all flex items-center gap-1.5 sm:gap-2 z-50 shadow-lg text-xs sm:text-sm font-bold"
+                        className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-all flex items-center gap-1.5 sm:gap-2 z-50 shadow-lg text-xs sm:text-sm font-bold"
                       >
                         <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -843,7 +894,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                         <span>إغلاق</span>
                       </button>
                       
-                      {/* Fullscreen button - left side (swapped with close) */}
+                      {/* Fullscreen button - left side for Arabic RTL */}
                       <button
                         onClick={toggleFullscreen}
                         className="absolute bottom-2 sm:bottom-3 md:bottom-4 left-2 sm:left-3 md:left-4 w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-all flex items-center justify-center z-50 shadow-lg"
@@ -855,27 +906,13 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                         </svg>
                       </button>
                       
-                      {/* Volume Control - right side with slider */}
+                      {/* Volume Control - next to close button, slider appears to the left */}
                       <div 
-                        className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 z-50 flex items-center gap-2"
+                        className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-[100px] sm:right-[120px] md:right-[140px] z-50 flex items-center-reverse gap-2"
                         onMouseEnter={() => setShowVolumeSlider(true)}
                         onMouseLeave={() => setShowVolumeSlider(false)}
+                        dir="ltr"
                       >
-                        {/* Volume Slider - appears on hover */}
-                        <div className={`transition-all duration-200 ${showVolumeSlider ? 'w-24 opacity-100' : 'w-0 opacity-0'} overflow-hidden`}>
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={isMuted ? 0 : volume}
-                            onChange={handleVolumeChange}
-                            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
-                            style={{
-                              background: `linear-gradient(to right, #fff ${isMuted ? 0 : volume}%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume}%)`
-                            }}
-                          />
-                        </div>
-                        
                         {/* Volume Button */}
                         <button
                           onClick={toggleMute}
@@ -900,6 +937,21 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                             </svg>
                           )}
                         </button>
+                        
+                        {/* Volume Slider - appears on hover to the left */}
+                        <div className={`transition-all duration-200 overflow-hidden ${showVolumeSlider ? 'w-24 opacity-100' : 'w-0 opacity-0'}`}>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={isMuted ? 0 : volume}
+                            onChange={handleVolumeChange}
+                            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                            style={{
+                              background: `linear-gradient(to right, #fff ${isMuted ? 0 : volume}%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume}%)`
+                            }}
+                          />
+                        </div>
                       </div>
 
                     </div>
@@ -930,9 +982,6 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                 )}
 
                 {/* Desktop sidebar ad (160×600) — desktop only, hidden on mobile */}
-                <div className="hidden lg:flex justify-center pt-4">
-                  <AdsManager type="banner" position="details-sidebar" />
-                </div>
               </div>
             </div>
 
@@ -941,11 +990,6 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
             {/* Watch CTA moved under the titles above genres */}
           </div>
         </div>
-      </div>
-
-      {/* Ad banner below the player/story (details-below-player) */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-6 flex justify-center">
-        <AdsManager type="banner" position="details-below-player" />
       </div>
 
       {/* Similar Series Section */}

@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch {}
   
   const posterImage = movie.poster_path
-    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+    ? `https://4cima.com/tmdb/w500${movie.poster_path}`
     : undefined
   const pageUrl = `https://4cima.com/movies/${slug}`
 
@@ -81,7 +81,13 @@ export default async function MovieDetails({ params }: PageProps) {
     description:     movie.overview_ar || movie.overview || undefined,
     image:           movie.poster_path ? `https://4cima.com/tmdb/w500${movie.poster_path}` : undefined,
     datePublished:   movie.release_date || undefined,
-    genre:           movie.genres_json ? JSON.parse(String(movie.genres_json)).map((g: any) => g.name_ar || g.name_en) : undefined,
+    genre:           (() => {
+      try {
+        return movie.genres_json ? JSON.parse(String(movie.genres_json)).map((g: any) => g.name_ar || g.name_en) : undefined
+      } catch {
+        return undefined
+      }
+    })(),
     inLanguage:      movie.original_language || 'ar',
     url:             `https://4cima.com/movies/${slug}`,
     aggregateRating: movie.vote_average ? {
