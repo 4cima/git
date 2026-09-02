@@ -6,6 +6,8 @@
 .horizontal-scroll {
   content-visibility: auto;
   contain-intrinsic-size: 1px 300px;
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
 }
 
 /* -------------------------------------------------------------------------- */

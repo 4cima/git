@@ -3,17 +3,27 @@
 import { useEffect, useRef, useState } from 'react'
 
 // هوك مشترك للسحب بالماوس + قفل اتجاه للمس.
-// الماوس: سحب أفقي للصف مع منع فتح العمل بعد السحب (consumIfDragged) — زي ما هو.
+// الماوس: سحب أفقي للصف مع منع فتح العمل بعد السحب (consumeIfDragged) — زي ما هو.
 // التاتش: يتميّز الاتجاه بعد عتبة 8px:
-//   - أفقي (|dx| > |dy|) ← نحرّك الصف scrollLeft بأنفسنا ونمنع الافتراضي.
+//   - أفقي (|dx| > |dy|) ← نحرّك الصف scrollLeft بأنفسنا عبر rAF واحد ونمنع الافتراضي.
 //   - رأسي (|dy| > |dx|) ← لا نمنع أي حاجة، فالصفحة تسكرول طبيعي حتى لو اليد على الكارت.
 //   - الاتجاه يتقفل بعد أول قرار ولا ينقلب في نفس الإيماءة.
 const TOUCH_AXIS_THRESHOLD = 8
+const TOUCH_CLICK_THRESHOLD = 5
 
 export function useDragScroll<T extends HTMLElement>() {
   const ref = useRef<T>(null)
   const dragState = useRef({ startX: 0, scrollLeft: 0, moved: false })
-  const touchState = useRef<{ startX: number; startY: number; scrollLeft: number; axis: 'x' | 'y' | null } | null>(null)
+  const touchState = useRef<{
+    startX: number
+    startY: number
+    scrollLeft: number
+    identifier: number | null
+    axis: 'x' | 'y' | null
+    horizontalMoved: boolean
+    latestX: number
+  } | null>(null)
+  const rafId = useRef<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -44,17 +54,27 @@ export function useDragScroll<T extends HTMLElement>() {
     }
   }, [isDragging])
 
-  // تاتش: قفل اتجاه — أفقي يشغّل سحب الصف، رأسي يعدّي للسكرول الطبيعي للصفحة
+  // تاتش: قفل اتجاه — أفقي يشغّل سحب الصف عبر rAF، رأسي يعدّي للسكرول الطبيعي للصفحة
   useEffect(() => {
     const el = ref.current
     if (!el || typeof window === 'undefined') return
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
     if (!isTouch) return
 
+    const originalSnap = el.style.scrollSnapType
+
     const onTouchStart = (e: TouchEvent) => {
       const t = e.touches[0]
       if (!t) return
-      touchState.current = { startX: t.clientX, startY: t.clientY, scrollLeft: el.scrollLeft, axis: null }
+      touchState.current = {
+        startX: t.clientX,
+        startY: t.clientY,
+        scrollLeft: el.scrollLeft,
+        identifier: t.identifier,
+        axis: null,
+        horizontalMoved: false,
+        latestX: t.clientX,
+      }
     }
 
     const onTouchMove = (e: TouchEvent) => {
@@ -64,20 +84,58 @@ export function useDragScroll<T extends HTMLElement>() {
       const dx = t.clientX - st.startX
       const dy = t.clientY - st.startY
 
+      // حدّث آخر موقع معروف — الـ rAF هيقرأه
+      st.latestX = t.clientX
+
       if (st.axis === null) {
         if (Math.abs(dx) < TOUCH_AXIS_THRESHOLD && Math.abs(dy) < TOUCH_AXIS_THRESHOLD) return
         st.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+        if (st.axis === 'x') {
+          // عطّل scroll-snap أثناء السحب الأفقي عشان ما يتقطعش
+          el.style.scrollSnapType = 'none'
+        }
       }
 
       if (st.axis === 'y') return // رأسي → لا نمنع شيئًا، الصفحة تسكرول طبيعي (حتى على الكارت)
 
-      // أفقي → نحرّك الصف يدويًا ونمنع سلوك المتصفح الافتراضي
+      // أفقي → نمنع سلوك المتصفح الافتراضي
       e.preventDefault()
-      el.scrollLeft = st.scrollLeft - dx
+
+      if (Math.abs(dx) > TOUCH_CLICK_THRESHOLD) {
+        st.horizontalMoved = true
+      }
+
+      // rAF واحد لكل فريم: scrollLeft يُحسب من نقطة اللمس الأولى (startX, scrollLeft)
+      if (rafId.current === null) {
+        rafId.current = requestAnimationFrame(() => {
+          rafId.current = null
+          const stNow = touchState.current
+          if (!stNow || stNow.axis !== 'x') return
+          const dxNow = stNow.latestX - stNow.startX
+          el.scrollLeft = stNow.scrollLeft - dxNow
+        })
+      }
     }
 
     const onTouchEnd = () => {
+      // رجّع scroll-snap زي ما كانت
+      el.style.scrollSnapType = originalSnap
+
+      // لو سحب أفقي فوق العتبة → امنع click اللي بعد الإفلات
+      if (touchState.current?.horizontalMoved) {
+        const preventClick = (ev: MouseEvent) => {
+          ev.preventDefault()
+          ev.stopPropagation()
+          el.removeEventListener('click', preventClick, true)
+        }
+        el.addEventListener('click', preventClick, true)
+      }
+
       touchState.current = null
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current)
+        rafId.current = null
+      }
     }
 
     el.addEventListener('touchstart', onTouchStart, { passive: true })
@@ -89,6 +147,10 @@ export function useDragScroll<T extends HTMLElement>() {
       el.removeEventListener('touchmove', onTouchMove)
       el.removeEventListener('touchend', onTouchEnd)
       el.removeEventListener('touchcancel', onTouchEnd)
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current)
+        rafId.current = null
+      }
     }
   }, [])
 
