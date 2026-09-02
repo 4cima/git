@@ -54,27 +54,35 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const playerRef = useRef<HTMLDivElement>(null)
   const progressInterval = useRef<NodeJS.Timeout | null>(null)
   const posterRef = useRef<HTMLDivElement>(null)
-  const [infoMaxHeight, setInfoMaxHeight] = useState<number | null>(null)
+  const posterImgRef = useRef<HTMLDivElement>(null)
+  const adRef = useRef<HTMLDivElement>(null)
+  const [posterHeight, setPosterHeight] = useState<number | null>(null)
+  const [adHeight, setAdHeight] = useState<number | null>(null)
 
-  // Measure the poster height to constrain the info card to 85% of it (15% less).
+  // قياس ارتفاع البوستر والإعلان
   useEffect(() => {
     const measure = () => {
-      const node = posterRef.current
-      if (!node) return
-      const h = node.getBoundingClientRect().height
-      if (h > 0) {
-        setInfoMaxHeight(Math.round(h * 0.85))
+      const posterNode = posterImgRef.current
+      const adNode = adRef.current
+      if (posterNode) {
+        const h = posterNode.getBoundingClientRect().height
+        if (h > 0) setPosterHeight(Math.round(h))
+      }
+      if (adNode) {
+        const h = adNode.getBoundingClientRect().height
+        if (h > 0) setAdHeight(Math.round(h))
       }
     }
     measure()
     window.addEventListener('resize', measure)
-    // Also re-measure shortly after mount to catch images that affect layout.
     const t1 = window.setTimeout(measure, 100)
     const t2 = window.setTimeout(measure, 500)
+    const t3 = window.setTimeout(measure, 1500)
     return () => {
       window.removeEventListener('resize', measure)
       window.clearTimeout(t1)
       window.clearTimeout(t2)
+      window.clearTimeout(t3)
     }
   }, [series?.id, series?.poster_path, series?.poster_url])
 
@@ -614,16 +622,16 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
       <div className="relative z-10 page-container pt-24 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
-          {/* Right (First in RTL): Poster with badge on corner */}
+          {/* Right (First in RTL): Poster + إعلان */}
           <div className="relative" ref={posterRef}>
-            <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group">
+            <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group" ref={posterImgRef}>
               {poster && (
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
               )}
             </div>
 
             {/* إعلان 300×250 تحت البوستر */}
-            <div className="mt-3 flex justify-center">
+            <div className="mt-3 flex justify-center" ref={adRef}>
               <div className="rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
                 <div className="rounded-[14.5px] bg-slate-950 p-1">
                   <AdsterraBanner ad={AD_AFTER_PLAYER} />
@@ -651,8 +659,11 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
           {/* Right: Info */}
           <div className="space-y-4">
-            {/* صندوق البيانات - كامل العرض */}
-            <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl max-h-[364px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            {/* صندوق البيانات - بنفس ارتفاع البوستر */}
+            <div
+              className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+              style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '364px' }}
+            >
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -816,9 +827,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
             {/* Grid: كاست (يمين) + تريلر (يسار) */}
             <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-4">
-              {/* كاست - عامود يمين */}
+              {/* كاست - عامود يمين بنفس ارتفاع الإعلان */}
               {cast.length > 0 && (
-                <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" style={{maxHeight: '220px'}}>
+                <div
+                  className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                  style={adHeight ? { height: `${adHeight}px` } : { minHeight: '180px' }}
+                >
                   <h3 className="text-xs font-bold text-purple-400 mb-3">فريق العمل</h3>
                   <div className="flex flex-col gap-2">
                     {cast.map((person: any, idx: number) => (

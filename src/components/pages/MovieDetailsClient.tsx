@@ -30,6 +30,37 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
   const [cardState, setCardState] = useState<'neutral' | 'favorite' | 'completed'>('neutral')
   const [stateLoading, setStateLoading] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const posterImgRef = useRef<HTMLDivElement>(null)
+  const adRef = useRef<HTMLDivElement>(null)
+  const [posterHeight, setPosterHeight] = useState<number | null>(null)
+  const [adHeight, setAdHeight] = useState<number | null>(null)
+
+  // قياس ارتفاع البوستر والكلمات المفتاحية (بديل الإعلان في الأفلام)
+  useEffect(() => {
+    const measure = () => {
+      const posterNode = posterImgRef.current
+      const adNode = adRef.current
+      if (posterNode) {
+        const h = posterNode.getBoundingClientRect().height
+        if (h > 0) setPosterHeight(Math.round(h))
+      }
+      if (adNode) {
+        const h = adNode.getBoundingClientRect().height
+        if (h > 0) setAdHeight(Math.round(h))
+      }
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    const t1 = window.setTimeout(measure, 100)
+    const t2 = window.setTimeout(measure, 500)
+    const t3 = window.setTimeout(measure, 1500)
+    return () => {
+      window.removeEventListener('resize', measure)
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+      window.clearTimeout(t3)
+    }
+  }, [movie?.tmdb_id, movie?.poster_path, movie?.poster_url])
 
   const title = sanitizeTitle(movie?.title_ar || movie?.title_en || movie?.title || 'فيلم')
   const titleEn = sanitizeTitle(movie?.title_en || movie?.title)
@@ -366,9 +397,9 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
       <div className="relative z-10 page-container pt-24 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
-          {/* Right (First in RTL): Poster with badge on corner */}
+          {/* Right (First in RTL): Poster */}
           <div className="relative">
-            <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group">
+            <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group" ref={posterImgRef}>
               {poster && (
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
               )}
@@ -376,7 +407,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
             {/* Keywords under poster */}
             {keywords.length > 0 && (
-              <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl mt-4">
+              <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl mt-4" ref={adRef}>
                 <h3 className="text-sm font-bold text-purple-400 mb-3">كلمات مفتاحية</h3>
                 <div className="flex flex-wrap gap-2">
                   {keywords.slice(0, 10).map((keyword: any, index: number) => (
@@ -394,8 +425,11 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
           {/* Right: Info */}
           <div className="space-y-4">
-            {/* صندوق البيانات - كامل العرض */}
-            <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl max-h-[364px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            {/* صندوق البيانات - بنفس ارتفاع البوستر */}
+            <div
+              className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+              style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '364px' }}
+            >
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -521,9 +555,12 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
 
             {/* Grid: كاست (يمين) + تريلر (يسار) */}
             <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-4">
-              {/* كاست - عامود يمين */}
+              {/* كاست - عامود يمين بنفس ارتفاع الكلمات المفتاحية */}
               {cast.length > 0 && (
-                <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent" style={{maxHeight: '220px'}}>
+                <div
+                  className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                  style={adHeight ? { height: `${adHeight}px` } : { minHeight: '180px' }}
+                >
                   <h3 className="text-xs font-bold text-purple-400 mb-3">فريق العمل</h3>
                   <div className="flex flex-col gap-2">
                     {cast.map((person: any, idx: number) => (
