@@ -102,6 +102,12 @@ interface HomeData {
   trendingSeries: MediaItem[]
   topRatedMovies?: MediaItem[]
   topRatedSeries?: MediaItem[]
+  action?: MediaItem[]
+  drama?: MediaItem[]
+  sciFi?: MediaItem[]
+  anime?: MediaItem[]
+  crime?: MediaItem[]
+  arabicMovies?: MediaItem[]
 }
 
 interface HomePageClientProps {
@@ -139,7 +145,7 @@ function mapItems(items: any[] | undefined, type: 'movie' | 'tv'): MediaItem[] {
       vote_average: Number(item.vote_average) || 0,
       overview_ar: item.overview_ar || item.overview,
       year: year,
-      media_type: type,
+      media_type: item.media_type === 'movie' ? 'movie' : item.media_type === 'tv' ? 'tv' : type,
       primary_genre: primaryGenre,
     }
   })
@@ -153,7 +159,13 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
     trendingMovies: mapItems(initialData.trendingMovies, 'movie'),
     trendingSeries: mapItems(initialData.trendingSeries, 'tv'),
     topRatedMovies: mapItems(initialData.topRatedMovies, 'movie'),
-    topRatedSeries: mapItems(initialData.topRatedSeries, 'tv')
+    topRatedSeries: mapItems(initialData.topRatedSeries, 'tv'),
+    action: mapItems(initialData.action, 'movie'),
+    drama: mapItems(initialData.drama, 'movie'),
+    sciFi: mapItems(initialData.sciFi, 'tv'),
+    anime: mapItems(initialData.anime, 'tv'),
+    crime: mapItems(initialData.crime, 'movie'),
+    arabicMovies: mapItems(initialData.arabicMovies, 'movie')
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

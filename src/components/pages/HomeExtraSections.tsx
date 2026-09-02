@@ -1,13 +1,13 @@
 'use client'
 
 /**
- * HomePageClient — أقسام إضافية للصفحة الرئيسية
- * (الأعلى تقييمًا + أحدث إضافات السنة) — بنفس هوية كروت الرائج تمامًا
- * (بوستر 2/3 + شارات النوع/التقييم/السنة) لكن صفوف أخف: 20 عنصر بدون قلوب ولا lazy-load.
+ * HomePageClient — أقسام إضافية للصفحة الرئيسية (8 أقسام ثابتة من كاشات السيرفر)
+ * بنفس هوية كروت الرائج تمامًا وبالآلية نفسها: سحب/لمس، أسهم، وعجلة،
+ * عرض أول 25 ثم تحميل كسول حتى 100، وإعلان كل 20 كارت.
  */
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CalendarDays, Drama, Film, Flame, Ghost, Laugh, Play, Star, Tv } from 'lucide-react'
+import { ArrowLeft, Drama, Film, Fingerprint, Flame, Globe, Play, Rocket, Sparkles, Star, Tv } from 'lucide-react'
 import { StarIcon } from '../common/StarIcon'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
@@ -20,7 +20,7 @@ const EXTRA_PAGE_SIZE = 25
 
 export interface ExtraSectionDef {
   title: string
-  icon: 'star' | 'calendar' | 'flame' | 'laugh' | 'ghost' | 'drama'
+  icon: 'star' | 'flame' | 'drama' | 'rocket' | 'sparkles' | 'fingerprint' | 'globe'
   browseHref: string
   items: MediaItem[]
 }
@@ -29,27 +29,29 @@ function SectionIcon({ name }: { name: ExtraSectionDef['icon'] }) {
   switch (name) {
     case 'star':
       return <Star className="w-7 h-7 text-yellow-400" />
-    case 'calendar':
-      return <CalendarDays className="w-7 h-7 text-purple-400" />
     case 'flame':
       return <Flame className="w-7 h-7 text-red-500" />
-    case 'laugh':
-      return <Laugh className="w-7 h-7 text-amber-400" />
-    case 'ghost':
-      return <Ghost className="w-7 h-7 text-emerald-400" />
     case 'drama':
       return <Drama className="w-7 h-7 text-pink-400" />
+    case 'rocket':
+      return <Rocket className="w-7 h-7 text-violet-400" />
+    case 'sparkles':
+      return <Sparkles className="w-7 h-7 text-amber-300" />
+    case 'fingerprint':
+      return <Fingerprint className="w-7 h-7 text-emerald-400" />
+    case 'globe':
+      return <Globe className="w-7 h-7 text-sky-400" />
   }
 }
 
 /** كارت بنفس هوية كارت الرائج بالظبط (بوستر + شارات + عنوان) */
-function ExtraCard({ item, eager }: { item: MediaItem; eager?: boolean }) {
+function ExtraCard({ item, eager, onCardClick }: { item: MediaItem; eager?: boolean; onCardClick?: (e: React.MouseEvent) => void }) {
   const mediaColorScheme = getMediaTypeColor(item.media_type)
   const genreColorScheme = item.primary_genre ? getGenreColor(item.primary_genre) : null
   const href = item.media_type === 'movie' ? `/movies/${item.slug}` : `/series/${item.slug}`
 
   return (
-    <Link href={href} className="group flex-shrink-0 w-40 sm:w-48">
+    <Link href={href} onClick={onCardClick} className="group flex-shrink-0 w-40 sm:w-48">
       <div className="bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative h-full">
         <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
           {item.poster_path ? (
@@ -225,7 +227,7 @@ function ExtraRow({ section }: { section: ExtraSectionDef }) {
         <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
               {section.items.slice(0, displayCount).map((item, idx) => (
                 <Fragment key={`${section.title}-${item.id}`}>
-                  <ExtraCard item={item} eager={idx < 6} />
+                  <ExtraCard item={item} eager={idx < 6} onCardClick={(e) => { if (drag.consumeIfDragged()) e.preventDefault() }} />
                   {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < displayCount && (
                     <AdInRowCard pos={`x-${idx + 1}-${section.browseHref}`} />
                   )}

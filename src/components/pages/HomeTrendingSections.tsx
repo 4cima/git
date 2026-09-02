@@ -48,6 +48,12 @@ interface HomeData {
   trendingSeries: MediaItem[]
   topRatedMovies?: MediaItem[]
   topRatedSeries?: MediaItem[]
+  action?: MediaItem[]
+  drama?: MediaItem[]
+  sciFi?: MediaItem[]
+  anime?: MediaItem[]
+  crime?: MediaItem[]
+  arabicMovies?: MediaItem[]
 }
 
 export interface HomeTrendingSectionsProps {
@@ -192,63 +198,57 @@ export function HomeTrendingSections({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [scrollHorizontal])
 
-  const currentYear = new Date().getFullYear()
-  const allMedia = [...(data?.trendingMovies || []), ...(data?.trendingSeries || [])]
-  /* تصفية بالتصنيف من نفس حمولة الرئيسية — بدون أي ريكوست إضافي.
-     التصنيفات الأكثر بحثًا عند الجمهور العربي/الشرق الأوسط */
-  const byGenre = (keywords: string[]) =>
-    allMedia
-      .filter((i) => !!i.primary_genre && keywords.some((k) => i.primary_genre!.includes(k)))
-      .slice(0, 40)
-
+  /* 10 أقسام رئيسية: قسمان رائجان أعلاه + 8 أقسام إضافية أدناه.
+     كلها تأتي من قوائم كاش ثابتة (~100 عنصر لكل قائمة) قادمة من السيرفر — بدون أي تصفية عميلة/byGenre
+     حتى لا يتكرر محتوى قسم داخل قسم آخر. */
   const extraSections: ExtraSectionDef[] = [
     {
       title: 'الأعلى تقييمًا — أفلام',
       icon: 'star',
       browseHref: '/movies',
-      items: (data?.topRatedMovies || []).slice(0, 40),
-    },
-    {
-      title: `أحدث أفلام ${currentYear}`,
-      icon: 'calendar',
-      browseHref: '/movies',
-      items: (data?.trendingMovies || []).filter((m) => m.year === currentYear).slice(0, 40),
+      items: (data?.topRatedMovies || []).slice(0, 100),
     },
     {
       title: 'الأعلى تقييمًا — مسلسلات',
       icon: 'star',
       browseHref: '/series',
-      items: (data?.topRatedSeries || []).slice(0, 40),
-    },
-    {
-      title: `أحدث مسلسلات ${currentYear}`,
-      icon: 'calendar',
-      browseHref: '/series',
-      items: (data?.trendingSeries || []).filter((s) => s.year === currentYear).slice(0, 40),
+      items: (data?.topRatedSeries || []).slice(0, 100),
     },
     {
       title: 'الأكشن والمغامرة',
       icon: 'flame',
       browseHref: '/movies',
-      items: byGenre(['أكشن', 'مغامرة', 'حرب', 'خيال علمي']),
-    },
-    {
-      title: 'الكوميديا',
-      icon: 'laugh',
-      browseHref: '/movies',
-      items: byGenre(['كوميدي']),
-    },
-    {
-      title: 'الرعب والتشويق',
-      icon: 'ghost',
-      browseHref: '/movies',
-      items: byGenre(['رعب', 'غموض', 'إثارة']),
+      items: (data?.action || []).slice(0, 100),
     },
     {
       title: 'الدراما والرومانسية',
       icon: 'drama',
       browseHref: '/movies',
-      items: byGenre(['دراما', 'رومانسي', 'عائلي']),
+      items: (data?.drama || []).slice(0, 100),
+    },
+    {
+      title: 'الخيال العلمي',
+      icon: 'rocket',
+      browseHref: '/movies',
+      items: (data?.sciFi || []).slice(0, 100),
+    },
+    {
+      title: 'الأنمي والرسوم المتحركة',
+      icon: 'sparkles',
+      browseHref: '/movies',
+      items: (data?.anime || []).slice(0, 100),
+    },
+    {
+      title: 'الجريمة والغموض',
+      icon: 'fingerprint',
+      browseHref: '/movies',
+      items: (data?.crime || []).slice(0, 100),
+    },
+    {
+      title: 'أفلام عربية',
+      icon: 'globe',
+      browseHref: '/movies',
+      items: (data?.arabicMovies || []).slice(0, 100),
     },
   ]
 
