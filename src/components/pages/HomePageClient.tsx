@@ -15,7 +15,15 @@ import { Loading } from '@/components/common/Loading'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
-import { AdsManager } from '@/components/features/system/AdsManager'
+import { AdsterraBanner } from '@/components/features/system/AdsterraBanner'
+import { getAdByNum } from '@/data/ads/4cima.com'
+
+/* الإعلانات المرجعية للصفحة الرئيسية — أرقام ثابتة من ملف بيانات 4cima.com:
+   1 = 728×90 تحت الهيرو | 2 = 300×250 بين زر الأفلام وزر المسلسلات | 3 = 160×600 العمود الشمال وحيدًا
+   (إعلان رقم 5 انتقل لصفوف الرائج في HomeTrendingSections) */
+const AD_UNDER_HERO = getAdByNum(1)!
+const AD_CTA = getAdByNum(2)!
+const AD_SIDE = getAdByNum(3)!
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -92,6 +100,8 @@ type CardState = 'neutral' | 'favorite' | 'completed'
 interface HomeData {
   trendingMovies: MediaItem[]
   trendingSeries: MediaItem[]
+  topRatedMovies?: MediaItem[]
+  topRatedSeries?: MediaItem[]
 }
 
 interface HomePageClientProps {
@@ -141,7 +151,9 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
   // State management - Initialize with server data
   const [data, setData] = useState<HomeData>({
     trendingMovies: mapItems(initialData.trendingMovies, 'movie'),
-    trendingSeries: mapItems(initialData.trendingSeries, 'tv')
+    trendingSeries: mapItems(initialData.trendingSeries, 'tv'),
+    topRatedMovies: mapItems(initialData.topRatedMovies, 'movie'),
+    topRatedSeries: mapItems(initialData.topRatedSeries, 'tv')
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -720,9 +732,13 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
         </section>
       )}
 
-      {/* Ad Banner after Hero — single centered 728×90 leaderboard, container hugs the ad (no big background) */}
-      <div className="w-full flex justify-center px-4 sm:px-6 md:px-8 lg:px-12 py-3">
-        <AdsManager type="banner" position="home-after-hero" />
+      {/* إعلان رقم 1 — 728×90 تحت الهيرو، إطار متدرّج بألوان التصميم وأركان دائرية بلا فراغات */}
+      <div className="flex w-full justify-center">
+        <div className="rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
+          <div className="rounded-[14.5px] bg-slate-950 p-1">
+            <AdsterraBanner ad={AD_UNDER_HERO} />
+          </div>
+        </div>
       </div>
 
 
@@ -732,7 +748,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
           <div className="flex flex-col lg:flex-row gap-8">
 
             {/* Main content column (appears on the RIGHT in RTL) */}
-            <div className="flex-1 min-w-0 space-y-12">
+            <div className="flex-1 min-w-0">
 
           <HomeTrendingSections
             data={data}
@@ -746,64 +762,67 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
             toggleCardState={toggleCardState}
           />
 
-          {/* CTA Buttons Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
-            {/* Movies CTA */}
+          {/* بوابة المكتبة — ثلاث خلايا متجاورة: زر الأفلام | إعلان رقم 2 (300×250 بالمقاس الأصلي بالظبط) | زر المسلسلات.
+              بدون ارتفاع ثابت: الخلية الوسطى محددة بمقاس الإعلان الأصلي (300×250 + الإطار) والزران يمدّدان لنفس الارتفاع — ممنوع أي قص */}
+          <div className="mt-8 grid w-full grid-cols-1 overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/50 sm:grid-cols-3">
+            {/* الخلية 1 — زر كل الأفلام */}
             <Link
               href="/movies"
-              className="group relative overflow-hidden bg-gradient-to-br from-red-600/20 to-amber-600/20 border-2 border-red-500/30 hover:border-red-500/60 rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-950/50"
+              className="group relative flex min-h-[180px] flex-col items-center justify-center gap-3 border-b border-slate-800/60 p-4 text-center transition-all duration-300 hover:bg-red-600/10 sm:min-h-0 sm:border-b-0 sm:border-l"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-red-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="w-14 h-14 rounded-xl bg-red-600/20 border border-red-500/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <Film className="w-7 h-7 text-red-400" />
-                  </div>
-                  <h3 className="text-2xl font-black text-slate-100">شاهد كل الأفلام</h3>
-                  <p className="text-sm text-slate-400">استكشف مكتبة الأفلام الكاملة</p>
-                </div>
-                <ArrowLeft className="w-8 h-8 text-red-400 group-hover:translate-x-[-8px] transition-transform" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-red-500/40 bg-red-600/15 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+                <Film className="h-7 w-7 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-100 sm:text-xl">شاهد كل الأفلام</h3>
+                <p className="mt-0.5 text-xs text-slate-400">اكتشف المكتبة الكاملة</p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-red-500/40 bg-red-600/15 transition-all duration-300 group-hover:bg-red-600">
+                <ArrowLeft className="h-4 w-4 text-red-400 transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:text-white" />
               </div>
             </Link>
 
-            {/* Series CTA */}
+            {/* الخلية 2 — إعلان رقم 2 (300×250) بمقاسه الأصلي بالظبط داخل إطار موحّد — بلا أي قص */}
+            <div className="relative flex items-center justify-center overflow-visible py-2">
+              <div className="w-fit rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
+                <div className="rounded-[14.5px] bg-slate-950 p-1">
+                  <AdsterraBanner ad={AD_CTA} />
+                </div>
+              </div>
+            </div>
+
+            {/* الخلية 3 — زر كل المسلسلات */}
             <Link
               href="/series"
-              className="group relative overflow-hidden bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border-2 border-blue-500/30 hover:border-blue-500/60 rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-950/50"
+              className="group relative flex min-h-[180px] flex-col items-center justify-center gap-3 border-b border-slate-800/60 p-4 text-center transition-all duration-300 hover:bg-blue-600/10 sm:min-h-0 sm:border-b-0"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="w-14 h-14 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                    <Tv className="w-7 h-7 text-blue-400" />
-                  </div>
-                  <h3 className="text-2xl font-black text-slate-100">شاهد كل المسلسلات</h3>
-                  <p className="text-sm text-slate-400">استكشف مكتبة المسلسلات الكاملة</p>
-                </div>
-                <ArrowLeft className="w-8 h-8 text-blue-400 group-hover:translate-x-[-8px] transition-transform" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-500/40 bg-blue-600/15 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110">
+                <Tv className="h-7 w-7 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-100 sm:text-xl">شاهد كل المسلسلات</h3>
+                <p className="mt-0.5 text-xs text-slate-400">اكتشف المكتبة الكاملة</p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-blue-500/40 bg-blue-600/15 transition-all duration-300 group-hover:bg-blue-600">
+                <ArrowLeft className="h-4 w-4 text-blue-400 transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:text-white" />
               </div>
             </Link>
           </div>
 
             </div>
 
-            {/* Side ads column — LAST child in RTL flex row => appears on the LEFT
-                of the content sections, stacked: 300×250 then 160×600 below it */}
-            <aside className="flex w-full flex-col items-center gap-6 lg:w-[300px] lg:shrink-0 lg:self-start">
-              <AdsManager type="banner" position="home-in-feed" />
-              <AdsManager type="banner" position="home-feed-side" />
+            {/* إعلان رقم 3 (Zone 31008096 — 160×600) العمود الشمال — وحيدًا بدون أي إعلان آخر: mt-[62px] لمساواة أعلاه مع أعلى كروت الأفلام الرائجة */}
+            <aside className="w-full lg:sticky lg:top-6 lg:mt-[62px] lg:w-[184px] lg:shrink-0 lg:self-start">
+              <div className="rounded-2xl bg-gradient-to-b from-blue-500/60 via-slate-700/70 to-red-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
+                <div className="rounded-[14.5px] bg-slate-950 p-1">
+                  <AdsterraBanner ad={AD_SIDE} />
+                </div>
+              </div>
             </aside>
 
           </div>
         </div>
       </section>
-
-      {/* Footer banner — end of home, before footer (728×90) */}
-      <div className="w-full bg-slate-950" style={{ minHeight: '88px' }}>
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-4">
-          <AdsManager type="banner" position="home-footer" />
-        </div>
-      </div>
 
       {/* Footer Component */}
       <Footer />

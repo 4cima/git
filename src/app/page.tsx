@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
 async function getHomeData() {
   try {
-    const [movies, series] = await Promise.all([
+    const [movies, series, topMovies, topSeries] = await Promise.all([
       executeAll(
         `SELECT l.id, l.tmdb_id,
                 COALESCE(m.slug, l.slug) AS slug,
@@ -34,17 +34,43 @@ async function getHomeData() {
          ORDER BY l.rank
          LIMIT 100`,
         []
+      ),
+      executeAll(
+        `SELECT l.id, l.tmdb_id,
+                COALESCE(m.slug, l.slug) AS slug,
+                l.title_ar, l.title_en, l.poster_path, l.backdrop_path,
+                l.vote_average, printf('%04d-01-01', l.release_year) AS release_date, l.overview_ar, l.genres_json
+         FROM list_movies_popular l
+         LEFT JOIN movies m ON m.tmdb_id = l.tmdb_id
+         ORDER BY l.vote_average DESC
+         LIMIT 40`,
+        []
+      ),
+      executeAll(
+        `SELECT l.id, l.tmdb_id,
+                COALESCE(t.slug, l.slug) AS slug,
+                l.name_ar AS title_ar, l.name_en AS title_en, l.poster_path, l.backdrop_path,
+                l.vote_average, printf('%04d-01-01', l.first_air_year) AS first_air_date, l.overview_ar, l.genres_json
+         FROM list_series_popular l
+         LEFT JOIN tv_series t ON t.tmdb_id = l.tmdb_id
+         ORDER BY l.vote_average DESC
+         LIMIT 40`,
+        []
       )
     ])
     return {
       trendingMovies: movies.map(r => JSON.parse(JSON.stringify(r))),
-      trendingSeries: series.map(r => JSON.parse(JSON.stringify(r)))
+      trendingSeries: series.map(r => JSON.parse(JSON.stringify(r))),
+      topRatedMovies: topMovies.map(r => JSON.parse(JSON.stringify(r))),
+      topRatedSeries: topSeries.map(r => JSON.parse(JSON.stringify(r)))
     }
   } catch (error) {
     console.error('Error fetching home data:', error)
     return {
       trendingMovies: [],
-      trendingSeries: []
+      trendingSeries: [],
+      topRatedMovies: [],
+      topRatedSeries: []
     }
   }
 }

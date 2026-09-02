@@ -12,6 +12,7 @@ import { RotateCcw, Download, MonitorPlay, Globe } from 'lucide-react'
 type Account = 'home' | 'player'
 
 interface Ad {
+  num: number
   id: string
   account: Account
   zoneId: string
@@ -21,21 +22,17 @@ interface Ad {
   label: string
 }
 
+/* البيانات من ملفات المصدر الوحيد: src/data/ads */
+import { ADS_4CIMA_COM } from '@/data/ads/4cima.com'
+import { ADS_4CIMA_STREAM } from '@/data/ads/4cima.stream'
+
 const ADS: Ad[] = [
-  // ==== 4cima.com ====
-  { id: 'home-728x90',  account: 'home', zoneId: '31008094', key: '0532fea1f51bb90a981bb89fb414869d', width: 728, height: 90,  label: '728x90' },
-  { id: 'home-300x250', account: 'home', zoneId: '31008095', key: '9a07073ebf48b3d7d98cf315a469e7c2', width: 300, height: 250, label: '300x250' },
-  { id: 'home-160x600', account: 'home', zoneId: '31008096', key: '538636ef4b7a5d451e5c038b418c921e', width: 160, height: 600, label: '160x600' },
-  { id: 'home-468x60',  account: 'home', zoneId: '31024533', key: '133edd7d82f4dab8a843a278994ce72d', width: 468, height: 60,  label: '468x60' },
-  { id: 'home-160x300', account: 'home', zoneId: '31024534', key: 'f72de37eaefbe39bbc12fcb14c7b6e73', width: 160, height: 300, label: '160x300' },
-  { id: 'home-320x50',  account: 'home', zoneId: '31024535', key: '8096860698e0700c21bd43e4678196b0', width: 320, height: 50,  label: '320x50' },
-  // ==== 4cima.stream ====
-  { id: 'player-728x90',  account: 'player', zoneId: '31024511', key: 'bdb4e0892a506c5b4ffd50fb24dd1806', width: 728, height: 90,  label: '728x90' },
-  { id: 'player-300x250', account: 'player', zoneId: '31024507', key: '9762bec6c202e2299933d090ef970907', width: 300, height: 250, label: '300x250' },
-  { id: 'player-160x600', account: 'player', zoneId: '31024509', key: '08167b6512c4b7d71219cb965142440d', width: 160, height: 600, label: '160x600' },
-  { id: 'player-468x60',  account: 'player', zoneId: '31024506', key: 'a473e3ba3aedd3ec83b608c4fa915f7d', width: 468, height: 60,  label: '468x60' },
-  { id: 'player-160x300', account: 'player', zoneId: '31024508', key: '89807f9f535c61e6f9af60f26437b842', width: 160, height: 300, label: '160x300' },
-  { id: 'player-320x50',  account: 'player', zoneId: '31024510', key: '57877d62319a7f78e0d12672140d9af3', width: 320, height: 50,  label: '320x50' },
+  ...ADS_4CIMA_COM.map(
+    (a): Ad => ({ num: a.num, id: a.id, account: 'home', zoneId: a.zoneId, key: a.key, width: a.width, height: a.height, label: a.size }),
+  ),
+  ...ADS_4CIMA_STREAM.map(
+    (a): Ad => ({ num: a.num, id: a.id, account: 'player', zoneId: a.zoneId, key: a.key, width: a.width, height: a.height, label: a.size }),
+  ),
 ]
 
 /* عنصر واحد على المخطط: إما بنر إعلاني أو مكوّن وهمي من الصفحة — كلها بنفس النظام */
@@ -238,8 +235,13 @@ function Card({
     >
       {ad ? (
         <>
-          <div className="flex h-6 items-center justify-between rounded-t-lg bg-orange-600/25 px-2 text-[10px] font-bold text-orange-300">
-            <span>#{ad.zoneId}</span>
+          <div className="flex h-7 items-center justify-between rounded-t-lg bg-orange-600/25 px-2 text-[11px] font-bold text-orange-300">
+            <span className="flex items-center gap-1.5">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-md bg-orange-500 px-1.5 text-xs font-extrabold text-white shadow">
+                {ad.num}
+              </span>
+              <span className="text-white/50">#{ad.zoneId}</span>
+            </span>
             <span>{ad.label}</span>
           </div>
           <div className="pointer-events-none flex h-[calc(100%-24px)] w-full items-center justify-center overflow-hidden rounded-b-lg">

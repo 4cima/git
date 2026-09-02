@@ -7,7 +7,7 @@
  * so this heavy chunk (dozens of cards, badges, home actions) does NOT block
  * the critical rendering path → improves INP & initial bundle of the home page.
  */
-import { useCallback, useEffect, useRef } from 'react'
+import { Fragment, useCallback, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Film, Play, Tv } from 'lucide-react'
 import { StarIcon } from '../common/StarIcon'
@@ -15,8 +15,17 @@ import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
 import { HomeCardHeart } from './HomeCardHeart'
 import { useDragScroll } from '@/hooks/useDragScroll'
+import { AdsterraBanner } from '@/components/features/system/AdsterraBanner'
+import { getAdByNum } from '@/data/ads/4cima.com'
+import { HomeExtraSections, type ExtraSectionDef } from './HomeExtraSections'
+import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 
-interface MediaItem {
+/* إعلان رقم 4 (468×60) — شريط تكاملي بين قسمي الأفلام والمسلسلات */
+const AD_BETWEEN = getAdByNum(4)!
+
+/* كارت الإعلان رقم 5 (160×300) داخل الصفوف — معرّف في HomeAdCard ومُشارَك مع الأقسام الإضافية */
+
+export interface MediaItem {
   id: number
   tmdb_id?: number
   slug: string
@@ -32,11 +41,13 @@ interface MediaItem {
   primary_genre: string | null
 }
 
-type CardState = 'neutral' | 'favorite' | 'completed'
+export type CardState = 'neutral' | 'favorite' | 'completed'
 
 interface HomeData {
   trendingMovies: MediaItem[]
   trendingSeries: MediaItem[]
+  topRatedMovies?: MediaItem[]
+  topRatedSeries?: MediaItem[]
 }
 
 export interface HomeTrendingSectionsProps {
@@ -181,6 +192,66 @@ export function HomeTrendingSections({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [scrollHorizontal])
 
+  const currentYear = new Date().getFullYear()
+  const allMedia = [...(data?.trendingMovies || []), ...(data?.trendingSeries || [])]
+  /* تصفية بالتصنيف من نفس حمولة الرئيسية — بدون أي ريكوست إضافي.
+     التصنيفات الأكثر بحثًا عند الجمهور العربي/الشرق الأوسط */
+  const byGenre = (keywords: string[]) =>
+    allMedia
+      .filter((i) => !!i.primary_genre && keywords.some((k) => i.primary_genre!.includes(k)))
+      .slice(0, 40)
+
+  const extraSections: ExtraSectionDef[] = [
+    {
+      title: 'الأعلى تقييمًا — أفلام',
+      icon: 'star',
+      browseHref: '/movies',
+      items: (data?.topRatedMovies || []).slice(0, 40),
+    },
+    {
+      title: `أحدث أفلام ${currentYear}`,
+      icon: 'calendar',
+      browseHref: '/movies',
+      items: (data?.trendingMovies || []).filter((m) => m.year === currentYear).slice(0, 40),
+    },
+    {
+      title: 'الأعلى تقييمًا — مسلسلات',
+      icon: 'star',
+      browseHref: '/series',
+      items: (data?.topRatedSeries || []).slice(0, 40),
+    },
+    {
+      title: `أحدث مسلسلات ${currentYear}`,
+      icon: 'calendar',
+      browseHref: '/series',
+      items: (data?.trendingSeries || []).filter((s) => s.year === currentYear).slice(0, 40),
+    },
+    {
+      title: 'الأكشن والمغامرة',
+      icon: 'flame',
+      browseHref: '/movies',
+      items: byGenre(['أكشن', 'مغامرة', 'حرب', 'خيال علمي']),
+    },
+    {
+      title: 'الكوميديا',
+      icon: 'laugh',
+      browseHref: '/movies',
+      items: byGenre(['كوميدي']),
+    },
+    {
+      title: 'الرعب والتشويق',
+      icon: 'ghost',
+      browseHref: '/movies',
+      items: byGenre(['رعب', 'غموض', 'إثارة']),
+    },
+    {
+      title: 'الدراما والرومانسية',
+      icon: 'drama',
+      browseHref: '/movies',
+      items: byGenre(['دراما', 'رومانسي', 'عائلي']),
+    },
+  ]
+
   return (
     <>
       {/* Trending Movies Section */}
@@ -221,9 +292,9 @@ export function HomeTrendingSections({
           >
             <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
               {data.trendingMovies.slice(0, moviesDisplayCount).map((item, idx) => (
+                <Fragment key={`movie-${item.id}`}>
                 <Link
                   href={`/movies/${item.slug}`}
-                  key={`movie-${item.id}`}
                   className="group flex-shrink-0 w-40 sm:w-48"
                   onClick={(e) => { if (moviesDrag.consumeIfDragged()) e.preventDefault() }}
                 >
@@ -341,7 +412,14 @@ export function HomeTrendingSections({
                     </div>
                   </div>
                 </Link>
+                  {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < moviesDisplayCount && (
+                    <AdInRowCard pos={`m-${idx + 1}`} />
+                  )}
+                </Fragment>
               ))}
+
+              {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة */}
+              <AdInRowCard pos="m-end" />
 
               {/* Sentinel for lazy loading */}
               {moviesDisplayCount < data.trendingMovies.length && (
@@ -373,7 +451,19 @@ export function HomeTrendingSections({
           </div>
         </div>
       )}
-{/* Trending Series Section */}
+
+      {/* إعلان رقم 4 — 468×60 بين قسمي الأفلام والمسلسلات (إعلان واحد فقط) بإطار متدرّج */}
+      {data && data.trendingMovies.length > 0 && data.trendingSeries.length > 0 && (
+        <div className="flex w-full justify-center">
+          <div className="rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
+            <div className="rounded-[14.5px] bg-slate-950 p-1">
+              <AdsterraBanner ad={AD_BETWEEN} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trending Series Section */}
       {data && data.trendingSeries.length > 0 && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -410,10 +500,10 @@ export function HomeTrendingSections({
             style={{ userSelect: 'none' }}
           >
             <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
-              {data.trendingSeries.slice(0, seriesDisplayCount).map((item) => (
+              {data.trendingSeries.slice(0, seriesDisplayCount).map((item, idx) => (
+                <Fragment key={`series-${item.id}`}>
                 <Link
                   href={`/series/${item.slug}`}
-                  key={`series-${item.id}`}
                   className="group flex-shrink-0 w-40 sm:w-48"
                   onClick={(e) => { if (seriesDrag.consumeIfDragged()) e.preventDefault() }}
                 >
@@ -530,7 +620,14 @@ export function HomeTrendingSections({
                     </div>
                   </div>
                 </Link>
+                  {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < seriesDisplayCount && (
+                    <AdInRowCard pos={`s-${idx + 1}`} />
+                  )}
+                </Fragment>
               ))}
+
+              {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة */}
+              <AdInRowCard pos="s-end" />
 
               {/* Sentinel for lazy loading */}
               {seriesDisplayCount < data.trendingSeries.length && (
@@ -562,6 +659,9 @@ export function HomeTrendingSections({
           </div>
         </div>
       )}
+
+      {/* أقسام إضافية: الأعلى تقييمًا + أحدث إضافات السنة */}
+      <HomeExtraSections sections={extraSections} />
     </>
   )
 }

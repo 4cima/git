@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FLAGS } from '../../../lib/constants'
 import { DIRECT_AD_FALLBACKS } from '../../../lib/directAds'
+import { mountAdInto } from './adsterraQueue'
 
 type AdRow = {
   id: number
@@ -66,114 +67,6 @@ function sanitizeAdHtml(input: string) {
   }
 }
 
-/**
- * Mount an ad snippet DIRECTLY into the page DOM — no iframe, no srcdoc.
- *
- * CRITICAL — multiple Adsterra zones on the same page:
- * Every Adsterra inline snippet assigns the GLOBAL `atOptions` variable, so if
- * two snippets are mounted at the same time they overwrite each other and the
- * later invoke.js reads the wrong config → blank/white box. Only the first zone
- * (hero leaderboard) worked for this exact reason.
- *
- * Fix: run every snippet sequentially through a per-tab queue:
- *   1) set window.atOptions = this zone's config
- *   2) append THIS zone's invoke.js
- *   3) await its load (the async script reads atOptions right when it runs)
- *   4) move to the next snippet
- * Each invoke.js therefore still sees its own atOptions.
- *
- * Snippets without atOptions (simple HTML/scripts) are appended as plain nodes.
- */
-let adsterraQueue: Promise<void> = Promise.resolve()
-
-function mountAdInto(container: HTMLElement, html: string) {
-  container.replaceChildren()
-
-  // Parse the snippet into ordered { atOptions? | src? | raw? } segments.
-  type Segment =
-    | { atOptions: Record<string, unknown> }
-    | { src: string; atOptions?: Record<string, unknown> }
-    | { raw: string }
-  const segments: Segment[] = []
-  const tpl = document.createElement('template')
-  tpl.innerHTML = html.trim()
-  tpl.content.querySelectorAll('script').forEach((old) => {
-    const src = old.getAttribute('src')
-    const text = old.textContent || ''
-    if (src) {
-      segments.push({ src, atOptions: undefined })
-      return
-    }
-    if (/atOptions\s*=/.test(text)) {
-      const eq = text.match(/atOptions\s*=\s*/)
-      if (eq) {
-        // Balanced-brace scan: extract the object after `atOptions =` even when
-        // it nests (e.g. `'params' : {}`) — the old non-greedy regex stopped at
-        // the first `}` and produced invalid JS.
-        let i = (eq.index ?? 0) + eq[0].length
-        while (i < text.length && /\s/.test(text[i])) i++
-        if (text[i] === '{') {
-          let depth = 0
-          let j = i
-          for (; j < text.length; j++) {
-            if (text[j] === '{') depth++
-            else if (text[j] === '}') {
-              depth--
-              if (depth === 0) break
-            }
-          }
-          if (depth === 0) {
-            const rawObj = text.slice(i, j + 1)
-            try {
-              // eslint-disable-next-line no-new-func
-              const parsed = new Function(`return (${rawObj});`)() as Record<string, unknown>
-              segments.push({ atOptions: parsed })
-              return
-            } catch {
-              // malformed — fall through and keep raw
-            }
-          }
-        }
-      }
-    }
-    segments.push({ raw: text })
-  })
-  if (segments.length === 0) {
-    container.appendChild(tpl.content)
-    return
-  }
-
-  const engine = async () => {
-    for (const seg of segments) {
-      if ('atOptions' in seg && seg.atOptions) {
-        // Shield parallel invokes: each invoke.js sees its own zone config
-        ;(window as unknown as { atOptions: Record<string, unknown> }).atOptions = seg.atOptions
-        continue
-      }
-      if ('src' in seg) {
-        await new Promise<void>((resolve) => {
-          const s = document.createElement('script')
-          s.src = seg.src!
-          s.async = true
-          s.onload = () => resolve()
-          s.onerror = () => resolve()
-          container.appendChild(s)
-          // Failsafe: never block the queue forever
-          window.setTimeout(resolve, 8000)
-        })
-        continue
-      }
-      if ('raw' in seg && seg.raw.trim()) {
-        const s = document.createElement('script')
-        s.textContent = seg.raw
-        container.appendChild(s)
-      }
-    }
-  }
-
-  // Serialize across every AdsManager on the page (hero + side + footer…)
-  adsterraQueue = adsterraQueue.then(engine)
-}
 /**
  * Renders an ad snippet directly in the page DOM. Network snippets (admin
  * configured) mount their live <script> tags so the ad network sees the real
