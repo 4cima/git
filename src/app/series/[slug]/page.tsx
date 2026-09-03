@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const series    = await executeFirst(
     'SELECT name_ar, name_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json FROM tv_series WHERE slug = ? LIMIT 1', [slug]
   )
-  if (!series) return { title: 'مسلسل غير موجود | فور سيما' }
+  if (!series) return { title: 'مسلسل غير موجود' }
   
   const title = String(
     (series.seo_title_ar && String(series.seo_title_ar).trim()) || 
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const pageUrl = `https://4cima.com/series/${slug}`
 
   return {
-    title: `${title} | فور سيما`,
+    title,
     description,
     keywords,
     alternates: { canonical: pageUrl },

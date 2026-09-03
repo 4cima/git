@@ -14,9 +14,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const genre = await executeFirst('SELECT name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [slug])
     if (!genre) return { title: 'تصنيف غير موجود' }
     const genreName = String(genre.name_ar || genre.name_en || 'تصنيف')
+    const genreTitle = `أفلام ${genreName}`
+    const genreDescription = `استكشف أفضل أفلام ${genreName} - جودة عالية ومترجم`
+    const genrePageUrl = `https://4cima.com/movies/genres/${slug}`
     return {
-      title: `أفلام ${genreName}`,
-      description: `استكشف أفضل أفلام ${genreName} - جودة عالية ومترجم`
+      title: genreTitle,
+      description: genreDescription,
+      alternates: { canonical: genrePageUrl },
+      openGraph: {
+        type: 'website',
+        locale: 'ar_EG',
+        url: genrePageUrl,
+        siteName: '4cima',
+        title: `${genreTitle} | فور سيما`,
+        description: genreDescription,
+        images: [
+          {
+            url: '/og-image.png',
+            width: 1200,
+            height: 630,
+            alt: genreTitle,
+          },
+        ],
+      },
     }
   } catch { return { title: 'تصنيف' } }
 }

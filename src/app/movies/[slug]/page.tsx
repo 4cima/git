@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     'SELECT title_ar, title_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json FROM movies WHERE slug = ? LIMIT 1',
     [slug]
   )
-  if (!movie) return { title: 'فيلم غير موجود | فور سيما' }
+  if (!movie) return { title: 'فيلم غير موجود' }
   
   const title = String(
     (movie.seo_title_ar && String(movie.seo_title_ar).trim()) || 
@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const pageUrl = `https://4cima.com/movies/${slug}`
 
   return {
-    title: `${title} | فور سيما`,
+    title,
     description,
     keywords,
     alternates: { canonical: pageUrl },

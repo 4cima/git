@@ -5,7 +5,23 @@ import { MoviesPageClient } from '@/components/pages/MoviesPageClient'
 export const metadata: Metadata = {
   title: 'الأفلام المترجمة',
   description: 'استكشف آلاف الأفلام المترجمة بجودة عالية - أفلام أكشن، كوميديا، دراما، رعب، وأكثر',
-  alternates: { canonical: 'https://4cima.com/movies' }
+  alternates: { canonical: 'https://4cima.com/movies' },
+  openGraph: {
+    type: 'website',
+    locale: 'ar_EG',
+    url: 'https://4cima.com/movies',
+    siteName: '4cima',
+    title: 'الأفلام المترجمة | فور سيما',
+    description: 'استكشف آلاف الأفلام المترجمة بجودة عالية - أفلام أكشن، كوميديا، دراما، رعب، وأكثر',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'الأفلام المترجمة',
+      },
+    ],
+  },
 }
 
 export const dynamic = 'force-dynamic' // D1 not available at build time on CI

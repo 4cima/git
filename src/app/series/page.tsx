@@ -5,7 +5,23 @@ import { SeriesPageClient } from '@/components/pages/SeriesPageClient'
 export const metadata: Metadata = {
   title: 'المسلسلات المترجمة',
   description: 'استكشف آلاف المسلسلات المترجمة بجودة عالية - دراما، أكشن، كوميديا، وأكثر',
-  alternates: { canonical: 'https://4cima.com/series' }
+  alternates: { canonical: 'https://4cima.com/series' },
+  openGraph: {
+    type: 'website',
+    locale: 'ar_EG',
+    url: 'https://4cima.com/series',
+    siteName: '4cima',
+    title: 'المسلسلات المترجمة | فور سيما',
+    description: 'استكشف آلاف المسلسلات المترجمة بجودة عالية - دراما، أكشن، كوميديا، وأكثر',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'المسلسلات المترجمة',
+      },
+    ],
+  },
 }
 
 export const dynamic    = 'force-dynamic' // D1 not available at build time on CI
