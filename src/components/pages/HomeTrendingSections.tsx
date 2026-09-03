@@ -13,15 +13,11 @@ import { ArrowLeft, Film, Play, Tv } from 'lucide-react'
 import { StarIcon } from '../common/StarIcon'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
+import { getYearBadgeStyle } from '@/utils/yearBadge'
 import { HomeCardHeart } from './HomeCardHeart'
 import { useDragScroll } from '@/hooks/useDragScroll'
-import { AdsterraBanner } from '@/components/features/system/AdsterraBanner'
-import { getAdByNum } from '@/data/ads/4cima.com'
 import { HomeExtraSections, type ExtraSectionDef } from './HomeExtraSections'
 import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
-
-/* إعلان رقم 4 (468×60) — شريط تكاملي بين قسمي الأفلام والمسلسلات */
-const AD_BETWEEN = getAdByNum(4)!
 
 /* كارت الإعلان رقم 5 (160×300) داخل الصفوف — معرّف في HomeAdCard ومُشارَك مع الأقسام الإضافية */
 
@@ -366,29 +362,11 @@ export function HomeTrendingSections({
                             <span className="text-[12px] font-bold">{item.vote_average.toFixed(1)}</span>
                           </span>
                         )}
-                        {item.year && (() => {
-                          const y = Number(item.year)
-                          const currentYear = new Date().getFullYear()
-
-                          let yearStyle = ''
-                          if (y === currentYear) {
-                            yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
-                          } else if (y >= 2020 && y <= 2025) {
-                            yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
-                          } else if (y >= 2010 && y <= 2019) {
-                            yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
-                          } else if (y >= 2000 && y <= 2009) {
-                            yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
-                          } else {
-                            yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
-                          }
-
-                          return (
-                            <span className={`px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>
-                              {item.year}
-                            </span>
-                          )
-                        })()}
+                        {item.year && (
+                          <span className={`px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg ${getYearBadgeStyle(item.year)}`}>
+                            {item.year}
+                          </span>
+                        )}
                       </div>
 
                       {/* Play Hover Button - Center */}
@@ -447,17 +425,6 @@ export function HomeTrendingSections({
                   </div>
                 </div>
               </Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* إعلان رقم 4 — 468×60 بين قسمي الأفلام والمسلسلات (إعلان واحد فقط) بإطار متدرّج */}
-      {data && data.trendingMovies.length > 0 && data.trendingSeries.length > 0 && (
-        <div className="flex w-full justify-center">
-          <div className="rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
-            <div className="rounded-[14.5px] bg-slate-950 p-1">
-              <AdsterraBanner ad={AD_BETWEEN} />
             </div>
           </div>
         </div>
@@ -574,29 +541,11 @@ export function HomeTrendingSections({
                             <span className="text-[12px] font-bold">{item.vote_average.toFixed(1)}</span>
                           </span>
                         )}
-                        {item.year && (() => {
-                          const y = Number(item.year)
-                          const currentYear = new Date().getFullYear()
-
-                          let yearStyle = ''
-                          if (y === currentYear) {
-                            yearStyle = 'bg-purple-500 text-white border border-purple-400 shadow-lg shadow-purple-500/50 animate-pulse'
-                          } else if (y >= 2020 && y <= 2025) {
-                            yearStyle = 'bg-blue-600 text-white border border-blue-500 shadow-md'
-                          } else if (y >= 2010 && y <= 2019) {
-                            yearStyle = 'bg-cyan-600 text-white border border-cyan-500 shadow-md'
-                          } else if (y >= 2000 && y <= 2009) {
-                            yearStyle = 'bg-slate-100 text-slate-900 border border-slate-200 shadow-md font-bold'
-                          } else {
-                            yearStyle = 'bg-slate-700 text-slate-300 border border-slate-600'
-                          }
-
-                          return (
-                            <span className={`px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg ${yearStyle}`}>
-                              {item.year}
-                            </span>
-                          )
-                        })()}
+                        {item.year && (
+                          <span className={`px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg ${getYearBadgeStyle(item.year)}`}>
+                            {item.year}
+                          </span>
+                        )}
                       </div>
 
                       {/* Play Hover Button - Center */}

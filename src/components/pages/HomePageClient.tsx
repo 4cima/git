@@ -1,17 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import {
   Film,
   Tv,
   Star,
   Play,
-  AlertTriangle,
   ArrowLeft,
   Heart,
 } from 'lucide-react'
-import { Loading } from '@/components/common/Loading'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
@@ -153,9 +151,10 @@ function mapItems(items: any[] | undefined, type: 'movie' | 'tv'): MediaItem[] {
 
 export function HomePageClient({ initialData }: HomePageClientProps) {
   const { user } = useAuth() // Check if user is logged in
-  
-  // State management - Initialize with server data
-  const [data, setData] = useState<HomeData>({
+
+  // البيانات موحّدة عبر mapItems — useMemo لأنها لا تتغير بعد الاستلام أبداً
+  // (كانت useState مع setPlayer لا يُستدعى — كود ميت)
+  const data = useMemo<HomeData>(() => ({
     trendingMovies: mapItems(initialData.trendingMovies, 'movie'),
     trendingSeries: mapItems(initialData.trendingSeries, 'tv'),
     topRatedMovies: mapItems(initialData.topRatedMovies, 'movie'),
@@ -166,55 +165,53 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
     anime: mapItems(initialData.anime, 'tv'),
     crime: mapItems(initialData.crime, 'movie'),
     arabicMovies: mapItems(initialData.arabicMovies, 'movie')
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  }), [initialData])
+
   const [heroIndex, setHeroIndex] = useState(0)
-  const [heroItems, setHeroItems] = useState<MediaItem[]>([])
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right'>('left')
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
-  
+
   // Lazy loading state
   const [moviesDisplayCount, setMoviesDisplayCount] = useState(25) // نبدأ بـ 25
   const [seriesDisplayCount, setSeriesDisplayCount] = useState(25) // نبدأ بـ 25
-  
+
   // Card states for hearts
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({})
   const [stateLoading, setStateLoading] = useState<Record<string, boolean>>({})
-  
-  // Drag to scroll state
 
+  // إنشاء قائمة الهيرو — useMemo ليُرسم الهيرو من أول Render على السيرفر
+  // (كان useState+useEffect → الهيرو لا يظهر إلا بعد الـhydration = تأخير LCP)
+  const heroItems = useMemo<MediaItem[]>(() => {
+    if (!data) return []
 
-  // إنشاء قائمة الهيرو من البيانات الأولية
-  useEffect(() => {
-    if (!data) return
-    
     const trendingMovies = data.trendingMovies
     const trendingSeries = data.trendingSeries
 
     // إنشاء قائمة الهيرو من أول 20 عمل فقط
     const heroList: MediaItem[] = []
     const addedIds = new Set<number>()
-    
-    const movies2026 = trendingMovies.filter(item => item.year === 2026).slice(0, 10)
-    const tvShows2026 = trendingSeries.filter(item => item.year === 2026).slice(0, 10)
-    
-    const maxItems = Math.max(movies2026.length, tvShows2026.length)
+
+    // السنة الحالية ديناميكياً — لا سنوات مكتوبة يدوياً (كانت 2026 ثابتة!)
+    const currentYear = new Date().getFullYear()
+    const currentYearMovies = trendingMovies.filter(item => item.year === currentYear).slice(0, 10)
+    const currentYearTv = trendingSeries.filter(item => item.year === currentYear).slice(0, 10)
+
+    const maxItems = Math.max(currentYearMovies.length, currentYearTv.length)
     for (let i = 0; i < maxItems && heroList.length < 10; i++) {
-      if (movies2026[i] && !addedIds.has(movies2026[i].id)) {
-        heroList.push(movies2026[i])
-        addedIds.add(movies2026[i].id)
+      if (currentYearMovies[i] && !addedIds.has(currentYearMovies[i].id)) {
+        heroList.push(currentYearMovies[i])
+        addedIds.add(currentYearMovies[i].id)
       }
-      if (tvShows2026[i] && !addedIds.has(tvShows2026[i].id) && heroList.length < 10) {
-        heroList.push(tvShows2026[i])
-        addedIds.add(tvShows2026[i].id)
+      if (currentYearTv[i] && !addedIds.has(currentYearTv[i].id) && heroList.length < 10) {
+        heroList.push(currentYearTv[i])
+        addedIds.add(currentYearTv[i].id)
       }
     }
-    
+
     if (heroList.length < 10) {
       const allMovies = trendingMovies.slice(0, 20)
       const allTvShows = trendingSeries.slice(0, 20)
-      
+
       const maxExtra = Math.max(allMovies.length, allTvShows.length)
       for (let i = 0; i < maxExtra && heroList.length < 10; i++) {
         if (allMovies[i] && !addedIds.has(allMovies[i].id) && heroList.length < 10) {
@@ -227,8 +224,8 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
         }
       }
     }
-    
-    setHeroItems(heroList)
+
+    return heroList
   }, [data])
 
 
@@ -319,36 +316,50 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
       document.removeEventListener('touchmove', handleTouchMove)
       document.removeEventListener('touchend', handleTouchEnd)
     }
-    document.addEventListener('touchmove', handleTouchMove)
+    // passive: true — لا نستدعي preventDefault، فلا نحجب thread التمرير
+    document.addEventListener('touchmove', handleTouchMove, { passive: true })
     document.addEventListener('touchend', handleTouchEnd)
   }, [heroIndex, heroItems.length, handleHeroChange])
   
-  const retryFetch = useCallback(() => {
-    setError(null)
-    setLoading(true)
-    // Re-trigger fetch by re-mounting (simple approach)
-    window.location.reload()
-  }, [])
+  // إظهار/إخفاء الهيرو من الشاشة → إيقاف أنيميشن الشهب عند خروجها (توفير GPU/بطارية)
+  const heroSectionRef = useRef<HTMLElement>(null)
+  const [heroVisible, setHeroVisible] = useState(true)
 
+  useEffect(() => {
+    const section = heroSectionRef.current
+    if (!section || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroVisible(entry.isIntersecting),
+      { threshold: 0 }
+    )
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [heroItems.length])
 
   const heroItem = heroItems.length > 0 ? heroItems[heroIndex] : null
-  
-  // Fetch card states for all visible items
+
+  // Fetch card states — مرة واحدة لكل جلسة تسجيل دخول (كان يُعاد مع كل تحميل
+  // كسول: كل زيادة عرض كانت ترسل POST بكل العناصر الظاهرة من جديد!)
+  const cardStatesFetchedRef = useRef(false)
   useEffect(() => {
     // Don't fetch if user is not logged in
-    if (!user) return
-    
+    if (!user || cardStatesFetchedRef.current) return
+
+    const allItems = [...(data?.trendingMovies || []), ...(data?.trendingSeries || []), ...(heroItems || [])]
+    // إزالة التكرار (الهيرو يشارك العناصر مع صفوف الرائج)
+    const unique = new Map<string, { content_type: string; tmdb_id: number }>()
+    for (const item of allItems) {
+      if (!item.tmdb_id && !item.id) continue
+      const contentType = item.media_type === 'tv' ? 'tv' : 'movie'
+      const tmdbId = item.tmdb_id || item.id
+      unique.set(`${contentType}-${tmdbId}`, { content_type: contentType, tmdb_id: tmdbId })
+    }
+    const items = Array.from(unique.values())
+    if (items.length === 0) return
+
+    cardStatesFetchedRef.current = true
+
     const fetchStates = async () => {
-      const allItems = [...(data?.trendingMovies || []).slice(0, moviesDisplayCount), ...(data?.trendingSeries || []).slice(0, seriesDisplayCount), ...(heroItems || [])]
-      const items = allItems
-        .filter(item => item.tmdb_id || item.id)
-        .map(item => ({
-          content_type: item.media_type === 'tv' ? 'tv' : 'movie',
-          tmdb_id: item.tmdb_id || item.id
-        }))
-      
-      if (items.length === 0) return
-      
       try {
         const res = await fetch('/api/user/card-state', {
           method: 'POST',
@@ -357,17 +368,17 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
           body: JSON.stringify({ items })
         })
         if (res.ok) {
-          const data = await res.json()
-          setCardStates(data.states || {})
+          const result = await res.json()
+          setCardStates(result.states || {})
         }
       } catch {
         // Silent fail - user might not be logged in
       }
     }
-    
+
     fetchStates()
-  }, [user, data, moviesDisplayCount, seriesDisplayCount, heroItems])
-  
+  }, [user, data, heroItems])
+
   // Toggle card state function
   const toggleCardState = async (item: MediaItem, e?: React.MouseEvent) => {
     if (e) {
@@ -440,27 +451,6 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
     return stateLoading[key] || false
   }
   
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-slate-900/50 border border-slate-800 rounded-2xl p-8 text-center space-y-4">
-          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-8 h-8 text-red-400" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-200">حدث خطأ أثناء التحميل</h2>
-          <p className="text-sm text-slate-400">{error}</p>
-          <button
-            onClick={retryFetch}
-            className="px-6 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg font-bold transition-colors"
-          >
-            إعادة المحاولة
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans" dir="rtl">
 
@@ -469,7 +459,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
 
       {/* 2. Hero Banner with Frame and Auto-Rotate - Full Width */}
       {heroItem && (
-        <section className="w-full bg-slate-950">
+        <section ref={heroSectionRef} className="w-full bg-slate-950">
           <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
             <div
               className="relative w-full h-[70vh] md:h-[80vh] flex items-end overflow-hidden rounded-2xl border-2 border-amber-400/50 bg-slate-950 shadow-2xl shadow-amber-500/30"
@@ -477,9 +467,9 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
               onMouseDown={beginHeroMouseSwipe}
               onTouchStart={beginHeroTouchSwipe}
             >
-              {/* Meteor Shower Effect - مطر الشهب الملتهب */}
+              {/* Meteor Shower Effect - مطر الشهب الملتهب — يتوقف عند خروج الهيرو من الشاشة */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-50">
-                <div className="meteor-shower">
+                <div className="meteor-shower" data-paused={!heroVisible}>
                   <div className="meteor meteor-1"></div>
                   <div className="meteor meteor-2"></div>
                   <div className="meteor meteor-3"></div>
@@ -493,19 +483,22 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
               {/* Backdrop Background — LCP: preloadable <img> with high priority + async decode */}
               {(heroItem.backdrop_path || heroItem.poster_path) ? (
                 <>
-                  <link
-                    rel="preload"
-                    as="image"
-                    href={`/tmdb/w780${heroItem.backdrop_path || heroItem.poster_path}`}
-                    fetchPriority="high"
-                  />
+                  {/* preload لأول عمل فقط — لا نتراكم preloads جديدة مع كل دورة هيرو */}
+                  {heroIndex === 0 && (
+                    <link
+                      rel="preload"
+                      as="image"
+                      href={`/tmdb/w780${heroItem.backdrop_path || heroItem.poster_path}`}
+                      fetchPriority="high"
+                    />
+                  )}
                   <img
                     key={`backdrop-${heroItem.id}`}
                     src={`/tmdb/w780${heroItem.backdrop_path || heroItem.poster_path}`}
                     alt=""
                     aria-hidden="true"
                     width={780}
-                    height={1170}
+                    height={439}
                     fetchPriority="high"
                     decoding="async"
                     loading="eager"
@@ -686,7 +679,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                         document.removeEventListener('touchmove', handleTouchMove)
                         document.removeEventListener('touchend', handleTouchEnd)
                       }
-                      document.addEventListener('touchmove', handleTouchMove)
+                      document.addEventListener('touchmove', handleTouchMove, { passive: true })
                       document.addEventListener('touchend', handleTouchEnd)
                     }}
                   >

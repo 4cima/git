@@ -198,17 +198,28 @@ function buildServerSources(mediaType, tmdbId, season, episode) {
 // old public TMDB key was revoked). The site API resolves text slugs,
 // and numeric paths match tmdb_id (used by the /watch fallback).
 // ------------------------------------------------------------------
+// GET a JSON document from the 4cima.com catalogue API.
+// Retries transient failures (network errors / 5xx / 429) a few times with a
+// small backoff, so a momentary hiccup on the main site never surfaces to the
+// visitor as a bogus "no catalogue match" error. Returns:
+//   { ok: true,  row }              → 200 + parsed JSON
+//   { ok: false, notFound: true }   → upstream answered 404 (genuinely absent)
+//   { ok: false, notFound: false }  → transient upstream failure (5xx/network)
 async function fetchSiteJson(path) {
-  try {
-    const res = await fetch(`${PLAY_BASE}${path}`, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
+  let notFound = false;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${PLAY_BASE}${path}`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
+      if (res.ok) return { ok: true, row: await res.json() };
+      if (res.status === 404) { notFound = true; break; }
+      // 5xx / 429 / other — fall through and retry.
+    } catch { /* network hiccup — retry */ }
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 150 * (attempt + 1)));
   }
+  return { ok: false, notFound };
 }
 
 function normalizeSiteRow(row) {
@@ -271,27 +282,36 @@ function normalizeSiteRow(row) {
 }
 
 async function resolveFromSite(slug, mediaType) {
-  const row = mediaType === 'movie'
-    ? await fetchSiteJson(`/api/movies/${encodeURIComponent(slug)}`)
-    : await fetchSiteJson(`/api/tv/${encodeURIComponent(slug)}`);
-  if (!row || !row.tmdb_id) throw new Error(`No catalogue match for slug "${slug}"`);
-  return normalizeSiteRow(row);
+  const path = mediaType === 'movie'
+    ? `/api/movies/${encodeURIComponent(slug)}`
+    : `/api/tv/${encodeURIComponent(slug)}`;
+  const res = await fetchSiteJson(path);
+  if (res.ok && res.row && res.row.tmdb_id) return normalizeSiteRow(res.row);
+  if (res.ok || res.notFound) throw new Error(`No catalogue match for slug "${slug}"`);
+  throw new Error(`Catalogue temporarily unavailable — please retry in a moment`);
 }
 
 // Bare slug: media type unknown — try movies, then tv.
 async function resolveAnyFromSite(slug) {
-  const movie = await fetchSiteJson(`/api/movies/${encodeURIComponent(slug)}`);
-  if (movie && movie.tmdb_id) return { mediaType: 'movie', data: normalizeSiteRow(movie) };
-  const tv = await fetchSiteJson(`/api/tv/${encodeURIComponent(slug)}`);
-  if (tv && tv.tmdb_id) return { mediaType: 'tv', data: normalizeSiteRow(tv) };
-  throw new Error(`No catalogue match for slug "${slug}"`);
+  const s = encodeURIComponent(slug);
+  const movie = await fetchSiteJson(`/api/movies/${s}`);
+  if (movie.ok && movie.row && movie.row.tmdb_id) return { mediaType: 'movie', data: normalizeSiteRow(movie.row) };
+  const tv = await fetchSiteJson(`/api/tv/${s}`);
+  if (tv.ok && tv.row && tv.row.tmdb_id) return { mediaType: 'tv', data: normalizeSiteRow(tv.row) };
+  // Only report "not found" when the catalogue genuinely answered 404 for
+  // both; otherwise the failure was transient and the visitor should retry.
+  if ((movie.ok || movie.notFound) && (tv.ok || tv.notFound)) {
+    throw new Error(`No catalogue match for slug "${slug}"`);
+  }
+  throw new Error(`Catalogue temporarily unavailable — please retry in a moment`);
 }
 
 // Resolve directly by TMDB id (numeric site-API paths match tmdb_id).
 async function resolveByIdFromSite(tmdbId, mediaType) {
-  const row = await fetchSiteJson(`${mediaType === 'movie' ? '/api/movies/' : '/api/tv/'}${tmdbId}`);
-  if (!row || !row.tmdb_id) throw new Error(`Catalogue has no ${mediaType} with tmdb_id ${tmdbId}`);
-  return normalizeSiteRow(row);
+  const res = await fetchSiteJson(`${mediaType === 'movie' ? '/api/movies/' : '/api/tv/'}${tmdbId}`);
+  if (res.ok && res.row && res.row.tmdb_id) return normalizeSiteRow(res.row);
+  if (res.ok || res.notFound) throw new Error(`Catalogue has no ${mediaType} with tmdb_id ${tmdbId}`);
+  throw new Error(`Catalogue temporarily unavailable — please retry in a moment`);
 }
 
 const slugifyLatin = (text, fallback) => {

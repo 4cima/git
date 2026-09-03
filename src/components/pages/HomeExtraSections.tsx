@@ -135,7 +135,7 @@ function ExtraCard({ item, eager, onCardClick }: { item: MediaItem; eager?: bool
 type ScrollRef = React.RefObject<HTMLDivElement | null>
 
 /** صف قسم واحد — نفس آلية صفوف الرائج (سحب + أسهم + عرض ثابت 25 + تحميل كسول + إعلان وسط الكروت) */
-function ExtraRow({ section }: { section: ExtraSectionDef }) {
+function ExtraRow({ section, showAds }: { section: ExtraSectionDef; showAds: boolean }) {
   const [displayCount, setDisplayCount] = useState(Math.min(EXTRA_PAGE_SIZE, section.items.length))
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -228,14 +228,14 @@ function ExtraRow({ section }: { section: ExtraSectionDef }) {
               {section.items.slice(0, displayCount).map((item, idx) => (
                 <Fragment key={`${section.title}-${item.id}`}>
                   <ExtraCard item={item} eager={idx < 6} onCardClick={(e) => { if (drag.consumeIfDragged()) e.preventDefault() }} />
-                  {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < displayCount && (
+                  {(showAds && (idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < displayCount) && (
                     <AdInRowCard pos={`x-${idx + 1}-${section.browseHref}`} />
                   )}
                 </Fragment>
               ))}
 
-              {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة (زي الرائج) */}
-              <AdInRowCard pos={`x-end-${section.browseHref}`} />
+              {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة (أول 3 أقسام فقط لتجنب تكرار نفس الـZone 10 مرات) */}
+              {showAds && <AdInRowCard pos={`x-end-${section.browseHref}`} />}
 
               {/* Sentinel for lazy loading */}
               {displayCount < section.items.length && (
@@ -284,14 +284,17 @@ function ExtraRow({ section }: { section: ExtraSectionDef }) {
       )
 }
 
+/** عدد الأقسام الإضافية التي تعرض إعلانات الصفوف — الباقي خالٍ لتجنب تكرار نفس الـZone الإعلاني */
+const AD_SECTIONS_LIMIT = 3
+
 export function HomeExtraSections({ sections }: { sections: ExtraSectionDef[] }) {
   const visible = sections.filter((s) => s.items.length > 0)
   if (visible.length === 0) return null
 
   return (
     <>
-      {visible.map((section) => (
-        <ExtraRow key={section.title} section={section} />
+      {visible.map((section, i) => (
+        <ExtraRow key={section.title} section={section} showAds={i < AD_SECTIONS_LIMIT} />
       ))}
     </>
   )

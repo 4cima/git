@@ -2037,3 +2037,18 @@ input[type="range"].slider::-moz-range-track {
   background-size: 200% 100%;
   animation: glass-shimmer 6s linear infinite;
 }
+
+/* ============================================================
+   Meteor Shower — توفير GPU/بطارية
+   1) الإيقاف عند خروج الهيرو من الشاشة (data-paused من IntersectionObserver)
+   2) احترام prefers-reduced-motion — إخفاء الشهب كلياً لمن يفضّل تقليل الحركة
+   ============================================================ */
+.meteor-shower[data-paused='true'] .meteor {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meteor-shower {
+    display: none;
+  }
+}

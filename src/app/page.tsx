@@ -10,6 +10,31 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
+/**
+ * كاش في ذاكرة الـWorker (isolate-level) — الصفحة الرئيسية تقرأ من جداول كاش
+ * ثابتة تتغير مرة يومياً، فلا داعي لإعادة 10 استعلامات D1 مع كل طلب.
+ * أيزلي لكل isolate وTTL قصير — يقلل زمن الاستجابة من ~ثانية إلى ~ميلي ثانية
+ * لمعظم الطلبات دون أي خطر على حداثة المحتوى.
+ */
+const HOME_DATA_TTL_MS = 10 * 60 * 1000 // 10 دقائق
+
+/** شكل بيانات الصفحة الرئيسية (صفوف DB خام — تُوحَّد لاحقاً بـ mapItems في الكلينت) */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+interface HomeDataResult {
+  trendingMovies: any[]
+  trendingSeries: any[]
+  topRatedMovies: any[]
+  topRatedSeries: any[]
+  action: any[]
+  drama: any[]
+  sciFi: any[]
+  anime: any[]
+  crime: any[]
+  arabicMovies: any[]
+}
+
+let homeDataCache: { at: number; data: HomeDataResult } | null = null
+
 /* أعمدة موحّدة لجداول كاش الأفلام */
 const MOVIE_GENRE_FIELDS = `
   'movie' AS media_type, l.id, l.tmdb_id, l.slug,
@@ -38,7 +63,11 @@ function genreQuery(movieGenreIds: number[], seriesGenreIds: number[], limit = 1
     LIMIT ${limit}`
 }
 
-async function getHomeData() {
+async function getHomeData(): Promise<HomeDataResult> {
+  // إرجاع النسخة المخزّنة إن كانت ما زالت صالحة
+  if (homeDataCache && Date.now() - homeDataCache.at < HOME_DATA_TTL_MS) {
+    return homeDataCache.data
+  }
   try {
     const [movies, series, topMovies, topSeries, action, drama, sciFi, anime, crime, arabicMovies] =
       await Promise.all([
@@ -111,7 +140,7 @@ async function getHomeData() {
       ])
 
     const sanitize = (rows: unknown[]) => rows.map((r) => JSON.parse(JSON.stringify(r)))
-    return {
+    const data = {
       trendingMovies: sanitize(movies),
       trendingSeries: sanitize(series),
       topRatedMovies: sanitize(topMovies),
@@ -123,6 +152,8 @@ async function getHomeData() {
       crime: sanitize(crime),
       arabicMovies: sanitize(arabicMovies),
     }
+    homeDataCache = { at: Date.now(), data }
+    return data
   } catch (error) {
     console.error('Error fetching home data:', error)
     return {

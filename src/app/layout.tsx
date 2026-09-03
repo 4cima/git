@@ -13,6 +13,14 @@ const websiteJsonLd = {
   name: 'فور سيما',
   alternateName: '4cima',
   url: 'https://4cima.com',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: 'https://4cima.com/search?q={search_term_string}',
+    },
+    'query-input': 'required name=search_term_string',
+  },
 }
 
 const cairo = Cairo({ 
@@ -67,18 +75,18 @@ export const metadata: Metadata = {
     description: 'مشاهدة وتحميل احدث الافلام والمسلسلات المترجمة بجودة عالية HD مجاناً',
     images: [
       {
-        url: '/logo.svg',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: '4cima',
+        alt: '4cima — شاهد أحدث الأفلام والمسلسلات المترجمة',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '4cima - مشاهدة افلام ومسلسلات',
-    description: 'مشاهدة وتحميل احدث الافلام والمسلسلات المترجمة',
-    images: ['/logo.svg'],
+    title: '4cima - مشاهدة افلام ومسلسلات مترجمة',
+    description: 'مشاهدة وتحميل احدث الافلام والمسلسلات المترجمة بجودة عالية HD مجاناً',
+    images: ['/og-image.png'],
   },
   robots: {
     index: true,
