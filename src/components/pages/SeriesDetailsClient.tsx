@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react'
 import { Star, Clock, Calendar, Tv, Heart, Play, ChevronDown } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
@@ -10,7 +10,7 @@ import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
-import { prefetchWatchAd, openWatchWithPlayer } from '@/lib/openWatch'
+import { openWatchWithPlayer } from '@/lib/openWatch'
 import { preparePopunder, firePopunderOnClick } from '@/components/features/system/adsClick'
 import { AdsterraBanner } from '@/components/features/system/AdsterraBanner'
 import { getAdByNum } from '@/data/ads/4cima.com'
@@ -36,14 +36,9 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   )
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [player, setPlayer] = useState<any>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [playingTrailer, setPlayingTrailer] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [currentTime, setCurrentTime] = useState(0)
   const [similarSeries, setSimilarSeries] = useState<any[]>([])
   const [similarLoading, setSimilarLoading] = useState(true)
-  const [duration, setDuration] = useState(0)
+  const [similarStates, setSimilarStates] = useState<Record<string, 'neutral' | 'favorite' | 'completed'>>({})
   const [volume, setVolume] = useState(100)
   const [isMuted, setIsMuted] = useState(false)
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
@@ -51,26 +46,17 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const [cardState, setCardState] = useState<'neutral' | 'favorite' | 'completed'>('neutral')
   const [stateLoading, setStateLoading] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const playerRef = useRef<HTMLDivElement>(null)
-  const progressInterval = useRef<NodeJS.Timeout | null>(null)
   const posterRef = useRef<HTMLDivElement>(null)
   const posterImgRef = useRef<HTMLDivElement>(null)
-  const adRef = useRef<HTMLDivElement>(null)
   const [posterHeight, setPosterHeight] = useState<number | null>(null)
-  const [adHeight, setAdHeight] = useState<number | null>(null)
 
-  // قياس ارتفاع البوستر والإعلان
-  useEffect(() => {
+  // قياس ارتفاع البوستر والإعلان — useLayoutEffect يقيس ويضبط قبل الرسم لمنع أي قفز
+  useLayoutEffect(() => {
     const measure = () => {
       const posterNode = posterImgRef.current
-      const adNode = adRef.current
       if (posterNode) {
         const h = posterNode.getBoundingClientRect().height
         if (h > 0) setPosterHeight(Math.round(h))
-      }
-      if (adNode) {
-        const h = adNode.getBoundingClientRect().height
-        if (h > 0) setAdHeight(Math.round(h))
       }
     }
     measure()
@@ -177,115 +163,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
       fs: '0', // Disable YouTube's fullscreen button
       iv_load_policy: '3',
       vq: 'medium', // Force 480p quality
-      disablekb: '1' // Disable keyboard controls to prevent conflicts
+      disablekb: '1', // Disable keyboard controls to prevent conflicts
+      enablejsapi: '1' // Required for postMessage volume/mute control
     })
     return `https://www.youtube.com/embed/${trailerKey}?${params.toString()}`
   }, [trailerKey])
   
-  // Debug: Log values
-  console.log('🎬 Series Debug:', {
-    title: series?.name_ar || series?.name,
-    backdrop: series?.backdrop_path,
-    trailerKey
-  })
-
-  // Load YouTube IFrame API
-  useEffect(() => {
-    if (!trailerKey) return
-
-    // Check if API already loaded
-    if ((window as any).YT && (window as any).YT.Player) {
-      return // Don't init player yet, wait for modal
-    }
-
-    // Load YouTube IFrame API
-    if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-      const tag = document.createElement('script')
-      tag.src = 'https://www.youtube.com/iframe_api'
-      const firstScriptTag = document.getElementsByTagName('script')[0]
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag)
-    }
-  }, [trailerKey])
-
-  // Init player when modal opens
-  useEffect(() => {
-    if (!isModalOpen || !trailerKey || player) return
-
-    const initPlayer = () => {
-      if (!playerRef.current) return
-      
-      const newPlayer = new (window as any).YT.Player(playerRef.current, {
-        height: '100%',
-        width: '100%',
-        videoId: trailerKey,
-        playerVars: {
-          autoplay: 1,
-          controls: 0,
-          modestbranding: 1,
-          rel: 0,
-          showinfo: 0,
-          disablekb: 1,
-          fs: 0,
-          iv_load_policy: 3,
-          playsinline: 1,
-          start: 5,
-          autohide: 1,
-          enablejsapi: 1,
-          cc_load_policy: 0
-        },
-        events: {
-          onStateChange: (event: any) => {
-            console.log('Player state changed:', event.data)
-            const isNowPlaying = event.data === 1
-            setIsPlaying(isNowPlaying)
-            
-            if (isNowPlaying) { // Playing
-              console.log('Video is playing, starting progress tracking')
-              startProgressTracking()
-            } else {
-              console.log('Video paused/stopped, stopping progress tracking')
-              stopProgressTracking()
-            }
-          },
-          onReady: (event: any) => {
-            console.log('Player ready')
-            const dur = event.target.getDuration()
-            console.log('Duration on ready:', dur)
-            setDuration(dur)
-            
-            // Start playing
-            event.target.playVideo()
-            setIsPlaying(true)
-            
-            // Force start progress tracking after a delay
-            setTimeout(() => {
-              console.log('Force starting progress tracking after delay')
-              startProgressTracking()
-            }, 1000)
-          }
-        }
-      })
-      setPlayer(newPlayer)
-    }
-
-    // Wait for API to load
-    if ((window as any).YT && (window as any).YT.Player) {
-      setTimeout(initPlayer, 100)
-    } else {
-      ;(window as any).onYouTubeIframeAPIReady = () => {
-        setTimeout(initPlayer, 100)
-      }
-    }
-  }, [isModalOpen, trailerKey])
-
-  useEffect(() => {
-    return () => {
-      if (player && player.destroy) {
-        player.destroy()
-        setPlayer(null)
-      }
-    }
-  }, [player])
 
   // Close trailer on scroll
   useEffect(() => {
@@ -325,6 +208,35 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     
     fetchSimilar()
   }, [series?.slug])
+
+  // حالات المفضلة لبطاقات "قد يعجبك" — طلب واحد مجمّع بدل طلب لكل بطاقة (كان يسبب 12+ POST بطيئة)
+  useEffect(() => {
+    if (!user || similarSeries.length === 0) return
+
+    const items = similarSeries
+      .filter((it: any) => it.tmdb_id || it.id)
+      .map((it: any) => ({ content_type: 'tv', tmdb_id: it.tmdb_id || it.id }))
+    if (items.length === 0) return
+
+    let cancelled = false
+    fetch('/api/user/card-state', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    })
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (!cancelled && data?.states) setSimilarStates(data.states)
+      })
+      .catch(() => {
+        // Silent fail — cards fall back to their own behavior
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user, similarSeries])
 
   // Check card state on mount
   useEffect(() => {
@@ -450,91 +362,15 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     }
   }
 
-  const handlePlayPause = () => {
-    if (!player) return
-    
-    try {
-      const playerState = player.getPlayerState()
-      
-      if (playerState === 1) { // Playing
-        player.pauseVideo()
-        setIsPlaying(false)
-      } else { // Paused or other
-        player.playVideo()
-        setIsPlaying(true)
-        setPlayingTrailer(true)
-      }
-    } catch (err) {
-      console.error('Play/Pause error:', err)
-      // Fallback
-      if (isPlaying) {
-        player.pauseVideo()
-        setIsPlaying(false)
-      } else {
-        player.playVideo()
-        setIsPlaying(true)
-        setPlayingTrailer(true)
-      }
-    }
-  }
-
-  const startProgressTracking = () => {
-    if (progressInterval.current) clearInterval(progressInterval.current)
-    progressInterval.current = setInterval(() => {
-      if (player && typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
-        try {
-          const current = player.getCurrentTime()
-          const total = player.getDuration()
-          if (current !== undefined && total !== undefined && total > 0) {
-            setCurrentTime(current)
-            setProgress((current / total) * 100)
-            if (!duration || duration === 0) {
-              setDuration(total)
-            }
-            console.log('Progress update:', {current, total, progress: (current/total)*100})
-          }
-        } catch (err) {
-          console.error('Progress tracking error:', err)
-        }
-      }
-    }, 1000)
-  }
-
-  const stopProgressTracking = () => {
-    if (progressInterval.current) {
-      clearInterval(progressInterval.current)
-      progressInterval.current = null
-    }
-  }
-
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!player) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const clickX = e.clientX - rect.left
-    const percentage = clickX / rect.width
-    const newTime = percentage * duration
-    player.seekTo(newTime, true)
-  }
-
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseInt(e.target.value)
     setVolume(newVolume)
-    if (player) {
-      player.setVolume(newVolume)
-      if (newVolume === 0) {
-        setIsMuted(true)
-      } else {
-        setIsMuted(false)
-      }
+    if (newVolume === 0) {
+      setIsMuted(true)
+    } else {
+      setIsMuted(false)
     }
   }
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
   const toggleFullscreen = async () => {
     const modalElement = document.querySelector('.trailer-modal') as HTMLElement
     if (!modalElement) return
@@ -572,33 +408,54 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
     setIsMuted(!isMuted)
   }
 
-  const handleVideoClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    handlePlayPause()
-  }
-
-  const handleVideoDoubleClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    toggleFullscreen()
-  }
-
   const handleOpenTrailer = () => {
     setIsModalOpen(true)
   }
 
   const handleCloseTrailer = () => {
-    stopProgressTracking()
-    if (player && player.destroy) {
-      player.destroy()
-      setPlayer(null)
-    }
     setIsModalOpen(false)
-    setPlayingTrailer(false)
-    setIsPlaying(false)
-    setProgress(0)
   }
+
+  // مزامنة الصوت/الكتم مع iframe يوتيوب — بدونها أزرار الصوت في المودال لا تعمل
+  useEffect(() => {
+    if (!iframeRef.current || !isModalOpen) return
+
+    const sendVolumeToYouTube = () => {
+      const volumeValue = isMuted ? 0 : volume
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({
+          event: 'command',
+          func: 'setVolume',
+          args: [volumeValue]
+        }),
+        'https://www.youtube.com'
+      )
+
+      if (isMuted) {
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: 'mute',
+            args: []
+          }),
+          'https://www.youtube.com'
+        )
+      } else {
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: 'unMute',
+            args: []
+          }),
+          'https://www.youtube.com'
+        )
+      }
+    }
+
+    // Small delay to ensure iframe is ready
+    const timeout = setTimeout(sendVolumeToYouTube, 100)
+    return () => clearTimeout(timeout)
+  }, [volume, isMuted, isModalOpen])
 
   // Get episodes for selected season
   const currentSeason = seasons.find((s: any) => s.season_number === selectedSeason)
@@ -611,7 +468,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
       <div className="absolute inset-0 h-screen">
         {backdrop && (
           <div className="absolute inset-0">
-            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="eager" fetchPriority="high" />
+            <img src={backdrop} alt="" className="w-full h-full object-cover object-top opacity-60" loading="eager" fetchPriority="high" crossOrigin="anonymous" />
             {/* Adaptive gradient based on image brightness */}
             <div className={`absolute inset-0 ${overlayConfig.gradient}`} />
             {/* Bottom fade for smooth transition - last 25% fades to background */}
@@ -620,20 +477,20 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
         )}
       </div>
 
-      <div className="relative z-10 page-container pt-24 pb-20">
-        {/* Layout: [بوستر 300px] [إعلان سايدبار 160px] [كاست 140px] [بيانات 1fr] */}
-        <div className="grid grid-cols-1 md:grid-cols-[300px_160px_140px_1fr] gap-4 items-start">
+      <div className="relative z-10 page-container pt-24 pb-0">
+        {/* Layout: [بوستر 300px] [بيانات 1fr] [كاست 160px] [إعلان سايدبار 160px] */}
+        <div className="grid grid-cols-1 md:grid-cols-[300px_1fr_160px_160px] gap-4 items-start">
 
           {/* عمود 1: البوستر + إعلان 300×250 + كلمات مفتاحية */}
           <div className="relative" ref={posterRef}>
             <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group" ref={posterImgRef}>
               {poster && (
-                <img src={poster} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                <img src={poster} alt={title} className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
               )}
             </div>
 
             {/* إعلان 300×250 تحت البوستر */}
-            <div className="mt-3 flex justify-center" ref={adRef}>
+            <div className="mt-3 flex justify-center">
               <div className="rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
                 <div className="rounded-[14.5px] bg-slate-950 p-1">
                   <AdsterraBanner ad={AD_AFTER_PLAYER} />
@@ -656,61 +513,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
             )}
           </div>
 
-          {/* عمود 2: إعلان سايدبار 160×600 — بنفس ارتفاع البوستر */}
-          <div
-            className="hidden lg:flex flex-col items-center justify-start"
-            style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '364px' }}
-          >
-            <div className="rounded-2xl bg-gradient-to-b from-blue-500/60 via-slate-700/70 to-red-500/60 p-[1.5px] shadow-lg shadow-slate-950/70 w-full">
-              <div className="rounded-[14.5px] bg-slate-950 p-1 flex justify-center">
-                <AdsterraBanner ad={AD_SIDE} />
-              </div>
-            </div>
-          </div>
-
-          {/* عمود 3: طاقم العمل — بنفس ارتفاع البوستر، صورة + اسم، يملأ الارتفاع */}
-          {cast.length > 0 && (
-            <div
-              className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden hidden md:flex flex-col"
-              style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '364px' }}
-            >
-              {/* عنوان */}
-              <div className="px-3 pt-3 pb-2 border-b border-white/10">
-                <h3 className="text-xs font-bold text-purple-400 text-center">طاقم العمل</h3>
-              </div>
-              {/* قائمة الممثلين تملأ الارتفاع المتبقي */}
-              <div className="flex-1 flex flex-col overflow-hidden p-2 gap-0">
-                {cast.map((person: any, idx: number) => {
-                  const totalItems = cast.length
-                  return (
-                    <div
-                      key={person.tmdb_id || person.id || `cast-${idx}`}
-                      className="flex items-center gap-2 min-w-0 px-1 rounded-lg hover:bg-white/5 transition-colors"
-                      style={{ flex: `1 1 ${100 / totalItems}%`, minHeight: 0 }}
-                    >
-                      {/* صورة على اليمين */}
-                      <div className="rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/10" style={{width: '36px', height: '36px'}}>
-                        {person.profile_path ? (
-                          <img src={`/tmdb/w45${person.profile_path}`} alt={person.name_ar || person.name_en} className="w-full h-full object-cover" loading="lazy" />
-                        ) : (
-                          <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-zinc-400 text-xs">؟</div>
-                        )}
-                      </div>
-                      {/* اسم على اليسار */}
-                      <p className="text-[11px] text-zinc-200 leading-tight truncate font-medium">{person.name_ar || person.name_en}</p>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* عمود 4: صندوق البيانات — بنفس ارتفاع البوستر */}
+          {/* عمود 2: صندوق البيانات — بنفس ارتفاع البوستر */}
           <div className="space-y-4">
             {/* صندوق البيانات - بنفس ارتفاع البوستر */}
             <div
               className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
-              style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '364px' }}
+              style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '450px' }}
             >
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="flex-1">
@@ -732,7 +540,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                 {/* Watch + favorite + season/episode dropdowns — directly under the titles, above genres */}
                 <div className="mb-5">
                   <div className="mx-auto flex w-full max-w-2xl flex-wrap items-stretch justify-center gap-3 min-h-[56px]">
-                    <div className="relative flex-1 min-w-[180px] max-w-[300px] group">
+                    <div className="relative flex-1 min-w-[200px] max-w-[350px] group">
                       <div
                         aria-hidden="true"
                         className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 opacity-60 blur-lg transition-opacity duration-300 group-hover:opacity-100"
@@ -740,18 +548,18 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                       <button
                         type="button"
                         onClick={handleWatch}
-                        className="relative flex w-full h-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 px-6 py-3 text-white shadow-xl transition-transform duration-200 active:scale-95"
+                        className="relative flex min-w-0 w-full h-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-500 px-4 py-3 sm:gap-3 sm:px-6 text-white shadow-xl transition-transform duration-200 active:scale-95"
                       >
                         <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/25 ring-2 ring-white/30">
                           <Play className="ml-0.5 h-5 w-5 fill-current" />
                         </span>
-                        <span className="flex flex-col text-right">
+                        <span className="flex min-w-0 flex-col text-right">
                           <span className="text-base sm:text-lg leading-tight font-black whitespace-nowrap">مشاهدة المسلسل</span>
                           <span className="text-xs font-medium leading-tight text-white/85">الموسم {selectedSeason} - الحلقة {selectedEpisode}</span>
                         </span>
                       </button>
                     </div>
-                    {user && (
+                    {user ? (
                       <button
                         onClick={toggleCardState}
                         disabled={stateLoading}
@@ -783,14 +591,16 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                           <Heart className={clsx("h-6 w-6", (cardState === 'favorite' || cardState === 'completed') && "fill-current")} />
                         </span>
                       </button>
+                    ) : (
+                      <div aria-hidden="true" className="w-[56px] flex-shrink-0 self-stretch rounded-xl border border-white/10 bg-zinc-900/40" />
                     )}
                     {seasons.length > 0 && (
-                      <div className="relative flex-1 min-w-[120px] max-w-[150px] group/dd">
+                      <div className="relative flex-1 min-w-[70px] max-w-[100px] group/dd">
                         <select
                           value={selectedSeason}
                           onChange={(e) => setSelectedSeason(Number(e.target.value))}
                           aria-label="اختر الموسم"
-                          className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 px-3 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
+                          className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 pr-3 pl-8 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
                         >
                           {seasons
                             .filter((s: any) => s.season_number > 0)
@@ -807,12 +617,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                         <ChevronDown aria-hidden="true" className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                       </div>
                     )}
-                    <div className="relative flex-1 min-w-[120px] max-w-[150px] group/dd">
+                    <div className="relative flex-1 min-w-[70px] max-w-[100px] group/dd">
                       <select
                         value={selectedEpisode}
                         onChange={(e) => setSelectedEpisode(Number(e.target.value))}
                         aria-label="اختر الحلقة"
-                        className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 px-3 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
+                        className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 pr-3 pl-8 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
                       >
                         {episodes.map((ep) => (
                           <option key={ep} value={ep} className="bg-zinc-900 text-white">
@@ -875,12 +685,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
 
             {/* Grid: تريلر فقط (بدون كاست هنا - انتقل لعمود مستقل) */}
             <div>
-              {/* تريلر */}
+              {/* تريلر — شريط عريض مسطّح بأبعاد البانر */}
               <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
-                <div className="aspect-video rounded-xl overflow-hidden bg-black/50 border border-white/10 relative group cursor-pointer" onClick={handleOpenTrailer}>
+                <div className="aspect-[21/9] w-full rounded-xl overflow-hidden bg-black/50 border border-white/10 relative group cursor-pointer" onClick={handleOpenTrailer}>
                   {trailerKey && backdrop ? (
                     <>
-                      <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" crossOrigin="anonymous" />
                       <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                         <div className="relative">
                           <div className="absolute inset-0 bg-red-600/30 blur-3xl"></div>
@@ -892,7 +702,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
                       <div className="absolute bottom-3 left-3 bg-black/80 px-2 py-1 rounded-lg text-white text-xs font-bold">🎬 شاهد التريلر</div>
                     </>
                   ) : backdrop ? (
-                    <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" />
+                    <img src={backdrop} alt={title} className="w-full h-full object-cover" loading="lazy" crossOrigin="anonymous" />
                   ) : null}
                 </div>
               </div>
@@ -928,30 +738,84 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
               </div>
             )}
           </div>
+
+          {/* عمود 3: طاقم العمل — بنفس ارتفاع البوستر، صورة يسار + اسم من اليسار لليمين */}
+          {cast.length > 0 && (
+            <div
+              className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden hidden md:flex flex-col"
+              style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '450px' }}
+            >
+              <div className="px-3 pt-3 pb-2 border-b border-white/10">
+                <h3 className="text-xs font-bold text-purple-400 text-center">طاقم العمل</h3>
+              </div>
+              <div className="flex-1 flex flex-col overflow-hidden p-2 gap-0">
+                {cast.map((person: any, idx: number) => (
+                  <div
+                    key={person.tmdb_id || person.id || `cast-${idx}`}
+                    className="flex items-center gap-2 min-w-0 px-1 rounded-lg hover:bg-white/5 transition-colors"
+                    style={{ flex: `1 1 ${100 / cast.length}%`, minHeight: 0 }}
+                    dir="ltr"
+                  >
+                    {/* صورة على اليسار */}
+                    <div className="rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/10" style={{width: '36px', height: '36px'}}>
+                      {person.profile_path ? (
+                        <img src={`/tmdb/w45${person.profile_path}`} alt={person.name_ar || person.name_en} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-zinc-400 text-xs">؟</div>
+                      )}
+                    </div>
+                    {/* الاسم بجانب الصورة من اليسار لليمين */}
+                    <p className="text-[11px] text-zinc-200 leading-tight truncate font-medium flex-1 text-left">{person.name_en || person.name_ar}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* عمود 4: إعلان سايدبار 160×600 — بنفس ارتفاع البوستر */}
+          <div
+            className="hidden lg:flex flex-col items-center justify-start"
+            style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '450px' }}
+          >
+            <div className="rounded-2xl bg-gradient-to-b from-blue-500/60 via-slate-700/70 to-red-500/60 p-[1.5px] shadow-lg shadow-slate-950/70 w-full">
+              <div className="rounded-[14.5px] bg-slate-950 p-1 flex justify-center">
+                <AdsterraBanner ad={AD_SIDE} />
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      {/* Similar Series Section */}
-      {!similarLoading && similarSeries.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+      {/* Similar Series Section — القسم محجوز دائماً (Skeleton أثناء الجلب) لمنع قفز الفوتر */}
+      {(similarLoading || similarSeries.length > 0) && (
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-12">
           <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
             <Tv className="w-6 h-6 text-blue-500" />
             قد يعجبك أيضاً
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {similarSeries.map((item: any, i: number) => (
-              <MovieCard
-                key={item.id}
-                movie={{
-                  ...item,
-                  media_type: 'tv',
-                  title_ar: item.name_ar,
-                  title_en: item.name_en,
-                  name: item.name_ar || item.name_en
-                }}
-                index={i}
-              />
-            ))}
+            {similarLoading
+              ? Array.from({ length: 12 }).map((_, i) => (
+                  <div key={`similar-skeleton-${i}`} aria-hidden="true">
+                    <div className="aspect-[2/3] w-full animate-pulse rounded-2xl bg-white/5" />
+                    <div className="h-[52px] w-full animate-pulse rounded-b-2xl bg-white/5" />
+                  </div>
+                ))
+              : similarSeries.map((item: any, i: number) => (
+                  <MovieCard
+                    key={item.id}
+                    movie={{
+                      ...item,
+                      media_type: 'tv',
+                      title_ar: item.name_ar,
+                      title_en: item.name_en,
+                      name: item.name_ar || item.name_en
+                    }}
+                    index={i}
+                    initialCardState={(item.tmdb_id || item.id) ? similarStates[`tv-${item.tmdb_id || item.id}`] : undefined}
+                  />
+                ))}
           </div>
         </div>
       )}
