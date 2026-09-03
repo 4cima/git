@@ -4,7 +4,7 @@ import { executeFirst } from '@/lib/db'
 import { MovieDetailsClient } from '@/components/pages/MovieDetailsClient'
 import { truncateDescription } from '@/utils/textSanitizer'
 
-export const revalidate = 3600
+export const revalidate = 60
 
 interface PageProps {
   params: Promise<{ slug: string }>
