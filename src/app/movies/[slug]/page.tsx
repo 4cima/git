@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst } from '@/lib/db'
 import { MovieDetailsClient } from '@/components/pages/MovieDetailsClient'
+import { truncateDescription } from '@/utils/textSanitizer'
 
 export const revalidate = 3600
 
@@ -23,11 +24,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     movie.title_en || 
     'فيلم'
   )
-  const description = String(
+  const description = truncateDescription(String(
     (movie.seo_description_ar && String(movie.seo_description_ar).trim()) || 
     movie.overview_ar || 
     'شاهد الفيلم على فور سيما'
-  ).slice(0, 160)
+    )
+)
   
   let keywords: string | undefined
   try {

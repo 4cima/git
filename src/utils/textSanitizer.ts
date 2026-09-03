@@ -96,3 +96,28 @@ export function containsSensitiveWords(text: string | null | undefined): boolean
   
   return false
 }
+/**
+ * قصّ الوصف عند حد أقصى مع القطع عند كلمة كاملة
+ * (يمنع وصف meta من التقطّع وسط الجملة)
+ * @param text النص المراد قصّه
+ * @param maxLen الحد الأقصى لعدد الأحرف (افتراضياً 160)
+ * @returns النص المقصوص عند آخر كلمة كاملة + «...» إن تجاوز الحد
+ */
+export function truncateDescription(text: string | null | undefined, maxLen = 160): string {
+  if (!text) return ''
+
+  const clean = text.trim().replace(/\s+/g, ' ')
+
+  if (clean.length <= maxLen) return clean
+
+  // قصّ عند الحد ثم الرجوع لآخر مسافة حتى لا نقطع وسط كلمة
+  const cut = clean.slice(0,maxLen)
+  const lastSpace = cut.lastIndexOf(' ')
+
+  // نتأكد أن القطع عند مسافة قريبة من الحد (وليس في أول النص)
+  if (lastSpace > Math.floor(maxLen * 0.7)) {
+    return cut.slice(0,lastSpace) + '...'
+  }
+
+  return cut.trim() + '...'
+}

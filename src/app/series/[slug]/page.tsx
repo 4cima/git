@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst } from '@/lib/db'
 import { SeriesDetailsClient } from '@/components/pages/SeriesDetailsClient'
+import { truncateDescription } from '@/utils/textSanitizer'
 
 export const revalidate = 3600
 
@@ -22,11 +23,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     series.name_en || 
     'مسلسل'
   )
-  const description = String(
+  const description = truncateDescription(String(
     (series.seo_description_ar && String(series.seo_description_ar).trim()) || 
     series.overview_ar || 
     'شاهد المسلسل على فور سيما'
-  ).slice(0, 160)
+    )
+)
   
   let keywords: string | undefined
   try {
