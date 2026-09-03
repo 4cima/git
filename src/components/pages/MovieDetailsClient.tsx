@@ -396,8 +396,10 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
       </div>
 
       <div className="relative z-10 page-container pt-24 pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
-          {/* Right (First in RTL): Poster */}
+        {/* Layout: [بوستر 300px] [إعلان سايدبار 160px] [كاست 140px] [بيانات 1fr] */}
+        <div className="grid grid-cols-1 md:grid-cols-[300px_160px_140px_1fr] gap-4 items-start">
+
+          {/* عمود 1: البوستر + كلمات مفتاحية */}
           <div className="relative">
             <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group" ref={posterImgRef}>
               {poster && (
@@ -411,10 +413,7 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                 <h3 className="text-sm font-bold text-purple-400 mb-3">كلمات مفتاحية</h3>
                 <div className="flex flex-wrap gap-2">
                   {keywords.slice(0, 10).map((keyword: any, index: number) => (
-                    <span
-                      key={index}
-                      className="px-2 py-1 rounded bg-white/5 border border-white/10 text-xs text-zinc-400"
-                    >
+                    <span key={index} className="px-2 py-1 rounded bg-white/5 border border-white/10 text-xs text-zinc-400">
                       {keyword.name || keyword}
                     </span>
                   ))}
@@ -423,7 +422,54 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
             )}
           </div>
 
-          {/* Right: Info */}
+          {/* عمود 2: إعلان سايدبار 160×600 — بنفس ارتفاع البوستر */}
+          <div
+            className="hidden lg:flex flex-col items-center justify-start"
+            style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '364px' }}
+          >
+            <div className="rounded-2xl bg-gradient-to-b from-blue-500/60 via-slate-700/70 to-red-500/60 p-[1.5px] shadow-lg shadow-slate-950/70 w-full">
+              <div className="rounded-[14.5px] bg-slate-950 p-1 flex justify-center">
+                <AdsManager type="banner" position="details-sidebar" />
+              </div>
+            </div>
+          </div>
+
+          {/* عمود 3: طاقم العمل — بنفس ارتفاع البوستر، صورة + اسم، يملأ الارتفاع */}
+          {cast.length > 0 && (
+            <div
+              className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden hidden md:flex flex-col"
+              style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '364px' }}
+            >
+              {/* عنوان */}
+              <div className="px-3 pt-3 pb-2 border-b border-white/10">
+                <h3 className="text-xs font-bold text-purple-400 text-center">طاقم العمل</h3>
+              </div>
+              {/* قائمة الممثلين تملأ الارتفاع المتبقي */}
+              <div className="flex-1 flex flex-col overflow-hidden p-2 gap-0">
+                {cast.map((person: any, idx: number) => {
+                  const totalItems = cast.length
+                  return (
+                    <div
+                      key={person.tmdb_id || person.id || `cast-${idx}`}
+                      className="flex items-center gap-2 min-w-0 px-1 rounded-lg hover:bg-white/5 transition-colors"
+                      style={{ flex: `1 1 ${100 / totalItems}%`, minHeight: 0 }}
+                    >
+                      <div className="rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/10" style={{width: '36px', height: '36px'}}>
+                        {person.profile_path ? (
+                          <img src={`/tmdb/w45${person.profile_path}`} alt={person.name_ar || person.name_en} className="w-full h-full object-cover" loading="lazy" />
+                        ) : (
+                          <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-zinc-400 text-xs">؟</div>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-zinc-200 leading-tight truncate font-medium">{person.name_ar || person.name_en}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* عمود 4: صندوق البيانات — بنفس ارتفاع البوستر */}
           <div className="space-y-4">
             {/* صندوق البيانات - بنفس ارتفاع البوستر */}
             <div
@@ -553,31 +599,8 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                 </div>
               </div>
 
-            {/* Grid: كاست (يمين) + تريلر (يسار) */}
-            <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-4">
-              {/* كاست - عامود يمين بنفس ارتفاع الكلمات المفتاحية */}
-              {cast.length > 0 && (
-                <div
-                  className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
-                  style={adHeight ? { height: `${adHeight}px` } : { minHeight: '180px' }}
-                >
-                  <h3 className="text-xs font-bold text-purple-400 mb-3">فريق العمل</h3>
-                  <div className="flex flex-col gap-2">
-                    {cast.map((person: any, idx: number) => (
-                      <div key={person.tmdb_id || person.id || `cast-${idx}`} className="flex items-center gap-2 min-w-0">
-                        <div className="rounded-full overflow-hidden bg-zinc-800 flex-shrink-0" style={{width: '28px', height: '28px'}}>
-                          {person.profile_path && (
-                            <img src={`/tmdb/w45${person.profile_path}`} alt={person.name_ar || person.name_en} className="w-full h-full object-cover" loading="lazy" />
-                          )}
-                        </div>
-                        <p className="text-[10px] text-zinc-300 leading-tight truncate">{person.name_ar || person.name_en}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* تريلر - عامود يسار */}
+            {/* تريلر فقط */}
+            <div>
               <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl">
                 <div className="aspect-video rounded-xl overflow-hidden bg-black/50 border border-white/10 relative group cursor-pointer" onClick={handleOpenTrailer}>
                   {trailerKey && backdrop ? (
