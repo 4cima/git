@@ -10,7 +10,7 @@ import { MobileStickyAd, DesktopOnly } from '@/components/features/system/Mobile
 import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
-import { useListingGenres } from '@/hooks/useListingGenres'
+import { useListingGenres, isFallbackGenreList } from '@/hooks/useListingGenres'
 
 /* ===== خريطة إعلانات القسم — الأرقام من src/data/ads/4cima.com =====
    1: 728×90 هيدر | 2: 300×250 أعلى العمود الجانبي | 3: 160×600 سكرايبر ديسكتوب
@@ -165,7 +165,7 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false }:
      يغطي الروابط العميقة لتصنيفات غير موجودة في القائمة الاحتياطية */
   const didDynamicGenreSync = useRef(false)
   useEffect(() => {
-    if (genresList === GENRES || didDynamicGenreSync.current) return
+    if (isFallbackGenreList(genresList, GENRES) || didDynamicGenreSync.current) return
     didDynamicGenreSync.current = true
     const urlGenre = searchParams.get('genre')
     if (!urlGenre || selectedGenre !== 'all') return
