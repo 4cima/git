@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { executeAll, executeFirst } from '@/lib/db'
+import { getGenresWithCounts } from '@/lib/genres'
 
 export const revalidate = 86400
 
@@ -78,6 +79,30 @@ export async function generateSitemaps(): Promise<{ id: number }[]> {
 }
 
 /**
+ * Genre landing pages (/movies/genres/[slug] and /series/genres/[slug]) —
+ * only genres that actually have content of each type.
+ */
+async function getGenreSitemapRoutes(): Promise<MetadataRoute.Sitemap> {
+  try {
+    const genres = await getGenresWithCounts()
+    const now = new Date()
+    const routes: MetadataRoute.Sitemap = []
+    for (const g of genres) {
+      if (g.movie_count > 0) {
+        routes.push({ url: `${BASE_URL}/movies/genres/${g.slug}`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 })
+      }
+      if (g.series_count > 0) {
+        routes.push({ url: `${BASE_URL}/series/genres/${g.slug}`, lastModified: now, changeFrequency: 'weekly', priority: 0.7 })
+      }
+    }
+    return routes
+  } catch (error) {
+    console.error('Sitemap genre routes error:', error)
+    return []
+  }
+}
+
+/**
  * Return URLs for a specific sitemap chunk.
  */
 export default async function sitemap({
@@ -98,8 +123,16 @@ export default async function sitemap({
             { url: BASE_URL, lastModified: new Date(), changeFrequency: 'daily', priority: 1.0 },
             { url: `${BASE_URL}/movies`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
             { url: `${BASE_URL}/series`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
+            { url: `${BASE_URL}/movies/arabic`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
+            { url: `${BASE_URL}/series/arabic`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
+            { url: `${BASE_URL}/genres/arabic`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
+            { url: `${BASE_URL}/anime`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
+            { url: `${BASE_URL}/genres`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
           ]
         : []
+
+    // Genre landing pages — only fetched for the first chunk
+    const extraGenreRoutes = chunkId === 0 ? await getGenreSitemapRoutes() : []
 
     // Series chunk
     if (chunkId >= SERIES_ID_OFFSET) {
@@ -117,7 +150,7 @@ export default async function sitemap({
         changeFrequency: 'weekly',
         priority: 0.8,
       }))
-      return [...staticRoutes, ...seriesRoutes]
+      return [...staticRoutes, ...extraGenreRoutes, ...seriesRoutes]
     }
 
     // Movie chunk
@@ -134,7 +167,7 @@ export default async function sitemap({
       changeFrequency: 'weekly',
       priority: 0.8,
     }))
-    return [...staticRoutes, ...movieRoutes]
+    return [...staticRoutes, ...extraGenreRoutes, ...movieRoutes]
   } catch (error) {
     console.error(`Sitemap chunk ${chunkId} error:`, error)
     return []
