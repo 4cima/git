@@ -1,15 +1,18 @@
 'use client'
 
 /**
- * HomePageClient — Trending Movies & Series sections
+ * HomePageClient — قسم الرائج المُدمج + الأقسام الإضافية
  *
- * Extracted from HomePageClient and loaded via `next/dynamic` with `ssr:false`
- * so this heavy chunk (dozens of cards, badges, home actions) does NOT block
- * the critical rendering path → improves INP & initial bundle of the home page.
+ * الهيكلة الجديدة: قسم واحد مختلط (أفلام + مسلسلات بتداخل الكروت: فيلم/مسلسل/فيلم...)
+ * بعنوان = الزر المنقسم السينمائي (SectionSplitHeader): زر «أفلام» | كلمة القسم | زر «مسلسلات».
+ * نفس المفهوم مستنسَخ لكل الأقسام الإضافية (خيال علمي، أنمي، جريمة، عربي).
+ * لا زر «عرض الكل» ولا كارت CTA — الروابط كلها من الزر المنقسم.
+ *
+ * يُحمَّل عبر `next/dynamic` (ssr:true) خارج مسار الرندر الحرج لتحسين INP وحجم الباندل.
  */
-import { Fragment, useCallback, useEffect, useRef } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Film, Play, Tv } from 'lucide-react'
+import { Film, Flame, Play } from 'lucide-react'
 import { StarIcon } from '../common/StarIcon'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
@@ -17,9 +20,9 @@ import { getYearBadgeStyle } from '@/utils/yearBadge'
 import { HomeCardHeart } from './HomeCardHeart'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import { HomeExtraSections, type ExtraSectionDef } from './HomeExtraSections'
+import { interleave, mapItems } from './homeSectionUtils'
 import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
-
-/* كارت الإعلان رقم 5 (160×300) داخل الصفوف — معرّف في HomeAdCard ومُشارَك مع الأقسام الإضافية */
+import { SectionSplitHeader, SectionNavArrows } from './SectionSplitHeader'
 
 export interface MediaItem {
   id: number
@@ -42,23 +45,18 @@ export type CardState = 'neutral' | 'favorite' | 'completed'
 interface HomeData {
   trendingMovies: MediaItem[]
   trendingSeries: MediaItem[]
-  topRatedMovies?: MediaItem[]
-  topRatedSeries?: MediaItem[]
-  action?: MediaItem[]
-  drama?: MediaItem[]
   sciFi?: MediaItem[]
   anime?: MediaItem[]
   crime?: MediaItem[]
   arabicMovies?: MediaItem[]
+  arabicSeries?: MediaItem[]
 }
 
 export interface HomeTrendingSectionsProps {
   data: HomeData
   isLoggedIn: boolean
-  moviesDisplayCount: number
-  seriesDisplayCount: number
-  onMoviesLoadMore: () => void
-  onSeriesLoadMore: () => void
+  trendingDisplayCount: number
+  onTrendingLoadMore: () => void
   getCardState: (item: MediaItem) => CardState
   isCardLoading: (item: MediaItem) => boolean
   toggleCardState: (item: MediaItem, e?: React.MouseEvent) => void
@@ -66,77 +64,193 @@ export interface HomeTrendingSectionsProps {
 
 type ScrollRef = React.RefObject<HTMLDivElement | null>
 
+/** كارت موحّد للرائج (فيلم أو مسلسل) — نفس هوية الكارت السابقة تمامًا */
+function TrendingCard({
+  item,
+  eager,
+  isLoggedIn,
+  getCardState,
+  isCardLoading,
+  toggleCardState,
+  onCardClick,
+}: {
+  item: MediaItem
+  eager?: boolean
+  isLoggedIn: boolean
+  getCardState: (item: MediaItem) => CardState
+  isCardLoading: (item: MediaItem) => boolean
+  toggleCardState: (item: MediaItem, e?: React.MouseEvent) => void
+  onCardClick?: (e: React.MouseEvent) => void
+}) {
+  const mediaColorScheme = getMediaTypeColor(item.media_type)
+  const genreColorScheme = item.primary_genre ? getGenreColor(item.primary_genre) : null
+  const href = item.media_type === 'movie' ? `/movies/${item.slug}` : `/series/${item.slug}`
+
+  return (
+    <Link href={href} onClick={onCardClick} className="group flex-shrink-0 w-40 sm:w-48">
+      <div className="bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative">
+        {/* Poster with Overlay Badges */}
+        <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
+          {item.poster_path ? (
+            <>
+              <div className="absolute inset-0 bg-slate-800 animate-pulse" />
+              <img
+                src={`/tmdb/w185${item.poster_path}`}
+                alt={item.title_ar}
+                width={185}
+                height={278}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
+                loading={eager ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+            </>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 p-4 text-center">
+              <Film className="w-8 h-8 text-slate-700 mb-2" />
+              <span className="text-[10px] text-slate-500">{item.title_ar}</span>
+            </div>
+          )}
+
+          {/* Dark gradient on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+          {/* Top Left - Heart Button */}
+          <div className="absolute top-2 left-2 z-40">
+            <HomeCardHeart
+              state={getCardState(item)}
+              loading={isCardLoading(item)}
+              onClick={(e) => toggleCardState(item, e)}
+              isLoggedIn={isLoggedIn}
+            />
+          </div>
+
+          {/* Top Right - Media Type Badge (فيلم / مسلسل) */}
+          <div className="absolute top-2 right-2 z-20">
+            <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
+              {mediaColorScheme.label}
+            </span>
+          </div>
+
+          {/* Bottom Right - Genre Badge */}
+          {genreColorScheme && (
+            <div className="absolute bottom-2 right-2 z-20">
+              <span className={`${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
+                {item.primary_genre}
+              </span>
+            </div>
+          )}
+
+          {/* Bottom Left - Rating & Year */}
+          <div className="absolute bottom-2 left-2 z-20 flex flex-col gap-1">
+            {item.vote_average > 0 && (
+              <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
+                <StarIcon className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
+                <span className="text-[12px] font-bold">{item.vote_average.toFixed(1)}</span>
+              </span>
+            )}
+            {item.year && (
+              <span className={`px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg ${getYearBadgeStyle(item.year)}`}>
+                {item.year}
+              </span>
+            )}
+          </div>
+
+          {/* Play Hover Button - Center */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
+            <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300 pointer-events-auto">
+              <Play className="w-5 h-5 text-white fill-white mr-0.5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Title Section - Reduced Height */}
+        <div className="p-2.5 h-[52px] flex flex-col justify-center relative overflow-hidden">
+          <h3 className="text-[13px] font-bold text-slate-200 line-clamp-1 group-hover:text-amber-400 transition leading-tight">
+            {sanitizeTitle(item.title_ar)}
+          </h3>
+          {item.title_en && (
+            <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 leading-tight">
+              {item.title_en}
+            </p>
+          )}
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 export function HomeTrendingSections({
   data,
   isLoggedIn,
-  moviesDisplayCount,
-  seriesDisplayCount,
-  onMoviesLoadMore,
-  onSeriesLoadMore,
+  trendingDisplayCount,
+  onTrendingLoadMore,
   getCardState,
   isCardLoading,
   toggleCardState,
 }: HomeTrendingSectionsProps) {
-  const moviesScrollRef = useRef<HTMLDivElement>(null)
-  const seriesScrollRef = useRef<HTMLDivElement>(null)
-  const moviesEndRef = useRef<HTMLDivElement>(null)
-  const seriesEndRef = useRef<HTMLDivElement>(null)
+  const trendingScrollRef = useRef<HTMLDivElement>(null)
+  const trendingEndRef = useRef<HTMLDivElement>(null)
+
+  /* الأقسام الإضافية — تُجلب من /api/home-sections بعد أول رسم (خارج HTML
+     الرئيسي لتخفيف حجمه إلى النصف تقريبًا) مع skeleton أثناء التحميل */
+  type ExtraRaw = { sciFi?: unknown[]; anime?: unknown[]; crime?: unknown[]; arabicMovies?: unknown[]; arabicSeries?: unknown[] }
+  const [extraRaw, setExtraRaw] = useState<ExtraRaw | null>(null)
+  const [extraLoading, setExtraLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/home-sections')
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((json: ExtraRaw) => {
+        if (!cancelled) {
+          setExtraRaw(json)
+          setExtraLoading(false)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setExtraLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Mouse drag-to-scroll (desktop only). Uses mouse events only, so native touch
   // scrolling & wheel scrolling are unaffected.
-  const moviesDrag = useDragScroll<HTMLDivElement>()
-  const seriesDrag = useDragScroll<HTMLDivElement>()
+  const trendingDrag = useDragScroll<HTMLDivElement>()
 
-  const setMoviesRef = (el: HTMLDivElement | null) => {
-    moviesScrollRef.current = el
-    ;(moviesDrag.ref as React.MutableRefObject<HTMLDivElement | null>).current = el
-  }
-  const setSeriesRef = (el: HTMLDivElement | null) => {
-    seriesScrollRef.current = el
-    ;(seriesDrag.ref as React.MutableRefObject<HTMLDivElement | null>).current = el
+  const setTrendingRef = (el: HTMLDivElement | null) => {
+    trendingScrollRef.current = el
+    ;(trendingDrag.ref as React.MutableRefObject<HTMLDivElement | null>).current = el
   }
 
-  // Intersection Observer → lazy-load more Movies
+  /* قسم الرائج الموحّد — أفلام + مسلسلات بتداخل الكروت (فيلم/مسلسل/فيلم...) */
+  const trendingItems = interleave([
+    ...(data?.trendingMovies || []),
+    ...(data?.trendingSeries || []),
+  ])
+
+  // Intersection Observer → lazy-load more trending items
   useEffect(() => {
-    if (!moviesEndRef.current || !data || moviesDisplayCount >= data.trendingMovies.length) return
+    if (!trendingEndRef.current || !data || trendingDisplayCount >= trendingItems.length) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          onMoviesLoadMore()
+          onTrendingLoadMore()
         }
       },
       {
-        root: moviesScrollRef.current,
+        root: trendingScrollRef.current,
         rootMargin: '400px',
         threshold: 0,
       }
     )
 
-    observer.observe(moviesEndRef.current)
+    observer.observe(trendingEndRef.current)
     return () => observer.disconnect()
-  }, [moviesDisplayCount, data, onMoviesLoadMore])
+  }, [trendingDisplayCount, data, onTrendingLoadMore, trendingItems.length])
 
-  // Intersection Observer → lazy-load more Series
-  useEffect(() => {
-    if (!seriesEndRef.current || !data || seriesDisplayCount >= data.trendingSeries.length) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          onSeriesLoadMore()
-        }
-      },
-      {
-        root: seriesScrollRef.current,
-        rootMargin: '400px',
-        threshold: 0,
-      }
-    )
-
-    observer.observe(seriesEndRef.current)
-    return () => observer.disconnect()
-  }, [seriesDisplayCount, data, onSeriesLoadMore])
 
   // Scroll helper functions
   const scrollHorizontal = useCallback((ref: ScrollRef, direction: 'left' | 'right') => {
@@ -148,45 +262,18 @@ export function HomeTrendingSections({
     })
   }, [])
 
-  // Mouse wheel → horizontal scroll
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (moviesScrollRef.current?.contains(e.target as Node)) {
-        e.preventDefault()
-        moviesScrollRef.current.scrollLeft += e.deltaY
-      } else if (seriesScrollRef.current?.contains(e.target as Node)) {
-        e.preventDefault()
-        seriesScrollRef.current.scrollLeft += e.deltaY
-      }
-    }
-
-    const moviesEl = moviesScrollRef.current
-    const seriesEl = seriesScrollRef.current
-
-    moviesEl?.addEventListener('wheel', handleWheel, { passive: false })
-    seriesEl?.addEventListener('wheel', handleWheel, { passive: false })
-
-    return () => {
-      moviesEl?.removeEventListener('wheel', handleWheel)
-      seriesEl?.removeEventListener('wheel', handleWheel)
-    }
-  }, [])
+  // العجلة (wheel): لا نعترضها إطلاقاً — التمرير الرأسي بالعجلة يبقى يسكرول الصفحة
+  // فوق وتحت بشكل طبيعي، والتنقل الأفقي يكون عبر الأسهم/السحب/لوحة المفاتيح فقط.
 
   // Keyboard navigation (← →)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft' && moviesScrollRef.current?.contains(document.activeElement)) {
+      if (e.key === 'ArrowLeft' && trendingScrollRef.current?.contains(document.activeElement)) {
         e.preventDefault()
-        scrollHorizontal(moviesScrollRef, 'left')
-      } else if (e.key === 'ArrowRight' && moviesScrollRef.current?.contains(document.activeElement)) {
+        scrollHorizontal(trendingScrollRef, 'left')
+      } else if (e.key === 'ArrowRight' && trendingScrollRef.current?.contains(document.activeElement)) {
         e.preventDefault()
-        scrollHorizontal(moviesScrollRef, 'right')
-      } else if (e.key === 'ArrowLeft' && seriesScrollRef.current?.contains(document.activeElement)) {
-        e.preventDefault()
-        scrollHorizontal(seriesScrollRef, 'left')
-      } else if (e.key === 'ArrowRight' && seriesScrollRef.current?.contains(document.activeElement)) {
-        e.preventDefault()
-        scrollHorizontal(seriesScrollRef, 'right')
+        scrollHorizontal(trendingScrollRef, 'right')
       }
     }
 
@@ -194,423 +281,105 @@ export function HomeTrendingSections({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [scrollHorizontal])
 
-  /* 10 أقسام رئيسية: قسمان رائجان أعلاه + 8 أقسام إضافية أدناه.
-     كلها تأتي من قوائم كاش ثابتة (~100 عنصر لكل قائمة) قادمة من السيرفر — بدون أي تصفية عميلة/byGenre
-     حتى لا يتكرر محتوى قسم داخل قسم آخر. */
+  /* 4 أقسام إضافية — كل قسم مختلط (أفلام + مسلسلات) مع تداخل الكروت
+     والزر المنقسم يوصل لصفحتي الأفلام والمسلسلات الخاصة بكل قسم */
   const extraSections: ExtraSectionDef[] = [
-    {
-      title: 'الأعلى تقييمًا — أفلام',
-      icon: 'star',
-      browseHref: '/movies',
-      items: (data?.topRatedMovies || []).slice(0, 100),
-    },
-    {
-      title: 'الأعلى تقييمًا — مسلسلات',
-      icon: 'star',
-      browseHref: '/series',
-      items: (data?.topRatedSeries || []).slice(0, 100),
-    },
-    {
-      title: 'الأكشن والمغامرة',
-      icon: 'flame',
-      browseHref: '/movies',
-      items: (data?.action || []).slice(0, 100),
-    },
-    {
-      title: 'الدراما والرومانسية',
-      icon: 'drama',
-      browseHref: '/movies',
-      items: (data?.drama || []).slice(0, 100),
-    },
     {
       title: 'الخيال العلمي',
       icon: 'rocket',
-      browseHref: '/movies',
-      items: (data?.sciFi || []).slice(0, 100),
+      labelHref: '/genres/science-fiction',
+      moviesHref: '/movies/genres/science-fiction',
+      seriesHref: '/series/genres/science-fiction',
+      items: interleave(mapItems(extraRaw?.sciFi, 'tv')).slice(0, 100),
     },
     {
       title: 'الأنمي والرسوم المتحركة',
       icon: 'sparkles',
-      browseHref: '/movies',
-      items: (data?.anime || []).slice(0, 100),
+      labelHref: '/genres/animation',
+      moviesHref: '/movies/genres/animation',
+      seriesHref: '/series/genres/animation',
+      items: interleave(mapItems(extraRaw?.anime, 'tv')).slice(0, 100),
     },
     {
       title: 'الجريمة والغموض',
       icon: 'fingerprint',
-      browseHref: '/movies',
-      items: (data?.crime || []).slice(0, 100),
+      labelHref: '/genres/crime',
+      moviesHref: '/movies/genres/crime',
+      seriesHref: '/series/genres/crime',
+      items: interleave(mapItems(extraRaw?.crime, 'movie')).slice(0, 100),
     },
     {
-      title: 'أفلام عربية',
+      title: 'عربي',
       icon: 'globe',
-      browseHref: '/movies',
-      items: (data?.arabicMovies || []).slice(0, 100),
+      labelHref: '/genres/arabic',
+      moviesHref: '/movies/arabic',
+      seriesHref: '/series/arabic',
+      items: interleave([
+        ...mapItems(extraRaw?.arabicMovies, 'movie').slice(0, 50),
+        ...mapItems(extraRaw?.arabicSeries, 'tv').slice(0, 50),
+      ].slice(0, 100)),
     },
   ]
 
+  /* أسهم التنقل السينمائية (ديسكتوب) — نفس هوية الزر المنقسم */
+  const trendingArrows = (
+    <div className="hidden md:block">
+      <SectionNavArrows scrollRef={trendingScrollRef} />
+    </div>
+  )
+
   return (
     <>
-      {/* Trending Movies Section */}
-      {data && data.trendingMovies.length > 0 && (
+      {/* قسم الرائج الموحّد — عنوانه الزر المنقسم السينمائي (أفلام | الرائج | مسلسلات) */}
+      {data && trendingItems.length > 0 && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl md:text-3xl font-black text-slate-100 flex items-center gap-3">
-              <Film className="w-7 h-7 text-red-500" />
-              <span>الأفلام الرائجة</span>
-            </h2>
-            <div className="flex items-center gap-2">
-              {/* Navigation Arrows */}
-              <div className="hidden md:flex items-center gap-2">
-                <button
-                  onClick={() => scrollHorizontal(moviesScrollRef, 'right')}
-                  className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all hover:scale-110"
-                  aria-label="Scroll right"
-                >
-                  <ArrowLeft className="w-5 h-5 text-slate-300 rotate-180" />
-                </button>
-                <button
-                  onClick={() => scrollHorizontal(moviesScrollRef, 'left')}
-                  className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all hover:scale-110"
-                  aria-label="Scroll left"
-                >
-                  <ArrowLeft className="w-5 h-5 text-slate-300" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <SectionSplitHeader
+            label="الرائج"
+            labelIcon={<Flame className="w-6 h-6 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]" />}
+            moviesHref="/movies"
+            seriesHref="/series"
+            actions={trendingArrows}
+          />
 
           <div
-            ref={setMoviesRef}
-            onMouseDown={moviesDrag.handleMouseDown}
+            ref={setTrendingRef}
+            onMouseDown={trendingDrag.handleMouseDown}
             className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing min-h-[318px] sm:min-h-[356px]"
             tabIndex={0}
             style={{ userSelect: 'none' }}
           >
             <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
-              {data.trendingMovies.slice(0, moviesDisplayCount).map((item, idx) => (
-                <Fragment key={`movie-${item.id}`}>
-                <Link
-                  href={`/movies/${item.slug}`}
-                  className="group flex-shrink-0 w-40 sm:w-48"
-                  onClick={(e) => { if (moviesDrag.consumeIfDragged()) e.preventDefault() }}
-                >
-                  <div className="bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative">
-                    {/* Poster with Overlay Badges */}
-                    <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
-                      {item.poster_path ? (
-                        <>
-                          <div className="absolute inset-0 bg-slate-800 animate-pulse" />
-                          <img
-                            src={`/tmdb/w185${item.poster_path}`}
-                            alt={item.title_ar}
-                            width={185}
-                            height={278}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
-                            loading={idx < 6 ? 'eager' : 'lazy'}
-                            decoding="async"
-                          />
-                        </>
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 p-4 text-center">
-                          <Film className="w-8 h-8 text-slate-700 mb-2" />
-                          <span className="text-[10px] text-slate-500">{item.title_ar}</span>
-                        </div>
-                      )}
-
-                      {/* Dark gradient on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-                      {/* Top Left - Heart Button */}
-                      <div className="absolute top-2 left-2 z-40">
-                        <HomeCardHeart
-                          state={getCardState(item)}
-                          loading={isCardLoading(item)}
-                          onClick={(e) => toggleCardState(item, e)}
-                          isLoggedIn={isLoggedIn}
-                        />
-                      </div>
-
-                      {/* Top Right - Media Type Badge */}
-                      {(() => {
-                        const mediaColorScheme = getMediaTypeColor(item.media_type)
-                        return (
-                          <div className="absolute top-2 right-2 z-20">
-                            <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
-                              {mediaColorScheme.label}
-                            </span>
-                          </div>
-                        )
-                      })()}
-
-                      {/* Bottom Right - Genre Badge */}
-                      {item.primary_genre && (() => {
-                        const genreColorScheme = getGenreColor(item.primary_genre)
-                        return (
-                          <div className="absolute bottom-2 right-2 z-20">
-                            <span className={`${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
-                              {item.primary_genre}
-                            </span>
-                          </div>
-                        )
-                      })()}
-{/* Bottom Left - Rating & Year */}
-                      <div className="absolute bottom-2 left-2 z-20 flex flex-col gap-1">
-                        {item.vote_average > 0 && (
-                          <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
-
-                            <StarIcon className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
-                            <span className="text-[12px] font-bold">{item.vote_average.toFixed(1)}</span>
-                          </span>
-                        )}
-                        {item.year && (
-                          <span className={`px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg ${getYearBadgeStyle(item.year)}`}>
-                            {item.year}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Play Hover Button - Center */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
-                        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300 pointer-events-auto">
-                          <Play className="w-5 h-5 text-white fill-white mr-0.5" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Title Section - Reduced Height */}
-                    <div className="p-2.5 h-[52px] flex flex-col justify-center relative overflow-hidden">
-                      <h3 className="text-[13px] font-bold text-slate-200 line-clamp-1 group-hover:text-amber-400 transition leading-tight">
-                        {sanitizeTitle(item.title_ar)}
-                      </h3>
-                      {item.title_en && (
-                        <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 leading-tight">
-                          {item.title_en}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-                  {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < moviesDisplayCount && (
-                    <AdInRowCard pos={`m-${idx + 1}`} />
+              {trendingItems.slice(0, trendingDisplayCount).map((item, idx) => (
+                <Fragment key={`trending-${item.media_type}-${item.id}`}>
+                  <TrendingCard
+                    item={item}
+                    eager={idx < 6}
+                    isLoggedIn={isLoggedIn}
+                    getCardState={getCardState}
+                    isCardLoading={isCardLoading}
+                    toggleCardState={toggleCardState}
+                    onCardClick={(e) => { if (trendingDrag.consumeIfDragged()) e.preventDefault() }}
+                  />
+                  {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < trendingDisplayCount && (
+                    <AdInRowCard pos={`t-${idx + 1}`} />
                   )}
                 </Fragment>
               ))}
 
               {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة */}
-              <AdInRowCard pos="m-end" />
+              <AdInRowCard pos="t-end" />
 
               {/* Sentinel for lazy loading */}
-              {moviesDisplayCount < data.trendingMovies.length && (
-                <div ref={moviesEndRef} className="flex-shrink-0 w-10" />
+              {trendingDisplayCount < trendingItems.length && (
+                <div ref={trendingEndRef} className="flex-shrink-0 w-10" />
               )}
-
-              {/* CTA Card - اذهب لقسم الأفلام */}
-              <Link
-                href="/movies"
-                className="group flex-shrink-0 w-40 sm:w-48"
-              >
-                <div className="bg-gradient-to-br from-red-600/20 to-amber-600/20 border-2 border-red-500/40 hover:border-red-400 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-red-950/50 relative h-full">
-                  <div className="aspect-[2/3] w-full relative overflow-hidden flex items-center justify-center p-6">
-                    <div className="text-center space-y-4">
-                      <Film className="w-16 h-16 text-red-400 mx-auto animate-pulse" />
-                      <div>
-                        <h3 className="text-lg font-black text-red-400 mb-2">اذهب لقسم الأفلام</h3>
-                        <p className="text-xs text-slate-300">اكتشف المزيد من الأفلام الرائعة</p>
-                      </div>
-                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-600/30 border border-red-500/50 rounded-lg text-sm font-bold text-red-300 group-hover:bg-red-600/50 transition-colors">
-                        <span>عرض الكل</span>
-                        <ArrowLeft className="w-4 h-4" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
             </div>
           </div>
         </div>
       )}
 
-      {/* Trending Series Section */}
-      {data && data.trendingSeries.length > 0 && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl md:text-3xl font-black text-slate-100 flex items-center gap-3">
-              <Tv className="w-7 h-7 text-blue-500" />
-              <span>المسلسلات الرائجة</span>
-            </h2>
-            <div className="flex items-center gap-2">
-              {/* Navigation Arrows */}
-              <div className="hidden md:flex items-center gap-2">
-                <button
-                  onClick={() => scrollHorizontal(seriesScrollRef, 'right')}
-                  className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all hover:scale-110"
-                  aria-label="Scroll right"
-                >
-                  <ArrowLeft className="w-5 h-5 text-slate-300 rotate-180" />
-                </button>
-                <button
-                  onClick={() => scrollHorizontal(seriesScrollRef, 'left')}
-                  className="p-2 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 transition-all hover:scale-110"
-                  aria-label="Scroll left"
-                >
-                  <ArrowLeft className="w-5 h-5 text-slate-300" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div
-            ref={setSeriesRef}
-            onMouseDown={seriesDrag.handleMouseDown}
-            className="horizontal-scroll -mx-4 px-4 cursor-grab active:cursor-grabbing min-h-[318px] sm:min-h-[356px]"
-            tabIndex={0}
-            style={{ userSelect: 'none' }}
-          >
-            <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
-              {data.trendingSeries.slice(0, seriesDisplayCount).map((item, idx) => (
-                <Fragment key={`series-${item.id}`}>
-                <Link
-                  href={`/series/${item.slug}`}
-                  className="group flex-shrink-0 w-40 sm:w-48"
-                  onClick={(e) => { if (seriesDrag.consumeIfDragged()) e.preventDefault() }}
-                >
-                  <div className="bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative">
-                    {/* Poster with Overlay Badges */}
-                    <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
-                      {item.poster_path ? (
-                        <>
-                          <div className="absolute inset-0 bg-slate-800 animate-pulse" />
-                          <img
-                            src={`/tmdb/w185${item.poster_path}`}
-                            alt={item.title_ar}
-                            width={185}
-                            height={278}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        </>
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 p-4 text-center">
-                          <Tv className="w-8 h-8 text-slate-700 mb-2" />
-                          <span className="text-[10px] text-slate-500">{item.title_ar}</span>
-                        </div>
-                      )}
-
-                      {/* Dark gradient on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-                      {/* Top Left - Heart Button */}
-                      <div className="absolute top-2 left-2 z-40">
-                        <HomeCardHeart
-                          state={getCardState(item)}
-                          loading={isCardLoading(item)}
-                          onClick={(e) => toggleCardState(item, e)}
-                          isLoggedIn={isLoggedIn}
-                        />
-                      </div>
-
-                      {/* Top Right - Media Type Badge */}
-                      {(() => {
-                        const mediaColorScheme = getMediaTypeColor(item.media_type)
-                        return (
-                          <div className="absolute top-2 right-2 z-20">
-                            <span className={`${mediaColorScheme.bg} ${mediaColorScheme.text} border ${mediaColorScheme.border} px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
-                              {mediaColorScheme.label}
-                            </span>
-                          </div>
-                        )
-                      })()}
-
-                      {/* Bottom Right - Genre Badge */}
-                      {item.primary_genre && (() => {
-                        const genreColorScheme = getGenreColor(item.primary_genre)
-                        return (
-                          <div className="absolute bottom-2 right-2 z-20">
-                            <span className={`${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg`}>
-                              {item.primary_genre}
-                            </span>
-                          </div>
-                        )
-                      })()}
-{/* Bottom Left - Rating & Year */}
-                      <div className="absolute bottom-2 left-2 z-20 flex flex-col gap-1">
-                        {item.vote_average > 0 && (
-                          <span className="flex items-center gap-1 bg-slate-900 text-yellow-400 border border-yellow-500/40 px-2 py-1 rounded-lg backdrop-blur-md shadow-lg">
-                            <StarIcon className="w-[11px] h-[11px] fill-yellow-400 shrink-0" />
-                            <span className="text-[12px] font-bold">{item.vote_average.toFixed(1)}</span>
-                          </span>
-                        )}
-                        {item.year && (
-                          <span className={`px-2 py-1 rounded-lg text-[12px] font-bold backdrop-blur-md shadow-lg ${getYearBadgeStyle(item.year)}`}>
-                            {item.year}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Play Hover Button - Center */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 pointer-events-none">
-                        <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300 pointer-events-auto">
-                          <Play className="w-5 h-5 text-white fill-white mr-0.5" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Title Section - Reduced Height */}
-                    <div className="p-2.5 h-[52px] flex flex-col justify-center relative overflow-hidden">
-                      <h3 className="text-[13px] font-bold text-slate-200 line-clamp-1 group-hover:text-amber-400 transition leading-tight">
-                        {sanitizeTitle(item.title_ar)}
-                      </h3>
-                      {item.title_en && (
-                        <p className="text-[11px] text-slate-400 line-clamp-1 mt-1 leading-tight">
-                          {item.title_en}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-                  {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < seriesDisplayCount && (
-                    <AdInRowCard pos={`s-${idx + 1}`} />
-                  )}
-                </Fragment>
-              ))}
-
-              {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة */}
-              <AdInRowCard pos="s-end" />
-
-              {/* Sentinel for lazy loading */}
-              {seriesDisplayCount < data.trendingSeries.length && (
-                <div ref={seriesEndRef} className="flex-shrink-0 w-10" />
-              )}
-
-              {/* CTA Card - اذهب لقسم المسلسلات */}
-              <Link
-                href="/series"
-                className="group flex-shrink-0 w-40 sm:w-48"
-              >
-                <div className="bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-2 border-blue-500/40 hover:border-blue-400 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-blue-950/50 relative h-full">
-                  <div className="aspect-[2/3] w-full relative overflow-hidden flex items-center justify-center p-6">
-                    <div className="text-center space-y-4">
-                      <Tv className="w-16 h-16 text-blue-400 mx-auto animate-pulse" />
-                      <div>
-                        <h3 className="text-lg font-black text-blue-400 mb-2">اذهب لقسم المسلسلات</h3>
-                        <p className="text-xs text-slate-300">اكتشف المزيد من المسلسلات الرائعة</p>
-                      </div>
-                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/30 border border-blue-500/50 rounded-lg text-sm font-bold text-blue-300 group-hover:bg-blue-600/50 transition-colors">
-                        <span>عرض الكل</span>
-                        <ArrowLeft className="w-4 h-4" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* أقسام إضافية: الأعلى تقييمًا + أحدث إضافات السنة */}
-      <HomeExtraSections sections={extraSections} />
+      {/* الأقسام الإضافية — نفس المفهوم بالضبط (زر منقسم + كروت مختلطة) */}
+      <HomeExtraSections sections={extraSections} loading={extraLoading} />
     </>
   )
 }
