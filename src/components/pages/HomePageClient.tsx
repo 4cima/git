@@ -100,11 +100,16 @@ interface HomePageClientProps {
 export function HomePageClient({ initialData }: HomePageClientProps) {
   const { user } = useAuth() // Check if user is logged in
 
-  // البيانات موحّدة عبر mapItems — الأقسام الإضافية تُجلب الآن كلاينت-سايد
-  // من /api/home-sections (داخل HomeTrendingSections) لتخفيف HTML الرئيسي
+  // البيانات موحّدة عبر mapItems — الأقسام الإضافية تصل الآن في SSR (initialData)
+  // كي يراها Googlebot في HTML الأول، و/api/home-sections يبقى للتحيين الكلاينت
   const data = useMemo<HomeData>(() => ({
     trendingMovies: mapItems(initialData.trendingMovies, 'movie'),
     trendingSeries: mapItems(initialData.trendingSeries, 'tv'),
+    sciFi: mapItems(initialData.sciFi, 'movie'),
+    anime: mapItems(initialData.anime, 'tv'),
+    crime: mapItems(initialData.crime, 'movie'),
+    arabicMovies: mapItems(initialData.arabicMovies, 'movie'),
+    arabicSeries: mapItems(initialData.arabicSeries, 'tv'),
   }), [initialData])
 
   const [heroIndex, setHeroIndex] = useState(0)

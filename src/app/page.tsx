@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { executeAll } from '@/lib/db'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
+import { fetchHomeSections } from '@/lib/home-sections-query'
 import { HomePageClient } from '@/components/pages/HomePageClient'
 
 export const metadata: Metadata = {
@@ -48,11 +49,18 @@ const HOME_DATA_TTL_MS = 30 * 60 * 1000 // 30 دقيقة (الجداول تتغ�
 /** أقل سنة مسموح بها في أقسام الصفحة الرئيسية — لا يُعرض أبداً عمل أقدم من 10 سنوات */
 const MIN_YEAR = new Date().getFullYear() - 10
 
-/** شكل بيانات الصفحة الرئيسية (صفوف DB خام — تُوحَّد لاحقاً بـ mapItems في الكلينت) */
+/** شكل بيانات الصفحة الرئيسية (صفوف DB خام — تُوحَّد لاحقاً بـ mapItems في الكلينت)
+ *  الأقسام الإضافية تُجلب في SSR كي يراها Googlebot في HTML الأول —
+ *  و/api/home-sections يبقى للتحيين كلاينت-سايد للصفحات المخزّنة. */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface HomeDataResult {
   trendingMovies: any[]
   trendingSeries: any[]
+  sciFi?: any[]
+  anime?: any[]
+  crime?: any[]
+  arabicMovies?: any[]
+  arabicSeries?: any[]
 }
 
 let homeDataCache: { at: number; data: HomeDataResult } | null = null
@@ -63,7 +71,7 @@ async function getHomeData(): Promise<HomeDataResult> {
     return homeDataCache.data
   }
   try {
-    const [movies, series] =
+    const [movies, series, sections] =
       await Promise.all([
         /* 1+2) الرائج — آخر 10 سنوات فقط، 60 لكل نوع */
         executeAll(
@@ -90,8 +98,9 @@ async function getHomeData(): Promise<HomeDataResult> {
            LIMIT 60`,
           []
         ),
-        /* 3..7) الأقسام الإضافية (خيال علمي، أنمي، جريمة، عربي) انتقلت إلى
-           /api/home-sections — تُحمَّل من الكلاينت بعد أول رسم لتخفيف HTML الرئيسي */
+        /* 3..7) الأقسام الإضافية (خيال علمي، أنمي، جريمة، عربي) — في SSR
+           كي يراها Googlebot في HTML الأول (الاستعلامات في lib/home-sections-query) */
+        fetchHomeSections(),
       ])
 
     const sanitize = (rows: unknown[]) => rows.map((r) => JSON.parse(JSON.stringify(r)))
@@ -100,6 +109,11 @@ async function getHomeData(): Promise<HomeDataResult> {
     const data = {
       trendingMovies: filterExcludedGenres(sanitize(movies)),
       trendingSeries: filterExcludedGenres(sanitize(series)),
+      sciFi: filterExcludedGenres(sanitize(sections.sciFi)),
+      anime: filterExcludedGenres(sanitize(sections.anime)),
+      crime: filterExcludedGenres(sanitize(sections.crime)),
+      arabicMovies: filterExcludedGenres(sanitize(sections.arabicMovies)),
+      arabicSeries: filterExcludedGenres(sanitize(sections.arabicSeries)),
     }
     homeDataCache = { at: Date.now(), data }
     return data

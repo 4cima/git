@@ -191,13 +191,18 @@ export function HomeTrendingSections({
   const trendingScrollRef = useRef<HTMLDivElement>(null)
   const trendingEndRef = useRef<HTMLDivElement>(null)
 
-  /* الأقسام الإضافية — تُجلب من /api/home-sections بعد أول رسم (خارج HTML
-     الرئيسي لتخفيف حجمه إلى النصف تقريبًا) مع skeleton أثناء التحميل */
+  /* الأقسام الإضافية — تصل في SSR من initialData (Googlebot يراها في HTML الأول).
+     /api/home-sections يبقى احتياطياً للتحيين إن لم تصل البيانات مع الصفحة. */
   type ExtraRaw = { sciFi?: unknown[]; anime?: unknown[]; crime?: unknown[]; arabicMovies?: unknown[]; arabicSeries?: unknown[] }
-  const [extraRaw, setExtraRaw] = useState<ExtraRaw | null>(null)
-  const [extraLoading, setExtraLoading] = useState(true)
+  const initialExtra: ExtraRaw | null =
+    (data?.sciFi?.length || data?.arabicMovies?.length || data?.crime?.length)
+      ? { sciFi: data?.sciFi, anime: data?.anime, crime: data?.crime, arabicMovies: data?.arabicMovies, arabicSeries: data?.arabicSeries }
+      : null
+  const [extraRaw, setExtraRaw] = useState<ExtraRaw | null>(initialExtra)
+  const [extraLoading, setExtraLoading] = useState(!initialExtra)
 
   useEffect(() => {
+    if (initialExtra) return
     let cancelled = false
     fetch('/api/home-sections')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
