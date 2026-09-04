@@ -1,11 +1,25 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { Tv } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
+import { Tv, ChevronLeft } from 'lucide-react'
+import Link from 'next/link'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { getGenreColor } from '@/utils/genreColors'
-import { useResponsiveGrid } from '@/hooks/useResponsiveGrid'
-import { AdsManager } from '@/components/features/system/AdsManager'
+import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { MobileStickyAd, DesktopOnly } from '@/components/features/system/MobileStickyAd'
+import { Footer } from '@/components/layout/Footer'
+import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
+import { getAdByNum } from '@/data/ads/4cima.com'
+import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
+
+/* ===== إعلانات صفحة التصنيف — أرقام موحّدة من src/data/ads/4cima.com (نظام موحّد لكل صفحات القوائم) =====
+   1: 728×90 هيدر | 2: 300×250 عمود جانبي | 3: 160×600 سكرايبر ديسكتوب
+   4: 468×60 فاصل قبل الفوتر | 5: 160×300 كارت داخل الجريد (AdInRowCard)
+   6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
+const AD_HEADER = getAdByNum(1)! // 728×90
+const AD_SIDE_RECT = getAdByNum(2)! // 300×250
+const AD_SIDE_SKY = getAdByNum(3)! // 160×600
+const AD_FOOTER_MID = getAdByNum(4)! // 468×60
 
 const SORT_OPTIONS = [
   { value: 'popularity',   order: 'desc', label: 'الأكثر شهرة',     icon: '🔥' },
@@ -20,28 +34,33 @@ interface SeriesGenrePageClientProps {
   slug: string
   initialSeries: any[]
   initialHasMore: boolean
+  /** مسار API مخصص للتحميل اللانهائي (افتراضي: /api/genres/{slug}) — تستخدمه صفحة /series/arabic */
+  listingPath?: string
 }
 
-export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMore }: SeriesGenrePageClientProps) {
+export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMore, listingPath }: SeriesGenrePageClientProps) {
   const [content, setContent] = useState<any[]>(initialSeries)
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
+  /* تحديث احتراف: عند ترتيب/تغيير والمحتوى معروض يبقى مكانه بقشريط رفيع */
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(initialHasMore)
   const [page, setPage] = useState(1)
   const [sort, setSort] = useState('popularity')
   const [order, setOrder] = useState<'asc' | 'desc'>('desc')
+  /* إعادة المحاولة: زيادة الرقم تجبر الـeffect على العمل حتى لو نفس الصفحة/الترتيب */
+  const [retryNonce, setRetryNonce] = useState(0)
 
   const observerTarget = useRef<HTMLDivElement>(null)
-  const itemsPerPage = useResponsiveGrid(12)
   const SKELETON_COUNT = 24
 
   const genreColorScheme = getGenreColor(genre.name_ar || genre.name_en)
 
   // Fetch series
   useEffect(() => {
-    // Skip initial fetch if we already have data from SSR
-    if (page === 1 && sort === 'popularity' && order === 'desc' && content.length > 0) {
+    // Skip initial fetch if we already have data from SSR (unless retry requested)
+    if (retryNonce === 0 && page === 1 && sort === 'popularity' && order === 'desc' && content.length > 0) {
       return
     }
     
@@ -50,18 +69,22 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
     const params = new URLSearchParams({
       type: 'tv',
       page: page.toString(),
-      limit: itemsPerPage.toString(),
+      limit: LISTING_PAGE_SIZE.toString(),
       sort,
       order
     })
 
     const isFirstPage = page === 1
-    if (isFirstPage) setLoading(true)
+    if (isFirstPage) {
+      // محتوى معروض؟ حدّثها بشريط رفيع (لا سكبور — لا قفز)
+      if (content.length > 0) setRefreshing(true)
+      else setLoading(true)
+    }
     else setLoadingMore(true)
     
     setError(null)
     
-    fetch(`/api/genres/${slug}?${params}`)
+    fetch(`${listingPath ?? `/api/genres/${slug}`}?${params}`)
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json()
@@ -85,7 +108,7 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
       .catch(err => {
         if (!cancelled) {
           console.error('Failed to fetch series:', err)
-          setContent(prev => isFirstPage ? [] : prev)
+          // نحتفظ بالمحتوى المعروض عند الخطأ — لا نسقطه (يمنع القفز)
           setError('فشل تحميل المسلسلات. حاول مرة أخرى.')
         }
       })
@@ -93,17 +116,18 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
         if (!cancelled) {
           setLoading(false)
           setLoadingMore(false)
+          setRefreshing(false)
         }
       })
     
     return () => { cancelled = true }
-  }, [slug, sort, order, page, itemsPerPage, initialSeries.length])
+  }, [slug, sort, order, page, initialSeries.length, listingPath, retryNonce])
 
   // Infinite scroll observer
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore && !refreshing) {
           setPage(prev => prev + 1)
         }
       },
@@ -116,38 +140,63 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
     return () => {
       if (currentTarget) observer.unobserve(currentTarget)
     }
-  }, [hasMore, loading, loadingMore])
+  }, [hasMore, loading, loadingMore, refreshing])
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change — مع الإبقاء بالمحتوى المعروض
   const resetAndFetch = useCallback((callback: () => void) => {
     callback()
     setPage(1)
-    setContent([])
     setError(null)
   }, [])
 
   return (
-    <div className="min-h-screen bg-black text-white pt-20 pb-12">
+    <div className="min-h-screen bg-slate-950 text-slate-100 pt-20 pb-12">
       <div className="page-container">
-        {/* Ad banner under the header (global-header) */}
+        {/* بنر 728×90 — نظام AdFrame */}
         <div className="mb-6 flex justify-center">
-          <AdsManager type="banner" position="global-header" />
+          <AdFrame ad={AD_HEADER} variant="x" />
         </div>
+
+        {/* مسار التنقل */}
+        <nav aria-label="مسار التنقل" className="mb-5 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
+          <Link href="/" className="transition-colors hover:text-zinc-300">الرئيسية</Link>
+          <span aria-hidden="true">/</span>
+          <Link href="/genres" className="transition-colors hover:text-zinc-300">التصنيفات</Link>
+          <span aria-hidden="true">/</span>
+          <Link href={`/genres/${slug}`} className="transition-colors hover:text-zinc-300">{genre.name_ar}</Link>
+          <span aria-hidden="true">/</span>
+          <span className="font-bold text-sky-400">مسلسلات</span>
+        </nav>
 
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className={`w-4 h-4 rounded-full ${genreColorScheme.bg} ${genreColorScheme.border} border-2 ${genreColorScheme.glow} shadow-xl`} />
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
+            <div className={`w-3.5 h-3.5 rounded-full ${genreColorScheme.bg} ${genreColorScheme.border} border-2 ${genreColorScheme.glow} shadow-xl`} />
             <h1 className={`text-4xl md:text-6xl font-black ${genreColorScheme.text} drop-shadow-lg`}>
               مسلسلات {genre.name_ar}
             </h1>
-          </div>
-          <p className="text-lg text-zinc-400">
             {genre.name_en && genre.name_en !== genre.name_ar && (
-              <span>{genre.name_en} • </span>
+              <span className="text-lg font-bold text-zinc-500">{genre.name_en}</span>
             )}
-            استكشف جميع المسلسلات
-          </p>
+          </div>
+          <p className="mb-5 text-lg text-zinc-400">استكشف جميع مسلسلات {genre.name_ar} المترجمة</p>
+
+          {/* تنقّل سريع: نظرة عامة + نظير الأفلام */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href={`/genres/${slug}`}
+              className="rounded-xl border border-zinc-700/60 bg-slate-900/60 px-4 py-2 text-sm font-bold text-zinc-300 transition-all duration-300 hover:border-zinc-500 hover:text-white"
+            >
+              نظرة عامة على {genre.name_ar}
+            </Link>
+            <Link
+              href={`/movies/genres/${slug}`}
+              className="group flex items-center gap-2 rounded-xl border border-red-500/25 bg-red-600/10 px-4 py-2 text-sm font-bold text-red-300 transition-all duration-300 hover:border-red-500/60 hover:bg-red-600/25"
+            >
+              <span>أفلام {genre.name_ar}</span>
+              <ChevronLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
+            </Link>
+          </div>
         </div>
 
         {/* Sort Options */}
@@ -158,8 +207,8 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
               onClick={() => resetAndFetch(() => { setSort(option.value); setOrder(option.order as 'asc' | 'desc') })}
               className={`px-4 py-2 rounded-lg font-semibold transition-all text-sm ${
                 sort === option.value && order === option.order
-                  ? 'bg-cyan-500 text-white border-2 border-cyan-400 shadow-lg'
-                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-2 border-transparent'
+                  ? 'bg-sky-500 text-white border-2 border-sky-400 shadow-lg shadow-sky-900/40'
+                  : 'bg-slate-900/60 text-zinc-400 hover:bg-slate-800 border-2 border-transparent'
               }`}
               aria-label={`ترتيب حسب ${option.label}`}
             >
@@ -167,6 +216,10 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
             </button>
           ))}
         </div>
+
+        {/* المنطق الموحد: شبكة الأعمال + العمود الجانبي الإعلاني (نفس نظام صفحات الأقسام) */}
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1">
 
         {/* Error State */}
         {error && (
@@ -180,7 +233,7 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
               <p className="text-red-300 text-sm font-bold">{error}</p>
             </div>
             <button 
-              onClick={() => setPage(1)}
+              onClick={() => setRetryNonce(n => n + 1)}
               className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-300 text-sm font-bold transition-colors"
             >
               إعادة المحاولة
@@ -203,11 +256,28 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
           </div>
         ) : content.length > 0 ? (
           <>
+            {/* شبكة ثابتة: مساحة محجزة + شريط تحديث رفيع (لا تغيّر ارتفاعها) */}
+            <div className="relative min-h-[320px]">
+              {refreshing && (
+                <div className="absolute top-0 left-0 right-0 z-20 h-0.5 overflow-hidden rounded-full bg-slate-800/80" aria-hidden="true">
+                  <div className="h-full w-1/2 rounded-full bg-gradient-to-l from-sky-500 via-cyan-400 to-sky-500 animate-pulse" />
+                </div>
+              )}
             <div className="grid-responsive gap-4" suppressHydrationWarning>
               {content.map((item: any, index: number) => {
                 const enhancedItem = { ...item, media_type: 'tv', isSeries: true }
-                return <MovieCard key={item.id} movie={enhancedItem} index={index} forceTv />
+                return (
+                  <Fragment key={item.id}>
+                    <MovieCard key={item.id} movie={enhancedItem} index={index} forceTv />
+                    {(index + 1) % AD_EVERY_N_CARDS === 0 && (
+                      <div className="flex justify-center">
+                        <AdInRowCard pos={`gs-${index + 1}`} />
+                      </div>
+                    )}
+                  </Fragment>
+                )
               })}
+            </div>
             </div>
 
             <div ref={observerTarget} className="h-10 mt-6"></div>
@@ -227,7 +297,31 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
             <p className="text-xl text-zinc-400">لا توجد مسلسلات في هذا التصنيف</p>
           </div>
         )}
+
+          </div>
+
+          {/* العمود الجانبي (يسار في RTL) — لاصق أثناء السكرول:
+              إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط */}
+          <aside className="flex w-full flex-col items-center gap-6 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
+            <AdFrame ad={AD_SIDE_RECT} variant="y" />
+            <DesktopOnly>
+              <div className="w-full">
+                <AdFrame ad={AD_SIDE_SKY} variant="y" />
+              </div>
+            </DesktopOnly>
+          </aside>
+        </div>
+
+        {/* إعلان 4 (468×60) — فاصل خفيف قبل الفوتر (نفس نظام صفحات الأقسام) */}
+        <div className="flex justify-center px-4 py-2 mt-8">
+          <AdFrame ad={AD_FOOTER_MID} variant="x" />
+        </div>
       </div>
+
+      <div className="pb-12"><Footer /></div>
+
+      {/* شريط الموبايل الثابت — إعلان 6 (320×50) */}
+      <MobileStickyAd />
     </div>
   )
 }

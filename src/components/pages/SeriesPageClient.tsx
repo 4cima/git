@@ -1,37 +1,41 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from 'react'
 import { useSearchParams } from 'next/navigation'
-import React from 'react'
-import Link from 'next/link'
-import { Tv, Star, Search, Play, ChevronDown, Filter as FilterIcon } from 'lucide-react'
+import { Tv, Search, X, ChevronDown } from 'lucide-react'
 import { Footer } from '@/components/layout/Footer'
-import { getGenreColor } from '@/utils/genreColors'
-import { sanitizeTitle } from '@/utils/textSanitizer'
-import { useResponsiveGrid } from '@/hooks/useResponsiveGrid'
 import { MovieCard } from '@/components/features/media/MovieCard'
-import { AdsManager } from '@/components/features/system/AdsManager'
+import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { MobileStickyAd, DesktopOnly } from '@/components/features/system/MobileStickyAd'
+import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
+import { getAdByNum } from '@/data/ads/4cima.com'
+import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
+import { useListingGenres } from '@/hooks/useListingGenres'
+
+/* ===== خريطة إعلانات القسم — الأرقام من src/data/ads/4cima.com =====
+   1: 728×90 هيدر | 2: 300×250 أعلى العمود الجانبي | 3: 160×600 سكرايبر ديسكتوب
+   4: 468×60 فاصل قبل الفوتر | 5: 160×300 كارت داخل الجريد (AdInRowCard)
+   6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
+const AD_HEADER = getAdByNum(1)!
+const AD_SIDE_RECT = getAdByNum(2)!
+const AD_SIDE_SKY = getAdByNum(3)!
+const AD_FOOTER_MID = getAdByNum(4)!
 import { useAuth } from '@/hooks/useAuth'
 
 const GENRES = [
-  { name: 'دراما',               slug: 'drama',              emoji: '🎭' },
-  { name: 'كوميديا',             slug: 'comedy',             emoji: '😂' },
-  { name: 'رسوم متحركة',        slug: 'animation',          emoji: '🎨' },
-  { name: 'وثائقي',              slug: 'documentary',        emoji: '🎬' },
-  { name: 'أكشن ومغامرة',        slug: 'action-&-adventure', emoji: '💥' },
-  { name: 'خيال علمي وفانتازيا', slug: 'sci-fi-&-fantasy',   emoji: '🚀' },
-  { name: 'جريمة',               slug: 'crime',              emoji: '🕵️' },
-  { name: 'واقعي',               slug: 'reality',            emoji: '📹' },
-  { name: 'غموض',                slug: 'mystery',            emoji: '🔍' },
-  { name: 'عائلي',               slug: 'family',             emoji: '👨‍👩‍👧‍👦' },
-  { name: 'أطفال',               slug: 'kids',               emoji: '👶' },
-  { name: 'دراما اجتماعية',     slug: 'soap',               emoji: '🎭' },
-  { name: 'حرب وسياسة',         slug: 'war-&-politics',     emoji: '⚔️' },
-  { name: 'برنامج حواري',       slug: 'talk',               emoji: '🎙️' },
-  { name: 'أخبار',               slug: 'news',               emoji: '📰' },
-  { name: 'غربي',                slug: 'western',            emoji: '🤠' },
-  { name: 'رومانسي',             slug: 'romance',            emoji: '💕' },
-  { name: 'تاريخي',              slug: 'history',            emoji: '📜' },
+  { name: 'دراما',               slug: 'drama',             emoji: '🎭' },
+  { name: 'كوميديا',             slug: 'comedy',            emoji: '😂' },
+  { name: 'رسوم متحركة',        slug: 'animation',         emoji: '🎨' },
+  { name: 'أكشن ومغامرة',        slug: 'action-adventure',  emoji: '💥' },
+  { name: 'خيال علمي وفانتازيا', slug: 'sci-fi-fantasy',    emoji: '🚀' },
+  { name: 'جريمة',               slug: 'crime',             emoji: '🕵️' },
+  { name: 'واقعي',               slug: 'reality',           emoji: '📹' },
+  { name: 'غموض',                slug: 'mystery',           emoji: '🔍' },
+  { name: 'عائلي',               slug: 'family',            emoji: '👨‍👩‍👧‍👦' },
+  { name: 'أطفال',               slug: 'kids',              emoji: '👶' },
+  { name: 'دراما اجتماعية',     slug: 'soap',              emoji: '🎭' },
+  { name: 'غربي',                slug: 'western',           emoji: '🤠' },
+  { name: 'رومانسي',             slug: 'romance',           emoji: '💕' },
 ] as const
 
 const YEARS = [
@@ -67,6 +71,13 @@ const RATINGS = [
   { value: '4.1-5',   label: '⭐ 5 متوسط'    },
 ]
 
+// تسميات عربية لأكواد اللغات (تظهر في شرائح الفلاتر النشطة)
+const LANGUAGE_LABELS: Record<string, string> = {
+  ar: 'عربي', en: 'إنجليزي', ko: 'كوري', ja: 'ياباني', zh: 'صيني',
+  hi: 'هندي', tr: 'تركي', es: 'إسباني', fr: 'فرنسي', de: 'ألماني',
+  pt: 'برتغالي', ru: 'روسي', it: 'إيطالي', th: 'تايلاندي',
+}
+
 const COUNTRIES = [
   { value: 'all', label: 'كل الدول'      },
   { value: 'US',  label: 'أمريكا'        },
@@ -94,45 +105,93 @@ const SORT_OPTIONS = [
   { value: 'first_air_year', order: 'asc',  label: 'الأقدم',          icon: '🕰️' },
 ]
 
-export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[] }) {
+/** قراءة الفلاتر من الـURL مرة واحدة عند الـmount — يمنع الطلب المزدوج ومسح بيانات الـSSR */
+function readFiltersFromURL(searchParams: { get(name: string): string | null }) {
+  const urlGenre = searchParams.get('genre')
+  const genre = urlGenre ? (GENRES.find(g => g.slug === urlGenre)?.name ?? 'all') : 'all'
+
+  // Language filter — passed directly to the API (original_language), no country mapping
+  const urlLanguage = searchParams.get('language')
+  const language    = urlLanguage ? urlLanguage.toLowerCase() : 'all'
+  const urlCountry  = searchParams.get('country')
+  const country     = urlCountry && COUNTRIES.some(c => c.value === urlCountry) ? urlCountry : 'all'
+
+  const urlYear   = searchParams.get('year')
+  const urlRating = searchParams.get('rating')
+  const year   = urlYear   && YEARS.some(y => y.value === urlYear)     ? urlYear   : 'all'
+  const rating = urlRating && RATINGS.some(r => r.value === urlRating) ? urlRating : 'all'
+  const search = searchParams.get('search') || searchParams.get('q') || ''
+
+  return { genre, country, year, rating, search, language }
+}
+
+export function SeriesPageClient({ initialSeries = [], initialHasMore = false }: { initialSeries?: any[]; initialHasMore?: boolean }) {
   const { user } = useAuth() // Check if user is logged in
   const searchParams = useSearchParams()
+  /* قائمة تصنيفات ديناميكية من قاعدة البيانات (GENRES احتياطية حتى وصول الاستجابة) */
+  const genresList = useListingGenres('tv', GENRES)
+  // Initialize filters from the URL exactly once (SSR data survives the first render)
+  const [initialFilters] = useState(() => readFiltersFromURL(searchParams))
   const [series, setSeries]                   = useState<any[]>(initialSeries)
   const [loading, setLoading]                 = useState(initialSeries.length === 0)
   const [loadingMore, setLoadingMore]         = useState(false)
+  /* تحديث بدون قفز: عند تغيير فلتر والمحتوى معروض، يبقى مكانه ونعرض شريط تقدم رفيع */
+  const [refreshing, setRefreshing]           = useState(false)
   const [error, setError]                     = useState<string | null>(null)
-  const [searchQuery, setSearchQuery]         = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [selectedGenre, setSelectedGenre]     = useState<string>('all')
-  const [selectedYear, setSelectedYear]       = useState<string>('all')
-  const [selectedRating, setSelectedRating]   = useState<string>('all')
-  const [selectedCountry, setSelectedCountry] = useState<string>('all')
+  const [searchQuery, setSearchQuery]         = useState(initialFilters.search)
+  const [debouncedSearch, setDebouncedSearch] = useState(initialFilters.search)
+  const [selectedGenre, setSelectedGenre]     = useState<string>(initialFilters.genre)
+  const [selectedYear, setSelectedYear]       = useState<string>(initialFilters.year)
+  const [selectedRating, setSelectedRating]   = useState<string>(initialFilters.rating)
+  const [selectedCountry, setSelectedCountry] = useState<string>(initialFilters.country)
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(initialFilters.language || 'all')
   const [sortBy, setSortBy]                   = useState('popularity')
   const [sortOrder, setSortOrder]             = useState('desc')
   const [page, setPage]                       = useState(1)
-  const [hasMore, setHasMore]                 = useState(false)
+  const [hasMore, setHasMore]                 = useState(initialHasMore)
+  const [retryNonce, setRetryNonce]           = useState(0)
   const observerTarget = useRef<HTMLDivElement>(null)
 
   // Batch card states for heart buttons
   const [cardStates, setCardStates] = useState<Record<string, 'neutral' | 'favorite' | 'completed'>>({})
+  // Keys already requested — so appended pages only fetch their own new items
+  const fetchedStateKeys = useRef<Set<string>>(new Set())
 
   // Single open dropdown at a time
   const [openDropdown, setOpenDropdown] = useState<'genre'|'year'|'rating'|'country'|'sort'|null>(null)
   const filtersRef = useRef<HTMLDivElement>(null)
 
-  // Use shared responsive grid hook (12 rows per page)
-  const itemsPerPage = useResponsiveGrid(12)
+  /* مزامنة فلتر التصنيف من الـURL بعد وصول القائمة الديناميكية —
+     يغطي الروابط العميقة لتصنيفات غير موجودة في القائمة الاحتياطية */
+  const didDynamicGenreSync = useRef(false)
+  useEffect(() => {
+    if (genresList === GENRES || didDynamicGenreSync.current) return
+    didDynamicGenreSync.current = true
+    const urlGenre = searchParams.get('genre')
+    if (!urlGenre || selectedGenre !== 'all') return
+    const g = genresList.find(x => x.slug === urlGenre)
+    if (g) setSelectedGenre(g.name)
+  }, [genresList])
+
+  // المنطق الموحد: 20 عنصرًا في كل دفعة (نفس حجم دفعة الـSSR) — ثابت لا يتغير مع تغيّر الشاشة
+  const limitRef = useRef(LISTING_PAGE_SIZE)
   
   // Fixed skeleton count for SSR (avoids hydration mismatch)
   const SKELETON_COUNT = 24 // 2 columns × 12 rows (mobile default)
 
-  // Sync filters from URL params whenever they change
+  // Sync filters from URL params on navigation — first mount is already handled
+  // by the useState initializers above (skipping it here avoids a duplicate fetch)
+  const isFirstUrlSync = useRef(true)
   useEffect(() => {
+    if (isFirstUrlSync.current) {
+      isFirstUrlSync.current = false
+      return
+    }
     // Read genre from URL (expects slug format)
     const urlGenre = searchParams.get('genre')
     if (urlGenre) {
       // Find genre by slug and set the Arabic name as selected value
-      const genre = GENRES.find(g => g.slug === urlGenre)
+      const genre = genresList.find(g => g.slug === urlGenre)
       if (genre) {
         setSelectedGenre(genre.name)
       }
@@ -143,28 +202,10 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
     // Read language from URL (maps to country filter)
     const urlLanguage = searchParams.get('language')
     if (urlLanguage) {
-      // Map language codes to country codes (e.g., 'ko' -> 'KR')
-      const languageMap: Record<string, string> = {
-        'ko': 'KR',  // Korean
-        'ja': 'JP',  // Japanese
-        'zh': 'CN',  // Chinese
-        'hi': 'IN',  // Hindi (India)
-        'tr': 'TR',  // Turkish
-        'ar': 'SA',  // Arabic (Saudi Arabia placeholder)
-        'en': 'US',  // English (US)
-        'es': 'MX',  // Spanish (Mexico)
-        'fr': 'FR',  // French
-        'de': 'DE',  // German
-        'pt': 'BR',  // Portuguese (Brazil)
-        'ru': 'RU',  // Russian
-      }
-      const country = languageMap[urlLanguage] || urlLanguage.toUpperCase()
-      const countryExists = COUNTRIES.some(c => c.value === country)
-      if (countryExists) {
-        setSelectedCountry(country)
-      }
-    } else if (!searchParams.get('country')) {
-      setSelectedCountry('all')
+      // Sent directly to the API — accurate original_language filter (no lossy country mapping)
+      setSelectedLanguage(urlLanguage.toLowerCase())
+    } else {
+      setSelectedLanguage('all')
     }
     
     // Read country from URL
@@ -208,9 +249,8 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
       setDebouncedSearch('')
     }
     
-    // Reset to page 1 when URL changes
+    // Reset to page 1 when URL changes — المحتوى يبقى حتى وصول النتائج الجديدة
     setPage(1)
-    setSeries([])
   }, [searchParams]) // Re-run whenever URL search params change
 
   // Debounce search
@@ -232,19 +272,24 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
   useEffect(() => {
     const abortController = new AbortController()
     
-    const params = new URLSearchParams({ page: page.toString(), limit: itemsPerPage.toString(), sort: sortBy, order: sortOrder })
+    const params = new URLSearchParams({ page: page.toString(), limit: limitRef.current.toString(), sort: sortBy, order: sortOrder })
     if (selectedGenre !== 'all') {
       // Convert Arabic name to slug for API
-      const genre = GENRES.find(g => g.name === selectedGenre)
+      const genre = genresList.find(g => g.name === selectedGenre)
       params.set('genre', genre?.slug || selectedGenre)
     }
     if (selectedYear      !== 'all') params.set('year',       selectedYear)
     if (selectedRating    !== 'all') params.set('rating_min', selectedRating)
     if (selectedCountry   !== 'all') params.set('country',    selectedCountry)
+    if (selectedLanguage  !== 'all') params.set('language',   selectedLanguage)
     if (debouncedSearch.trim())      params.set('search',     debouncedSearch.trim())
 
     const isFirstPage = page === 1
-    if (isFirstPage) setLoading(true)
+    if (isFirstPage) {
+      // محتوى معروض بالفعل؟ حدّث مكانه بشريط رفيع (لا سكبور — لا قفز)
+      if (series.length > 0) setRefreshing(true)
+      else setLoading(true)
+    }
     else setLoadingMore(true)
     
     setError(null) // Clear previous errors
@@ -275,7 +320,7 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
         if (err.name === 'AbortError') return
         
         console.error('Failed to fetch series:', err)
-        setSeries(prev => isFirstPage ? [] : prev)
+        // نحتفظ بالمحتوى القديم المعروض عند الخطأ — لا نسقطه (يمنع القفز)
         setError('فشل تحميل المسلسلات. حاول مرة أخرى.')
       })
       .finally(() => { 
@@ -283,17 +328,25 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
         if (!abortController.signal.aborted) {
           setLoading(false)
           setLoadingMore(false)
+          setRefreshing(false)
         }
       })
     
     return () => {
       abortController.abort()
     }
-  }, [selectedGenre, selectedYear, selectedRating, selectedCountry, sortBy, sortOrder, page, debouncedSearch])
+  }, [selectedGenre, selectedYear, selectedRating, selectedCountry, selectedLanguage, sortBy, sortOrder, page, debouncedSearch, retryNonce])
 
   // Batch fetch card states for all series (only if user is logged in)
   useEffect(() => {
     if (!user || series.length === 0) return
+
+    // Incremental: ask only about items we haven't checked yet, merge into existing states
+    const missing = series
+      .map(s => ({ content_type: 'tv', tmdb_id: (s.tmdb_id || s.id) as number | string }))
+      .filter(i => !fetchedStateKeys.current.has(`tv-${i.tmdb_id}`))
+    if (missing.length === 0) return
+    missing.forEach(i => fetchedStateKeys.current.add(`tv-${i.tmdb_id}`))
 
     const fetchStates = async () => {
       try {
@@ -301,19 +354,14 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: series.map(s => ({ 
-              content_type: 'tv', 
-              tmdb_id: s.tmdb_id || s.id 
-            }))
-          })
+          body: JSON.stringify({ items: missing })
         })
-        
+
         if (!res.ok) return
-        
+
         const data = await res.json()
         if (data.states) {
-          setCardStates(data.states)
+          setCardStates(prev => ({ ...prev, ...data.states }))
         }
       } catch (err) {
         // Silently fail - heart buttons will show neutral state
@@ -327,7 +375,7 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore && !refreshing) {
           setPage(prev => prev + 1)
         }
       },
@@ -344,19 +392,49 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
         observer.unobserve(currentTarget)
       }
     }
-  }, [hasMore, loading, loadingMore])
+  }, [hasMore, loading, loadingMore, refreshing])
 
   const toggle = useCallback((name: typeof openDropdown) => {
     setOpenDropdown(prev => prev === name ? null : name)
   }, [])
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change — مع الإبقاء على المحتوى المعروض
+  // (يُستبدل عند وصول النتائج الجديدة — يمنع انهيار الشبكة وقفز الصفحة)
   const resetAndFetch = useCallback((callback: () => void) => {
     callback()
     setPage(1)
-    setSeries([])
     setError(null)
   }, [])
+
+  // Clear every active filter at once
+  const clearAllFilters = useCallback(() => {
+    resetAndFetch(() => {
+      setSelectedGenre('all')
+      setSelectedYear('all')
+      setSelectedRating('all')
+      setSelectedCountry('all')
+      setSearchQuery('')
+      setDebouncedSearch('')
+    })
+  }, [resetAndFetch])
+
+  // Active filter chips for the results toolbar
+  const activeFilters = useMemo(() => {
+    const chips: { key: string; label: string; clear: () => void }[] = []
+    if (selectedGenre !== 'all')
+      chips.push({ key: 'genre', label: selectedGenre, clear: () => resetAndFetch(() => setSelectedGenre('all')) })
+    if (selectedYear !== 'all')
+      chips.push({ key: 'year', label: YEARS.find(y => y.value === selectedYear)?.label || selectedYear, clear: () => resetAndFetch(() => setSelectedYear('all')) })
+    if (selectedRating !== 'all')
+      chips.push({ key: 'rating', label: RATINGS.find(r => r.value === selectedRating)?.label || selectedRating, clear: () => resetAndFetch(() => setSelectedRating('all')) })
+    if (selectedCountry !== 'all')
+      chips.push({ key: 'country', label: COUNTRIES.find(c => c.value === selectedCountry)?.label || selectedCountry, clear: () => resetAndFetch(() => setSelectedCountry('all')) })
+    if (selectedLanguage !== 'all')
+      chips.push({ key: 'language', label: LANGUAGE_LABELS[selectedLanguage] || selectedLanguage, clear: () => resetAndFetch(() => setSelectedLanguage('all')) })
+    if (debouncedSearch.trim())
+      chips.push({ key: 'search', label: `"${debouncedSearch.trim()}"`, clear: () => resetAndFetch(() => { setSearchQuery(''); setDebouncedSearch('') }) })
+    return chips
+  }, [selectedGenre, selectedYear, selectedRating, selectedCountry, debouncedSearch, resetAndFetch])
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
@@ -364,13 +442,10 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
       {/* Single page H1 for SEO (visually hidden) */}
       <h1 className="sr-only">المسلسلات المترجمة</h1>
 
-      {/* Header banner — 728×90 */}
-      <div className="w-full bg-slate-950">
-        <div className="w-full flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 py-3">
-          <AdsManager type="banner" position="global-header" />
-        </div>
+      {/* Header banner — إعلان 1 (728×90): يتمدد مركزيًا ويصغر تلقائيًا على الموبايل */}
+      <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 py-3">
+        <AdFrame ad={AD_HEADER} variant="x" />
       </div>
-
 
       {/* Main Content */}
       <section className="w-full bg-slate-950">
@@ -395,13 +470,13 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
                   aria-expanded={openDropdown==='genre'}
                   aria-haspopup="listbox"
                 >
-                  <span>{selectedGenre==='all' ? 'كل التصنيفات' : GENRES.find(g=>g.name===selectedGenre)?.emoji+' '+selectedGenre}</span>
+                  <span>{selectedGenre==='all' ? 'كل التصنيفات' : genresList.find(g=>g.name===selectedGenre)?.emoji+' '+selectedGenre}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='genre'?'rotate-180':''}`}/>
                 </button>
                 {openDropdown==='genre' && (
                   <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain" role="listbox">
                     <button onClick={()=>{resetAndFetch(() => setSelectedGenre('all'));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedGenre==='all'?'bg-slate-700 text-cyan-400':'text-slate-100'}`} role="option" aria-selected={selectedGenre==='all'}>كل التصنيفات</button>
-                    {GENRES.map(g=>(
+                    {genresList.map(g=>(
                       <button key={g.name} onClick={()=>{resetAndFetch(() => setSelectedGenre(g.name));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 whitespace-nowrap ${selectedGenre===g.name?'bg-slate-700 text-cyan-400':'text-slate-100'}`} role="option" aria-selected={selectedGenre===g.name}>{g.emoji} {g.name}</button>
                     ))}
                   </div>
@@ -486,6 +561,36 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
             </div>
           </div>
 
+          {/* Results toolbar: count + active filter chips */}
+          {(activeFilters.length > 0 || series.length > 0) && (
+            <div className="flex flex-wrap items-center gap-2 mb-5">
+              {series.length > 0 && (
+                <span className="text-sm font-bold text-slate-500 ml-1">
+                  {series.length} <span className="font-medium">نتيجة</span>
+                </span>
+              )}
+              {activeFilters.map(f => (
+                <button
+                  key={f.key}
+                  onClick={f.clear}
+                  className="group flex items-center gap-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/25 hover:border-cyan-500/50 rounded-full pl-2 pr-3 py-1 text-xs font-bold text-cyan-300 transition-colors"
+                  aria-label={`إزالة فلتر ${f.label}`}
+                >
+                  <span className="max-w-[160px] truncate">{f.label}</span>
+                  <X className="w-3.5 h-3.5 text-cyan-400/70 group-hover:text-cyan-300 transition-all duration-200 group-hover:rotate-90" />
+                </button>
+              ))}
+              {activeFilters.length > 1 && (
+                <button
+                  onClick={clearAllFilters}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-300 underline underline-offset-4 decoration-slate-700 hover:decoration-slate-500 transition-colors mr-1"
+                >
+                  مسح الكل
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Grid */}
           <div className="mt-6">
           {error && (
@@ -499,7 +604,7 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
                 <p className="text-red-300 text-sm font-bold">{error}</p>
               </div>
               <button 
-                onClick={() => setPage(1)}
+                onClick={() => setRetryNonce(n => n + 1)}
                 className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-red-300 text-sm font-bold transition-colors"
               >
                 إعادة المحاولة
@@ -520,13 +625,21 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
             </div>
           ) : series.length > 0 ? (
             <>
+              {/* شبكة ثابتة: مساحة محجزة دائمًا + شريط تحديث رفيع (لا تغيّر ارتفاعها) */}
+              <div className="relative min-h-[320px]">
+                {refreshing && (
+                  <div className="absolute top-0 left-0 right-0 z-20 h-0.5 overflow-hidden rounded-full bg-slate-800/80" aria-hidden="true">
+                    <div className="h-full w-1/2 rounded-full bg-gradient-to-l from-sky-500 via-cyan-400 to-sky-500 animate-pulse" />
+                  </div>
+                )}
               <div className="grid-responsive gap-6">
                 {series.map((item, index) => {
                   const tmdbId = item.tmdb_id || item.id
                   const stateKey = `tv-${tmdbId}`
                   return (
-                    <MovieCard 
-                      key={item.id} 
+                    <Fragment key={item.id}>
+                      <MovieCard
+                      key={item.id}
                       movie={{
                         ...item,
                         media_type: 'tv'
@@ -538,8 +651,15 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
                         setCardStates(prev => ({ ...prev, [stateKey]: newState }))
                       }}
                     />
+                      {(index + 1) % AD_EVERY_N_CARDS === 0 && (
+                        <div className="flex justify-center">
+                          <AdInRowCard pos={`s-${index + 1}`} />
+                        </div>
+                      )}
+                    </Fragment>
                   )
                 })}
+                </div>
               </div>
 
               {/* Infinite scroll trigger */}
@@ -566,14 +686,28 @@ export function SeriesPageClient({ initialSeries = [] }: { initialSeries?: any[]
             </div>
 
             {/* Side ads column — last child in RTL => appears on the LEFT of the grid: 300×250 then 160×600 stacked */}
-            <aside className="flex w-full flex-col items-center gap-6 lg:w-[300px] lg:shrink-0 lg:self-start">
-              <AdsManager type="banner" position="home-in-feed" />
-              <AdsManager type="banner" position="home-feed-side" />
+            {/* العمود الجانبي (يسار في RTL) — لاصق أثناء السكرول لعروض أعلى:
+                إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط */}
+            <aside className="flex w-full flex-col items-center gap-6 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
+              <AdFrame ad={AD_SIDE_RECT} variant="y" />
+              <DesktopOnly>
+                <div className="w-full">
+                  <AdFrame ad={AD_SIDE_SKY} variant="y" />
+                </div>
+              </DesktopOnly>
             </aside>
 
           </div>
         </div>
       </section>
+
+      {/* إعلان 4 (468×60) — فاصل خفيف بين الشبكة والفوتر */}
+      <div className="flex justify-center px-4 py-2">
+        <AdFrame ad={AD_FOOTER_MID} variant="x" />
+      </div>
+
+      {/* شريط الموبايل الثابت — إعلان 6 (320×50) */}
+      <MobileStickyAd />
 
       <div className="pb-12"><Footer/></div>
     </div>
