@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeFirst, executeAll } from '@/lib/db'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 3600
@@ -49,7 +50,8 @@ export async function GET(
       ids
     )
     
-    return NextResponse.json({ data: similar })
+    // فلتر: Talk Show + War & Politics + Documentary + History
+    return NextResponse.json({ data: filterExcludedGenres(similar) })
   } catch (error) {
     console.error('Error fetching similar series:', error)
     return NextResponse.json({ data: [] })

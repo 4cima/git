@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,10 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json()
+    // فلتر دفاعي: استبعاد Talk Show + War & Politics + Documentary + History من نتائج الـ worker
+    if (Array.isArray(data?.results)) {
+      data.results = filterExcludedGenres(data.results)
+    }
     return NextResponse.json(data)
   } catch (error) {
     console.error('❌ [API /anime] Error:', error)

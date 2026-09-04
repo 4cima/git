@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { executeAll } from '@/lib/db'
+import { executeAll, executeFirst } from '@/lib/db'
 import { sanitizeSearchInput } from '@/lib/search-utils'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+
+    const page  = Math.max(1, parseInt(searchParams.get('page')  || '1')  || 1)
+    const limit = Math.min(60, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
     const offset = (page - 1) * limit
     
     const genre    = searchParams.get('genre')
@@ -38,8 +39,17 @@ export async function GET(request: NextRequest) {
     }
 
     if (genre) {
-      conditions.push(`genres_json LIKE ?`)
-      args.push(`%"slug":"${genre}"%`)
+      /* مطابقة دقيقة وموحّدة: slug → tmdb_id من جدول genres ثم مطابقة المعرّف داخل genres_json.
+         تحل مشكلتين: تضارب صيغة الـslug بين جدول genres و genres_json (مثل action-adventure
+         مقابل action-&-adventure)، وأي تصادم substring في أرقام المعرّفات. */
+      const genreRow = await executeFirst('SELECT tmdb_id FROM genres WHERE slug = ? LIMIT 1', [genre]).catch(() => null)
+      if (genreRow && genreRow.tmdb_id != null) {
+        conditions.push(`(genres_json LIKE ? OR genres_json LIKE ?)`)
+        args.push(`%"tmdb_id":${genreRow.tmdb_id},%`, `%"tmdb_id":${genreRow.tmdb_id}}%`)
+      } else {
+        conditions.push(`genres_json LIKE ?`)
+        args.push(`%"slug":"${genre}"%`)
+      }
     }
     
     if (year) {
@@ -47,11 +57,16 @@ export async function GET(request: NextRequest) {
         conditions.push('release_year < 1990')
       } else if (year.includes('-')) {
         const [from, to] = year.split('-').map(Number)
-        conditions.push('release_year BETWEEN ? AND ?')
-        args.push(from, to)
+        if (Number.isFinite(from) && Number.isFinite(to)) {
+          conditions.push('release_year BETWEEN ? AND ?')
+          args.push(from, to)
+        }
       } else {
-        conditions.push('release_year = ?')
-        args.push(parseInt(year))
+        const y = parseInt(year)
+        if (Number.isFinite(y)) {
+          conditions.push('release_year = ?')
+          args.push(y)
+        }
       }
     }
     
@@ -97,6 +112,13 @@ export async function GET(request: NextRequest) {
       conditions.push('runtime <= ?')
       args.push(parseInt(runtimeMax))
     }
+
+    // Exclude unwanted genres (Talk Show, War & Politics, Documentary, History) at SQL level
+    // — keeps pagination accurate (no short pages from post-JS filtering)
+    conditions.push(`(genres_json IS NULL OR NOT EXISTS (
+      SELECT 1 FROM json_each(movies.genres_json)
+      WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
+    ))`)
     
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
     const validSorts = ['popularity', 'vote_average', 'vote_count', 'release_year']
@@ -116,8 +138,9 @@ export async function GET(request: NextRequest) {
         )
         const hasMore = cacheRows.length > limit
         if (hasMore) cacheRows.pop()
+        const filteredCache = filterExcludedGenres(cacheRows)
         const response = NextResponse.json({
-          movies: cacheRows,
+          movies: filteredCache,
           pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }
         })
         response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
@@ -145,12 +168,15 @@ export async function GET(request: NextRequest) {
 
     const hasMore = rows.length > limit
     if (hasMore) rows.pop()
+    const filteredRows = filterExcludedGenres(rows)
 
+    // Broad listings are stable — cache longer at the CDN; narrow/heavy filters less so
+    const cacheTime = (genre || ratingMin || ratingMax || runtimeMin || runtimeMax || search) ? 120 : 300
     const response = NextResponse.json({
-      movies: rows,
+      movies: filteredRows,
       pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }
     })
-    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+    response.headers.set('Cache-Control', `public, s-maxage=${cacheTime}, stale-while-revalidate=600`)
     return response
   } catch (error) {
     console.error('Error fetching movies:', error)

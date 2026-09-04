@@ -35,8 +35,8 @@ const path        = require('path');
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const ACCOUNT_ID    = '834bca43d616c73db23cf95311cfe17e';
-const DATABASE_ID   = 'b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6';
+const ACCOUNT_ID    = process.env.CF_ACCOUNT_ID || '834bca43d616c73db23cf95311cfe17e';
+const DATABASE_ID   = process.env.CF_DATABASE_ID || 'b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6';
 const D1_QUERY_URL  = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`;
 
 const LOCAL_DB_PATH = path.join(__dirname, '../data/4cima-local.db');

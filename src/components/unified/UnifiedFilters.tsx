@@ -32,17 +32,17 @@ const GENRE_OPTIONS: Record<ContentType, { value: string; labelAr: string; label
     { value: 'horror', labelAr: 'رعب', labelEn: 'Horror' },
     { value: 'romance', labelAr: 'رومانسي', labelEn: 'Romance' },
     { value: 'thriller', labelAr: 'إثارة', labelEn: 'Thriller' },
-    { value: 'sci-fi', labelAr: 'خيال علمي', labelEn: 'Sci-Fi' },
+    { value: 'science-fiction', labelAr: 'خيال علمي', labelEn: 'Sci-Fi' },
     { value: 'animation', labelAr: 'رسوم متحركة', labelEn: 'Animation' }
   ],
   series: [
     { value: 'drama', labelAr: 'دراما', labelEn: 'Drama' },
     { value: 'comedy', labelAr: 'كوميديا', labelEn: 'Comedy' },
-    { value: 'action', labelAr: 'أكشن', labelEn: 'Action' },
-    { value: 'thriller', labelAr: 'إثارة', labelEn: 'Thriller' },
-    { value: 'romance', labelAr: 'رومانسي', labelEn: 'Romance' },
+    { value: 'action-adventure', labelAr: 'أكشن ومغامرة', labelEn: 'Action & Adventure' },
     { value: 'mystery', labelAr: 'غموض', labelEn: 'Mystery' },
-    { value: 'fantasy', labelAr: 'فانتازيا', labelEn: 'Fantasy' }
+    { value: 'romance', labelAr: 'رومانسي', labelEn: 'Romance' },
+    { value: 'crime', labelAr: 'جريمة', labelEn: 'Crime' },
+    { value: 'sci-fi-fantasy', labelAr: 'خيال علمي وفانتازيا', labelEn: 'Sci-Fi & Fantasy' }
   ],
   gaming: [
     { value: 'action', labelAr: 'أكشن', labelEn: 'Action' },

@@ -26,6 +26,29 @@ export const GENRE_SIBLINGS: Record<number, number[]> = {
 }
 
 /**
+ * TV-specific sibling mapping.
+ *
+ * TMDB لا يوسم المسلسلات بـ Thriller (53) أو Horror (27) أبدًا —
+ * مسلسلات الإثارة/الرعب تُصنَّف Mystery (9648) أو Crime (80).
+ * لذا تُترجم هاتان الفئتان إلى أقرب تصنيف تلفزيوني، وللمسلسلات فقط
+ * (حتى لا تتلوث صفحة أفلام الإثارة/الرعب بمحتوى الغموض).
+ */
+export const GENRE_TV_SIBLINGS: Record<number, number[]> = {
+  53: [9648], // Thriller → Mystery
+  27: [9648]  // Horror   → Mystery
+}
+
+/**
+ * Get all related genre IDs for a given genre (including the original),
+ * merged with TV-specific siblings — استخدمها فقط عند جلب محتوى المسلسلات (type=tv)
+ */
+export function getGenreWithTvSiblings(genreId: number): number[] {
+  const base = getGenreWithSiblings(genreId)
+  const tvExtra = GENRE_TV_SIBLINGS[genreId] || []
+  return Array.from(new Set([...base, ...tvExtra]))
+}
+
+/**
  * Get all related genre IDs for a given genre (including the original)
  */
 export function getGenreWithSiblings(genreId: number): number[] {

@@ -76,7 +76,7 @@ export const MovieCard = memo(({
 
   // Determine titles
   const titleAr = movie.title_ar || movie.name_ar
-  const titleEn = movie.title_en || movie.title || movie.name
+  const titleEn = movie.title_en || movie.name_en || movie.title || movie.name
   const mainTitle = titleAr || titleEn || 'Untitled'
   const subTitle = titleAr && titleEn && titleAr !== titleEn ? titleEn : null
 

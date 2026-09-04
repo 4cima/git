@@ -39,6 +39,8 @@ export interface AdRecord {
   placementHint: string
   /** ملاحظات */
   notes?: string
+  /** تعطيل الزون مؤقتًا (مثال: دومين التوصيل بتاعها ميت في Adsterra) — لا يُحمَّل أي سكربت */
+  enabled?: boolean
 }
 
 export const ADS_4CIMA_COM: AdRecord[] = [
@@ -120,7 +122,7 @@ export const ADS_4CIMA_COM: AdRecord[] = [
     height: 300,
     size: '160x300',
     placementHint: 'بنر طولي نص — تحت بنر السايدبار الطولي (رقم 3) في نفس العمود',
-    notes: 'مكمّل للعمود الجانبي مع 160x600',
+    notes: 'مكمّل للعمود الجانبي مع 160x600 — الدومين الميت (kettledroopingcontinuation.com) يُحيَّد تلقائيًا بواسطة deadDeliveryGuard.ts، والإعلان يشتغل بمجرد أن Adsterra يبدّل الدومين',
   },
   {
     num: 6,

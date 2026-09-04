@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useMemo, memo, useEffect } from 'react'
-import { Home, Film, Tv, Zap, Rocket, Sparkles, Drama, Smile, Eye, Heart, Skull, Menu, X, LogIn, User, LogOut, ChevronDown, Settings } from 'lucide-react'
+import { Home, Film, Tv, Menu, X, LogIn, User, LogOut, ChevronDown, Settings } from 'lucide-react'
 import { UserMenu } from './UserMenu'
 import { useAuth } from '@/hooks/useAuth'
 import { SearchBox } from './SearchBox'
@@ -37,36 +37,38 @@ export const QuantumNavbar = memo(() => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
   
-  const navLinks = useMemo(() => [
-    { to: '/', label: 'الرئيسية', icon: Home, color: '#00ffcc' },
-    { to: '/movies', label: 'أفلام', icon: Film, color: '#00ccff' },
-    { to: '/series', label: 'مسلسلات', icon: Tv, color: '#aa00ff' }
+  // الأزرار الثلاثة للشريط المنقسم ثلاثي الأبعاد: أفلام (يمين) | الرئيسية (وسط) | مسلسلات (يسار)
+  // بألوان هادئة: وردي هادئ للأفلام، عنبري ذهبي للرئيسية، سماوي للمسلسلات
+  const navSegments = useMemo(() => [
+    { to: '/movies', label: 'أفلام', icon: Film, tint: '#fb7185', divider: false, exact: false },
+    { to: '/', label: 'الرئيسية', icon: Home, tint: '#fcd34d', divider: true, exact: true },
+    { to: '/series', label: 'مسلسلات', icon: Tv, tint: '#38bdf8', divider: false, exact: false }
   ], [])
 
   const countryLinks = useMemo(() => [
-    { code: 'ar', label: 'عربي', icon: '🇸🇦', filter: 'ar' },
-    { code: 'en', label: 'أجنبي', icon: '🇺🇸', filter: 'en' },
-    { code: 'tr', label: 'تركي', icon: '🇹🇷', filter: 'tr' },
-    { code: 'hi', label: 'هندي', icon: '🇮🇳', filter: 'hi' },
-    { code: 'ko', label: 'كوري', icon: '🇰🇷', filter: 'ko' },
-    { code: 'zh', label: 'صيني', icon: '🇨🇳', filter: 'zh,cn' },
-    { code: 'ja', label: 'ياباني', icon: '🇯🇵', filter: 'ja' },
-    { code: 'fr', label: 'فرنسي', icon: '🇫🇷', filter: 'fr' },
-    { code: 'es', label: 'إسباني', icon: '🇪🇸', filter: 'es' },
-    { code: 'de', label: 'ألماني', icon: '🇩🇪', filter: 'de' }
+    { code: 'ar', label: 'عربي', filter: 'ar' },
+    { code: 'en', label: 'أجنبي', filter: 'en' },
+    { code: 'tr', label: 'تركي', filter: 'tr' },
+    { code: 'hi', label: 'هندي', filter: 'hi' },
+    { code: 'ko', label: 'كوري', filter: 'ko' },
+    { code: 'zh', label: 'صيني', filter: 'zh,cn' },
+    { code: 'ja', label: 'ياباني', filter: 'ja' },
+    { code: 'fr', label: 'فرنسي', filter: 'fr' },
+    { code: 'es', label: 'إسباني', filter: 'es' },
+    { code: 'de', label: 'ألماني', filter: 'de' }
   ], [])
 
   const genreLinks = useMemo(() => [
-    { slug: 'action', label: 'أكشن', icon: Zap, color: 'red-500' },
-    { slug: 'comedy', label: 'كوميديا', icon: Smile, color: 'yellow-400' },
-    { slug: 'drama', label: 'دراما', icon: Drama, color: 'slate-400' },
-    { slug: 'romance', label: 'رومانسي', icon: Heart, color: 'pink-400' },
-    { slug: 'thriller', label: 'إثارة', icon: Eye, color: 'orange-500' },
-    { slug: 'horror', label: 'رعب', icon: Skull, color: 'red-700' },
-    { slug: 'crime', label: 'جريمة', icon: Film, color: 'gray-400' },
-    { slug: 'adventure', label: 'مغامرات', icon: Rocket, color: 'green-400' },
-    { slug: 'fantasy', label: 'فانتازيا', icon: Sparkles, color: 'purple-400' },
-    { slug: 'animation', label: 'أنمي', icon: Tv, color: 'cyan-400' }
+    { slug: 'action', label: 'أكشن' },
+    { slug: 'comedy', label: 'كوميديا' },
+    { slug: 'drama', label: 'دراما' },
+    { slug: 'romance', label: 'رومانسي' },
+    { slug: 'thriller', label: 'إثارة' },
+    { slug: 'horror', label: 'رعب' },
+    { slug: 'crime', label: 'جريمة' },
+    { slug: 'adventure', label: 'مغامرات' },
+    { slug: 'fantasy', label: 'فانتازيا' },
+    { slug: 'animation', label: 'أنمي' }
   ], [])
 
   return (
@@ -167,97 +169,146 @@ export const QuantumNavbar = memo(() => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-16 right-0 h-[calc(100%-4rem)] w-60 z-[1200] bg-black/95 backdrop-blur-xl border-l border-white/10 shadow-2xl flex flex-col"
+              className="fixed top-16 right-0 max-h-[calc(100%-4rem)] w-80 max-w-[92vw] z-[1200] rounded-l-[1.75rem] overflow-hidden bg-gradient-to-b from-[#141824]/97 via-[#0f121c]/97 to-[#0a0c14]/97 backdrop-blur-xl border-l border-t border-b border-white/10 shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.9)] flex flex-col"
             >
+              {/* شريط توهج علوي هادئ بنفس ألوان الزر الثلاثي */}
+              <div
+                aria-hidden="true"
+                className="h-[3px] w-full shrink-0 bg-gradient-to-l from-rose-400/50 via-amber-300/50 to-sky-400/50"
+              />
               {/* Header */}
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center gap-2">
                   {/* User Profile or Login Button */}
                   {user ? (
                     <div className="relative">
+                      {/* زر التشغيل — ثلاثي الأبعاد بنفس وصفة الأزرار الجديدة */}
                       <button
+                        type="button"
                         onClick={() => setUserMenuOpen(!userMenuOpen)}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
+                        className={`group relative inline-flex items-center rounded-xl bg-gradient-to-b from-cyan-300/40 to-sky-500/15 p-[1.5px] shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)] transition-all duration-300 hover:shadow-[0_0_18px_rgba(56,189,248,0.3)] active:translate-y-[1px] ${
+                          userMenuOpen ? 'ring-1 ring-cyan-300/60' : ''
+                        }`}
                       >
-                        <img
-                          src={getAvatarUrl(profile?.avatar_url, user.id, user.email)}
-                          alt={(profile?.username || user.email?.split('@')[0] || 'User').split(' ')[0]}
-                          className="w-6 h-6 rounded-full object-cover border border-zinc-700"
-                        />
-                        <span className="text-sm font-semibold text-white truncate max-w-[80px]">
-                          {(profile?.username || user.email?.split('@')[0] || 'User').split(' ')[0]}
+                        <span className="flex items-center gap-2 rounded-[10px] bg-gradient-to-b from-slate-800 to-slate-950 py-1 pl-1.5 pr-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.5)]">
+                          <img
+                            src={getAvatarUrl(profile?.avatar_url, user.id, user.email)}
+                            alt={(profile?.username || user.email?.split('@')[0] || 'User').split(' ')[0]}
+                            className="h-6 w-6 rounded-full object-cover ring-1 ring-cyan-300/40"
+                          />
+                          <span className="max-w-[80px] truncate text-[12px] font-extrabold tracking-wide text-slate-200 transition-colors duration-300 group-hover:text-white">
+                            {(profile?.username || user.email?.split('@')[0] || 'User').split(' ')[0]}
+                          </span>
+                          <ChevronDown size={13} className={`text-cyan-300 transition-transform duration-300 ${userMenuOpen ? 'rotate-180' : ''}`} />
                         </span>
-                        <ChevronDown size={14} className={`text-zinc-400 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                       </button>
 
-                      {/* Dropdown Menu */}
+                      {/* المنسدلة — بإطار متدرج هادئ (وردي ← عنبري ← سماوي) وشريط توهج علوي */}
                       <AnimatePresence>
                         {userMenuOpen && (
                           <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute top-full right-0 mt-1 w-48 max-w-[calc(100vw-1rem)] bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden z-[1300]"
+                            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                            transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+                            className="absolute right-0 top-full z-[1300] mt-2 w-56 max-w-[calc(100vw-1.5rem)]"
                           >
-                            {/* User Info */}
-                            <div className="px-3 py-2 border-b border-zinc-800">
-                              <p className="text-sm font-semibold text-zinc-100 truncate">
-                                {profile?.username || user.email?.split('@')[0]}
-                              </p>
-                              <p className="text-xs text-zinc-500 truncate">{user.email}</p>
-                              {(profile?.role === 'admin' || profile?.role === 'supervisor') && (
-                                <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold bg-cyan-400/10 text-cyan-400 rounded">
-                                  مشرف
-                                </span>
-                              )}
-                            </div>
+                            <div className="relative rounded-2xl bg-gradient-to-b from-rose-400/35 via-amber-300/35 to-sky-400/35 p-[1.5px] shadow-[0_20px_45px_-12px_rgba(0,0,0,0.95)]">
+                              {/* توهج خلفي هادئ */}
+                              <div
+                                aria-hidden="true"
+                                className="pointer-events-none absolute -inset-1 rounded-3xl bg-gradient-to-b from-rose-500/10 via-amber-400/10 to-sky-500/10 opacity-70 blur-lg"
+                              />
+                              <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-b from-[#141824]/98 to-[#0a0c14]/98 backdrop-blur-xl">
+                                {/* شريط التوهج العلوي — نفس هوية القائمة */}
+                                <div
+                                  aria-hidden="true"
+                                  className="h-[3px] w-full shrink-0 bg-gradient-to-l from-rose-400/50 via-amber-300/50 to-sky-400/50"
+                                />
 
-                            {/* Menu Items */}
-                            <div className="py-1">
-                              <Link
-                                href="/profile"
-                                onClick={() => {
-                                  setUserMenuOpen(false)
-                                  setSidebarOpen(false)
-                                }}
-                                className="flex items-center gap-3 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
-                              >
-                                <User size={16} />
-                                <span>الملف الشخصي</span>
-                              </Link>
+                                {/* بطاقة المستخدم */}
+                                <div className="flex items-center gap-2.5 border-b border-white/10 px-3 py-2.5">
+                                  <img
+                                    src={getAvatarUrl(profile?.avatar_url, user.id, user.email)}
+                                    alt={(profile?.username || user.email?.split('@')[0] || 'User').split(' ')[0]}
+                                    className="h-9 w-9 shrink-0 rounded-full object-cover shadow-[0_4px_10px_-3px_rgba(0,0,0,0.8)] ring-2 ring-white/10"
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-[12.5px] font-extrabold text-slate-100">
+                                      {profile?.username || user.email?.split('@')[0]}
+                                    </p>
+                                    <p className="truncate text-[10.5px] text-slate-500">{user.email}</p>
+                                    {(profile?.role === 'admin' || profile?.role === 'supervisor') && (
+                                      <span className="mt-1 inline-block rounded-md bg-cyan-400/10 px-1.5 py-0.5 text-[9.5px] font-bold text-cyan-300 ring-1 ring-cyan-400/30">
+                                        مشرف
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
 
-                              {(profile?.role === 'admin' || profile?.role === 'supervisor') && (
-                                <Link
-                                  href="/admin"
-                                  onClick={() => {
-                                    setUserMenuOpen(false)
-                                    setSidebarOpen(false)
-                                  }}
-                                  className="flex items-center gap-3 px-3 py-2 text-sm text-cyan-400 hover:bg-cyan-400/10 transition-colors"
-                                >
-                                  <Settings size={16} />
-                                  <span>لوحة التحكم</span>
-                                </Link>
-                              )}
+                                {/* الأزرار ثلاثية الأبعاد */}
+                                <div className="flex flex-col gap-1.5 p-2">
+                                  {/* الملف الشخصي — عنبري ذهبي */}
+                                  <Link
+                                    href="/profile"
+                                    onClick={() => {
+                                      setUserMenuOpen(false)
+                                      setSidebarOpen(false)
+                                    }}
+                                    className="group relative block rounded-xl bg-gradient-to-b from-amber-300/45 to-amber-500/15 p-[1.5px] shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)] transition-all duration-300 hover:shadow-[0_0_18px_rgba(252,211,77,0.25)] active:translate-y-[1px]"
+                                  >
+                                    <span className="flex items-center gap-2.5 rounded-[10px] bg-gradient-to-b from-slate-800 to-slate-950 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.5)]">
+                                      <User size={15} className="shrink-0 text-amber-300 transition-transform duration-300 group-hover:scale-110" />
+                                      <span className="text-[12px] font-extrabold tracking-wide text-slate-200 transition-colors duration-300 group-hover:text-white">
+                                        الملف الشخصي
+                                      </span>
+                                    </span>
+                                  </Link>
 
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    await signOut()
-                                    setUserMenuOpen(false)
-                                    setSidebarOpen(false)
-                                    router.push('/')
-                                    router.refresh()
-                                  } catch (error) {
-                                    console.error('Sign out error:', error)
-                                  }
-                                }}
-                                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-400/10 transition-colors"
-                              >
-                                <LogOut size={16} />
-                                <span>تسجيل الخروج</span>
-                              </button>
+                                  {/* لوحة التحكم — سماوي */}
+                                  {(profile?.role === 'admin' || profile?.role === 'supervisor') && (
+                                    <Link
+                                      href="/admin"
+                                      onClick={() => {
+                                        setUserMenuOpen(false)
+                                        setSidebarOpen(false)
+                                      }}
+                                      className="group relative block rounded-xl bg-gradient-to-b from-sky-400/45 to-sky-500/15 p-[1.5px] shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)] transition-all duration-300 hover:shadow-[0_0_18px_rgba(56,189,248,0.25)] active:translate-y-[1px]"
+                                    >
+                                      <span className="flex items-center gap-2.5 rounded-[10px] bg-gradient-to-b from-slate-800 to-slate-950 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.5)]">
+                                        <Settings size={15} className="shrink-0 text-sky-300 transition-transform duration-300 group-hover:rotate-45 group-hover:scale-110" />
+                                        <span className="text-[12px] font-extrabold tracking-wide text-slate-200 transition-colors duration-300 group-hover:text-white">
+                                          لوحة التحكم
+                                        </span>
+                                      </span>
+                                    </Link>
+                                  )}
+
+                                  {/* تسجيل الخروج — وردي أحمر هادئ */}
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      try {
+                                        await signOut()
+                                        setUserMenuOpen(false)
+                                        setSidebarOpen(false)
+                                        router.push('/')
+                                        router.refresh()
+                                      } catch (error) {
+                                        console.error('Sign out error:', error)
+                                      }
+                                    }}
+                                    className="group relative block w-full rounded-xl bg-gradient-to-b from-rose-400/45 to-rose-500/15 p-[1.5px] shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)] transition-all duration-300 hover:shadow-[0_0_18px_rgba(251,113,133,0.25)] active:translate-y-[1px]"
+                                  >
+                                    <span className="flex items-center gap-2.5 rounded-[10px] bg-gradient-to-b from-slate-800 to-slate-950 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.5)]">
+                                      <LogOut size={15} className="shrink-0 text-rose-300 transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:scale-110" />
+                                      <span className="text-[12px] font-extrabold tracking-wide text-slate-200 transition-colors duration-300 group-hover:text-white">
+                                        تسجيل الخروج
+                                      </span>
+                                    </span>
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </motion.div>
                         )}
@@ -267,128 +318,172 @@ export const QuantumNavbar = memo(() => {
                     <Link
                       href={loginHref}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg transition-colors group ${
-                        pathname?.startsWith('/login') ? 'bg-emerald-500/20 text-emerald-400' : 'text-white hover:text-emerald-400'
+                      className={`group relative inline-flex rounded-xl bg-gradient-to-b from-amber-300/45 to-amber-500/15 p-[1.5px] shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)] transition-all duration-300 hover:shadow-[0_0_18px_rgba(252,211,77,0.25)] active:translate-y-[1px] ${
+                        pathname?.startsWith('/login') ? 'ring-1 ring-amber-300/60' : ''
                       }`}
                     >
-                      <LogIn size={16} className="group-hover:scale-110 transition-transform" />
-                      <span className="text-sm font-bold">الدخول</span>
+                      <span className="flex items-center gap-1.5 rounded-[10px] bg-gradient-to-b from-slate-800 to-slate-950 px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.5)]">
+                        <LogIn size={15} className="text-amber-300 transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:scale-110" />
+                        <span className="text-[12px] font-extrabold tracking-wide text-slate-200 transition-colors duration-300 group-hover:text-white">
+                          الدخول
+                        </span>
+                      </span>
                     </Link>
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSidebarOpen(false)}
-                  className="p-1.5 text-white hover:text-red-500 transition-colors"
                   aria-label="إغلاق"
+                  className="group relative rounded-xl bg-gradient-to-b from-rose-800/50 to-rose-950/50 p-[1.5px] shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)] transition-all duration-300 hover:shadow-[0_0_18px_rgba(190,18,60,0.4)] active:translate-y-[1px] active:shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)]"
                 >
-                  <X size={20} />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-gradient-to-b from-[#8b1a2b] to-[#38060f] shadow-[inset_0_1px_0_rgba(255,255,255,0.14),inset_0_-2px_5px_rgba(0,0,0,0.55)] transition-transform duration-300 group-hover:scale-105">
+                    <X size={16} className="text-rose-200 transition-all duration-300 group-hover:rotate-90 group-hover:text-white" />
+                  </span>
                 </button>
               </div>
 
-              {/* Scrollable Content - REDESIGNED: Compact & Organized */}
+              {/* Scrollable Content — القائمة الرئيسية: 3 أعمدة ثلاثية الأبعاد بألوان هادئة */}
               <div className="flex-1 overflow-y-auto">
-                {/* Main Navigation - Compact Single Row */}
-                <div className="px-3 pt-2 pb-3 border-b border-white/5">
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {navLinks.map((link) => {
-                      const isActive = pathname === link.to || pathname?.startsWith(link.to + '/')
-                      return (
-                        <Link
-                          key={link.to}
-                          href={link.to}
-                          onClick={() => setSidebarOpen(false)}
-                          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-                            isActive 
-                              ? 'bg-white/20 text-white' 
-                              : 'hover:bg-white/10 text-zinc-300 hover:text-white'
-                          }`}
-                        >
-                          <link.icon size={18} style={{ color: link.color }} className="flex-shrink-0" />
-                          <span className="text-[10px] font-bold">{link.label}</span>
-                        </Link>
-                      )
-                    })}
+                {/* ===== الشريط العلوي: زر ثلاثي منقسم (أفلام | الرئيسية | مسلسلات) ===== */}
+                <div className="px-2.5 pt-3">
+                  <div className="relative rounded-2xl bg-gradient-to-l from-rose-400/40 via-amber-300/40 to-sky-400/40 p-[1.5px] shadow-[0_14px_30px_-10px_rgba(0,0,0,0.9)]">
+                    {/* توهج خلفي هادئ للإطار */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -inset-1 rounded-3xl bg-gradient-to-l from-rose-500/15 via-amber-400/10 to-sky-500/15 opacity-70 blur-lg"
+                    />
+                    <div className="relative grid grid-cols-3 overflow-hidden rounded-[15px] bg-gradient-to-b from-slate-800 to-slate-950">
+                      {navSegments.map((seg) => {
+                        const isActive = seg.exact ? pathname === seg.to : pathname?.startsWith(seg.to)
+                        return (
+                          <Link
+                            key={seg.to}
+                            href={seg.to}
+                            onClick={() => setSidebarOpen(false)}
+                            aria-current={isActive ? 'page' : undefined}
+                            className={`group relative flex select-none flex-col items-center justify-center gap-2 py-4 transition-all duration-300 ${
+                              seg.divider ? 'border-x border-black/50' : ''
+                            } ${
+                              isActive
+                                ? 'shadow-[inset_0_2px_12px_rgba(0,0,0,0.65),inset_0_-1px_0_rgba(0,0,0,0.5)]'
+                                : 'hover:bg-white/[0.045] active:translate-y-[1px]'
+                            }`}
+                            style={isActive ? { backgroundColor: `${seg.tint}16` } : undefined}
+                          >
+                            {/* خط ضوئي سفلي هادئ يحدد الزر النشط */}
+                            <span
+                              aria-hidden="true"
+                              className={`absolute inset-x-3 bottom-0 h-[2px] rounded-full transition-opacity duration-300 ${
+                                isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'
+                              }`}
+                              style={{ background: `linear-gradient(90deg, transparent, ${seg.tint}, transparent)` }}
+                            />
+                            {/* لمعة الحافة العلوية — إحساس ثلاثي الأبعاد */}
+                            <span aria-hidden="true" className="pointer-events-none absolute inset-x-2 top-0 h-px bg-white/10" />
+                            <seg.icon
+                              size={19}
+                              style={{ color: seg.tint }}
+                              className="drop-shadow-[0_2px_3px_rgba(0,0,0,0.7)] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110"
+                            />
+                            <span className="text-[12px] font-extrabold tracking-wide text-slate-100 transition-colors duration-300 group-hover:text-white">
+                              {seg.label}
+                            </span>
+                          </Link>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
 
-                {/* COMPACT: Languages in single dropdown-like section */}
-                <div className="px-3 py-2 border-b border-white/5">
-                  <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <span>🌍</span>
-                    <span>اللغات</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {countryLinks.slice(0, 10).map((country) => (
-                      <Link
-                        key={country.code}
-                        href={pathname?.includes('/series') ? `/series?language=${country.filter}` : `/movies?language=${country.filter}`}
-                        onClick={() => setSidebarOpen(false)}
-                        className="flex items-center justify-center p-2 rounded-lg hover:bg-white/10 transition-all text-center"
-                        title={country.label}
-                      >
-                        <span className="text-xs font-semibold text-zinc-300 hover:text-white">{country.label}</span>
-                      </Link>
-                    ))}
+                {/* ===== الأعمدة: تصنيفات الأفلام | اللغات | تصنيفات المسلسلات ===== */}
+                <div className="px-2.5 pb-4 pt-2">
+                  <div className="grid grid-cols-3 overflow-hidden rounded-2xl border border-white/[0.06] bg-slate-900/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                    {/* عمود أفلام — سطور التصنيفات تتمدد لتساوي ارتفاع عمود اللغات */}
+                    <div className="flex flex-col border-l border-black/40">
+                      <div className="flex flex-1 flex-col pt-2.5 pb-2">
+                        {genreLinks.map((genre) => {
+                          const isActive = pathname?.includes(`/movies/genres/${genre.slug}`)
+                          return (
+                            <Link
+                              key={genre.slug}
+                              href={`/movies/genres/${genre.slug}`}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`flex flex-1 items-center gap-2 px-2.5 py-1.5 text-[12px] font-bold transition-colors duration-200 ${
+                                isActive ? 'bg-rose-500/10 text-rose-200' : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-100'
+                              }`}
+                            >
+                              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400/70" />
+                              <span className="truncate">{genre.label}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* العمود الأوسط — اللغات: زر زجاجي ثلاثي الأبعاد واحد لكل لغة
+                        (الكتابة ظاهرة كاملة | ثلث اليمين الشفاف → أفلام | ثلث اليسار الشفاف → مسلسلات) */}
+                    <div className="flex flex-col border-l border-black/40">
+                      <div className="flex flex-col gap-1.5 px-1.5 pt-2.5 pb-2">
+                        {countryLinks.map((country) => (
+                          <div
+                            key={country.code}
+                            className="relative rounded-[10px] bg-gradient-to-l from-rose-400/30 via-white/10 to-sky-400/30 p-[1.5px] shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
+                          >
+                            <div className="group/lang relative overflow-hidden rounded-[8.5px] bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.14),inset_0_-1px_2px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+                              {/* لمعة الحافة العلوية — إحساس الزجاج */}
+                              <span aria-hidden="true" className="pointer-events-none absolute inset-x-2 top-0 h-px bg-white/15" />
+                              {/* الكتابة كاملة في المنتصف — غير قابلة للضغط */}
+                              <div className="flex select-none items-center justify-center gap-1.5 py-[6px]" title={country.label}>
+                                <span className="text-[11.5px] font-bold text-slate-100">{country.label}</span>
+                              </div>
+                              {/* ثلث اليمين الشفاف (تدرج أحمر خفيف) → أفلام */}
+                              <Link
+                                href={`/movies?language=${country.filter}`}
+                                onClick={() => setSidebarOpen(false)}
+                                title={`${country.label} — أفلام`}
+                                aria-label={`أفلام ${country.label}`}
+                                className="absolute inset-y-0 right-0 w-1/3 rounded-r-[8.5px] bg-rose-500/10 transition-colors duration-200 hover:bg-rose-500/25 active:bg-rose-500/35"
+                              />
+                              {/* ثلث اليسار الشفاف (تدرج أزرق خفيف) → مسلسلات */}
+                              <Link
+                                href={`/series?language=${country.filter}`}
+                                onClick={() => setSidebarOpen(false)}
+                                title={`${country.label} — مسلسلات`}
+                                aria-label={`مسلسلات ${country.label}`}
+                                className="absolute inset-y-0 left-0 w-1/3 rounded-l-[8.5px] bg-sky-500/10 transition-colors duration-200 hover:bg-sky-500/25 active:bg-sky-500/35"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* عمود مسلسلات — سطور التصنيفات تتمدد لتساوي ارتفاع عمود اللغات */}
+                    <div className="flex flex-col">
+                      <div className="flex flex-1 flex-col pt-2.5 pb-2">
+                        {genreLinks.map((genre) => {
+                          const isActive = pathname?.includes(`/series/genres/${genre.slug}`)
+                          return (
+                            <Link
+                              key={genre.slug}
+                              href={`/series/genres/${genre.slug}`}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`flex flex-row-reverse flex-1 items-center gap-2 px-2.5 py-1.5 text-[12px] font-bold transition-colors duration-200 ${
+                                isActive ? 'bg-sky-500/10 text-sky-200' : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-100'
+                              }`}
+                            >
+                              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400/70" />
+                              <span className="truncate">{genre.label}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* COMPACT: All Genres in one unified section with media type toggle */}
-                <div className="px-3 py-2">
-                  <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
-                    <span>🎬</span>
-                    <span>التصنيفات</span>
-                  </div>
-                  
-                  {/* Genres Grid - Works for both movies and series */}
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {genreLinks.map((genre) => {
-                      const isMoviesActive = pathname?.includes(`/movies/genres/${genre.slug}`)
-                      const isSeriesActive = pathname?.includes(`/series/genres/${genre.slug}`)
-                      const isActive = isMoviesActive || isSeriesActive
-                      
-                      let iconColorClass = ''
-                      switch(genre.color) {
-                        case 'red-500': iconColorClass = 'text-red-500'; break;
-                        case 'red-700': iconColorClass = 'text-red-700'; break;
-                        case 'yellow-400': iconColorClass = 'text-yellow-400'; break;
-                        case 'slate-400': iconColorClass = 'text-slate-400'; break;
-                        case 'pink-400': iconColorClass = 'text-pink-400'; break;
-                        case 'orange-500': iconColorClass = 'text-orange-500'; break;
-                        case 'gray-400': iconColorClass = 'text-gray-400'; break;
-                        case 'green-400': iconColorClass = 'text-green-400'; break;
-                        case 'purple-400': iconColorClass = 'text-purple-400'; break;
-                        case 'cyan-400': iconColorClass = 'text-cyan-400'; break;
-                        default: iconColorClass = 'text-purple-400';
-                      }
-                      
-                      // Smart routing: if on series page, link to series genre, else movies
-                      const targetHref = pathname?.includes('/series') 
-                        ? `/series/genres/${genre.slug}`
-                        : `/movies/genres/${genre.slug}`
-                      
-                      return (
-                        <Link
-                          key={genre.slug}
-                          href={targetHref}
-                          onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center gap-2 p-2 rounded-lg transition-all group text-xs ${
-                            isActive
-                              ? 'bg-white/20 text-white border border-purple-400/50'
-                              : 'hover:bg-white/10 text-zinc-300 hover:text-white'
-                          }`}
-                        >
-                          <genre.icon size={14} className={`${iconColorClass} group-hover:scale-110 transition-transform flex-shrink-0`} />
-                          <span className="font-medium truncate">{genre.label}</span>
-                        </Link>
-                      )
-                    })}
-                  </div>
-                  
-                  {/* Quick toggle hint */}
-                  <div className="mt-2 text-[9px] text-zinc-600 text-center">
-                    💡 التصنيفات تتغير حسب الصفحة (أفلام/مسلسلات)
-                  </div>
-                </div>
+
               </div>
             </motion.div>
           </>

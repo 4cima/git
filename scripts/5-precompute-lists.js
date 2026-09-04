@@ -6,8 +6,8 @@
  * Writes to D1 via HTTP API (not local file).
  */
 
-const ACCOUNT_ID = '834bca43d616c73db23cf95311cfe17e';
-const DATABASE_ID = 'b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6';
+const ACCOUNT_ID = process.env.CF_ACCOUNT_ID || '834bca43d616c73db23cf95311cfe17e';
+const DATABASE_ID = process.env.CF_DATABASE_ID || 'b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6';
 const D1_HTTP_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`;
 
 // Read token from .env.local
@@ -278,6 +278,7 @@ async function populateMoviesNewest() {
     WHERE filter_status = 'clean'
       AND slug IS NOT NULL
       AND tmdb_id IS NOT NULL
+      AND release_year <= CAST(strftime('%Y', 'now') AS INTEGER)
     ORDER BY release_year DESC
     LIMIT 300
   `);
@@ -408,6 +409,7 @@ async function populateSeriesNewest() {
     WHERE filter_status = 'clean'
       AND slug IS NOT NULL
       AND tmdb_id IS NOT NULL
+      AND first_air_year <= CAST(strftime('%Y', 'now') AS INTEGER)
     ORDER BY first_air_year DESC
     LIMIT 300
   `);

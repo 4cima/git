@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { MovieGenrePageClient } from '@/components/pages/MovieGenrePageClient'
 import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams } from '@/lib/genre-siblings'
+import { filterExcludedGenres, EXCLUDED_GENRE_SQL_CLAUSE } from '@/utils/excludedGenres'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -63,22 +64,27 @@ export default async function MovieGenrePage({ params }: PageProps) {
               vote_average, release_year, overview_ar, genres_json
        FROM movies
        WHERE ${whereClause}
+         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+         AND ${EXCLUDED_GENRE_SQL_CLAUSE}
        ORDER BY popularity DESC
        LIMIT 21`,
       genreParams
     )
 
-    const hasMore = initialMovies.length > 20
-    if (hasMore) initialMovies.pop()
+    // فلتر: Talk Show + War & Politics + Documentary + History
+    const filteredMovies = filterExcludedGenres(initialMovies)
+
+    const hasMore = filteredMovies.length > 20
+    if (hasMore) filteredMovies.pop()
 
     return (
       <>
         <div className="hidden" aria-hidden="true" data-ssr-content="movies">
-          {initialMovies.map((movie: any) => (
+          {filteredMovies.map((movie: any) => (
             <div key={movie.id} data-movie-title={movie.title_ar || movie.title_en} />
           ))}
         </div>
-        <MovieGenrePageClient genre={plainGenre} slug={slug} initialMovies={initialMovies} initialHasMore={hasMore} />
+        <MovieGenrePageClient genre={plainGenre} slug={slug} initialMovies={filteredMovies} initialHasMore={hasMore} />
       </>
     )
   } catch { notFound() }

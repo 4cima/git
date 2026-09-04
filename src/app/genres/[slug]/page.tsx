@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { GenreOverviewPageClient } from '@/components/pages/GenreOverviewPageClient'
 import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams } from '@/lib/genre-siblings'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -14,9 +15,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const genre = await executeFirst('SELECT name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [slug])
     if (!genre) return { title: 'تصنيف غير موجود' }
     const genreName = String(genre.name_ar || genre.name_en || 'تصنيف')
+    const title = `أفلام ومسلسلات ${genreName} — تصفح كامل التصنيف | فور سيما`
+    const description = `استكشف أفضل أفلام ومسلسلات ${genreName} المترجمة بجودة عالية — مقسّمة لقسمين: أفلام ${genreName} ومسلسلات ${genreName} مع ترتيب حسب الشهرة والتقييم والحدث.`
+    const url = `https://4cima.com/genres/${slug}`
     return {
-      title: `أفلام ومسلسلات ${genreName}`,
-      description: `استكشف أفضل أفلام ومسلسلات ${genreName} - جودة عالية ومترجم`
+      title,
+      description,
+      keywords: [
+        `أفلام ${genreName}`, `مسلسلات ${genreName}`, `أفلام ${genreName} مترجمة`,
+        `مسلسلات ${genreName} مترجمة`, `تصنيف ${genreName}`, 'أفلام ومسلسلات', '4cima',
+      ],
+      alternates: { canonical: url },
+      openGraph: {
+        title,
+        description,
+        url,
+        siteName: '4cima',
+        type: 'website',
+        locale: 'ar_EG',
+        images: [{ url: '/og-image.png', width: 1200, height: 630, alt: title }],
+      },
     }
   } catch { return { title: 'تصنيف' } }
 }
@@ -54,8 +72,53 @@ export default async function GenreOverviewPage({ params }: PageProps) {
       )
     ])
 
+    // فلتر: Talk Show + War & Politics + Documentary + History
+    const filteredMovies = filterExcludedGenres(topMovies)
+    const filteredSeries = filterExcludedGenres(topSeries)
+
+    const genreName = String(genre.name_ar || genre.name_en || 'تصنيف')
+
+    /* JSON-LD — Breadcrumb + CollectionPage بكل الأعمال الظاهرة (SEO) */
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: 'https://4cima.com/' },
+            { '@type': 'ListItem', position: 2, name: 'التصنيفات', item: 'https://4cima.com/genres' },
+            { '@type': 'ListItem', position: 3, name: genreName, item: `https://4cima.com/genres/${slug}` },
+          ],
+        },
+        {
+          '@type': 'CollectionPage',
+          name: `أفلام ومسلسلات ${genreName}`,
+          url: `https://4cima.com/genres/${slug}`,
+          mainEntity: {
+            '@type': 'ItemList',
+            numberOfItems: filteredMovies.length + filteredSeries.length,
+            itemListElement: [
+              ...filteredMovies.slice(0, 10).map((m: any, i: number) => ({
+                '@type': 'ListItem', position: i + 1,
+                url: `https://4cima.com/movies/${m.slug}`,
+                name: m.title_ar || m.title_en,
+              })),
+              ...filteredSeries.slice(0, 10).map((s: any, i: number) => ({
+                '@type': 'ListItem', position: filteredMovies.slice(0, 10).length + i + 1,
+                url: `https://4cima.com/series/${s.slug}`,
+                name: s.title_ar || s.title_en,
+              })),
+            ],
+          },
+        },
+      ],
+    }
+
     return (
-      <GenreOverviewPageClient genre={genre} slug={slug} topMovies={topMovies} topSeries={topSeries} />
+      <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <GenreOverviewPageClient genre={genre} slug={slug} topMovies={filteredMovies} topSeries={filteredSeries} />
+      </>
     )
   } catch { notFound() }
 }

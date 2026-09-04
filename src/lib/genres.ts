@@ -8,30 +8,58 @@
 
 import { executeAll } from '@/lib/db'
 
-export async function getGenresWithCounts(type?: 'movie' | 'tv') {
-  let query = `
-    SELECT
-      g.*,
-      COALESCE(gc.movie_count, 0)  as movie_count,
-      COALESCE(gc.series_count, 0) as series_count
-    FROM genres g
-    LEFT JOIN genre_counts gc ON gc.genre_id = g.tmdb_id
-  `
+/** الـ genre IDs الممنوعة من الظهور في قوائم التصنيفات */
+const EXCLUDED_GENRE_TMDB_IDS = [10767, 10768, 99, 36]
 
-  if (type === 'movie') {
-    query += ` WHERE COALESCE(gc.movie_count, 0) > 0`
-  } else if (type === 'tv') {
-    query += ` WHERE COALESCE(gc.series_count, 0) > 0`
+/* ------------------------------------------------------------
+   عدّادات كتالوج كاملة من جدول genre_counts المحسوب مسبقًا (سريع جدًا).
+
+   الجدول يُعبَّأ أثناء خطوط الإدخال ويحتوي على إجمالي الأفلام والمسلسلات
+   لكل تصنيف — أرقام حقيقية (لا حدّ أقصى كما في جداول list_* التي تحتفظ
+   بأفضل 300 فقط). والصفحات الفرعية تُصفح الكتالوج كاملاً عبر استعلامات حية،
+   لذا العدّاد الكامل مطابق لما يمكن الوصول إليه فعلًا.
+
+   نستبعد التصنيفات الممنوعة (حواري/وثائقي/حرب وسياسة/تاريخي) نهائيًا
+   حتى لا يظهر كارت يعرض صفحة فارغة، مع cache 60 ثانية.
+   ------------------------------------------------------------ */
+let cachedCounts: { at: number; data: any[] } | null = null
+const COUNTS_TTL_MS = 60_000
+
+async function computeVisibleGenreCounts() {
+  if (cachedCounts && Date.now() - cachedCounts.at < COUNTS_TTL_MS) {
+    return cachedCounts.data
   }
 
-  query += ` ORDER BY g.name_ar ASC`
+  const rows = await executeAll(
+    `SELECT g.*, COALESCE(gc.movie_count, 0) AS movie_count, COALESCE(gc.series_count, 0) AS series_count
+     FROM genres g
+     LEFT JOIN genre_counts gc ON gc.genre_id = g.tmdb_id`,
+    []
+  )
 
-  const rows = await executeAll(query, [])
+  const visible = rows
+    .map((g: any) => {
+      const id = Number(g.tmdb_id)
+      if (EXCLUDED_GENRE_TMDB_IDS.includes(id)) return null
+      const movie_count = Number(g.movie_count || 0)
+      const series_count = Number(g.series_count || 0)
+      return {
+        ...g,
+        movie_count,
+        series_count,
+        total_count: movie_count + series_count,
+      }
+    })
+    .filter((g: any) => g && g.total_count > 0)
+    .sort((a: any, b: any) => b.total_count - a.total_count)
 
-  return rows.map(genre => ({
-    ...genre,
-    movie_count:  Number(genre.movie_count  || 0),
-    series_count: Number(genre.series_count || 0),
-    total_count:  Number(genre.movie_count  || 0) + Number(genre.series_count || 0)
-  }))
+  cachedCounts = { at: Date.now(), data: visible }
+  return visible
+}
+
+export async function getGenresWithCounts(type?: 'movie' | 'tv') {
+  const all = await computeVisibleGenreCounts()
+  if (type === 'movie') return all.filter((g: any) => g.movie_count > 0)
+  if (type === 'tv') return all.filter((g: any) => g.series_count > 0)
+  return all
 }

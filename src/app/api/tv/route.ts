@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,9 +40,10 @@ export async function GET(request: NextRequest) {
 
     const hasMore = rows.length > limit
     if (hasMore) rows.pop()
+    const filteredRows = filterExcludedGenres(rows)
 
     return NextResponse.json({
-      results: rows,
+      results: filteredRows,
       page,
       limit,
       hasMore,

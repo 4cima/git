@@ -12,16 +12,15 @@ import {
 } from 'lucide-react'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
+import { mapItems } from './homeSectionUtils'
 import { Footer } from '@/components/layout/Footer'
-import { AdsterraBanner } from '@/components/features/system/AdsterraBanner'
+import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
-/* الإعلانات المرجعية للصفحة الرئيسية — أرقام ثابتة من ملف بيانات 4cima.com:
-   1 = 728×90 تحت الهيرو | 2 = 300×250 بين زر الأفلام وزر المسلسلات | 3 = 160×600 العمود الشمال وحيدًا
-   (إعلان رقم 5 انتقل لصفوف الرائج في HomeTrendingSections) */
-const AD_UNDER_HERO = getAdByNum(1)!
+/* الإعلان المرجعي المتبقي للصفحة الرئيسية — رقم 2 (300×250) بين زر الأفلام وزر المسلسلات.
+   (رقم 1 تحت الهيرو ورقم 3 السايد بار حُذفا بناءً على طلب المالك،
+    ورقم 5 في صفوف الرائج/الأقسام في HomeAdCard) */
 const AD_CTA = getAdByNum(2)!
-const AD_SIDE = getAdByNum(3)!
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -36,22 +35,7 @@ function TrendingSectionsLoading() {
   return (
     <div className="space-y-10">
       <div className="space-y-4">
-        <div className="w-40 h-7 bg-lumen-muted animate-pulse rounded-md" />
-        <div className="horizontal-scroll -mx-4 px-4 overflow-hidden">
-          <div className="flex gap-4 pb-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton
-                key={i}
-                variant="card"
-                aspectRatio="2/3"
-                className="w-40 sm:w-48 shrink-0"
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="space-y-4">
-        <div className="w-40 h-7 bg-lumen-muted animate-pulse rounded-md" />
+        <div className="w-52 h-9 bg-lumen-muted animate-pulse rounded-2xl" />
         <div className="horizontal-scroll -mx-4 px-4 overflow-hidden">
           <div className="flex gap-4 pb-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -98,82 +82,37 @@ type CardState = 'neutral' | 'favorite' | 'completed'
 interface HomeData {
   trendingMovies: MediaItem[]
   trendingSeries: MediaItem[]
-  topRatedMovies?: MediaItem[]
-  topRatedSeries?: MediaItem[]
-  action?: MediaItem[]
-  drama?: MediaItem[]
   sciFi?: MediaItem[]
   anime?: MediaItem[]
   crime?: MediaItem[]
   arabicMovies?: MediaItem[]
+  arabicSeries?: MediaItem[]
 }
 
 interface HomePageClientProps {
   initialData: HomeData
 }
 
-function mapItems(items: any[] | undefined, type: 'movie' | 'tv'): MediaItem[] {
-  return (items || []).map((item) => {
-    let primaryGenre = null
-    try {
-      const genres = JSON.parse(item.genres_json || '[]')
-      primaryGenre = genres?.[0]?.name_ar || genres?.[0]?.name || null
-    } catch (e) {
-      // Silent error handling
-    }
-    
-    // Extract year from various possible fields
-    let year = item.year || item.release_year || item.first_air_year
-    if (!year && item.release_date && typeof item.release_date === 'string' && /^\d{4}/.test(item.release_date)) {
-      year = parseInt(item.release_date.substring(0, 4), 10)
-    }
-    if (!year && item.first_air_date && typeof item.first_air_date === 'string' && /^\d{4}/.test(item.first_air_date)) {
-      year = parseInt(item.first_air_date.substring(0, 4), 10)
-    }
-    
-    return {
-      id: item.id,
-      tmdb_id: item.tmdb_id && Number(item.tmdb_id) > 0 ? Number(item.tmdb_id) : undefined,
-      slug: item.slug,
-      title: item.title_ar || item.title_en || item.name_ar || item.name,
-      title_ar: item.title_ar || item.name_ar || item.title || item.name,
-      title_en: item.title_en || item.name_en || item.title_en,
-      poster_path: item.poster_path,
-      backdrop_path: item.backdrop_path,
-      vote_average: Number(item.vote_average) || 0,
-      overview_ar: item.overview_ar || item.overview,
-      year: year,
-      media_type: item.media_type === 'movie' ? 'movie' : item.media_type === 'tv' ? 'tv' : type,
-      primary_genre: primaryGenre,
-    }
-  })
-}
-
+/** فلتر مركزي للـ genres الممنوعة (Talk Show + War & Politics + Documentary + History).
+ *  الفلتر الفعلي مُطبَّق في الـ server (page.tsx + API routes) — هنا كـ safety net
+ *  للحالات اللي ممكن تجيب داتا قديمة من الكاش.
+ *  + فلتر السنوات: لا يُعرض أبداً أي عمل أقدم من 10 سنوات في أقسام الصفحة الرئيسية. */
 export function HomePageClient({ initialData }: HomePageClientProps) {
   const { user } = useAuth() // Check if user is logged in
 
-  // البيانات موحّدة عبر mapItems — useMemo لأنها لا تتغير بعد الاستلام أبداً
-  // (كانت useState مع setPlayer لا يُستدعى — كود ميت)
+  // البيانات موحّدة عبر mapItems — الأقسام الإضافية تُجلب الآن كلاينت-سايد
+  // من /api/home-sections (داخل HomeTrendingSections) لتخفيف HTML الرئيسي
   const data = useMemo<HomeData>(() => ({
     trendingMovies: mapItems(initialData.trendingMovies, 'movie'),
     trendingSeries: mapItems(initialData.trendingSeries, 'tv'),
-    topRatedMovies: mapItems(initialData.topRatedMovies, 'movie'),
-    topRatedSeries: mapItems(initialData.topRatedSeries, 'tv'),
-    action: mapItems(initialData.action, 'movie'),
-    drama: mapItems(initialData.drama, 'movie'),
-    sciFi: mapItems(initialData.sciFi, 'tv'),
-    anime: mapItems(initialData.anime, 'tv'),
-    crime: mapItems(initialData.crime, 'movie'),
-    arabicMovies: mapItems(initialData.arabicMovies, 'movie')
   }), [initialData])
 
   const [heroIndex, setHeroIndex] = useState(0)
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right'>('left')
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Lazy loading state
-  const [moviesDisplayCount, setMoviesDisplayCount] = useState(25) // نبدأ بـ 25
-  const [seriesDisplayCount, setSeriesDisplayCount] = useState(25) // نبدأ بـ 25
+  // Lazy loading state — قسم الرائج الموحّد (أفلام + مسلسلات مدمجة)
+  const [trendingDisplayCount, setTrendingDisplayCount] = useState(18) // نبدأ بـ 18 (صور أقل عند أول تحميل = طلبات أقل)
 
   // Card states for hearts
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({})
@@ -737,31 +676,15 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
         </section>
       )}
 
-      {/* إعلان رقم 1 — 728×90 تحت الهيرو، إطار متدرّج بألوان التصميم وأركان دائرية بلا فراغات */}
-      <div className="flex w-full justify-center">
-        <div className="rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
-          <div className="rounded-[14.5px] bg-slate-950 p-1">
-            <AdsterraBanner ad={AD_UNDER_HERO} />
-          </div>
-        </div>
-      </div>
-
-
-          {/* 3. Trending Content Sections — lazy client chunk (off critical path) */}
+      {/* 3. Trending Content Sections — lazy client chunk (off critical path) */}
       <section className="w-full bg-slate-950">
         <div className="max-w-[1920px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 py-8">
-          <div className="flex flex-col lg:flex-row gap-8">
-
-            {/* Main content column (appears on the RIGHT in RTL) */}
-            <div className="flex-1 min-w-0">
 
           <HomeTrendingSections
             data={data}
             isLoggedIn={!!user}
-            moviesDisplayCount={moviesDisplayCount}
-            seriesDisplayCount={seriesDisplayCount}
-            onMoviesLoadMore={() => setMoviesDisplayCount(prev => Math.min(prev + 25, data.trendingMovies.length))}
-            onSeriesLoadMore={() => setSeriesDisplayCount(prev => Math.min(prev + 25, data.trendingSeries.length))}
+            trendingDisplayCount={trendingDisplayCount}
+            onTrendingLoadMore={() => setTrendingDisplayCount(prev => Math.min(prev + 25, (data.trendingMovies.length + data.trendingSeries.length)))}
             getCardState={getCardState}
             isCardLoading={isCardLoading}
             toggleCardState={toggleCardState}
@@ -789,11 +712,7 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
 
             {/* الخلية 2 — إعلان رقم 2 (300×250) بمقاسه الأصلي بالظبط داخل إطار موحّد — بلا أي قص */}
             <div className="relative flex items-center justify-center overflow-visible py-2">
-              <div className="w-fit rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
-                <div className="rounded-[14.5px] bg-slate-950 p-1">
-                  <AdsterraBanner ad={AD_CTA} />
-                </div>
-              </div>
+              <AdFrame ad={AD_CTA} variant="x" />
             </div>
 
             {/* الخلية 3 — زر كل المسلسلات */}
@@ -812,19 +731,6 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                 <ArrowLeft className="h-4 w-4 text-blue-400 transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:text-white" />
               </div>
             </Link>
-          </div>
-
-            </div>
-
-            {/* إعلان رقم 3 (Zone 31008096 — 160×600) العمود الشمال — وحيدًا بدون أي إعلان آخر: mt-[62px] لمساواة أعلاه مع أعلى كروت الأفلام الرائجة */}
-            <aside className="w-full lg:sticky lg:top-6 lg:mt-[62px] lg:w-[184px] lg:shrink-0 lg:self-start">
-              <div className="rounded-2xl bg-gradient-to-b from-blue-500/60 via-slate-700/70 to-red-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
-                <div className="rounded-[14.5px] bg-slate-950 p-1">
-                  <AdsterraBanner ad={AD_SIDE} />
-                </div>
-              </div>
-            </aside>
-
           </div>
         </div>
       </section>

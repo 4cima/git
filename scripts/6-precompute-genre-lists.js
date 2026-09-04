@@ -5,7 +5,8 @@
  * 
  * Strategy:
  * - Top rated: ORDER BY vote_average DESC, vote_count DESC LIMIT 300
- * - Genre lists: Paginate source table, parse genres_json in Node, keep top 300 by popularity per genre
+ * - Genre lists: Paginate source table, parse genres_json in Node, keep top 500 per genre
+ *   (primary-genre matches first, then popularity)
  * - Zero json_each on D1
  * - Batch INSERT OR REPLACE with retry on 429
  */
@@ -13,12 +14,20 @@
 const https = require('https')
 const fs = require('fs')
 
-const ACCOUNT_ID = '834bca43d616c73db23cf95311cfe17e'
-const DATABASE_ID = 'b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6'
-const API_TOKEN = process.env.CLOUDFLARE_D1_TOKEN
+const ACCOUNT_ID = process.env.CF_ACCOUNT_ID || '834bca43d616c73db23cf95311cfe17e'
+const DATABASE_ID = process.env.CF_DATABASE_ID || 'b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6'
+
+// Read token from .env.local fallback (نفس منطق السكربتات الأخرى)
+const envPath = require('path').join(__dirname, '..', '.env.local')
+let API_TOKEN = process.env.CLOUDFLARE_D1_TOKEN
+if (!API_TOKEN && fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf8')
+  const match = envContent.match(/CLOUDFLARE_D1_TOKEN=(.+)/)
+  if (match) API_TOKEN = match[1].trim()
+}
 
 if (!API_TOKEN) {
-  console.error('❌ CLOUDFLARE_D1_TOKEN not set')
+  console.error('❌ CLOUDFLARE_D1_TOKEN not set (env or .env.local)')
   process.exit(1)
 }
 
@@ -253,11 +262,20 @@ async function main() {
 
   console.log(`   Total genre IDs found: ${genreMoviesMap.size}`)
 
-  // Keep top 300 per genre by popularity
-  console.log('   Sorting and limiting to top 300 per genre...')
+  // Keep top 500 per genre — التصنيف الأساسي أولًا (الأعمال التي يأتي التصنيف
+  // أول قائمة تصنيفاتها تتصدر) ثم الأكثر شهرة. يرفع عمق الكاش من 300 إلى 500.
+  console.log('   Sorting and limiting to top 500 per genre (primary genre first)...')
+  const primaryRank = (entry, gid) => {
+    try {
+      const arr = JSON.parse(entry.item.genres_json || '[]')
+      return Number(arr?.[0]?.tmdb_id) === Number(gid) ? 0 : 1
+    } catch {
+      return 1
+    }
+  }
   for (const [gid, items] of genreMoviesMap.entries()) {
-    items.sort((a, b) => b.popularity - a.popularity)
-    genreMoviesMap.set(gid, items.slice(0, 300))
+    items.sort((a, b) => (primaryRank(a, gid) - primaryRank(b, gid)) || (b.popularity - a.popularity))
+    genreMoviesMap.set(gid, items.slice(0, 500))
   }
 
   // Insert genre movies
@@ -333,11 +351,11 @@ async function main() {
 
   console.log(`   Total genre IDs found: ${genreSeriesMap.size}`)
 
-  // Keep top 300 per genre by popularity
-  console.log('   Sorting and limiting to top 300 per genre...')
+  // Keep top 500 per genre — نفس منطق الأفلام: التصنيف الأساسي أولًا ثم الأكثر شهرة
+  console.log('   Sorting and limiting to top 500 per genre (primary genre first)...')
   for (const [gid, items] of genreSeriesMap.entries()) {
-    items.sort((a, b) => b.popularity - a.popularity)
-    genreSeriesMap.set(gid, items.slice(0, 300))
+    items.sort((a, b) => (primaryRank(a, gid) - primaryRank(b, gid)) || (b.popularity - a.popularity))
+    genreSeriesMap.set(gid, items.slice(0, 500))
   }
 
   // Insert genre series

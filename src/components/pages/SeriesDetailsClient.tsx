@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Star, Clock, Calendar, Tv, Heart, Play, ChevronDown } from 'lucide-react'
 import clsx from 'clsx'
 import Link from 'next/link'
@@ -12,17 +12,13 @@ import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { openWatchWithPlayer } from '@/lib/openWatch'
 import { preparePopunder, firePopunderOnClick } from '@/components/features/system/adsClick'
-import { AdsterraBanner } from '@/components/features/system/AdsterraBanner'
+import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
-/* الإعلانات المرجعية لصفحة تفاصيل المسلسل — أرقام ثابتة من ملف بيانات 4cima.com:
-   1 = 728×90 تحت الهيرو | 2 = 300×250 بعد المشغّال | 3 = 160×600 سايدبار
-   4 = 468×60 بين الأقسام | 6 = 320×50 فوتر موبايل */
-const AD_UNDER_HERO = getAdByNum(1)!
+/* الإعلانات لصفحة تفاصيل المسلسل — مطابقة لصفحة تفاصيل الفيلم:
+   2 = 300×250 بعد المشغّال | 3 = 160×600 سايدبار */
 const AD_AFTER_PLAYER = getAdByNum(2)!
 const AD_SIDE = getAdByNum(3)!
-const AD_BETWEEN = getAdByNum(4)!
-const AD_FOOTER = getAdByNum(6)!
 
 interface SeriesDetailsClientProps {
   series: any
@@ -46,31 +42,10 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   const [cardState, setCardState] = useState<'neutral' | 'favorite' | 'completed'>('neutral')
   const [stateLoading, setStateLoading] = useState(false)
   const iframeRef = useRef<HTMLIFrameElement>(null)
-  const posterRef = useRef<HTMLDivElement>(null)
-  const posterImgRef = useRef<HTMLDivElement>(null)
-  const [posterHeight, setPosterHeight] = useState<number | null>(null)
 
-  // قياس ارتفاع البوستر والإعلان — useLayoutEffect يقيس ويضبط قبل الرسم لمنع أي قفز
-  useLayoutEffect(() => {
-    const measure = () => {
-      const posterNode = posterImgRef.current
-      if (posterNode) {
-        const h = posterNode.getBoundingClientRect().height
-        if (h > 0) setPosterHeight(Math.round(h))
-      }
-    }
-    measure()
-    window.addEventListener('resize', measure)
-    const t1 = window.setTimeout(measure, 100)
-    const t2 = window.setTimeout(measure, 500)
-    const t3 = window.setTimeout(measure, 1500)
-    return () => {
-      window.removeEventListener('resize', measure)
-      window.clearTimeout(t1)
-      window.clearTimeout(t2)
-      window.clearTimeout(t3)
-    }
-  }, [series?.id, series?.poster_path, series?.poster_url])
+  // ارتفاع البوستر ثابت هندسيًا (بعرض 300px × نسبة 2/3 = 450px) — لا قياس JS.
+  // الأعمدة المطابقة (المعلومات/الطاقم/الإعلان) تحصل على نفس الارتفاع برمجيًا
+  // بالكلاسات md:h-[450px] — فلا إعادة رسم بعد التحميل ولا قفز في التخطيط.
 
   const title = sanitizeTitle(series?.name_ar || series?.name || series?.original_name || 'مسلسل')
   const titleEn = sanitizeTitle(series?.name_en || series?.name || series?.original_name)
@@ -482,20 +457,16 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr_160px_160px] gap-4 items-start">
 
           {/* عمود 1: البوستر + إعلان 300×250 + كلمات مفتاحية */}
-          <div className="relative" ref={posterRef}>
-            <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group" ref={posterImgRef}>
+          <div className="relative">
+            <div className="relative rounded-xl overflow-hidden shadow-2xl aspect-[2/3] group">
               {poster && (
                 <img src={poster} alt={title} className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
               )}
             </div>
 
-            {/* إعلان 300×250 تحت البوستر */}
+            {/* إعلان 300×250 تحت البوستر — يختفي كليًا (بإطاره) عند فشل الإعلان */}
             <div className="mt-3 flex justify-center">
-              <div className="rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70">
-                <div className="rounded-[14.5px] bg-slate-950 p-1">
-                  <AdsterraBanner ad={AD_AFTER_PLAYER} />
-                </div>
-              </div>
+              <AdFrame ad={AD_AFTER_PLAYER} variant="x" />
             </div>
 
             {/* Keywords under poster */}
@@ -517,8 +488,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
           <div className="space-y-4">
             {/* صندوق البيانات - بنفس ارتفاع البوستر */}
             <div
-              className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
-              style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '450px' }}
+              className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent md:h-[450px]"
             >
                 <div className="flex items-start justify-between gap-4 mb-2">
                   <div className="flex-1">
@@ -742,8 +712,7 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
           {/* عمود 3: طاقم العمل — بنفس ارتفاع البوستر، صورة يسار + اسم من اليسار لليمين */}
           {cast.length > 0 && (
             <div
-              className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden hidden md:flex flex-col"
-              style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '450px' }}
+              className="bg-black/20 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl overflow-hidden hidden md:flex flex-col md:h-[450px]"
             >
               <div className="px-3 pt-3 pb-2 border-b border-white/10">
                 <h3 className="text-xs font-bold text-purple-400 text-center">طاقم العمل</h3>
@@ -772,16 +741,11 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
             </div>
           )}
 
-          {/* عمود 4: إعلان سايدبار 160×600 — بنفس ارتفاع البوستر */}
+          {/* عمود 4: إعلان سايدبار 160×600 — بنفس ارتفاع البوستر — يختفي كليًا عند فشل الإعلان */}
           <div
-            className="hidden lg:flex flex-col items-center justify-start"
-            style={posterHeight ? { height: `${posterHeight}px` } : { minHeight: '450px' }}
+            className="hidden lg:flex flex-col items-center justify-start lg:h-[450px]"
           >
-            <div className="rounded-2xl bg-gradient-to-b from-blue-500/60 via-slate-700/70 to-red-500/60 p-[1.5px] shadow-lg shadow-slate-950/70 w-full">
-              <div className="rounded-[14.5px] bg-slate-950 p-1 flex justify-center">
-                <AdsterraBanner ad={AD_SIDE} />
-              </div>
-            </div>
+            <AdFrame ad={AD_SIDE} variant="y" />
           </div>
 
         </div>

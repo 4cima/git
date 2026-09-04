@@ -118,6 +118,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ar" dir="rtl" data-scroll-behavior="smooth">
+      <head>
+        {/* تسريع تحميل الإعلانات: فتح الاتصال بسيرفر Adsterra مبكرًا
+            (كل زونات Adsterra تستخدم نفس الدومين) — يوفر ~100-300ms على أول إعلان */}
+        <link rel="preconnect" href="https://professionalsusceptible.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://professionalsusceptible.com" />
+      </head>
       <body className={`${cairo.className} bg-black text-white min-h-screen`}>
         <script
           type="application/ld+json"

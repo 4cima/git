@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
 import { sanitizeSearchInput } from '@/lib/search-utils'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +50,8 @@ async function cascadingSearch(query: string, queryLength: number) {
         executeAll(
           `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_en, movies.title_ar,
                   movies.poster_path, movies.release_year, movies.vote_average,
-                  movies.popularity, movies.filter_status, 'movie' as media_type, 999 as search_level
+                  movies.popularity, movies.filter_status, movies.genres_json,
+                  'movie' as media_type, 999 as search_level
            FROM movies
            JOIN movies_fts ON movies.id = movies_fts.rowid
            WHERE movies_fts MATCH ?
@@ -61,7 +63,8 @@ async function cascadingSearch(query: string, queryLength: number) {
         executeAll(
           `SELECT tv_series.id, tv_series.tmdb_id, tv_series.slug, tv_series.name_en, tv_series.name_ar,
                   tv_series.poster_path, tv_series.first_air_year, tv_series.vote_average,
-                  tv_series.popularity, tv_series.filter_status, 'tv' as media_type, 999 as search_level
+                  tv_series.popularity, tv_series.filter_status, tv_series.genres_json,
+                  'tv' as media_type, 999 as search_level
            FROM tv_series
            JOIN series_fts ON tv_series.id = series_fts.rowid
            WHERE series_fts MATCH ?
@@ -71,7 +74,8 @@ async function cascadingSearch(query: string, queryLength: number) {
           [searchTerm]
         )
       ])
-      allResults.push(...moviesFTS, ...seriesFTS)
+      // فلتر: Talk Show + War & Politics + Documentary + History
+      allResults.push(...filterExcludedGenres([...moviesFTS, ...seriesFTS]))
     } catch {
       console.log('FTS5 search failed, continuing with fallback')
     }
@@ -112,7 +116,9 @@ export async function GET(request: NextRequest) {
          LIMIT 50`,
         [queryLength, q, q, q, q, q, q, q, q]
       )
-      return NextResponse.json({ results, totalFound: results.length, searchStrategy: 'short-title-lookup' })
+      // فلتر دفاعي (short_titles_lookup لا يحتوي genres_json — الفلتر no-op هنا)
+      const filteredResults = filterExcludedGenres(results)
+      return NextResponse.json({ results: filteredResults, totalFound: filteredResults.length, searchStrategy: 'short-title-lookup' })
     }
     
     const allResults = await cascadingSearch(q, queryLength)

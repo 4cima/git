@@ -17,6 +17,9 @@
  * Snippets without atOptions (simple HTML/scripts) are appended as plain nodes.
  */
 
+// حيّد أي طلب لدومينات التوصيل الميتة قبل التركيب — راجع deadDeliveryGuard.ts
+import './deadDeliveryGuard'
+
 let adsterraQueue: Promise<void> = Promise.resolve()
 
 /**

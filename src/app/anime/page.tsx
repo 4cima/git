@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function AnimePage() {
-  return <CategoryHub type="movie" category="anime" />
+  return <CategoryHub type="movie" category="anime" allowTypeSwitch />
 }
