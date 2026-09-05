@@ -6,7 +6,6 @@ import { motion } from 'framer-motion'
 import { Star, Heart, Play, Calendar, Clock } from 'lucide-react'
 import { MovieCard } from '../features/media/MovieCard'
 import { SectionHeader } from '../common/SectionHeader'
-import { firePopunderOnClick } from '../features/system/adsClick'
 import { Loading } from '../common/Loading'
 import ReactPlayer from 'react-player'
 import clsx from 'clsx'
@@ -209,7 +208,8 @@ export const SeriesDetailsPage = ({ slug }: { slug: string }) => {
 
             <button
               onClick={() => {
-                firePopunderOnClick()
+                // البوبندر يتفعّل داخل openWatchWithPlayer — من نفس الضغطة،
+                // مرة واحدة لكل جلسة، ولا يوقف المشاهدة أبدًا.
                 openWatchWithPlayer({
                   type: 'tv',
                   id: series?.tmdb_id || series?.id,

@@ -7,7 +7,7 @@
  */
 import { Fragment, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Drama, Film, Fingerprint, Flame, Globe, Play, Rocket, Sparkles, Star } from 'lucide-react'
+import { ArrowLeft, Clapperboard, Drama, Film, Fingerprint, Flame, Globe, Play, Rocket, Star } from 'lucide-react'
 import { StarIcon } from '../common/StarIcon'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
@@ -21,7 +21,7 @@ const EXTRA_PAGE_SIZE = 25
 
 export interface ExtraSectionDef {
   title: string
-  icon: 'star' | 'flame' | 'drama' | 'rocket' | 'sparkles' | 'fingerprint' | 'globe'
+  icon: 'star' | 'flame' | 'drama' | 'rocket' | 'clapperboard' | 'fingerprint' | 'globe'
   /** رابط صفحة القسم المختلط (عنوان القسم + كارت CTA الأخير) */
   labelHref?: string
   /** رابط صفحة أفلام القسم (زر «أفلام» في الزر المنقسم) */
@@ -41,8 +41,8 @@ function SectionIcon({ name }: { name: ExtraSectionDef['icon'] }) {
       return <Drama className="w-7 h-7 text-pink-400" />
     case 'rocket':
       return <Rocket className="w-7 h-7 text-violet-400" />
-    case 'sparkles':
-      return <Sparkles className="w-7 h-7 text-amber-300" />
+    case 'clapperboard':
+      return <Clapperboard className="w-7 h-7 text-amber-300" />
     case 'fingerprint':
       return <Fingerprint className="w-7 h-7 text-emerald-400" />
     case 'globe':

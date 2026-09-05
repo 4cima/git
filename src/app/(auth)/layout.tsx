@@ -5,7 +5,7 @@
  * Mobile: Stacked vertically
  */
 
-import { Sparkles, BookMarked, Play, Star } from 'lucide-react'
+import { Flame, BookMarked, Play, Star } from 'lucide-react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
@@ -80,7 +80,7 @@ export default function AuthLayout({
           
           {/* Decorative element */}
           <div className="absolute bottom-12 right-12 opacity-10">
-            <Sparkles size={120} className="text-red-600" />
+            <Flame size={120} className="text-red-600" />
           </div>
         </div>
       </div>

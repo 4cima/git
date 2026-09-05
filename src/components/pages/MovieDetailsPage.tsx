@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Star, Heart, Play, Calendar, Clock, Film, Users, AlertTriangle } from 'lucide-react'
 import { MovieCard } from '../features/media/MovieCard'
 import { SectionHeader } from '../common/SectionHeader'
-import { firePopunderOnClick } from '../features/system/adsClick'
+import { requestPopunderFromUserGesture } from '../features/system/adsClick'
 import { Loading } from '../common/Loading'
 import ReactPlayer from 'react-player'
 import clsx from 'clsx'
@@ -200,7 +200,9 @@ export const MovieDetailsPage = ({ slug }: { slug: string }) => {
 
             <button
               onClick={() => {
-                firePopunderOnClick()
+                // البوبندر يتفعّل فقط عند فتح المشغّل (أول مشاهدة في الجلسة) —
+                // داخل نفس الضغطة، مرة واحدة لكل جلسة، ولا يوقف المشاهدة.
+                if (!showPlayer) void requestPopunderFromUserGesture()
                 setShowPlayer(!showPlayer)
               }}
               className="w-full py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 flex items-center justify-center gap-2 font-bold hover:transition-transform"

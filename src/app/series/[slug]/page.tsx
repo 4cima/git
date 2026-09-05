@@ -13,9 +13,10 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug }  = await params
   const series    = await executeFirst(
-    'SELECT name_ar, name_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json FROM tv_series WHERE slug = ? LIMIT 1', [slug]
+    'SELECT name_ar, name_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path FROM tv_series WHERE slug = ? LIMIT 1', [slug]
   )
-  if (!series) return { title: 'مسلسل غير موجود' }
+  // العمل غير موجود → 404 فعلي (كان يُرجع { title: 'مسلسل غير موجود' } مع HTTP 200 — سبب الـ soft 404)
+  if (!series) notFound()
 
   // تفادي تكرار اسم الموقع داخل العنوان (القالب في layout.tsx يضيف «| فور سيما | 4cima»)
   const stripBrand = (s: unknown): string =>
@@ -48,9 +49,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   } catch {}
   
-  const posterImage = series.poster_path
-    ? `https://4cima.com/tmdb/w500${series.poster_path}`
-    : undefined
+  // og:image: خلفية 16:9 إن توفّرت (أقرب مقاس متاح من TMDB لـ 1200×630 هو w1280 بـ 1280×720)،
+  // وإلا الملصق، وإلا صورة الموقع العامة — الصور عبر بروكسي /tmdb/ وليس image.tmdb.org مباشرة
+  const ogImage = series.backdrop_path
+    ? { url: `https://4cima.com/tmdb/w1280${series.backdrop_path}`, width: 1280, height: 720, alt: title }
+    : series.poster_path
+      ? { url: `https://4cima.com/tmdb/w500${series.poster_path}`, width: 500, height: 750, alt: title }
+      : { url: 'https://4cima.com/og-image.png', width: 1200, height: 630, alt: 'فور سيما' }
   const pageUrl = `https://4cima.com/series/${slug}`
 
   return {
@@ -64,13 +69,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       siteName: 'فور سيما',
-      images: posterImage ? [{ url: posterImage, width: 500, height: 750, alt: title }] : undefined,
+      images: [ogImage],
     },
     twitter: {
       card: 'summary_large_image' as const,
       title,
       description,
-      images: posterImage ? [posterImage] : undefined,
+      images: [ogImage.url],
     },
   }
 }

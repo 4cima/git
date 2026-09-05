@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Search, X, Film, Tv, Loader2, Star, Calendar, TrendingUp, Filter, SlidersHorizontal, ChevronDown, Clock, Award } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface SearchResult {
@@ -113,6 +114,7 @@ function YouTubeKeyboard({ onKeyPress, onClose }: { onKeyPress: (key: string) =>
 }
 
 export function SearchBox() {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -567,6 +569,14 @@ export function SearchBox() {
                       type="text"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        // Enter → صفحة /search (لا يكسر النتائج المنسدلة ولا مستمع الأسهم/الريموت العام)
+                        if (e.key === 'Enter' && query.trim().length >= 1) {
+                          e.preventDefault()
+                          router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+                          handleResultClick()
+                        }
+                      }}
                       placeholder="ابحث..."
                       className="flex-1 bg-slate-900/50 text-white placeholder-slate-500 outline-none text-xs font-medium px-2 py-0.5 rounded border border-slate-700 focus:border-slate-600"
                       autoComplete="off"

@@ -315,7 +315,7 @@ export function HomeTrendingSections({
     },
     {
       title: 'الأنمي والرسوم المتحركة',
-      icon: 'sparkles',
+      icon: 'clapperboard',
       labelHref: '/genres/animation',
       moviesHref: '/movies/genres/animation',
       seriesHref: '/series/genres/animation',

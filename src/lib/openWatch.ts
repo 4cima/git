@@ -1,6 +1,7 @@
 'use client'
 
 import { CONFIG } from './constants'
+import { requestPopunderFromUserGesture } from '@/components/features/system/adsClick'
 
 export type WatchTarget = {
   type: 'movie' | 'tv'
@@ -14,40 +15,9 @@ export type WatchTarget = {
   who?: string
 }
 
-// Pop-under ad URL is prefetched once per session so it can be opened
-// *synchronously* inside the user's click gesture (required by browser
-// pop-up blockers). If the fetch hasn't resolved yet, the watch still
-// works — it just opens without the pop-under.
-let cachedAdUrl: string | null | undefined
-
-export function prefetchWatchAd(): void {
-  if (cachedAdUrl !== undefined) return
-  cachedAdUrl = null
-  fetch('/api/ads?active=true&type=popunder')
-    .then((res) => (res.ok ? res.json() : null))
-    .then((data) => {
-      if (!data) return
-      const ads = (data as any).data || data
-      const ad = (Array.isArray(ads) ? ads[0] : null) as { content?: string } | null
-      cachedAdUrl = ad?.content ? extractAdUrl(ad.content) : null
-    })
-    .catch(() => {
-      cachedAdUrl = null
-    })
-}
-
-function extractAdUrl(input: string): string | null {
-  const fromHref = input.match(/href\s*=\s*["'](https?:\/\/[^"']+)["']/i)?.[1]
-  const fromRaw = input.match(/https?:\/\/[^\s"'<>]+/i)?.[0]
-  const candidate = fromHref || fromRaw
-  if (!candidate) return null
-  try {
-    const u = new URL(candidate)
-    return u.protocol === 'http:' || u.protocol === 'https:' ? u.toString() : null
-  } catch {
-    return null
-  }
-}
+// البوبندر — تفعيل واحد لكل جلسة، داخل ضغطة زرار مشاهدة فقط:
+// راجع requestPopunderFromUserGesture() في src/components/features/system/adsClick.ts
+// (لا prefetch ولا window.open عند onload — قُصّ من الإقلاع نهائيًا)
 
 // Anti-bot: the player host is never present as a plain string in the
 // client bundle / static HTML — it is decoded at runtime only inside the
@@ -95,9 +65,11 @@ export function toPlayerUrl(target: WatchTarget): string {
 }
 
 /**
- * Watch flow required by 4cima.com:
- *  1) open the pop-under ad first (background tab),
- *  2) then open the player page on 4cima.stream passing the movie/series id.
+ * Watch flow:
+ *  1) تفعيل البوبندر مرة واحدة لكل جلسة — فقط من داخل ضغطة زرار مشاهدة
+ *     حقيقية (requestPopunderFromUserGesture تُحقن السكربت داخل نفس الـ
+ *     click gesture وتنتظر حتى ~1s كحد أقصى، وتفشل بصمت بدون تعطيل المشاهدة).
+ *  2) ثم الانتقال لصفحة المشغّل على 4cima.stream بمعرّف الفيلم/المسلسل.
  *
  * When the visitor has a session, a short-lived signed player bridge token
  * (HMAC, no secrets in it) is fetched same-origin and appended as ?pt= so the
@@ -105,18 +77,9 @@ export function toPlayerUrl(target: WatchTarget): string {
  * just without the bridge.
  */
 export async function openWatchWithPlayer(target: WatchTarget): Promise<void> {
-  if (cachedAdUrl) {
-    // Open behind the current tab (classic pop-under), then hand focus back.
-    const pop = window.open(cachedAdUrl, '_blank')
-    if (pop) {
-      try {
-        pop.blur()
-      } catch {
-        /* ignore */
-      }
-    }
-    window.focus()
-  }
+  // البوّابة الوحيدة للإعلان العدواني — داخل نفس الضغطة، مرة واحدة لكل جلسة.
+  // firedNow = true فقط لو هي أول ضغطة مشاهدة في الجلسة.
+  const firedNow = await requestPopunderFromUserGesture()
   let url = toPlayerUrl(target)
   try {
     const ctrl = new AbortController()
@@ -132,15 +95,19 @@ export async function openWatchWithPlayer(target: WatchTarget): Promise<void> {
   } catch {
     /* bridge unavailable — watch without it */
   }
-  // Give the network's click-captured pop-under time to fire BEFORE we
-  // navigate in the same tab — navigating in the same tick kills the pending
-  // window.open (popunder never opens). 2 rAF + 400ms is enough; the viewer
-  // barely notices, and the current tab still goes to the player (no hijack).
-  requestAnimationFrame(() =>
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        window.location.href = url
-      }, 400)
-    })
-  )
+  if (firedNow) {
+    // أعطِ سكربت الشبكة (المحقون داخل الضغطة) فرصة قصيرة لتشغيل البوبندر
+    // قبل التنقل في نفس التاب — التنقل الفوري في نفس اللحظة قد يقتل الـ
+    // window.open المعلّق. 2 rAF + 400ms تكفي، والتالي الحالي يكمل للمشغّل.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          window.location.href = url
+        }, 400)
+      })
+    )
+    return
+  }
+  // الجلسة شغّلت الإعلان قبل كده (أو الإعلان معطّل) → للمشغّل مباشرة
+  window.location.href = url
 }

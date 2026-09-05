@@ -1,5 +1,21 @@
 'use client'
 
+/**
+ * بوّابة البوبندر — Popunder Gate (المسار الوحيد للإعلان العدواني)
+ * ================================================================
+ * السياسة الصارمة:
+ *  - ممنوع تحميل أي سكربت بوبندر عند الإقلاع، ولا عند أول scroll/لمسة،
+ *    ولا بعد idle. القديم (preparePopunder في useEffect + firePopunderOnClick
+ *    بمعدلات localStorage) قُصّ نهائيًا.
+ *  - التفعيل الوحيد: requestPopunderFromUserGesture() — تُستدعى فقط من داخل
+ *    click handler لزرار مشاهدة فعلي («مشاهدة الآن» / زرار سيرفر / حلقة)،
+ *    i.e. ضغطة gesture حقيقية من المستخدم — لا scroll ولا mousedown عام.
+ *  - مرة واحدة لكل جلسة (sessionStorage). الضغطة التالية تذهب للمشغّل مباشرة.
+ *  - fail-open دائمًا: لو السكربت فشل أو اتحظر، المشاهدة تكمل عادي ولا
+ *    تُعلَّق على نجاح الإعلان أبدًا.
+ *  - لا cloaking: نفس الكود لكل زائر (بما فيهم Googlebot) — لا فحص User-Agent.
+ */
+
 import { isHostAllowed } from '@/lib/adsAllowlist'
 import { FLAGS } from '@/lib/constants'
 
@@ -8,101 +24,109 @@ const CACHE_KEY = `ads_serve_${SLOT}`
 const CACHE_TTL = 10 * 60 * 1000 // 10 minutes
 const ZONE_KEY = '11691417'
 const FALLBACK_SCRIPT = 'https://al5sm.com/tag.min.js'
-const POPUP_COOLDOWN = 20000 // 20 seconds between popups
-const CLICK_COOLDOWN = 2000 // 2 clicks in 2 seconds = 1 popup
+/** أقصى انتظار لجاهزية سكربت البوبندر داخل نفس الضغطة (~1s) */
+const GESTURE_READY_TIMEOUT = 1000
 
-let scriptInjected = false
+/** مفتاح جلسة الإعلان — يُكتب فقط بعد أول ضغطة مشاهدة */
+export const POPUNDER_SESSION_KEY = 'popunder_fired_session'
 
-function injectScript(config?: any) {
-  if (typeof window === 'undefined') return
-  if (scriptInjected) return
-  if (sessionStorage.getItem('ads_script_injected')) {
-    scriptInjected = true
-    return
-  }
+let injectedThisSession = false
 
-  // Server config is used only when it is a valid https script integration;
-  // ANYTHING else (source:null, html integration, bad host) → fallback zone
-  // 11691417 loaded directly from al5sm.com. We never treat an empty serve
-  // response as "success" — the popunder must always be armed.
-  let scriptUrl: string | undefined =
-    config && config.integration === 'script' && typeof config.script_url === 'string'
-      ? config.script_url
-      : undefined
-  if (scriptUrl && !isHostAllowed('propellerads', scriptUrl)) scriptUrl = undefined
-  const zoneKey = scriptUrl ? config.zone_key || ZONE_KEY : ZONE_KEY
-  if (!scriptUrl) scriptUrl = FALLBACK_SCRIPT
-
+/** هل اتشغّل الإعلان بالجلسة دي؟ (in-memory + sessionStorage + مفتاح قديم) */
+function sessionAlreadyFired(): boolean {
+  if (injectedThisSession) return true
   try {
-    if (new URL(scriptUrl).protocol !== 'https:') scriptUrl = FALLBACK_SCRIPT
+    if (sessionStorage.getItem(POPUNDER_SESSION_KEY) === '1') return true
+    // مفتاح الجلسة القديم — نحترمه حتى لا يُفتح تاب ثانية في نفس الجلسة
+    if (sessionStorage.getItem('ads_script_injected') === '1') return true
+    return false
   } catch {
-    scriptUrl = FALLBACK_SCRIPT
-  }
-
-  scriptInjected = true
-  sessionStorage.setItem('ads_script_injected', '1')
-
-  try {
-    const script = document.createElement('script')
-    script.src = scriptUrl
-    script.setAttribute('data-zone', zoneKey)
-    script.async = true
-    document.body.appendChild(script)
-  } catch {
-    // Silent fail - fail-open
+    return false
   }
 }
 
-export function preparePopunder() {
-  if (typeof window === 'undefined') return
-
-  if (!FLAGS.ADS_ENABLED) return
-
-  if (scriptInjected) return
-  if (sessionStorage.getItem('ads_script_injected')) {
-    scriptInjected = true
-    return
+/** علّم الجلسة إن الإعلان اتشغّل — بعد أول ضغطة مشاهدة فقط */
+function markSessionFired(): void {
+  injectedThisSession = true
+  try {
+    sessionStorage.setItem(POPUNDER_SESSION_KEY, '1')
+    if (!sessionStorage.getItem('ads_script_injected')) {
+      sessionStorage.setItem('ads_script_injected', '1')
+    }
+  } catch {
+    /* private mode / storage blocked — in-memory flag still holds */
   }
+}
 
+/**
+ * حدد رابط سكربت البوبندر — إجمالًا من كاش إعدادات السيرفر (لو صالح)،
+ * وإلا الفولباك. أي رابط مش https أو مش من شبكة مسموحة → فولباك.
+ */
+function resolvePopunderScriptUrl(): string {
   try {
     const cached = sessionStorage.getItem(CACHE_KEY)
     if (cached) {
-      const { data, timestamp } = JSON.parse(cached)
-      if (Date.now() - timestamp < CACHE_TTL) {
-        injectScript(data)
-        return
+      const { data, timestamp } = JSON.parse(cached) as {
+        data?: { integration?: string; script_url?: string }
+        timestamp?: number
+      }
+      if (data && timestamp && Date.now() - timestamp < CACHE_TTL) {
+        const url =
+          data.integration === 'script' && typeof data.script_url === 'string'
+            ? data.script_url
+            : undefined
+        if (url) {
+          const parsed = new URL(url)
+          if (
+            parsed.protocol === 'https:' &&
+            isHostAllowed('propellerads', url)
+          ) {
+            return url
+          }
+        }
       }
     }
-
-    fetch(`/api/ads/serve?slot=${SLOT}`)
-      .then(res => res.json())
-      .then(data => {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }))
-        injectScript(data)
-      })
-      .catch(() => {
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data: null, timestamp: Date.now() }))
-        injectScript({ integration: 'script', zone_key: ZONE_KEY, script_url: FALLBACK_SCRIPT })
-      })
   } catch {
-    injectScript({ integration: 'script', zone_key: ZONE_KEY, script_url: FALLBACK_SCRIPT })
+    /* fall through to fallback */
   }
+  return FALLBACK_SCRIPT
 }
 
-export function firePopunderOnClick() {
-  if (typeof window === 'undefined') return
+/**
+ * تفعيل البوبندر من داخل ضغطة زرار مشاهدة — الدالة الوحيدة المسموحة.
+ *
+ * - تُحقن السكربت *مزامنة* داخل نفس الضغطة (gesture حقيقي).
+ * - تنتظر جاهزيته حتى ~1s كحد أقصى ثم تعود فورًا.
+ * - تعيد true فقط لو هي اللي شغّلت الإعلان في هذه الجلسة (أول ضغطة)،
+ *   وfalse في أي حالة أخرى (الجلسة اتشغّلت قبل كده / الإعلانات مقفولة / SSR).
+ * - لا ترمي أبدًا — fail-open.
+ */
+export async function requestPopunderFromUserGesture(): Promise<boolean> {
+  if (typeof window === 'undefined') return false
+  if (!FLAGS.ADS_ENABLED) return false
+  if (sessionAlreadyFired()) return false
 
-  const now = Date.now()
+  // علّم الجلسة أولًا — حتى لو السكربت فشل، الضغطة التالية مفيهاش تاب تانية
+  markSessionFired()
 
-  // Rate limiting: 20 seconds between popups
-  const lastPopup = parseInt(localStorage.getItem('ads_last_popup') || '0', 10)
-  if (now - lastPopup < POPUP_COOLDOWN) return
+  const url = resolvePopunderScriptUrl()
 
-  // Rate limiting: 2 clicks in 2 seconds = 1 popup
-  const lastClick = parseInt(localStorage.getItem('ads_last_click') || '0', 10)
-  if (now - lastClick < CLICK_COOLDOWN) return
-  localStorage.setItem('ads_last_click', now.toString())
+  try {
+    await new Promise<void>((resolve) => {
+      const script = document.createElement('script')
+      script.src = url
+      script.setAttribute('data-zone', ZONE_KEY)
+      script.async = true
+      script.onload = () => resolve()
+      script.onerror = () => resolve()
+      document.body.appendChild(script)
+      // Failsafe: لا ننتظر أطول من ~1s — المشاهدة أهم من الإعلان
+      window.setTimeout(resolve, GESTURE_READY_TIMEOUT)
+    })
+  } catch {
+    /* silent — fail-open */
+  }
 
-  // Update last popup time - script is already loaded and handles the actual popup
-  localStorage.setItem('ads_last_popup', now.toString())
+  return true
 }
+

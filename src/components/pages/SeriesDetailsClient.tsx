@@ -11,7 +11,6 @@ import { useImageBrightness } from '@/utils/imageAnalysis'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { openWatchWithPlayer } from '@/lib/openWatch'
-import { preparePopunder, firePopunderOnClick } from '@/components/features/system/adsClick'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
@@ -274,12 +273,12 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
   }
 
   const handleWatch = () => {
-    // Log watch progress, then: pop-under ad first, then open the external
-    // player (hosted on 4cima.stream) passing series id + season/episode.
+    // Log watch progress, then open the external player (hosted on
+    // 4cima.stream) passing series id + season/episode.
+    // البوبندر يتفعّل داخل openWatchWithPlayer — من نفس الضغطة، مرة واحدة
+    // لكل جلسة (requestPopunderFromUserGesture)، ولا يوقف المشاهدة أبدًا.
     const id = Number(series?.tmdb_id)
     if (!(Number.isFinite(id) && id > 0)) return
-    // user-click popunder — fail-open, never blocks opening the player
-    firePopunderOnClick()
     logWatch()
     openWatchWithPlayer({
       type: 'tv',
@@ -292,10 +291,6 @@ export const SeriesDetailsClient = ({ series, seasons }: SeriesDetailsClientProp
         : '',
     })
   }
-  // Preload the pop-under URL once so it can fire synchronously on click.
-  useEffect(() => {
-    preparePopunder()
-  }, [])
 
   const toggleCardState = async () => {
     if (stateLoading || !series?.tmdb_id) return

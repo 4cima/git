@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Film, Tv, ChevronLeft, Sparkles } from 'lucide-react'
+import { Film, Tv, ChevronLeft, Flame } from 'lucide-react'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { getGenreColor } from '@/utils/genreColors'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
@@ -66,7 +66,7 @@ export function GenreOverviewPageClient({
             )}
           </div>
           <p className="flex items-center gap-2 text-lg text-zinc-400">
-            <Sparkles className="h-4 w-4 text-amber-400" />
+            <Flame className="h-4 w-4 text-amber-400" />
             أفضل أفلام ومسلسلات {genre.name_ar} المترجمة — مختارة بعناية
           </p>
 

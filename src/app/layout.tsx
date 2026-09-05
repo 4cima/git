@@ -116,9 +116,11 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" data-scroll-behavior="smooth">
       <head>
-        {/* تأجيل اتصالات الإعلانات (INP/LCP) — كانت preconnect/dns-prefetch لـ
-            professionalsusceptible.com (Adsterra) — تُفتح الاتصالات ضمنياً عند
-            تحميل سكربتات الإعلانات بعد window load + idle (adsterraQueue). */}
+        {/* لا preconnect/dns-prefetch لدومينات الإعلانات إطلاقًا — اتصالات
+            الشبكات الإعلانية (professionalsusceptible وغيرها) تُفتح ضمنياً
+            فقط عند تحميل سكربتات البنرات (adsterraQueue) أو عند تفعيل
+            البوبندر من داخل ضغطة زرار مشاهدة (adsClick). لا يُحمَّل أي
+            سكربت إعلان عند الإقلاع أو أول سكرول. */}
       </head>
       <body className={`${cairo.className} bg-black text-white min-h-screen`}>
         <script

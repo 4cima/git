@@ -62,6 +62,19 @@ const nextConfig: NextConfig = {
         destination: '/series/:slug',
         permanent: true,
       },
+      // Permanent redirects for orphan season/episode URLs (viewing happens on
+      // the series detail page → 4cima.stream). Config redirects are evaluated
+      // BEFORE filesystem routes, so the orphan page.tsx files never render.
+      {
+        source: '/series/:slug/season/:season',
+        destination: '/series/:slug',
+        permanent: true,
+      },
+      {
+        source: '/series/:slug/season/:season/episode/:ep',
+        destination: '/series/:slug',
+        permanent: true,
+      },
       // Permanent redirects for renamed movie slugs (old → current)
       {
         source: '/movies/spider-man-brand-new-day',
@@ -87,6 +100,45 @@ const nextConfig: NextConfig = {
   // Public CDN caching for movie/series detail pages (details only, not user APIs)
   async headers() {
     return [
+      // Security headers on every HTML/response path (no CSP by design —
+      // ad networks would break). '/:path*' also covers '/' and is safe for
+      // _next static assets and API routes with these particular headers.
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), geolocation=()',
+          },
+        ],
+      },
+      // Homepage: public catalog HTML (no per-user SSR content) — force-dynamic
+      // stays for D1-at-runtime, but the CDN may cache it briefly.
+      {
+        source: '/',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=60, stale-while-revalidate=600',
+          },
+        ],
+      },
       {
         source: '/movies/:slug*',
         headers: [

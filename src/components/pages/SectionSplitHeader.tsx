@@ -40,70 +40,71 @@ export function SectionSplitHeader({
 }: SectionSplitHeaderProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      {/* الزر المنقسم السينمائي */}
-      <div className="group/split relative inline-flex rounded-2xl bg-gradient-to-l from-red-500 via-amber-400 to-blue-500 p-[2px] shadow-lg shadow-slate-950/70 transition-shadow duration-500 hover:shadow-amber-500/20">
+      {/* الزر المنقسم السينمائي — لا يتجاوز عرض الشاشة على الموبايل (min-w-0 + max-w-full) */}
+      <div className="group/split relative inline-flex min-w-0 max-w-full rounded-2xl bg-gradient-to-l from-red-500 via-amber-400 to-blue-500 p-[2px] shadow-lg shadow-slate-950/70 transition-shadow duration-500 hover:shadow-amber-500/20">
         {/* توهج خلفي يظهر عند الـhover */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -inset-1.5 rounded-3xl bg-gradient-to-l from-red-600/25 via-amber-400/15 to-blue-600/25 opacity-0 blur-xl transition-opacity duration-500 group-hover/split:opacity-100"
         />
 
-        <div className="relative flex items-stretch overflow-hidden rounded-[14px] bg-slate-950/95 backdrop-blur-sm">
+        <div className="relative flex min-w-0 max-w-full items-stretch overflow-hidden rounded-[14px] bg-slate-950/95 backdrop-blur-sm">
           {/* لمعة سينمائية تمسح الزر عند الـhover */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-y-0 w-1/2 -translate-x-[150%] bg-gradient-to-l from-transparent via-white/[0.08] to-transparent transition-transform duration-1000 ease-out group-hover/split:translate-x-[220%]"
           />
 
-          {/* النصف الأيمن — أفلام (زر) */}
+          {/* النصف الأيمن — أفلام (زر) — shrink-0: لا يُضغط أبدًا حتى مع اسم قسم طويل */}
           <Link
             href={moviesHref}
             aria-label={`تصفح أفلام ${label}`}
-            className="group/movie relative z-10 flex items-center gap-2 rounded-r-[12px] py-2.5 pl-4 pr-5 transition-colors duration-300 hover:bg-red-600/15"
+            className="group/movie relative z-10 flex shrink-0 items-center gap-1.5 rounded-r-[12px] py-2.5 pl-1.5 pr-3 transition-colors duration-300 hover:bg-red-600/15 sm:gap-2 sm:pl-4 sm:pr-5"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-600/10 transition-all duration-300 group-hover/movie:scale-110 group-hover/movie:border-red-400/60 group-hover/movie:bg-red-600/25">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-600/10 transition-all duration-300 group-hover/movie:scale-110 group-hover/movie:border-red-400/60 group-hover/movie:bg-red-600/25 sm:h-8 sm:w-8">
               <Film className="h-4 w-4 text-red-400" />
             </span>
-            <span className="text-base font-black text-slate-100 transition-colors duration-300 group-hover/movie:text-red-300 md:text-lg">
+            <span className="text-sm font-black text-slate-100 transition-colors duration-300 group-hover/movie:text-red-300 sm:text-base md:text-lg">
               أفلام
             </span>
             <ArrowRight className="h-4 w-4 -translate-x-1.5 text-red-400 opacity-0 transition-all duration-300 group-hover/movie:translate-x-0 group-hover/movie:opacity-100" />
           </Link>
 
-          {/* الوسط — كلمة القسم: عند توفر labelHref تصبح h2 قابلة للضغط لصفحة القسم المختلط */}
+          {/* الوسط — كلمة القسم: عند توفر labelHref تصبح h2 قابلة للضغط لصفحة القسم المختلط
+              — min-w-0: يتقلص داخل المساحة المتاحة ويلتف لسطرين كحد أقصى بدل مدّ الشريط */}
           {labelHref ? (
-            <h2 className="relative z-10 flex items-center gap-2 border-x border-slate-700/50 bg-slate-900/50 px-4 py-2.5">
+            <h2 className="relative z-10 flex min-w-0 items-center gap-2 border-x border-slate-700/50 bg-slate-900/50 px-2 py-2.5 sm:px-4">
               {labelIcon}
               <Link
                 href={labelHref}
-                className="bg-gradient-to-l from-red-400 via-amber-300 to-blue-400 bg-clip-text text-base font-black text-transparent transition-opacity duration-300 hover:opacity-75 md:text-lg"
+                className="min-w-0 bg-gradient-to-l from-red-400 via-amber-300 to-blue-400 bg-clip-text text-sm font-black text-transparent transition-opacity duration-300 hover:opacity-75 sm:text-base md:text-lg"
               >
-                {label}
+                <span className="line-clamp-2 break-words">{label}</span>
               </Link>
             </h2>
           ) : (
             <div
               aria-hidden="true"
-              className="relative z-10 flex select-none items-center gap-2 border-x border-slate-700/50 bg-slate-900/50 px-4 py-2.5"
+              className="relative z-10 flex min-w-0 select-none items-center gap-2 border-x border-slate-700/50 bg-slate-900/50 px-2 py-2.5 sm:px-4"
             >
               {labelIcon}
-              <span className="bg-gradient-to-l from-red-400 via-amber-300 to-blue-400 bg-clip-text text-base font-black text-transparent md:text-lg">
-                {label}
+              <span className="min-w-0 bg-gradient-to-l from-red-400 via-amber-300 to-blue-400 bg-clip-text text-sm font-black text-transparent sm:text-base md:text-lg">
+                <span className="line-clamp-2 break-words">{label}</span>
               </span>
             </div>
           )}
 
-          {/* النصف الأيسر — مسلسلات (زر) */}
+          {/* النصف الأيسر — مسلسلات (زر) — shrink-0: لا يُضغط أبدًا حتى مع اسم قسم طويل */}
           <Link
             href={seriesHref}
             aria-label={`تصفح مسلسلات ${label}`}
-            className="group/series relative z-10 flex items-center gap-2 rounded-l-[12px] py-2.5 pl-5 pr-4 transition-colors duration-300 hover:bg-blue-600/15"
+            className="group/series relative z-10 flex shrink-0 items-center gap-1.5 rounded-l-[12px] py-2.5 pl-3 pr-1.5 transition-colors duration-300 hover:bg-blue-600/15 sm:gap-2 sm:pl-5 sm:pr-4"
           >
             <ArrowLeft className="h-4 w-4 translate-x-1.5 text-blue-400 opacity-0 transition-all duration-300 group-hover/series:translate-x-0 group-hover/series:opacity-100" />
-            <span className="text-base font-black text-slate-100 transition-colors duration-300 group-hover/series:text-blue-300 md:text-lg">
+            <span className="text-sm font-black text-slate-100 transition-colors duration-300 group-hover/series:text-blue-300 sm:text-base md:text-lg">
               مسلسلات
             </span>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-600/10 transition-all duration-300 group-hover/series:scale-110 group-hover/series:border-blue-400/60 group-hover/series:bg-blue-600/25">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-blue-500/30 bg-blue-600/10 transition-all duration-300 group-hover/series:scale-110 group-hover/series:border-blue-400/60 group-hover/series:bg-blue-600/25 sm:h-8 sm:w-8">
               <Tv className="h-4 w-4 text-blue-400" />
             </span>
           </Link>

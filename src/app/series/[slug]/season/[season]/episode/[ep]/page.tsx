@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { notFound, useParams, useRouter } from 'next/navigation'
 import { buildServerUrl, StreamServer } from '@/services/streamService'
 
 export default function WatchEpisodePage() {
@@ -45,6 +45,11 @@ export default function WatchEpisodePage() {
   const embedUrl = seriesId && current
     ? buildServerUrl(current, 'tv', seriesId, Number(season), Number(ep))
     : ''
+
+  // slug فاضي/مفقود → صفحة 404 بدلاً من مشغّل فارغ بـ HTTP 200 (نفس نمط صفحة الموسم)
+  if (!slug || slug.trim() === '') {
+    notFound()
+  }
 
   return (
     <div className="min-h-screen bg-black">
