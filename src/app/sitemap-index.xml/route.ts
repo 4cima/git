@@ -1,92 +1,57 @@
-import { NextResponse } from 'next/server'
-import { executeFirst } from '@/lib/db'
+import {
+  SITEMAP_BASE_URL,
+  SHARD_SIZE,
+  INDEX_CACHE_CONTROL,
+  CLEAN_ITEM_SQL,
+  sitemapQuery,
+  sitemapindexXml,
+  xmlSuccessResponse,
+  xmlUnavailableResponse,
+} from '@/lib/sitemap'
 
-export const revalidate = 86400
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-const CHUNK_SIZE = 15000
-const BASE_URL = 'https://4cima.com'
-const SERIES_ID_OFFSET = 1000
-const FALLBACK_MOVIE_PARTS = 25
-const FALLBACK_SERIES_PARTS = 8
-
-async function countMovies(): Promise<number> {
-  // NOTE: no swallow-catch here — if D1 is unreachable the outer catch falls back
-  // to the full safe slice list (FALLBACK_*_PARTS) instead of a broken 1-loc index.
-  const result = await executeFirst<{ cnt: number }>(
-    `SELECT COUNT(*) AS cnt FROM movies 
-     WHERE filter_status = 'clean' AND slug IS NOT NULL AND tmdb_id IS NOT NULL`,
-    []
-  )
-  return result?.cnt ?? 0
-}
-
-async function countSeries(): Promise<number> {
-  const result = await executeFirst<{ cnt: number }>(
-    `SELECT COUNT(*) AS cnt FROM tv_series 
-     WHERE filter_status = 'clean' AND slug IS NOT NULL AND tmdb_id IS NOT NULL`,
-    []
-  )
-  return result?.cnt ?? 0
-}
-
+/**
+ * /sitemap-index.xml — sitemap index Route Handler (raw XML).
+ *
+ * Lists ONLY shards that contain links:
+ *   /sitemap/static.xml            (static + genre landing pages)
+ *   /sitemap/priority.xml          (top 2000 fresh items — indexing fuel)
+ *   /sitemap/movies-0.xml …N       (10000 per shard, sequential from 0)
+ *   /sitemap/series-0.xml …N       (10000 per shard, sequential from 0)
+ *
+ * Any database failure → 503 XML (never an empty or partial index with 200).
+ */
 export async function GET() {
   try {
-    const movieCount = await countMovies()
-    const seriesCount = await countSeries()
-    let movieParts = Math.ceil(movieCount / CHUNK_SIZE)
-    const seriesParts = Math.ceil(seriesCount / CHUNK_SIZE)
+    const rows = await sitemapQuery<{ movies: number; series: number }>(
+      `SELECT
+        (SELECT COUNT(*) FROM movies    WHERE ${CLEAN_ITEM_SQL}) AS movies,
+        (SELECT COUNT(*) FROM tv_series WHERE ${CLEAN_ITEM_SQL}) AS series`
+    )
 
-    // If both zero, ensure at least one movie part pointing to empty sitemap
-    if (movieParts === 0 && seriesParts === 0) {
-      movieParts = 1
+    const movies = Number(rows[0]?.movies ?? 0)
+    const series = Number(rows[0]?.series ?? 0)
+
+    const locs: string[] = [`${SITEMAP_BASE_URL}/sitemap/static.xml`]
+
+    if (movies > 0 || series > 0) {
+      locs.push(`${SITEMAP_BASE_URL}/sitemap/priority.xml`)
     }
 
-    const locs: string[] = []
-
-    // Movie parts: 0..movieParts-1
+    const movieParts = Math.ceil(movies / SHARD_SIZE)
     for (let i = 0; i < movieParts; i++) {
-      locs.push(`${BASE_URL}/sitemap/${i}.xml`)
+      locs.push(`${SITEMAP_BASE_URL}/sitemap/movies-${i}.xml`)
     }
 
-    // Series parts: 1000..1000+seriesParts-1
+    const seriesParts = Math.ceil(series / SHARD_SIZE)
     for (let i = 0; i < seriesParts; i++) {
-      locs.push(`${BASE_URL}/sitemap/${SERIES_ID_OFFSET + i}.xml`)
+      locs.push(`${SITEMAP_BASE_URL}/sitemap/series-${i}.xml`)
     }
 
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${locs.map(loc => `  <sitemap><loc>${loc}</loc></sitemap>`).join('\n')}
-</sitemapindex>`
-
-    return new NextResponse(xml, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400',
-      },
-    })
+    return xmlSuccessResponse(sitemapindexXml(locs), INDEX_CACHE_CONTROL)
   } catch (error) {
-    console.error('Sitemap index error:', error)
-    // Fallback: return safe upper bound of parts
-    const locs: string[] = []
-    for (let i = 0; i < FALLBACK_MOVIE_PARTS; i++) {
-      locs.push(`${BASE_URL}/sitemap/${i}.xml`)
-    }
-    for (let i = 0; i < FALLBACK_SERIES_PARTS; i++) {
-      locs.push(`${BASE_URL}/sitemap/${SERIES_ID_OFFSET + i}.xml`)
-    }
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${locs.map(loc => `  <sitemap><loc>${loc}</loc></sitemap>`).join('\n')}
-</sitemapindex>`
-
-    return new NextResponse(xml, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/xml; charset=utf-8',
-        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=86400',
-      },
-    })
+    return xmlUnavailableResponse(error)
   }
 }

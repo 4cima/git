@@ -36,6 +36,17 @@ const nextConfig: NextConfig = {
         destination: '/sitemap-index.xml',
         statusCode: 301,
       },
+      // Junk referral path seen in Search Console (/http://4cima.com) → home
+      {
+        source: '/http\\://4cima.com',
+        destination: 'https://4cima.com',
+        statusCode: 301,
+      },
+      {
+        source: '/http\\:/:path*',
+        destination: 'https://4cima.com',
+        statusCode: 301,
+      },
       {
         source: '/watch/movie/:slug',
         destination: '/movies/:slug',
@@ -91,6 +102,25 @@ const nextConfig: NextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      // Sitemaps are plain XML documents: drop Next's RSC negotiation Vary
+      {
+        source: '/sitemap-index.xml',
+        headers: [
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
+          },
+        ],
+      },
+      {
+        source: '/sitemap/:path*',
+        headers: [
+          {
+            key: 'Vary',
+            value: 'Accept-Encoding',
           },
         ],
       },
