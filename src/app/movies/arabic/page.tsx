@@ -4,7 +4,8 @@ import { MovieGenrePageClient } from '@/components/pages/MovieGenrePageClient'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const metadata: Metadata = {
-  title: 'أفلام عربي | فور سيما',
+  // بدون «| فور سيما» — template في layout يضيفها تلقائياً
+  title: 'أفلام عربي',
   description: 'شاهد أفضل الأفلام العربية بجودة عالية - أحدث الأفلام المصرية والسورية واللبنانية مترجمة',
   keywords: ['أفلام عربي', 'أفلام مصرية', 'أفلام سورية', 'أفلام لبنانية', 'مشاهدة أفلام عربية', 'أفلام عربية 2025', '4cima'],
   alternates: { canonical: 'https://4cima.com/movies/arabic' },

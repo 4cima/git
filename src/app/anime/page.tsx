@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { CategoryHub } from '@/components/pages/CategoryHub'
 
 export const metadata: Metadata = {
-  title: 'أنمي | فور سيما',
+  title: 'أنمي',
   description: 'استكشف أفضل الأنمي على فور سيما - جودة عالية ومترجم',
 }
 

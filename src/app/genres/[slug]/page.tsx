@@ -15,7 +15,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const genre = await executeFirst('SELECT name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [slug])
     if (!genre) return { title: 'تصنيف غير موجود' }
     const genreName = String(genre.name_ar || genre.name_en || 'تصنيف')
-    const title = `أفلام ومسلسلات ${genreName} — تصفح كامل التصنيف | فور سيما`
+    // بدون «| فور سيما» — template في layout يضيفها تلقائياً
+    const title = `أفلام ومسلسلات ${genreName} — تصفح كامل التصنيف`
     const description = `استكشف أفضل أفلام ومسلسلات ${genreName} المترجمة بجودة عالية — مقسّمة لقسمين: أفلام ${genreName} ومسلسلات ${genreName} مع ترتيب حسب الشهرة والتقييم والحدث.`
     const url = `https://4cima.com/genres/${slug}`
     return {

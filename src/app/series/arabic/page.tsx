@@ -4,7 +4,8 @@ import { SeriesGenrePageClient } from '@/components/pages/SeriesGenrePageClient'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const metadata: Metadata = {
-  title: 'مسلسلات عربي | فور سيما',
+  // بدون «| فور سيما» — template في layout يضيفها تلقائياً
+  title: 'مسلسلات عربي',
   description: 'شاهد أفضل المسلسلات العربية بجودة عالية - أحدث المسلسلات المصرية والسورية واللبنانية مترجمة',
   keywords: ['مسلسلات عربي', 'مسلسلات مصرية', 'مسلسلات سورية', 'مسلسلات لبنانية', 'مسلسلات رمضان', 'مشاهدة مسلسلات عربية', '4cima'],
   alternates: { canonical: 'https://4cima.com/series/arabic' },

@@ -4,7 +4,8 @@ import { GenreOverviewPageClient } from '@/components/pages/GenreOverviewPageCli
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const metadata: Metadata = {
-  title: 'أفلام ومسلسلات عربي — تصفح كامل القسم | فور سيما',
+  // بدون «| فور سيما» — template في layout يضيفها تلقائياً
+  title: 'أفلام ومسلسلات عربي — تصفح كامل القسم',
   description:
     'استكشف أفضل الأفلام والمسلسلات العربية المترجمة بجودة عالية — مقسّمة لقسمين: الأفلام العربية والمسلسلات العربية مع ترتيب حسب الشهرة.',
   keywords: [
