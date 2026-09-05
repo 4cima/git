@@ -425,21 +425,11 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                 </div>
               </div>
               {/* Backdrop Background — عنصر الـLCP الوحيد في الصفحة:
-                  موبايل w300 فقط (ديسكتوب w780 عبر srcset — الموبايل ما ينزّلوش) */}
+                  موبايل w300 فقط (ديسكتوب w780 عبر srcset — الموبايل ما ينزّلوش).
+                  الـpreload as=image (واحد فقط) يتولّد تلقائياً من React 19
+                  للـimg ذات fetchPriority="high" — بنفس imagesrcset/imagesizes. */}
               {(heroItem.backdrop_path || heroItem.poster_path) ? (
-                <>
-                  {/* preload واحد فقط لأول عمل — لا نتراكم preloads جديدة مع كل دورة هيرو */}
-                  {heroIndex === 0 && (
-                    <link
-                      rel="preload"
-                      as="image"
-                      href={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path}`}
-                      imageSrcSet={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path} 300w, /tmdb/w780${heroItem.backdrop_path || heroItem.poster_path} 780w`}
-                      imageSizes="(max-width: 640px) 100vw, 1280px"
-                      fetchPriority="high"
-                    />
-                  )}
-                  <img
+                <img
                     key={`backdrop-${heroItem.id}`}
                     src={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path}`}
                     srcSet={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path} 300w, /tmdb/w780${heroItem.backdrop_path || heroItem.poster_path} 780w`}
@@ -454,7 +444,6 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                     draggable="false"
                     className="absolute inset-0 w-full h-full object-cover object-[center_30%] cursor-grab active:cursor-grabbing transition-all duration-1000"
                   />
-                </>
               ) : null}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent cursor-grab" />
               <div className="absolute inset-0 bg-gradient-to-l from-slate-950/80 via-transparent to-transparent cursor-grab" />
