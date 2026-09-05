@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useRef, Fragment } from 'react'
+import { useEffect, useState, useMemo, useRef, Fragment, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { MovieCard } from '../features/media/MovieCard'
@@ -50,7 +50,7 @@ interface CategoryHubProps {
   allowTypeSwitch?: boolean
 }
 
-export const CategoryHub = ({ type = 'movie', category, allowTypeSwitch = false }: CategoryHubProps) => {
+const CategoryHubInner = ({ type = 'movie', category, allowTypeSwitch = false }: CategoryHubProps) => {
   const router = useRouter()
   const searchParams = useSearchParams()
   const year = searchParams.get('year')
@@ -442,4 +442,25 @@ export const CategoryHub = ({ type = 'movie', category, allowTypeSwitch = false 
     </div>
   )
 }
+
+/**
+ * غلاف بحدود Suspense: useSearchParams داخلياً تسبب CSR bailout أثناء
+ * prerender الصفحات الثابتة (/anime). كانت حدود loading.tsx الجذرية تخفي هذا
+ * — بعد حذفها (سبب جذر الـ404 الحقيقي) نضع الحدود هنا مباشرة بدل ملف loading.tsx.
+ */
+export const CategoryHub = (props: CategoryHubProps) => (
+  <Suspense
+    fallback={
+      <div className="min-h-screen bg-gray-950 pt-24">
+        <div className="max-w-[2400px] mx-auto px-4 sm:px-6 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="aspect-[2/3] rounded-xl bg-gray-900/60 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    }
+  >
+    <CategoryHubInner {...props} />
+  </Suspense>
+)
 
