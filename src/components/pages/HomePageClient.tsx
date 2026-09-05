@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
-import { mapItems } from './homeSectionUtils'
 import { Footer } from '@/components/layout/Footer'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { getAdByNum } from '@/data/ads/4cima.com'
@@ -100,16 +99,16 @@ interface HomePageClientProps {
 export function HomePageClient({ initialData }: HomePageClientProps) {
   const { user } = useAuth() // Check if user is logged in
 
-  // البيانات موحّدة عبر mapItems — الأقسام الإضافية تصل الآن في SSR (initialData)
-  // كي يراها Googlebot في HTML الأول، و/api/home-sections يبقى للتحيين الكلاينت
+  // البيانات تصل من السيرفر جاهزة كـ MediaItem (مُوحَّدة في page.tsx) —
+  // الأقسام الإضافية تُجلب كلاينت بعد idle داخل HomeTrendingSections (/api/home-sections)
   const data = useMemo<HomeData>(() => ({
-    trendingMovies: mapItems(initialData.trendingMovies, 'movie'),
-    trendingSeries: mapItems(initialData.trendingSeries, 'tv'),
-    sciFi: mapItems(initialData.sciFi, 'movie'),
-    anime: mapItems(initialData.anime, 'tv'),
-    crime: mapItems(initialData.crime, 'movie'),
-    arabicMovies: mapItems(initialData.arabicMovies, 'movie'),
-    arabicSeries: mapItems(initialData.arabicSeries, 'tv'),
+    trendingMovies: initialData.trendingMovies,
+    trendingSeries: initialData.trendingSeries,
+    sciFi: initialData.sciFi,
+    anime: initialData.anime,
+    crime: initialData.crime,
+    arabicMovies: initialData.arabicMovies,
+    arabicSeries: initialData.arabicSeries,
   }), [initialData])
 
   const [heroIndex, setHeroIndex] = useState(0)
@@ -117,7 +116,8 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Lazy loading state — قسم الرائج الموحّد (أفلام + مسلسلات مدمجة)
-  const [trendingDisplayCount, setTrendingDisplayCount] = useState(18) // نبدأ بـ 18 (صور أقل عند أول تحميل = طلبات أقل)
+  // 8 كروت فقط في أول شاشة (موبايل-أولاً) — الباقي عبر الـsentinel (IntersectionObserver)
+  const [trendingDisplayCount, setTrendingDisplayCount] = useState(8)
 
   // Card states for hearts
   const [cardStates, setCardStates] = useState<Record<string, CardState>>({})
@@ -424,27 +424,32 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                   <div className="meteor meteor-8"></div>
                 </div>
               </div>
-              {/* Backdrop Background — LCP: preloadable <img> with high priority + async decode */}
+              {/* Backdrop Background — عنصر الـLCP الوحيد في الصفحة:
+                  موبايل w300 فقط (ديسكتوب w780 عبر srcset — الموبايل ما ينزّلوش) */}
               {(heroItem.backdrop_path || heroItem.poster_path) ? (
                 <>
-                  {/* preload لأول عمل فقط — لا نتراكم preloads جديدة مع كل دورة هيرو */}
+                  {/* preload واحد فقط لأول عمل — لا نتراكم preloads جديدة مع كل دورة هيرو */}
                   {heroIndex === 0 && (
                     <link
                       rel="preload"
                       as="image"
-                      href={`/tmdb/w780${heroItem.backdrop_path || heroItem.poster_path}`}
+                      href={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path}`}
+                      imageSrcSet={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path} 300w, /tmdb/w780${heroItem.backdrop_path || heroItem.poster_path} 780w`}
+                      imageSizes="(max-width: 640px) 100vw, 1280px"
                       fetchPriority="high"
                     />
                   )}
                   <img
                     key={`backdrop-${heroItem.id}`}
-                    src={`/tmdb/w780${heroItem.backdrop_path || heroItem.poster_path}`}
+                    src={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path}`}
+                    srcSet={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path} 300w, /tmdb/w780${heroItem.backdrop_path || heroItem.poster_path} 780w`}
+                    sizes="(max-width: 640px) 100vw, 1280px"
                     alt=""
                     aria-hidden="true"
                     width={780}
                     height={439}
                     fetchPriority="high"
-                    decoding="async"
+                    decoding="sync"
                     loading="eager"
                     draggable="false"
                     className="absolute inset-0 w-full h-full object-cover object-[center_30%] cursor-grab active:cursor-grabbing transition-all duration-1000"
@@ -646,14 +651,17 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                               : 'opacity-0 scale-95 z-0'
                           }`}
                         >
+                          {/* بوستر جوّه الهيرو — مش LCP: w92/w154 مع low/lazy (باقة B) */}
                           <img
-                            src={`/tmdb/w300${item.poster_path}`}
+                            src={`/tmdb/w92${item.poster_path}`}
+                            srcSet={`/tmdb/w92${item.poster_path} 92w, /tmdb/w154${item.poster_path} 154w`}
+                            sizes="(max-width: 640px) 160px, 192px"
                             alt={item.title_ar}
-                            width={300}
-                            height={450}
+                            width={92}
+                            height={138}
                             decoding="async"
-                            fetchPriority={isActive ? 'high' : 'low'}
-                            loading={isActive ? 'eager' : 'lazy'}
+                            fetchPriority="low"
+                            loading="lazy"
                             className="w-full h-full object-cover pointer-events-none"
                             draggable="false"
                           />

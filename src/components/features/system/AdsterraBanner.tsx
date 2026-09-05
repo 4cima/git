@@ -111,11 +111,13 @@ export const AdsterraBanner = ({
     mo.observe(stage, { childList: true, subtree: true })
     stage.querySelectorAll('iframe').forEach(scheduleIframeCheck)
 
-    // لم يُحقن أي iframe إطلاقًا خلال 15 ثانية → فشل (الطابور متسلسل بـfailsafe 8 ثوانٍ)
+    // لم يُحقن أي iframe إطلاقًا خلال 30 ثانية → فشل.
+    // (التركيب متأجَّل الآن: window load + requestIdleCallback أو أول تفاعل —
+    //  لذا المهلة أطول من قبل حتى لا يُحسب الإعلان فاشلاً وهو في انتظار فك القفل)
     timers.push(
       window.setTimeout(() => {
         if (!stage.querySelector('iframe')) fail()
-      }, 15000),
+      }, 30000),
     )
 
     return () => {

@@ -51,7 +51,7 @@ function SectionIcon({ name }: { name: ExtraSectionDef['icon'] }) {
 }
 
 /** كارت بنفس هوية كارت الرائج بالظبط (بوستر + شارات + عنوان) */
-function ExtraCard({ item, eager, onCardClick }: { item: MediaItem; eager?: boolean; onCardClick?: (e: React.MouseEvent) => void }) {
+function ExtraCard({ item, onCardClick }: { item: MediaItem; onCardClick?: (e: React.MouseEvent) => void }) {
   const mediaColorScheme = getMediaTypeColor(item.media_type)
   const genreColorScheme = item.primary_genre ? getGenreColor(item.primary_genre) : null
   const href = item.media_type === 'movie' ? `/movies/${item.slug}` : `/series/${item.slug}`
@@ -63,14 +63,18 @@ function ExtraCard({ item, eager, onCardClick }: { item: MediaItem; eager?: bool
           {item.poster_path ? (
             <>
               <div className="absolute inset-0 bg-slate-800 animate-pulse" />
+              {/* باقة B: w92 افتراضي + srcset w92/w154 — ممنوع w185/w300 على كروت الرئيسية */}
               <img
-                src={`/tmdb/w185${item.poster_path}`}
+                src={`/tmdb/w92${item.poster_path}`}
+                srcSet={`/tmdb/w92${item.poster_path} 92w, /tmdb/w154${item.poster_path} 154w`}
+                sizes="(max-width: 640px) 160px, 192px"
                 alt={item.title_ar}
-                width={185}
-                height={278}
+                width={92}
+                height={138}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
-                loading={eager ? 'eager' : 'lazy'}
+                loading="lazy"
                 decoding="async"
+                fetchPriority="low"
               />
             </>
           ) : (
@@ -168,7 +172,12 @@ function ExtraRow({ section }: { section: ExtraSectionDef }) {
   }, [displayCount, section.items])
 
   return (
-    <div className="space-y-6">
+    /* content-visibility: auto — الصف تحت الfold: المتصفح يتخطى رسمه لو مش ظاهر،
+       والـcontain-intrinsic-size يحجز ارتفاع الصف النهائي تقريباً (لا قفز عند الظهور) */
+    <div
+      className="space-y-6"
+      style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 460px' } as React.CSSProperties}
+    >
       <SectionSplitHeader
         label={section.title}
         labelIcon={<SectionIcon name={section.icon} />}
@@ -191,7 +200,7 @@ function ExtraRow({ section }: { section: ExtraSectionDef }) {
         <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
               {section.items.slice(0, displayCount).map((item, idx) => (
                 <Fragment key={`${section.title}-${item.media_type}-${item.tmdb_id || item.id}`}>
-                  <ExtraCard item={item} eager={idx < 6} onCardClick={(e) => { if (drag.consumeIfDragged()) e.preventDefault() }} />
+                  <ExtraCard item={item} onCardClick={(e) => { if (drag.consumeIfDragged()) e.preventDefault() }} />
                   {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < displayCount && (
                     <AdInRowCard pos={`x-${idx + 1}-${section.title}`} />
                   )}

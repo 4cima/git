@@ -1,8 +1,7 @@
 import { Metadata } from 'next'
 import { executeAll } from '@/lib/db'
-import { filterExcludedGenres } from '@/utils/excludedGenres'
-import { fetchHomeSections } from '@/lib/home-sections-query'
 import { HomePageClient } from '@/components/pages/HomePageClient'
+import { mapItems } from '@/components/pages/homeSectionUtils'
 
 export const metadata: Metadata = {
   title: 'فور سيما | شاهد أحدث الأفلام والمسلسلات المترجمة',
@@ -49,21 +48,22 @@ const HOME_DATA_TTL_MS = 30 * 60 * 1000 // 30 دقيقة (الجداول تتغ�
 /** أقل سنة مسموح بها في أقسام الصفحة الرئيسية — لا يُعرض أبداً عمل أقدم من 10 سنوات */
 const MIN_YEAR = new Date().getFullYear() - 10
 
-/** شكل بيانات الصفحة الرئيسية (صفوف DB خام — تُوحَّد لاحقاً بـ mapItems في الكلينت)
- *  الأقسام الإضافية تُجلب في SSR كي يراها Googlebot في HTML الأول —
- *  و/api/home-sections يبقى للتحيين كلاينت-سايد للصفحات المخزّنة. */
+/** شكل بيانات الصفحة الرئيسية — MediaItem جاهزة (مُوحَّدة على السيرفر عبر mapItems)
+ *  لأجل تقليم الـRSC payload: لا overview_ar كامل ولا genres_json ولا صفوف DB خام.
+ *  الأقسام الإضافية (خيال علمي/أنمي/جريمة/عربي) لا تصل في SSR إطلاقاً —
+ *  تُجلب كلاينت بعد idle من /api/home-sections (هيكل بارتفاع محجوز = لا CLS). */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface HomeDataResult {
   trendingMovies: any[]
   trendingSeries: any[]
-  sciFi?: any[]
-  anime?: any[]
-  crime?: any[]
-  arabicMovies?: any[]
-  arabicSeries?: any[]
 }
 
 let homeDataCache: { at: number; data: HomeDataResult } | null = null
+
+/** أقصى عدد كروت يُسلَّر للرئيسية لكل نوع (يكفي: 8 كروت أول شاشة + قائمة الهيرو + load-more) */
+const SSR_TRENDING_LIMIT = 60
+/** قص وصف العمل — الهيرو فقط يعرضه (line-clamp-7) و500 حرف أوفر من أيقافه */
+const OVERVIEW_LIMIT = 500
 
 async function getHomeData(): Promise<HomeDataResult> {
   // إرجاع النسخة المخزّنة إن كانت ما زالت صالحة
@@ -71,49 +71,41 @@ async function getHomeData(): Promise<HomeDataResult> {
     return homeDataCache.data
   }
   try {
-    const [movies, series, sections] =
-      await Promise.all([
-        /* 1+2) الرائج — آخر 10 سنوات فقط، 60 لكل نوع */
-        executeAll(
-          `SELECT l.id, l.tmdb_id,
-                  COALESCE(m.slug, l.slug) AS slug,
-                  l.title_ar, l.title_en, l.poster_path, l.backdrop_path,
-                  l.vote_average, printf('%04d-01-01', l.release_year) AS release_date, l.overview_ar, l.genres_json
-           FROM list_movies_popular l
-           LEFT JOIN movies m ON m.tmdb_id = l.tmdb_id
-           WHERE l.release_year >= ${MIN_YEAR}
-           ORDER BY l.rank
-           LIMIT 60`,
-          []
-        ),
-        executeAll(
-          `SELECT l.id, l.tmdb_id,
-                  COALESCE(t.slug, l.slug) AS slug,
-                  l.name_ar AS title_ar, l.name_en AS title_en, l.poster_path, l.backdrop_path,
-                  l.vote_average, printf('%04d-01-01', l.first_air_year) AS first_air_date, l.overview_ar, l.genres_json
-           FROM list_series_popular l
-           LEFT JOIN tv_series t ON t.tmdb_id = l.tmdb_id
-           WHERE l.first_air_year >= ${MIN_YEAR}
-           ORDER BY l.rank
-           LIMIT 60`,
-          []
-        ),
-        /* 3..7) الأقسام الإضافية (خيال علمي، أنمي، جريمة، عربي) — في SSR
-           كي يراها Googlebot في HTML الأول (الاستعلامات في lib/home-sections-query) */
-        fetchHomeSections(),
-      ])
+    const [movies, series] = await Promise.all([
+      /* 1+2) الرائج — آخر 10 سنوات فقط، 60 لكل نوع */
+      executeAll(
+        `SELECT l.id, l.tmdb_id,
+                COALESCE(m.slug, l.slug) AS slug,
+                l.title_ar, l.title_en, l.poster_path, l.backdrop_path,
+                l.vote_average, printf('%04d-01-01', l.release_year) AS release_date, l.overview_ar, l.genres_json
+         FROM list_movies_popular l
+         LEFT JOIN movies m ON m.tmdb_id = l.tmdb_id
+         WHERE l.release_year >= ${MIN_YEAR}
+         ORDER BY l.rank
+         LIMIT 60`,
+        []
+      ),
+      executeAll(
+        `SELECT l.id, l.tmdb_id,
+                COALESCE(t.slug, l.slug) AS slug,
+                l.name_ar AS title_ar, l.name_en AS title_en, l.poster_path, l.backdrop_path,
+                l.vote_average, printf('%04d-01-01', l.first_air_year) AS first_air_date, l.overview_ar, l.genres_json
+         FROM list_series_popular l
+         LEFT JOIN tv_series t ON t.tmdb_id = l.tmdb_id
+         WHERE l.first_air_year >= ${MIN_YEAR}
+         ORDER BY l.rank
+         LIMIT 60`,
+        []
+      ),
+    ])
 
-    const sanitize = (rows: unknown[]) => rows.map((r) => JSON.parse(JSON.stringify(r)))
-    // فلتر مركزي: يستبعد Talk Show + War & Politics + Documentary + History
-    // من كل أقسام الصفحة الرئيسية (الرائج + التصنيفات + العربية)
+    // mapItems على السيرفر = صفوف DB خام/genres_json لا تدخل الـRSC payload أصلاً
+    const trimOverview = (items: any[]) =>
+      items.map((i) => ({ ...i, overview_ar: (i.overview_ar || '').slice(0, OVERVIEW_LIMIT) }))
+
     const data = {
-      trendingMovies: filterExcludedGenres(sanitize(movies)),
-      trendingSeries: filterExcludedGenres(sanitize(series)),
-      sciFi: filterExcludedGenres(sanitize(sections.sciFi)),
-      anime: filterExcludedGenres(sanitize(sections.anime)),
-      crime: filterExcludedGenres(sanitize(sections.crime)),
-      arabicMovies: filterExcludedGenres(sanitize(sections.arabicMovies)),
-      arabicSeries: filterExcludedGenres(sanitize(sections.arabicSeries)),
+      trendingMovies: trimOverview(mapItems(movies as any[], 'movie')).slice(0, SSR_TRENDING_LIMIT),
+      trendingSeries: trimOverview(mapItems(series as any[], 'tv')).slice(0, SSR_TRENDING_LIMIT),
     }
     homeDataCache = { at: Date.now(), data }
     return data
@@ -131,8 +123,8 @@ function buildHomeJsonLd(data: HomeDataResult) {
   const movies = (data.trendingMovies || []).slice(0, 6)
   const series = (data.trendingSeries || []).slice(0, 6)
   const items = [
-    ...movies.map((m) => ({ name: m.title_ar || m.title_en, type: 'Movie', slug: m.slug, year: m.release_date?.substring(0, 4) })),
-    ...series.map((s) => ({ name: s.title_ar || s.title_en, type: 'TVSeries', slug: s.slug, year: s.first_air_date?.substring(0, 4) })),
+    ...movies.map((m) => ({ name: m.title_ar || m.title_en, type: 'Movie', slug: m.slug, year: m.year })),
+    ...series.map((s) => ({ name: s.title_ar || s.title_en, type: 'TVSeries', slug: s.slug, year: s.year })),
   ].filter((i) => i.slug)
 
   return {

@@ -67,7 +67,6 @@ type ScrollRef = React.RefObject<HTMLDivElement | null>
 /** كارت موحّد للرائج (فيلم أو مسلسل) — نفس هوية الكارت السابقة تمامًا */
 function TrendingCard({
   item,
-  eager,
   isLoggedIn,
   getCardState,
   isCardLoading,
@@ -75,7 +74,6 @@ function TrendingCard({
   onCardClick,
 }: {
   item: MediaItem
-  eager?: boolean
   isLoggedIn: boolean
   getCardState: (item: MediaItem) => CardState
   isCardLoading: (item: MediaItem) => boolean
@@ -89,19 +87,23 @@ function TrendingCard({
   return (
     <Link href={href} onClick={onCardClick} className="group flex-shrink-0 w-40 sm:w-48">
       <div className="bg-slate-900/20 border border-slate-800/60 hover:border-slate-700/80 rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-slate-950/50 relative">
-        {/* Poster with Overlay Badges */}
+        {/* Poster with Overlay Badges — حاوية aspect-[2/3] ثابتة قبل وصول الصورة (لا CLS) */}
         <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-950">
           {item.poster_path ? (
             <>
               <div className="absolute inset-0 bg-slate-800 animate-pulse" />
+              {/* باقة B: w92 افتراضي + srcset w92/w154 — ممنوع w185/w300 على كروت الرئيسية */}
               <img
-                src={`/tmdb/w185${item.poster_path}`}
+                src={`/tmdb/w92${item.poster_path}`}
+                srcSet={`/tmdb/w92${item.poster_path} 92w, /tmdb/w154${item.poster_path} 154w`}
+                sizes="(max-width: 640px) 160px, 192px"
                 alt={item.title_ar}
-                width={185}
-                height={278}
+                width={92}
+                height={138}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 relative z-10"
-                loading={eager ? 'eager' : 'lazy'}
+                loading="lazy"
                 decoding="async"
+                fetchPriority="low"
               />
             </>
           ) : (
@@ -204,19 +206,33 @@ export function HomeTrendingSections({
   useEffect(() => {
     if (initialExtra) return
     let cancelled = false
-    fetch('/api/home-sections')
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((json: ExtraRaw) => {
-        if (!cancelled) {
-          setExtraRaw(json)
-          setExtraLoading(false)
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setExtraLoading(false)
-      })
+    /* تأجيل جلب الأقسام الإضافية بعد idle (تحت الfold — لا يزاحم الـLCP).
+       requestIdleCallback مع timeout أمان، وfallback لـsetTimeout للمتصفحات القديمة. */
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }
+    const startFetch = () => {
+      if (cancelled) return
+      fetch('/api/home-sections')
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((json: ExtraRaw) => {
+          if (!cancelled) {
+            setExtraRaw(json)
+            setExtraLoading(false)
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setExtraLoading(false)
+        })
+    }
+    let idleId = 0
+    if (typeof w.requestIdleCallback === 'function') {
+      idleId = w.requestIdleCallback(startFetch, { timeout: 4000 })
+    } else {
+      idleId = window.setTimeout(startFetch, 1500)
+    }
     return () => {
       cancelled = true
+      if (typeof w.requestIdleCallback === 'function') cancelIdleCallback?.(idleId)
+      else window.clearTimeout(idleId)
     }
   }, [])
 
@@ -358,7 +374,6 @@ export function HomeTrendingSections({
                 <Fragment key={`trending-${item.media_type}-${item.id}`}>
                   <TrendingCard
                     item={item}
-                    eager={idx < 6}
                     isLoggedIn={isLoggedIn}
                     getCardState={getCardState}
                     isCardLoading={isCardLoading}

@@ -22,6 +22,53 @@ import './deadDeliveryGuard'
 
 let adsterraQueue: Promise<void> = Promise.resolve()
 
+/* ------------------------------------------------------------------
+ * بوابة تأجيل الإعلانات (INP/LCP — موبايل-أولاً):
+ * لا سكربت إعلان يُحمَّل قبل window load + requestIdleCallback،
+ * أو قبل أول تفاعل (scroll/click/touch) — أيهما أسبق.
+ * هذا يؤجل الشبكات الإعلانية (professionalsusceptible وغيرها) خارج
+ * المسار الحرج لرسم الصفحة دون إزالتها.
+ * ------------------------------------------------------------------ */
+let adsUnlocked = false
+let adsUnlockWaiters: Array<() => void> = []
+let adsGateInstalled = false
+
+function unlockAds() {
+  if (adsUnlocked) return
+  adsUnlocked = true
+  const waiters = adsUnlockWaiters
+  adsUnlockWaiters = []
+  waiters.forEach((w) => w())
+}
+
+function installAdsGate() {
+  if (adsGateInstalled || typeof window === 'undefined') return
+  adsGateInstalled = true
+  const idle = (cb: () => void) => {
+    const ric = (window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
+    }).requestIdleCallback
+    if (typeof ric === 'function') ric(cb, { timeout: 4000 })
+    else window.setTimeout(cb, 2000)
+  }
+  // المسار الطبيعي: اكتمال تحميل الصفحة ثم خمول الـCPU
+  if (document.readyState === 'complete') idle(unlockAds)
+  else window.addEventListener('load', () => idle(unlockAds), { once: true })
+  // أو أول تفاعل من المستخدم — أيهما أسبق
+  const events: Array<keyof WindowEventMap> = ['scroll', 'pointerdown', 'keydown', 'touchstart']
+  events.forEach((ev) => window.addEventListener(ev, unlockAds, { once: true, passive: true }))
+}
+
+/** ينتظر فك قفل الإعلانات قبل التنفيذ (load+idle أو أول تفاعل) */
+function whenAdsUnlocked(cb: () => void) {
+  installAdsGate()
+  if (adsUnlocked) {
+    cb()
+    return
+  }
+  adsUnlockWaiters.push(cb)
+}
+
 /**
  * Mount generation per container — كل حاوية لها رقم توليد يزداد مع كل تركيب/تنظيف.
  * لو بدأ تركيب جديد أو حصل تنظيف أثناء انتظار الطابور، التركيب القديم يكتشف أن
@@ -125,8 +172,12 @@ export function mountAdInto(container: HTMLElement, html: string) {
     }
   }
 
-  // Serialize across every ad slot on the page
-  adsterraQueue = adsterraQueue.then(engine)
+  // Serialize across every ad slot on the page — بعد فك قفل التأجيل فقط
+  // (window load + requestIdleCallback أو أول تفاعل): السكربت لا يُلمس قبل ذلك،
+  // ولو حصل unmount أثناء الانتظار ففحص الـgeneration داخل engine يُلغيه بأمان.
+  whenAdsUnlocked(() => {
+    adsterraQueue = adsterraQueue.then(engine)
+  })
 }
 
 /** Build the standard Adsterra banner snippet for a code-level zone. */

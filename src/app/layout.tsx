@@ -103,12 +103,9 @@ export const metadata: Metadata = {
     // TODO: أضف كود التحقق من Google Search Console
     // google: 'YOUR_GOOGLE_VERIFICATION_CODE',
   },
-  // Monetag publisher verification — renders as:
+  // Monetag publisher verification متأجَّلة (INP/LCP) — كانت تُرسم كـ
   // <meta name="monetag" content="3e29c37aa4e9905e68def8c15741a614" />
-  // in the <head> of every page (global layout => all routes).
-  other: {
-    monetag: '3e29c37aa4e9905e68def8c15741a614',
-  },
+  // في أول الـ <head> — تُعاد بعد أول رسمة/تفاعل عبر ClientInit إن لزم.
 }
 
 export default function RootLayout({
@@ -119,10 +116,9 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" data-scroll-behavior="smooth">
       <head>
-        {/* تسريع تحميل الإعلانات: فتح الاتصال بسيرفر Adsterra مبكرًا
-            (كل زونات Adsterra تستخدم نفس الدومين) — يوفر ~100-300ms على أول إعلان */}
-        <link rel="preconnect" href="https://professionalsusceptible.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://professionalsusceptible.com" />
+        {/* تأجيل اتصالات الإعلانات (INP/LCP) — كانت preconnect/dns-prefetch لـ
+            professionalsusceptible.com (Adsterra) — تُفتح الاتصالات ضمنياً عند
+            تحميل سكربتات الإعلانات بعد window load + idle (adsterraQueue). */}
       </head>
       <body className={`${cairo.className} bg-black text-white min-h-screen`}>
         <script
