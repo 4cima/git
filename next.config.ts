@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
       {
         source: '/sitemap.xml',
         destination: '/sitemap-index.xml',
-        permanent: true,
+        statusCode: 301,
       },
       {
         source: '/watch/movie/:slug',
