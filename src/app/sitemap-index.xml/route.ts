@@ -10,29 +10,23 @@ const FALLBACK_MOVIE_PARTS = 25
 const FALLBACK_SERIES_PARTS = 8
 
 async function countMovies(): Promise<number> {
-  try {
-    const result = await executeFirst<{ cnt: number }>(
-      `SELECT COUNT(*) AS cnt FROM movies 
-       WHERE filter_status = 'clean' AND slug IS NOT NULL AND tmdb_id IS NOT NULL`,
-      []
-    )
-    return result?.cnt ?? 0
-  } catch {
-    return 0
-  }
+  // NOTE: no swallow-catch here — if D1 is unreachable the outer catch falls back
+  // to the full safe slice list (FALLBACK_*_PARTS) instead of a broken 1-loc index.
+  const result = await executeFirst<{ cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM movies 
+     WHERE filter_status = 'clean' AND slug IS NOT NULL AND tmdb_id IS NOT NULL`,
+    []
+  )
+  return result?.cnt ?? 0
 }
 
 async function countSeries(): Promise<number> {
-  try {
-    const result = await executeFirst<{ cnt: number }>(
-      `SELECT COUNT(*) AS cnt FROM tv_series 
-       WHERE filter_status = 'clean' AND slug IS NOT NULL AND tmdb_id IS NOT NULL`,
-      []
-    )
-    return result?.cnt ?? 0
-  } catch {
-    return 0
-  }
+  const result = await executeFirst<{ cnt: number }>(
+    `SELECT COUNT(*) AS cnt FROM tv_series 
+     WHERE filter_status = 'clean' AND slug IS NOT NULL AND tmdb_id IS NOT NULL`,
+    []
+  )
+  return result?.cnt ?? 0
 }
 
 export async function GET() {

@@ -32,6 +32,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/sitemap.xml',
+        destination: '/sitemap-index.xml',
+        permanent: true,
+      },
+      {
         source: '/watch/movie/:slug',
         destination: '/movies/:slug',
         permanent: true,

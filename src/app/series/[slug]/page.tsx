@@ -16,13 +16,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     'SELECT name_ar, name_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json FROM tv_series WHERE slug = ? LIMIT 1', [slug]
   )
   if (!series) return { title: 'مسلسل غير موجود' }
-  
-  const title = String(
-    (series.seo_title_ar && String(series.seo_title_ar).trim()) || 
-    series.name_ar || 
-    series.name_en || 
-    'مسلسل'
-  )
+
+  // تفادي تكرار اسم الموقع داخل العنوان (القالب في layout.tsx يضيف «| فور سيما | 4cima»)
+  const stripBrand = (s: unknown): string =>
+    String(s ?? '')
+      .replace(/فور\s*سيما/gi, '')
+      .replace(/^[\s\-–—|·:]+/, '')
+      .replace(/[\s\-–—|·:]+$/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+
+  const nameAr = stripBrand(series.name_ar || series.name_en) || 'مسلسل'
+  const nameEn = stripBrand(series.name_en)
+  const title = nameEn && nameEn !== nameAr ? `مسلسل ${nameAr} | ${nameEn}` : `مسلسل ${nameAr}`
   const description = truncateDescription(String(
     (series.seo_description_ar && String(series.seo_description_ar).trim()) || 
     series.overview_ar || 

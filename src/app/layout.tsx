@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://4cima.com'),
   title: {
     default: 'فور سيما - مشاهدة افلام ومسلسلات مترجمة اون لاين بجودة عالية',
-    template: '%s | فور سيما',
+    template: '%s | فور سيما | 4cima',
   },
   description: 'مشاهدة وتحميل احدث الافلام والمسلسلات المترجمة والمدبلجة بجودة عالية HD و 4K مجاناً. افلام اجنبية، مسلسلات تركية، دراما كورية، وأكثر.',
   keywords: [
@@ -53,12 +53,12 @@ export const metadata: Metadata = {
   publisher: '4cima',
   icons: {
     icon: [
-      { url: '/icons/favicon.svg?v=4', type: 'image/svg+xml' },
-      { url: '/icons/favicon-32x32.png?v=4', sizes: '32x32', type: 'image/png' },
-      { url: '/icons/favicon.ico?v=3', sizes: 'any' },
+      { url: '/icons/favicon.svg?v=5', type: 'image/svg+xml' },
+      { url: '/icons/favicon-32x32.png?v=5', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon.ico?v=5', sizes: 'any' },
     ],
-    shortcut: '/icons/favicon.ico?v=3',
-    apple: '/icons/apple-touch-icon.png?v=4',
+    shortcut: '/icons/favicon.ico?v=5',
+    apple: '/icons/apple-touch-icon.png?v=5',
   },
   manifest: '/manifest.webmanifest',
   formatDetection: {

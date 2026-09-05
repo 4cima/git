@@ -17,13 +17,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     [slug]
   )
   if (!movie) return { title: 'فيلم غير موجود' }
-  
-  const title = String(
-    (movie.seo_title_ar && String(movie.seo_title_ar).trim()) || 
-    movie.title_ar || 
-    movie.title_en || 
-    'فيلم'
-  )
+
+  // تفادي تكرار اسم الموقع داخل العنوان (القالب في layout.tsx يضيف «| فور سيما | 4cima»)
+  const stripBrand = (s: unknown): string =>
+    String(s ?? '')
+      .replace(/فور\s*سيما/gi, '')
+      .replace(/^[\s\-–—|·:]+/, '')
+      .replace(/[\s\-–—|·:]+$/, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+
+  const nameAr = stripBrand(movie.title_ar || movie.title_en) || 'فيلم'
+  const nameEn = stripBrand(movie.title_en)
+  const title = nameEn && nameEn !== nameAr ? `فيلم ${nameAr} | ${nameEn}` : `فيلم ${nameAr}`
   const description = truncateDescription(String(
     (movie.seo_description_ar && String(movie.seo_description_ar).trim()) || 
     movie.overview_ar || 
