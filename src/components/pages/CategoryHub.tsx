@@ -11,7 +11,7 @@ import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { MobileStickyAd, DesktopOnly } from '@/components/features/system/MobileStickyAd'
 import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { getAdByNum } from '@/data/ads/4cima.com'
-import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
+import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
 
 /* ===== إعلانات صفحة التصنيف — أرقام موحّدة من src/data/ads/4cima.com (نظام موحّد لكل صفحات القوائم) =====
    1: 728×90 هيدر | 2: 300×250 عمود جانبي | 3: 160×600 سكرايبر ديسكتوب
@@ -70,6 +70,12 @@ const CategoryHubInner = ({ type = 'movie', category, allowTypeSwitch = false }:
   const [hasMore, setHasMore] = useState(false)
   const [activeTab, setActiveTab] = useState<'latest' | 'top_rated' | 'trending' | 'popular'>('latest')
   const observerTarget = useRef<HTMLDivElement>(null)
+
+  /* التقسيم ثابت في الـDOM (سيرفرًا وعميلًا): أول 16 كارت في البلوك العلوي والبقية
+     في الشبكة السفلية. موضع الإعلان (جنب العلوي ديسكتوبًا / أسفل الكل على الجوال)
+     يُضبط بـCSS grid فقط — لا JS ولا matchMedia في التخطيط. */
+  const topItems = content.slice(0, LISTING_TOP_CARDS_COUNT)
+  const restItems = content.slice(LISTING_TOP_CARDS_COUNT)
 
   useEffect(() => {
     if (category === 'top_rated') setActiveTab('top_rated')
@@ -342,9 +348,10 @@ const CategoryHubInner = ({ type = 'movie', category, allowTypeSwitch = false }:
       </div>
 
 
-      {/* المنطق الموحد: شبكة الأعمال + العمود الجانبي الإعلاني */}
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-        <div className="min-w-0 flex-1">
+      {/* البلوك العلوي (أول 16) + العمود الجانبي بجانبه على الديسكتوب — CSS grid فقط.
+          الجوال: الشبكتان متتابعتان بنفس فجوة صفوف الشبكة ثم الإعلان أسفل الكل. */}
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           {/* قسم مختارات — يظهر فقط بدون فلاتر */}
           {!year && !genre && !rating && !language && featuredContent.length > 0 && (
             <section className="mb-8">
@@ -390,9 +397,9 @@ const CategoryHubInner = ({ type = 'movie', category, allowTypeSwitch = false }:
                   </div>
                 )}
                 <div className="grid-responsive gap-4" suppressHydrationWarning>
-                  {content.map((item, i) => (
+                  {topItems.map((item, i) => (
                     <Fragment key={item.id}>
-                      <MovieCard movie={item} index={i} forceTv={mediaType === 'tv'} />
+                      <MovieCard movie={item} index={i} forceTv={mediaType === 'tv'} eager={i < LISTING_TOP_CARDS_COUNT} />
                       {(i + 1) % AD_EVERY_N_CARDS === 0 && (
                         <div className="flex justify-center">
                           <AdInRowCard pos={`hub-${i + 1}`} />
@@ -402,8 +409,33 @@ const CategoryHubInner = ({ type = 'movie', category, allowTypeSwitch = false }:
                   ))}
                 </div>
               </div>
+            </>
+          )}
+        </div>
 
-              {/* مشغّل السكرول اللانهائي */}
+        {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — ديسكتوب: صف بعرض كامل تحت البلوك.
+            جوال: تلي الشبكة العلوية بنفس فجوة صفوفها (بلا فجوة ظاهرة) */}
+        <div className="min-w-0 mt-4 lg:mt-0 lg:col-start-1 lg:col-span-2 lg:row-start-2">
+          {restItems.length > 0 && (
+            <div className="grid-responsive gap-4" suppressHydrationWarning>
+              {restItems.map((item, i) => {
+                const gi = LISTING_TOP_CARDS_COUNT + i
+                return (
+                  <Fragment key={item.id}>
+                    <MovieCard movie={item} index={gi} forceTv={mediaType === 'tv'} />
+                    {(gi + 1) % AD_EVERY_N_CARDS === 0 && (
+                      <div className="flex justify-center">
+                        <AdInRowCard pos={`hub-${gi + 1}`} />
+                      </div>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </div>
+          )}
+
+          {content.length > 0 && (
+            <>
               <div ref={observerTarget} className="h-10 mt-6"></div>
 
               {loadingMore && (
@@ -418,9 +450,9 @@ const CategoryHubInner = ({ type = 'movie', category, allowTypeSwitch = false }:
           )}
         </div>
 
-        {/* العمود الجانبي (يسار في RTL) — لاصق أثناء السكرول:
-            إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط */}
-        <aside className="flex w-full flex-col items-center gap-6 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
+        {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط.
+            ديسكتوب: بجانب البلوك العلوي. جوال: أسفل كل الكروت — عبر CSS grid فقط */}
+        <aside className="mt-8 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
           <AdFrame ad={AD_SIDE_RECT} variant="y" />
           <DesktopOnly>
             <div className="w-full">

@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, memo, useRef, useEffect } from 'react'
-import { Loader2 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 
 // Fallback poster image (gradient with cinema theme)
 const FALLBACK_POSTER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23374151;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%231f2937;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="300" height="450" fill="url(%23grad)"/%3E%3Ctext x="150" y="225" font-size="24" fill="%239ca3af" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-weight="bold"%3E🎬%3C/text%3E%3Ctext x="150" y="280" font-size="16" fill="%236b7280" text-anchor="middle" dominant-baseline="middle" font-family="Arial"%3Eسينما أونلاين%3C/text%3E%3C/svg%3E'
@@ -26,7 +24,6 @@ interface TmdbImageProps extends React.HTMLAttributes<HTMLDivElement> {
   path?: string | null
   size?: TmdbImageSize
   fallback?: React.ReactNode
-  showLoading?: boolean
   sizes?: string
   priority?: boolean
   alt: string
@@ -44,7 +41,6 @@ export const TmdbImage = memo(({
   path,
   size = 'w300', // Default to w300 for better performance
   fallback,
-  showLoading = true,
   className = '',
   imgClassName = '',
   alt,
@@ -87,17 +83,9 @@ export const TmdbImage = memo(({
 
   return (
     <div className={`relative overflow-hidden bg-zinc-900 ${className}`} style={{ ...(style || {}), aspectRatio }} {...props}>
-      <AnimatePresence>
-        {status === 'loading' && showLoading && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-10 flex items-center justify-center bg-zinc-900"
-          >
-            <Loader2 className="h-6 w-6 animate-spin text-zinc-600" />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* لا دائرة تحميل دوّارة فوق البوستر — placeholder ثابت (zinc) حتى وصول الصورة.
+          سبب: 20 كارت في صفحة /movies كلها بدائرة لودينغ تغطي الكارت حتى يحمَّل
+          البروكسي /tmdb → تبدو الصفحة عالقة على اللودينغ بعد أول رسمة. */}
 
       <img
         ref={imgRef}

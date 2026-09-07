@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { SeriesGenrePageClient } from '@/components/pages/SeriesGenrePageClient'
-import { getGenreWithTvSiblings, buildGenreWhereClause, buildGenreParams } from '@/lib/genre-siblings'
+import { getGenreWithTvSiblings, getTvGenreExclusions, buildGenreWhereClause, buildGenreParams, buildGenreExclusionClause, buildGenreExclusionParams } from '@/lib/genre-siblings'
 import { filterExcludedGenres, EXCLUDED_GENRE_SQL_CLAUSE } from '@/utils/excludedGenres'
 
 interface PageProps {
@@ -56,14 +56,16 @@ export default async function SeriesGenrePage({ params }: PageProps) {
     }
 
     const genreIds = getGenreWithTvSiblings(Number(genre.tmdb_id))
+    const excludedTvIds = getTvGenreExclusions(Number(genre.tmdb_id))
     const whereClause = buildGenreWhereClause(genreIds)
-    const genreParams = buildGenreParams(genreIds)
+    const genreParams = [...buildGenreParams(genreIds), ...buildGenreExclusionParams(excludedTvIds)]
 
     const initialSeries = await executeAll(
       `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, backdrop_path,
               vote_average, first_air_year, overview_ar, genres_json
        FROM tv_series
        WHERE ${whereClause}
+         AND ${buildGenreExclusionClause(excludedTvIds)}
          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
          AND ${EXCLUDED_GENRE_SQL_CLAUSE}
        ORDER BY popularity DESC

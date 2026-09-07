@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeFirst, executeAll } from '@/lib/db'
-import { getGenreWithSiblings, getGenreWithTvSiblings, buildGenreWhereClause, buildGenreParams } from '@/lib/genre-siblings'
+import { getGenreWithSiblings, getGenreWithTvSiblings, getTvGenreExclusions, buildGenreWhereClause, buildGenreParams, buildGenreExclusionClause, buildGenreExclusionParams } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
@@ -49,6 +49,13 @@ export async function GET(
     const whereClause = buildGenreWhereClause(genreIds, 'm')
     const whereClauseSeries = buildGenreWhereClause(genreIds, 's')
     const genreParams = buildGenreParams(genreIds)
+
+    /* استبعادات أنواع التلفزيون — Horror(27) يستبعد Crime(80) حتى لا تكون
+       صفحة الرعب نسخة من صفحة الإثارة (كلاهما mystery على TMDB).
+       للأفلام لا استبعاد إطلاقًا. */
+    const excludedTvIds = type === 'movie' ? [] : getTvGenreExclusions(Number(genre.tmdb_id))
+    const exclusionSeries = buildGenreExclusionClause(excludedTvIds, 's')
+    const exclusionSeriesParams = buildGenreExclusionParams(excludedTvIds)
 
     /* ترتيب "التصنيف الأساسي أولًا": الأعمال التي يأتي التصنيف المطلوب أول قائمة
        تصنيفاتها تتصدر النتائج — فلا تظهر صفحة أكشن مملوءة بأعمال تحمل أكشن
@@ -166,11 +173,12 @@ export async function GET(
                 'tv' as media_type
          FROM tv_series s
          WHERE ${whereClauseSeries}
+           AND ${exclusionSeries}
            AND ${approvedClause}
            AND ${strictSeries}
          ORDER BY ${primaryFirstSeries}s.${sortColumn} ${sortOrder}
          LIMIT ? OFFSET ?`,
-        [...genreParams, ...strictSeriesParams, ...primaryFirstSeriesParams, limit + 1, offset]
+        [...genreParams, ...exclusionSeriesParams, ...strictSeriesParams, ...primaryFirstSeriesParams, limit + 1, offset]
       )
       const hasMore = rows.length > limit
       if (hasMore) rows.pop()
@@ -197,10 +205,11 @@ export async function GET(
                   s.overview_ar, s.overview_en, s.genres_json, s.original_language,
                   'tv' as media_type
            FROM tv_series s WHERE ${whereClauseSeries}
+             AND ${exclusionSeries}
              AND (s.filter_status IN ('clean', 'reviewed_approved') OR s.filter_status IS NULL)
              AND ${strictSeries}
            ORDER BY s.${sortColumn} ${sortOrder} LIMIT ?`,
-          [...genreParams, ...strictSeriesParams, fetchLimit]
+          [...genreParams, ...exclusionSeriesParams, ...strictSeriesParams, fetchLimit]
         )
       ])
 

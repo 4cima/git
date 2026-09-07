@@ -10,7 +10,7 @@ import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { MobileStickyAd, DesktopOnly } from '@/components/features/system/MobileStickyAd'
 import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { getAdByNum } from '@/data/ads/4cima.com'
-import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
+import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
 import { useListingGenres, isFallbackGenreList } from '@/hooks/useListingGenres'
 
 /* ===== خريطة إعلانات القسم — الأرقام من src/data/ads/4cima.com =====
@@ -157,6 +157,12 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false }:
   const [cardStates, setCardStates] = useState<Record<string, 'neutral' | 'favorite' | 'completed'>>({})
   // Keys already requested — so appended pages only fetch their own new items
   const fetchedStateKeys = useRef<Set<string>>(new Set())
+
+  /* التقسيم ثابت في الـDOM (سيرفرًا وعميلًا): أول 16 كارت في البلوك العلوي والبقية
+     في الشبكة السفلية. موضع الإعلان (جنب العلوي ديسكتوبًا / أسفل الكل على الجوال)
+     يُضبط بـCSS grid فقط — لا JS ولا matchMedia في التخطيط. */
+  const topItems = movies.slice(0, LISTING_TOP_CARDS_COUNT)
+  const restItems = movies.slice(LISTING_TOP_CARDS_COUNT)
 
   // Single open dropdown at a time
   const [openDropdown, setOpenDropdown] = useState<'genre'|'year'|'rating'|'country'|'sort'|null>(null)
@@ -469,10 +475,10 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false }:
       {/* Main Content */}
       <section className="w-full bg-slate-950">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4">
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-x-6 lg:gap-y-8">
 
-            {/* Main column — filters + grid (appears on the RIGHT in RTL) */}
-            <div className="flex-1 min-w-0 space-y-6">
+            {/* Main column — filters + top grid (appears on the RIGHT in RTL) */}
+            <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
 
           {/* Search & Filters */}
           <div ref={filtersRef} className="flex flex-col md:flex-row items-stretch md:items-center gap-4 bg-slate-800/40 border border-slate-700 p-4 rounded-xl">
@@ -651,7 +657,7 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false }:
                   </div>
                 )}
                 <div className="grid-responsive gap-6">
-                {movies.map((item, index) => {
+                {topItems.map((item: any, index: number) => {
                   const tmdbId = item.tmdb_id || item.id
                   const stateKey = `movie-${tmdbId}`
                   return (
@@ -664,6 +670,7 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false }:
                       }} 
                       index={index} 
                       isVisible={true}
+                      eager={index < LISTING_TOP_CARDS_COUNT}
                       initialCardState={user ? cardStates[stateKey] : undefined}
                       onStateChange={(newState) => {
                         setCardStates(prev => ({ ...prev, [stateKey]: newState }))
@@ -679,19 +686,6 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false }:
                 })}
                 </div>
               </div>
-
-              {/* Infinite scroll trigger */}
-              <div ref={observerTarget} className="h-10 mt-6"></div>
-
-              {/* Loading indicator */}
-              {loadingMore && (
-                <div className="flex items-center justify-center py-8">
-                  <div className="flex items-center gap-3 text-slate-400">
-                    <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-sm font-bold">جاري التحميل...</span>
-                  </div>
-                </div>
-              )}
             </>
           ) : (
             <div className="flex flex-col items-center justify-center h-96 text-center">
@@ -702,9 +696,62 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false }:
           )}
             </div>
 
-            {/* العمود الجانبي (يسار في RTL) — لاصق أثناء السكرول لعروض أعلى:
-                إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط */}
-            <aside className="flex w-full flex-col items-center gap-6 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
+            {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — ديسكتوب: صف بعرض كامل تحت البلوك.
+                جوال: تلي الشبكة العلوية بنفس فجوة صفوفها (بلا فجوة ظاهرة) */}
+            <div className="min-w-0 mt-6 lg:mt-0 lg:col-start-1 lg:col-span-2 lg:row-start-2">
+              {restItems.length > 0 && (
+                <div className="grid-responsive gap-6">
+                  {restItems.map((item: any, i: number) => {
+                    const index = LISTING_TOP_CARDS_COUNT + i
+                    const tmdbId = item.tmdb_id || item.id
+                    const stateKey = `movie-${tmdbId}`
+                    return (
+                      <Fragment key={item.id}>
+                        <MovieCard
+                          key={item.id}
+                          movie={{
+                            ...item,
+                            media_type: 'movie'
+                          }}
+                          index={index}
+                          isVisible={true}
+                          initialCardState={user ? cardStates[stateKey] : undefined}
+                          onStateChange={(newState) => {
+                            setCardStates(prev => ({ ...prev, [stateKey]: newState }))
+                          }}
+                        />
+                        {(index + 1) % AD_EVERY_N_CARDS === 0 && (
+                          <div className="flex justify-center">
+                            <AdInRowCard pos={`m-${index + 1}`} />
+                          </div>
+                        )}
+                      </Fragment>
+                    )
+                  })}
+                </div>
+              )}
+
+              {movies.length > 0 && (
+                <>
+                  {/* Infinite scroll trigger */}
+                  <div ref={observerTarget} className="h-10 mt-6"></div>
+
+                  {/* Loading indicator */}
+                  {loadingMore && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="flex items-center gap-3 text-slate-400">
+                        <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm font-bold">جاري التحميل...</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط.
+                ديسكتوب: بجانب البلوك العلوي. جوال: أسفل كل الكروت — عبر CSS grid فقط */}
+            <aside className="mt-6 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
               <AdFrame ad={AD_SIDE_RECT} variant="y" />
               <DesktopOnly>
                 <div className="w-full">

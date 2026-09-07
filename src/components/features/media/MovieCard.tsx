@@ -55,6 +55,8 @@ interface MovieCardProps {
   initialCardState?: CardState // Optional: if provided, skip individual API call
   onStateChange?: (newState: CardState) => void // Optional: callback when state changes
   forceTv?: boolean // Force series path regardless of media_type
+  /** كروت الثنية الأولى (أول صفوف الديسكتوب): صورة eager + لا إخفاء عند الهيدرايشن */
+  eager?: boolean
 }
 
 export const MovieCard = memo(({ 
@@ -63,7 +65,8 @@ export const MovieCard = memo(({
   isVisible,
   initialCardState,
   onStateChange,
-  forceTv = false
+  forceTv = false,
+  eager = false
 }: MovieCardProps) => {
   const { user } = useAuth() // Check if user is logged in
   const [isHovered, setIsHovered] = useState(false)
@@ -336,7 +339,7 @@ export const MovieCard = memo(({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={eager ? false : { opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.35, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
@@ -357,8 +360,8 @@ export const MovieCard = memo(({
               <img
                 src={thumbSrc}
                 alt={mainTitle}
-                loading="lazy"
-                decoding="async"
+                loading={eager ? 'eager' : 'lazy'}
+                decoding={eager ? 'sync' : 'async'}
                 className={`h-full w-full object-cover transition-all duration-500 ease-lumen ${isHovered ? 'brightness-75' : 'scale-100'}`}
                 onError={() => setThumbSrc('')}
               />
@@ -367,6 +370,7 @@ export const MovieCard = memo(({
                 path={movie.poster_path || movie.backdrop_path}
                 alt={mainTitle}
                 size="w92"
+                priority={eager}
                 className="h-full w-full"
                 imgClassName={`transition-all duration-500 ease-lumen ${isHovered ? 'brightness-75' : 'scale-100'}`}
                 fallback={

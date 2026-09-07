@@ -10,7 +10,7 @@ import { MobileStickyAd, DesktopOnly } from '@/components/features/system/Mobile
 import { Footer } from '@/components/layout/Footer'
 import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { getAdByNum } from '@/data/ads/4cima.com'
-import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
+import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
 
 /* ===== إعلانات صفحة التصنيف — أرقام موحّدة من src/data/ads/4cima.com (نظام موحّد لكل صفحات القوائم) =====
    1: 728×90 هيدر | 2: 300×250 عمود جانبي | 3: 160×600 سكرايبر ديسكتوب
@@ -56,6 +56,12 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
   const SKELETON_COUNT = 24
 
   const genreColorScheme = getGenreColor(genre.name_ar || genre.name_en)
+
+  /* التقسيم ثابت في الـDOM (سيرفرًا وعميلًا): أول 16 كارت في البلوك العلوي والبقية
+     في الشبكة السفلية. موضع الإعلان (جنب العلوي ديسكتوبًا / أسفل الكل على الجوال)
+     يُضبط بـCSS grid فقط — لا JS ولا matchMedia في التخطيط. */
+  const topItems = content.slice(0, LISTING_TOP_CARDS_COUNT)
+  const restItems = content.slice(LISTING_TOP_CARDS_COUNT)
 
   // Fetch series
   useEffect(() => {
@@ -217,9 +223,10 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
           ))}
         </div>
 
-        {/* المنطق الموحد: شبكة الأعمال + العمود الجانبي الإعلاني (نفس نظام صفحات الأقسام) */}
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-          <div className="min-w-0 flex-1">
+        {/* البلوك العلوي (أول 16) + العمود الجانبي بجانبه على الديسكتوب — CSS grid فقط.
+            الجوال: الشبكتان متتابعتان بنفس فجوة صفوف الشبكة ثم الإعلان أسفل الكل. */}
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
 
         {/* Error State */}
         {error && (
@@ -264,11 +271,11 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
                 </div>
               )}
             <div className="grid-responsive gap-4" suppressHydrationWarning>
-              {content.map((item: any, index: number) => {
+              {topItems.map((item: any, index: number) => {
                 const enhancedItem = { ...item, media_type: 'tv', isSeries: true }
                 return (
                   <Fragment key={item.id}>
-                    <MovieCard key={item.id} movie={enhancedItem} index={index} forceTv />
+                    <MovieCard key={item.id} movie={enhancedItem} index={index} forceTv eager={index < LISTING_TOP_CARDS_COUNT} />
                     {(index + 1) % AD_EVERY_N_CARDS === 0 && (
                       <div className="flex justify-center">
                         <AdInRowCard pos={`gs-${index + 1}`} />
@@ -280,16 +287,6 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
             </div>
             </div>
 
-            <div ref={observerTarget} className="h-10 mt-6"></div>
-
-            {loadingMore && (
-              <div className="flex items-center justify-center py-8">
-                <div className="flex items-center gap-3 text-zinc-400">
-                  <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm font-bold">جاري التحميل...</span>
-                </div>
-              </div>
-            )}
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-96 text-center">
@@ -300,9 +297,47 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
 
           </div>
 
-          {/* العمود الجانبي (يسار في RTL) — لاصق أثناء السكرول:
-              إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط */}
-          <aside className="flex w-full flex-col items-center gap-6 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
+          {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — ديسكتوب: صف بعرض كامل تحت البلوك.
+              جوال: تلي الشبكة العلوية بنفس فجوة صفوفها (بلا فجوة ظاهرة) */}
+          <div className="min-w-0 mt-4 lg:mt-0 lg:col-start-1 lg:col-span-2 lg:row-start-2">
+            {restItems.length > 0 && (
+              <div className="grid-responsive gap-4" suppressHydrationWarning>
+                {restItems.map((item: any, i: number) => {
+                  const gi = LISTING_TOP_CARDS_COUNT + i
+                  const enhancedItem = { ...item, media_type: 'tv', isSeries: true }
+                  return (
+                    <Fragment key={item.id}>
+                      <MovieCard movie={enhancedItem} index={gi} forceTv />
+                      {(gi + 1) % AD_EVERY_N_CARDS === 0 && (
+                        <div className="flex justify-center">
+                          <AdInRowCard pos={`gs-${gi + 1}`} />
+                        </div>
+                      )}
+                    </Fragment>
+                  )
+                })}
+              </div>
+            )}
+
+            {content.length > 0 && (
+              <>
+                <div ref={observerTarget} className="h-10 mt-6"></div>
+
+                {loadingMore && (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="flex items-center gap-3 text-zinc-400">
+                      <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm font-bold">جاري التحميل...</span>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط.
+              ديسكتوب: بجانب البلوك العلوي. جوال: أسفل كل الكروت — عبر CSS grid فقط */}
+          <aside className="mt-8 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
             <AdFrame ad={AD_SIDE_RECT} variant="y" />
             <DesktopOnly>
               <div className="w-full">

@@ -77,12 +77,14 @@ export function useIsTablet(): boolean {
 
 /**
  * Hook to detect if the current device is desktop (>= 1024px)
+ *
+ * ⚠️ Hydration-safe: القيمة الابتدائية false دائمًا (سيرفرًا وعميلًا) ثم تُحدَّث
+ * في useEffect — نفس نمط DesktopOnly. قراءة window.innerWidth في الـinitializer
+ * تسببت في hydration mismatch: السيرفر يرسم شبكة واحدة بينما أول رسمة عميل
+ * على الديسكتوب تقسمها (16 + الباقي) → «server rendered HTML didn't match».
  */
 export function useIsDesktop(): boolean {
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.innerWidth >= 1024
-  })
+  const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)')
