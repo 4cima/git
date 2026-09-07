@@ -20,6 +20,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { EXCLUDED_GENRE_IDS_LIST } from '@/utils/excludedGenres';
+
 type SqlValue = string | number | boolean | null;
 
 export const SITEMAP_BASE_URL = 'https://4cima.com';
@@ -33,6 +35,31 @@ export const SHARD_CACHE_CONTROL = 'public, s-maxage=3600, stale-while-revalidat
 /** Shared "indexable catalog item" predicate (mirrors the listing queries). */
 export const CLEAN_ITEM_SQL =
   "filter_status = 'clean' AND slug IS NOT NULL AND slug != '' AND tmdb_id IS NOT NULL";
+
+// ── Detail-link filter (sitemap only — لا يمس استعلامات صفحات الموقع) ────────
+//
+// جوجل يزور الأشهر/الأحدث بدل مئات الآلاف: روابط التفاصيل في الخريطة =
+// (حديث: سنة >= 2015) أو (أقدم من 2015 بتقييمات كافية)، مع استبعاد أنواع
+// المحتوى الممنوعة الموجودة أصلًا (Talk Show/War & Politics/Documentary/History).
+//
+// - الاستبعاد بنمط استعلامات القوائم الحية (json_each + NULL مسموح —
+//   8210 مسلسل نظيف بلا genres_json كانوا سيُستبعدون خطأً بنمط NOT LIKE).
+// - عتبة المصوّتين للأقدم من 2015: vote_count >= 1000 — لا توجد عتبة جودة
+//   موحّدة في السحب/الفلتر (أقربها 50/100 لأغراض مشابهة أخرى) فثُبّتت 1000 صراحةً.
+
+export const SITEMAP_MIN_YEAR = 2015;
+export const SITEMAP_MIN_VOTE_COUNT = 1000;
+
+/** فلتر روابط التفاصيل في السايت ماب لجدول محدد (عمود السنة يختلف بين الجدولين). */
+export function sitemapDetailFilterSql(table: 'movies' | 'tv_series'): string {
+  const yearColumn = table === 'movies' ? 'release_year' : 'first_air_year';
+  const excludedIds = EXCLUDED_GENRE_IDS_LIST.join(', ');
+  return (
+    `(genres_json IS NULL OR NOT EXISTS (SELECT 1 FROM json_each(${table}.genres_json) ` +
+    `WHERE json_extract(value, '$.tmdb_id') IN (${excludedIds}))) ` +
+    `AND (${yearColumn} >= ${SITEMAP_MIN_YEAR} OR vote_count >= ${SITEMAP_MIN_VOTE_COUNT})`
+  );
+}
 
 // ── DB access ────────────────────────────────────────────────────────────────
 

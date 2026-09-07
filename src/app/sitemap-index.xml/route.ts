@@ -3,6 +3,7 @@ import {
   SHARD_SIZE,
   INDEX_CACHE_CONTROL,
   CLEAN_ITEM_SQL,
+  sitemapDetailFilterSql,
   sitemapQuery,
   sitemapindexXml,
   xmlSuccessResponse,
@@ -21,14 +22,19 @@ export const dynamic = 'force-dynamic'
  *   /sitemap/movies-0.xml …N       (10000 per shard, sequential from 0)
  *   /sitemap/series-0.xml …N       (10000 per shard, sequential from 0)
  *
+ * العدّ بنفس فلتر روابط التفاصيل (مجموعة B) حتى يتطابق عدد الـshards
+ * مع ما تُنتجه فعليًا — لا ملفات فارغة، والـshards الزائدة القديمة 404 نظيف.
+ *
  * Any database failure → 503 XML (never an empty or partial index with 200).
  */
 export async function GET() {
   try {
     const rows = await sitemapQuery<{ movies: number; series: number }>(
       `SELECT
-        (SELECT COUNT(*) FROM movies    WHERE ${CLEAN_ITEM_SQL}) AS movies,
-        (SELECT COUNT(*) FROM tv_series WHERE ${CLEAN_ITEM_SQL}) AS series`
+        (SELECT COUNT(*) FROM movies WHERE ${CLEAN_ITEM_SQL}
+           AND ${sitemapDetailFilterSql('movies')}) AS movies,
+        (SELECT COUNT(*) FROM tv_series WHERE ${CLEAN_ITEM_SQL}
+           AND ${sitemapDetailFilterSql('tv_series')}) AS series`
     )
 
     const movies = Number(rows[0]?.movies ?? 0)

@@ -5,6 +5,7 @@ import {
   PRIORITY_PER_TYPE,
   SHARD_CACHE_CONTROL,
   CLEAN_ITEM_SQL,
+  sitemapDetailFilterSql,
   sitemapQuery,
   urlset,
   urlEntry,
@@ -76,14 +77,17 @@ async function buildStatic(): Promise<string[]> {
   return entries
 }
 
-/** Top 2000 items by real updated_at (DESC) — 1000 newest movies + 1000 newest series. */
+/** Top 2000 items by real updated_at (DESC) — 1000 newest movies + 1000 newest series.
+ *  نفس فلتر روابط التفاصيل (كل روابط التفاصيل في الخريطة = مجموعة B). */
 async function buildPriority(): Promise<string[]> {
   const movies = await sitemapQuery<SlugRow>(
     `SELECT slug, updated_at FROM movies WHERE ${CLEAN_ITEM_SQL}
+      AND ${sitemapDetailFilterSql('movies')}
      ORDER BY updated_at DESC LIMIT ${PRIORITY_PER_TYPE}`
   )
   const series = await sitemapQuery<SlugRow>(
     `SELECT slug, updated_at FROM tv_series WHERE ${CLEAN_ITEM_SQL}
+      AND ${sitemapDetailFilterSql('tv_series')}
      ORDER BY updated_at DESC LIMIT ${PRIORITY_PER_TYPE}`
   )
   return [
@@ -92,7 +96,8 @@ async function buildPriority(): Promise<string[]> {
   ]
 }
 
-/** Catalog shard: page*10000 → (page+1)*10000, stable order by tmdb_id. */
+/** Catalog shard: page*10000 → (page+1)*10000, stable order by tmdb_id.
+ *  فلتر روابط التفاصيل (مجموعة B) — لا يمس استعلامات صفحات الموقع. */
 async function buildCatalog(
   type: 'movies' | 'series',
   page: number
@@ -101,6 +106,7 @@ async function buildCatalog(
   const prefix = type === 'movies' ? '/movies/' : '/series/'
   const rows = await sitemapQuery<SlugRow>(
     `SELECT slug, updated_at FROM ${table} WHERE ${CLEAN_ITEM_SQL}
+      AND ${sitemapDetailFilterSql(table)}
      ORDER BY tmdb_id ASC LIMIT ${SHARD_SIZE} OFFSET ?`,
     [page * SHARD_SIZE]
   )
