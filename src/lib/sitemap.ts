@@ -29,8 +29,13 @@ export const SHARD_SIZE = 10000;
 export const PRIORITY_PER_TYPE = 1000;
 
 /** Index cache: rebuilt often, tiny. Shards cache: big, stable. */
-export const INDEX_CACHE_CONTROL = 'public, s-maxage=600, stale-while-revalidate=3600';
-export const SHARD_CACHE_CONTROL = 'public, s-maxage=3600, stale-while-revalidate=86400';
+/* كاش الحافة: قائمة الشظايا (العدّ) لا تتغير كل 10 دقائق — يوم كامل.
+   الأثر الفعلي على D1 يأتي من كاش ذاكرة الـWorker في مساري الفهرس والشظايا. */
+export const INDEX_CACHE_CONTROL = 'public, s-maxage=86400, stale-while-revalidate=86400';
+export const SHARD_CACHE_CONTROL = 'public, s-maxage=86400, stale-while-revalidate=86400';
+
+/** مدة كاش ذاكرة الـWorker لنتائج السايت ماب (فهرس + شظايا) — 24 ساعة. */
+export const SITEMAP_MEM_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 /** Shared "indexable catalog item" predicate (mirrors the listing queries). */
 export const CLEAN_ITEM_SQL =

@@ -14,6 +14,15 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 /**
+ * كاش ذاكرة الـWorker (isolate) لقائمة الشظايا — 24 ساعة.
+ * استعلاما COUNT(*) مع json_each يمسحان الجدولين كاملين (~314 ألف صف) —
+ * يُدفعان مرة واحدة كل 24 ساعة لكل isolate بدل كل طلب. نتيجة القائمة
+ * (12 ملفًا) لا تتغير إلا عند تجاوز عدد مجموعة B حدّ شظية جديدة.
+ */
+const INDEX_TTL_MS = 24 * 60 * 60 * 1000
+let cachedIndex: { at: number; locs: string[] } | null = null
+
+/**
  * /sitemap-index.xml — sitemap index Route Handler (raw XML).
  *
  * Lists ONLY shards that contain links:
@@ -24,11 +33,17 @@ export const dynamic = 'force-dynamic'
  *
  * العدّ بنفس فلتر روابط التفاصيل (مجموعة B) حتى يتطابق عدد الـshards
  * مع ما تُنتجه فعليًا — لا ملفات فارغة، والـshards الزائدة القديمة 404 نظيف.
+ * العدّ نفسه مخزّن 24 ساعة في ذاكرة الـWorker (وفق Cache-Control يوم كامل) —
+ * لا COUNT حي عند كل طلب.
  *
  * Any database failure → 503 XML (never an empty or partial index with 200).
  */
 export async function GET() {
   try {
+    if (cachedIndex && Date.now() - cachedIndex.at < INDEX_TTL_MS) {
+      return xmlSuccessResponse(sitemapindexXml(cachedIndex.locs), INDEX_CACHE_CONTROL)
+    }
+
     const rows = await sitemapQuery<{ movies: number; series: number }>(
       `SELECT
         (SELECT COUNT(*) FROM movies WHERE ${CLEAN_ITEM_SQL}
@@ -56,6 +71,7 @@ export async function GET() {
       locs.push(`${SITEMAP_BASE_URL}/sitemap/series-${i}.xml`)
     }
 
+    cachedIndex = { at: Date.now(), locs }
     return xmlSuccessResponse(sitemapindexXml(locs), INDEX_CACHE_CONTROL)
   } catch (error) {
     return xmlUnavailableResponse(error)

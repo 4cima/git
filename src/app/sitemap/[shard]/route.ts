@@ -46,6 +46,25 @@ const STATIC_ROUTES: { path: string; priority: string }[] = [
 
 type SlugRow = { slug: string; updated_at?: string | null }
 
+/**
+ * كاش ذاكرة الـWorker (isolate) لنتائج الشظايا — 24 ساعة.
+ * استعلام الشظية يمسح الفهرس ويحلّل JSON لكل صف مرشّح (حتى ~267 ألف صف
+ * للشظايا الأخيرة) — يُدفع مرة كل 24 ساعة لكل isolate بدل كل طلب زحف.
+ * المفتاح: "static" | "priority" | "movies:0" | "series:2" …
+ * النتيجة الفارغة (شظية خارج النطاق) تُكاش أيضًا — الفهرس هو من يحدد
+ * الشظايا الموجودة، ولا يُدرج شظية جديدة إلا بعد تجاوز العدد الحد.
+ */
+const SHARD_TTL_MS = 24 * 60 * 60 * 1000
+const shardCache = new Map<string, { at: number; urls: string[] }>()
+
+async function cachedEntries(key: string, build: () => Promise<string[]>): Promise<string[]> {
+  const hit = shardCache.get(key)
+  if (hit && Date.now() - hit.at < SHARD_TTL_MS) return hit.urls
+  const urls = await build()
+  shardCache.set(key, { at: Date.now(), urls })
+  return urls
+}
+
 /** Static pages + every genre landing page that actually has content. */
 async function buildStatic(): Promise<string[]> {
   const entries = STATIC_ROUTES.map((r) => urlEntry(`${SITEMAP_BASE_URL}${r.path}`, null, r.priority))
@@ -134,11 +153,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sha
 
   try {
     if (shard === 'static.xml') {
-      return xmlSuccessResponse(urlset(await buildStatic()), SHARD_CACHE_CONTROL)
+      const urls = await cachedEntries('static', buildStatic)
+      return xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
     }
 
     if (shard === 'priority.xml') {
-      const urls = await buildPriority()
+      const urls = await cachedEntries('priority', buildPriority)
       if (urls.length === 0) return xmlNotFoundResponse('no priority urls')
       return xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
     }
@@ -146,7 +166,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sha
     const moviesShard = shard.match(/^movies-(\d+)\.xml$/)
     if (moviesShard) {
       const page = parseInt(moviesShard[1], 10)
-      const urls = await buildCatalog('movies', page)
+      const urls = await cachedEntries(`movies:${page}`, () => buildCatalog('movies', page))
       if (urls.length === 0) return xmlNotFoundResponse(`movies shard ${page} out of range`)
       return xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
     }
@@ -154,7 +174,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sha
     const seriesShard = shard.match(/^series-(\d+)\.xml$/)
     if (seriesShard) {
       const page = parseInt(seriesShard[1], 10)
-      const urls = await buildCatalog('series', page)
+      const urls = await cachedEntries(`series:${page}`, () => buildCatalog('series', page))
       if (urls.length === 0) return xmlNotFoundResponse(`series shard ${page} out of range`)
       return xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
     }
