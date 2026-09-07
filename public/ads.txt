@@ -1,0 +1,7 @@
+# 4cima.com authorized digital sellers
+# Adsterra — website IDs from publisher dashboard (4cima.com only)
+adsterra.com, 6019925, DIRECT
+adsterra.com, 2018051, DIRECT
+# Monetag (Propeller Ads group) — site ID from publishers.monetag.com
+monetag.com, 3471530, DIRECT
+propellerads.com, 3471530, DIRECT, 5d62403b1874469b
