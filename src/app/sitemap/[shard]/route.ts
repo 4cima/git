@@ -12,6 +12,8 @@ import {
   xmlSuccessResponse,
   xmlUnavailableResponse,
   xmlNotFoundResponse,
+  sitemapCacheMatch,
+  sitemapCachePut,
 } from '@/lib/sitemap'
 
 export const runtime = 'nodejs'
@@ -53,16 +55,24 @@ type SlugRow = { slug: string; updated_at?: string | null }
  * المفتاح: "static" | "priority" | "movies:0" | "series:2" …
  * النتيجة الفارغة (شظية خارج النطاق) تُكاش أيضًا — الفهرس هو من يحدد
  * الشظايا الموجودة، ولا يُدرج شظية جديدة إلا بعد تجاوز العدد الحد.
+ * فوق الذاكرة: Cache API (caches.default) بنفس المدة — الـisolates الأخرى
+ * تُخدم من الحافة دون لمس D1. ترتيب الفحص: ذاكرة → حافة → D1 (miss فقط).
  */
 const SHARD_TTL_MS = 24 * 60 * 60 * 1000
 const shardCache = new Map<string, { at: number; urls: string[] }>()
 
-async function cachedEntries(key: string, build: () => Promise<string[]>): Promise<string[]> {
+type CachedShard = { urls: string[]; edgeResponse: Response | null }
+
+async function cachedEntries(request: Request, key: string, build: () => Promise<string[]>): Promise<CachedShard> {
   const hit = shardCache.get(key)
-  if (hit && Date.now() - hit.at < SHARD_TTL_MS) return hit.urls
+  if (hit && Date.now() - hit.at < SHARD_TTL_MS) return { urls: hit.urls, edgeResponse: null }
+
+  const edgeHit = await sitemapCacheMatch(request)
+  if (edgeHit) return { urls: [], edgeResponse: edgeHit }
+
   const urls = await build()
   shardCache.set(key, { at: Date.now(), urls })
-  return urls
+  return { urls, edgeResponse: null }
 }
 
 /** Static pages + every genre landing page that actually has content. */
@@ -139,7 +149,7 @@ function legacyRedirect(destination: string): Response {
   return res
 }
 
-export async function GET(_request: Request, { params }: { params: Promise<{ shard: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ shard: string }> }) {
   const shard = (await params).shard.toLowerCase()
 
   // Legacy numbered shards from the old generateSitemaps scheme.
@@ -153,30 +163,42 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sha
 
   try {
     if (shard === 'static.xml') {
-      const urls = await cachedEntries('static', buildStatic)
-      return xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
+      const { urls, edgeResponse } = await cachedEntries(request, 'static', buildStatic)
+      if (edgeResponse) return edgeResponse
+      const response = xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
+      await sitemapCachePut(request, response)
+      return response
     }
 
     if (shard === 'priority.xml') {
-      const urls = await cachedEntries('priority', buildPriority)
-      if (urls.length === 0) return xmlNotFoundResponse('no priority urls')
-      return xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
+      const { urls, edgeResponse } = await cachedEntries(request, 'priority', buildPriority)
+      if (edgeResponse) return edgeResponse
+      if (urls.length === 0) return xmlNotFoundResponse('no priority urls') /* 404 يُكاش في الحافة (max-age=86400) */
+      const response = xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
+      await sitemapCachePut(request, response)
+      return response
     }
 
     const moviesShard = shard.match(/^movies-(\d+)\.xml$/)
     if (moviesShard) {
       const page = parseInt(moviesShard[1], 10)
-      const urls = await cachedEntries(`movies:${page}`, () => buildCatalog('movies', page))
-      if (urls.length === 0) return xmlNotFoundResponse(`movies shard ${page} out of range`)
-      return xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
+      const { urls, edgeResponse } = await cachedEntries(request, `movies:${page}`, () => buildCatalog('movies', page))
+      if (edgeResponse) return edgeResponse
+      if (urls.length === 0) return xmlNotFoundResponse(`movies shard ${page} out of range`) /* 404 يُكاش أيضًا */
+      const response = xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
+      await sitemapCachePut(request, response)
+      return response
     }
 
     const seriesShard = shard.match(/^series-(\d+)\.xml$/)
     if (seriesShard) {
       const page = parseInt(seriesShard[1], 10)
-      const urls = await cachedEntries(`series:${page}`, () => buildCatalog('series', page))
-      if (urls.length === 0) return xmlNotFoundResponse(`series shard ${page} out of range`)
-      return xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
+      const { urls, edgeResponse } = await cachedEntries(request, `series:${page}`, () => buildCatalog('series', page))
+      if (edgeResponse) return edgeResponse
+      if (urls.length === 0) return xmlNotFoundResponse(`series shard ${page} out of range`) /* 404 يُكاش أيضًا */
+      const response = xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
+      await sitemapCachePut(request, response)
+      return response
     }
 
     return xmlNotFoundResponse('unknown sitemap shard')

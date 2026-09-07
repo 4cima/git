@@ -8,6 +8,8 @@ import {
   sitemapindexXml,
   xmlSuccessResponse,
   xmlUnavailableResponse,
+  sitemapCacheMatch,
+  sitemapCachePut,
 } from '@/lib/sitemap'
 
 export const runtime = 'nodejs'
@@ -33,16 +35,21 @@ let cachedIndex: { at: number; locs: string[] } | null = null
  *
  * العدّ بنفس فلتر روابط التفاصيل (مجموعة B) حتى يتطابق عدد الـshards
  * مع ما تُنتجه فعليًا — لا ملفات فارغة، والـshards الزائدة القديمة 404 نظيف.
- * العدّ نفسه مخزّن 24 ساعة في ذاكرة الـWorker (وفق Cache-Control يوم كامل) —
- * لا COUNT حي عند كل طلب.
+ * طبقتا كاش (كلاهما 24 ساعة): ذاكرة الـisolate أولًا، ثم Cache API (الحافة) —
+ * لا COUNT حي عند وجود نتيجة كاش في أيٍّ منهما. الحساب نفسه يُدفع مرة
+ * كل 24 ساعة لكل isolate.
  *
  * Any database failure → 503 XML (never an empty or partial index with 200).
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
     if (cachedIndex && Date.now() - cachedIndex.at < INDEX_TTL_MS) {
       return xmlSuccessResponse(sitemapindexXml(cachedIndex.locs), INDEX_CACHE_CONTROL)
     }
+
+    /* miss من الذاكرة → جرب كاش الحافة قبل أي استعلام */
+    const edgeHit = await sitemapCacheMatch(request)
+    if (edgeHit) return edgeHit
 
     const rows = await sitemapQuery<{ movies: number; series: number }>(
       `SELECT
@@ -72,7 +79,9 @@ export async function GET() {
     }
 
     cachedIndex = { at: Date.now(), locs }
-    return xmlSuccessResponse(sitemapindexXml(locs), INDEX_CACHE_CONTROL)
+    const response = xmlSuccessResponse(sitemapindexXml(locs), INDEX_CACHE_CONTROL)
+    await sitemapCachePut(request, response)
+    return response
   } catch (error) {
     return xmlUnavailableResponse(error)
   }

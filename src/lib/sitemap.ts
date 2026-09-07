@@ -37,6 +37,39 @@ export const SHARD_CACHE_CONTROL = 'public, s-maxage=86400, stale-while-revalida
 /** مدة كاش ذاكرة الـWorker لنتائج السايت ماب (فهرس + شظايا) — 24 ساعة. */
 export const SITEMAP_MEM_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
+/** مدة كاش الـCache API (caches.default) لنتائج السايت ماب — 24 ساعة. */
+export const SITEMAP_CACHE_TTL_S = 86400;
+
+// ── Cache API فوق كاش ذاكرة الـWorker ────────────────────────────────────────
+// caches.default يخزّن النتيجة على حافة Cloudflare — الطلبات من isolates
+// مختلفة (وأعادات تشغيل الـWorker) تُخدم من الحافة دون لمس D1.
+// الذاكرة أسرع فتُفحص أولًا؛ Cache API ثانيًا؛ D1 أخيرًا (miss فقط).
+// الكاش هنا تسريع فقط: أي فشل فيه لا يفشل المسار (الرد يُحسب عاديًا).
+
+export async function sitemapCacheMatch(request: Request): Promise<Response | null> {
+  if (typeof caches === 'undefined') return null;
+  /* caches.default خاص بعمال Cloudflare (غير موجود في أنواع DOM القياسية) */
+  const edgeCache = (caches as any)?.default as Cache | undefined;
+  if (!edgeCache) return null;
+  try {
+    const hit = await edgeCache.match(request);
+    return hit ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function sitemapCachePut(request: Request, response: Response): Promise<void> {
+  if (typeof caches === 'undefined') return;
+  const edgeCache = (caches as any)?.default as Cache | undefined;
+  if (!edgeCache) return;
+  try {
+    await edgeCache.put(request, response.clone());
+  } catch {
+    /* تجاهل — كاش الحافة تسريع فقط، ليست مصدر الحقيقة */
+  }
+}
+
 /** Shared "indexable catalog item" predicate (mirrors the listing queries). */
 export const CLEAN_ITEM_SQL =
   "filter_status = 'clean' AND slug IS NOT NULL AND slug != '' AND tmdb_id IS NOT NULL";

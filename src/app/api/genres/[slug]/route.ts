@@ -67,16 +67,31 @@ export async function GET(
     const genreIdPlaceholders = genreIds.map(() => '?').join(',')
     const strictMoviesParams: number[] = strict ? genreIds : []
     const strictSeriesParams: number[] = strict ? genreIds : []
-    const primaryFirstMoviesParams: number[] = sort === 'popularity' ? genreIds : []
-    const primaryFirstSeriesParams: number[] = sort === 'popularity' ? genreIds : []
+
+    /* «التصنيف الأساسي أولًا» — إفصاح صريح: كان يُطبق عبر CASE(json_extract) في ORDER BY
+       داخل SQL، مما يمنع استخدام فهرس الترتيب ويقيّم json_extract على كل صف ممسوح.
+       الآن SQL يرتّب على العمود الصافي (popularity/vote_* — يمشي على الفهرس)،
+       والتصنيف الأساسي يُطبق هنا في JS على صفوف الصفحة فقط (~limit صفًا).
+       لا تغيير في شكل الاستجابة (حقول/pagination) ولا في الفلاتر. */
+    const pageGidSet = new Set(genreIds.map(Number))
+    const pagePrimaryGenreId = (row: any): number => {
+      try { return Number(JSON.parse(row.genres_json || '[]')?.[0]?.tmdb_id) } catch { return 0 }
+    }
+    const pageAsc = order.toLowerCase() === 'asc'
+    const primaryFirstPageSort = (rows: any[]) => {
+      if (sort !== 'popularity') return rows
+      return [...rows].sort((a, b) => {
+        const ap = pageGidSet.has(pagePrimaryGenreId(a)) ? 0 : 1
+        const bp = pageGidSet.has(pagePrimaryGenreId(b)) ? 0 : 1
+        if (ap !== bp) return ap - bp
+        const aVal = Number(a.popularity || 0)
+        const bVal = Number(b.popularity || 0)
+        return pageAsc ? aVal - bVal : bVal - aVal
+      })
+    }
+
     const strictMovies  = strict ? `json_extract(m.genres_json, '$[0].tmdb_id') IN (${genreIdPlaceholders})` : '1=1'
     const strictSeries  = strict ? `json_extract(s.genres_json, '$[0].tmdb_id') IN (${genreIdPlaceholders})` : '1=1'
-    const primaryFirstMovies = sort === 'popularity'
-      ? `CASE WHEN json_extract(m.genres_json, '$[0].tmdb_id') IN (${genreIdPlaceholders}) THEN 0 ELSE 1 END, `
-      : ''
-    const primaryFirstSeries = sort === 'popularity'
-      ? `CASE WHEN json_extract(s.genres_json, '$[0].tmdb_id') IN (${genreIdPlaceholders}) THEN 0 ELSE 1 END, `
-      : ''
 
     /* شرط المحتوى المعتمد — يمنع ظهور أعمال غير مراجعة في الترتيبات غير الافتراضية */
     const approvedClause = isMovie
@@ -148,6 +163,7 @@ export async function GET(
     }
 
     if (type === 'movie') {
+      /* بدون CASE في ORDER BY — الترتيب على العمود الصافي يمشي على الفهرس */
       const rows = await executeAll(
         `SELECT m.id, m.tmdb_id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
                 m.vote_average, m.vote_count, m.popularity, m.release_date, m.release_year,
@@ -157,13 +173,16 @@ export async function GET(
          WHERE ${whereClause}
            AND ${approvedClause}
            AND ${strictMovies}
-         ORDER BY ${primaryFirstMovies}m.${sortColumn} ${sortOrder}
+         ORDER BY m.${sortColumn} ${sortOrder}
          LIMIT ? OFFSET ?`,
-        [...genreParams, ...strictMoviesParams, ...primaryFirstMoviesParams, limit + 1, offset]
+        [...genreParams, ...strictMoviesParams, limit + 1, offset]
       )
       const hasMore = rows.length > limit
       if (hasMore) rows.pop()
-      return NextResponse.json({ genre, content: filterExcludedGenres(rows), pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page } })
+      /* «التصنيف الأساسي أولًا» في JS على صفوف الصفحة فقط (انظر الإفصاح أعلاه) */
+      const content = primaryFirstPageSort(filterExcludedGenres(rows))
+      return NextResponse.json({ genre, content, pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page } },
+        { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } })
 
     } else if (type === 'tv') {
       const rows = await executeAll(
@@ -176,13 +195,16 @@ export async function GET(
            AND ${exclusionSeries}
            AND ${approvedClause}
            AND ${strictSeries}
-         ORDER BY ${primaryFirstSeries}s.${sortColumn} ${sortOrder}
+         ORDER BY s.${sortColumn} ${sortOrder}
          LIMIT ? OFFSET ?`,
-        [...genreParams, ...exclusionSeriesParams, ...strictSeriesParams, ...primaryFirstSeriesParams, limit + 1, offset]
+        [...genreParams, ...exclusionSeriesParams, ...strictSeriesParams, limit + 1, offset]
       )
       const hasMore = rows.length > limit
       if (hasMore) rows.pop()
-      return NextResponse.json({ genre, content: filterExcludedGenres(rows), pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page } })
+      /* «التصنيف الأساسي أولًا» في JS على صفوف الصفحة فقط (انظر الإفصاح أعلاه) */
+      const content = primaryFirstPageSort(filterExcludedGenres(rows))
+      return NextResponse.json({ genre, content, pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page } },
+        { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } })
 
     } else {
       // type === 'all' — الترقيم في SQL (LIMIT/OFFSET لكل جدول) بدل جلب شريحة
