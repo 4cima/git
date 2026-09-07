@@ -113,5 +113,5 @@ export function buildGenreExclusionClause(excludedIds: number[], tableAlias: str
  * المستخدمة في buildGenreParams ("%\"tmdb_id\":ID%")
  */
 export function buildGenreExclusionParams(excludedIds: number[]): string[] {
-  return excludedIds.map(id => `%\"tmdb_id\":${id}%`)
+  return excludedIds.map(id => `%"tmdb_id":${id}%`)
 }
