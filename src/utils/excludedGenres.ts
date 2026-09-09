@@ -56,16 +56,13 @@ export function filterExcludedGenres<T extends { genres_json?: string | unknown[
 
 /**
  * شرط SQL لاستبعاد المحتوى الممنوع من الاستعلام مباشرة
- * (بنفس صيغة المطابقة المستخدمة في buildGenreParams — "%\"tmdb_id\":ID%")
+ * جولة التفريق: مطابقة ID حدّي عبر json_each (لا LIKE نصي).
  *
  * يضمن عدداً ثابتاً لكل صفحة (20 عنصراً) بدلاً من الفلترة بعد الجلب،
  * ويُبقي على filterExcludedGenres في الـ client كـ safety net فقط.
  */
 export const EXCLUDED_GENRE_SQL_CLAUSE =
-  `(genres_json NOT LIKE '%"tmdb_id":10767%'` + // Talk Show
-  ` AND genres_json NOT LIKE '%"tmdb_id":10768%'` + // War & Politics
-  ` AND genres_json NOT LIKE '%"tmdb_id":99%'` + // Documentary
-  ` AND genres_json NOT LIKE '%"tmdb_id":36%')` // History
+  `(NOT EXISTS (SELECT 1 FROM json_each(genres_json) WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)))`
 
 /** مصفوفة الـ IDs (للاستخدام في SQL / debugging) */
 export const EXCLUDED_GENRE_IDS_LIST: readonly number[] = Array.from(EXCLUDED_GENRE_IDS)

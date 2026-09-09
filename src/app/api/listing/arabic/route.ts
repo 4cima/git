@@ -40,11 +40,12 @@ export async function GET(request: NextRequest) {
                 printf('%04d-01-01', release_year) as release_date,
                 'movie' as media_type
          FROM movies
-         WHERE original_language = 'ar'
-           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-           AND slug IS NOT NULL AND tmdb_id IS NOT NULL
-         ORDER BY ${sortColumn} ${order}
-         LIMIT ? OFFSET ?`,
+          WHERE original_language = 'ar'
+            AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+            AND release_year IS NOT NULL AND release_year >= 2000
+            AND slug IS NOT NULL AND tmdb_id IS NOT NULL
+          ORDER BY ${sortColumn} ${order}
+          LIMIT ? OFFSET ?`,
         [limit + 1, offset]
       )
       const hasMore = rows.length > limit
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
        FROM tv_series
        WHERE original_language = 'ar'
          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+         AND first_air_year IS NOT NULL AND first_air_year >= 2000
          AND slug IS NOT NULL AND tmdb_id IS NOT NULL
        ORDER BY ${sortColumn} ${order}
        LIMIT ? OFFSET ?`,

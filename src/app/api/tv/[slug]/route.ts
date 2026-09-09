@@ -17,6 +17,7 @@ export async function GET(
       `SELECT * FROM tv_series
             WHERE (slug = ?${isNumeric ? ' OR tmdb_id = ?' : ''})
               AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+              AND first_air_year IS NOT NULL AND first_air_year >= 2000
             LIMIT 1`,
       isNumeric ? [slug, Number(slug)] : [slug]
     )

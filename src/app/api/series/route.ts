@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
          (تتجنب تضارب صيغة الـslug بين جدول genres و genres_json وتصادم أرقام المعرّفات) */
       const genreRow = await executeFirst('SELECT tmdb_id FROM genres WHERE slug = ? LIMIT 1', [genre]).catch(() => null)
       if (genreRow && genreRow.tmdb_id != null) {
-        conditions.push(`(genres_json LIKE ? OR genres_json LIKE ?)`)
-        args.push(`%"tmdb_id":${genreRow.tmdb_id},%`, `%"tmdb_id":${genreRow.tmdb_id}}%`)
+        conditions.push(`EXISTS (SELECT 1 FROM json_each(tv_series.genres_json) WHERE json_extract(value, '$.tmdb_id') = ?)`)
+        args.push(Number(genreRow.tmdb_id))
       } else {
         conditions.push(`genres_json LIKE ?`)
         args.push(`%"slug":"${genre}"%`)
@@ -107,6 +107,11 @@ export async function GET(request: NextRequest) {
       SELECT 1 FROM json_each(tv_series.genres_json)
       WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
     ))`)
+
+    // بوابة الإخفاء — لا يظهر المحجوب (blocked) ولا المحتاج للمراجعة في أي قائمة أو بحث
+    // جولة السياسة: + فلتر السنة (first_air_year >= 2000) وempty_date مستبعد
+    conditions.push(`(tv_series.filter_status IN ('clean', 'reviewed_approved') OR tv_series.filter_status IS NULL)`)
+    conditions.push(`(tv_series.first_air_year IS NOT NULL AND tv_series.first_air_year >= 2000)`)
     
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
     const validSorts  = ['popularity', 'vote_average', 'vote_count', 'first_air_year']

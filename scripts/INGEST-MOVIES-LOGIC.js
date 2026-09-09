@@ -10,7 +10,7 @@
 require('dotenv').config({ path: './.env.local' })
 const db = require('./services/local-db')
 const { translateContent } = require('./services/translation-service-cjs')
-const { shouldFilterContent, getFilterReason, pickDisplayCertification } = require('./services/content-filter')
+const { shouldFilterContent, getFilterReason, getFilterDetails, shouldRejectWork, isLowQualityContent, pickDisplayCertification } = require('./services/content-filter')
 const { generateCompleteSEO } = require('./services/seo-generator')
 const pLimit = require('p-limit').default || require('p-limit')
 
@@ -423,10 +423,20 @@ async function processMovie(tmdbId) {
     }
 
     // ── فحص السلامة/الجودة قبل أي معالجة أو ترجمة (توفير تكلفة API) ──
-    if (shouldFilterContent(movie)) {
-      const reason = getFilterReason(movie)
+    // جولة السياسة: shouldRejectWork هو بوابة الرفض — المرفوض blocked دائماً بلا اكتمال.
+    const policy = shouldRejectWork(movie, { mediaType: 'movie', mode: 'ingest' })
+    if (policy.reject) {
       db.prepare(`
-        UPDATE movies SET is_filtered = 1, filter_reason = ?, is_complete = 0 
+        UPDATE movies SET is_filtered = 1, filter_status = 'blocked', filter_reason = ?, is_complete = 0
+        WHERE tmdb_id = ?
+      `).run(policy.reason, tmdbId)
+      stats.filtered++ // ← منفصل عن errors
+      return
+    }
+    if (isLowQualityContent(movie).blocked) {
+      const reason = isLowQualityContent(movie).reason
+      db.prepare(`
+        UPDATE movies SET is_filtered = 1, filter_reason = ?, is_complete = 0
         WHERE tmdb_id = ?
       `).run(reason, tmdbId)
       stats.filtered++ // ← منفصل عن errors

@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { MovieGenrePageClient } from '@/components/pages/MovieGenrePageClient'
-import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams } from '@/lib/genre-siblings'
+import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres, EXCLUDED_GENRE_SQL_CLAUSE } from '@/utils/excludedGenres'
 
 interface PageProps {
@@ -47,7 +47,7 @@ export const revalidate = 3600
 export default async function MovieGenrePage({ params }: PageProps) {
   const { slug } = await params
   try {
-    const genre = await executeFirst('SELECT * FROM genres WHERE slug = ? LIMIT 1', [slug])
+    const genre = await executeFirst('SELECT * FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(slug)])
     if (!genre) notFound()
 
     const plainGenre = {
@@ -64,8 +64,8 @@ export default async function MovieGenrePage({ params }: PageProps) {
               vote_average, release_year, overview_ar, genres_json
        FROM movies
        WHERE ${whereClause}
-         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-         AND ${EXCLUDED_GENRE_SQL_CLAUSE}
+          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+          AND release_year IS NOT NULL AND release_year >= 2000
        ORDER BY popularity DESC
        LIMIT 21`,
       genreParams

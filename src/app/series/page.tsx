@@ -36,6 +36,9 @@ async function getInitialSeries() {
       `SELECT id, slug, name_ar, name_en, poster_path, vote_average,
               printf('%04d-01-01', first_air_year) AS first_air_date, genres_json
        FROM list_series_popular
+       WHERE first_air_year >= 2000
+         AND tmdb_id NOT IN (SELECT tmdb_id FROM tv_series WHERE filter_status NOT IN ('clean', 'reviewed_approved')
+           OR first_air_year IS NULL OR first_air_year < 2000)
        ORDER BY rank
        LIMIT ${LISTING_PAGE_SIZE + 1}`,
       []

@@ -13,7 +13,12 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const movie = await executeFirst(
-    'SELECT title_ar, title_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path FROM movies WHERE slug = ? LIMIT 1',
+    `SELECT title_ar, title_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path
+     FROM movies
+     WHERE slug = ?
+       AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+     AND release_year IS NOT NULL AND release_year >= 2000
+     LIMIT 1`,
     [slug]
   )
   // العمل غير موجود → 404 فعلي (كان يُرجع { title: 'فيلم غير موجود' } مع HTTP 200 — سبب الـ soft 404)
@@ -83,7 +88,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MovieDetails({ params }: PageProps) {
   const { slug }    = await params
-  const movieData   = await executeFirst('SELECT * FROM movies WHERE slug = ? LIMIT 1', [slug])
+  /* بوابة الإخفاء: المحجوب (blocked) → 404 نظيف بلا JSON-LD ولا بيانات صفحة */
+  const movieData   = await executeFirst(
+    `SELECT * FROM movies
+     WHERE slug = ?
+       AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+     AND release_year IS NOT NULL AND release_year >= 2000
+     LIMIT 1`,
+    [slug]
+  )
   if (!movieData) notFound()
   const movie       = JSON.parse(JSON.stringify(movieData))
   const jsonLd = {

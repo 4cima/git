@@ -13,7 +13,12 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug }  = await params
   const series    = await executeFirst(
-    'SELECT name_ar, name_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path FROM tv_series WHERE slug = ? LIMIT 1', [slug]
+    `SELECT name_ar, name_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path
+     FROM tv_series
+     WHERE slug = ?
+       AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+     AND first_air_year IS NOT NULL AND first_air_year >= 2000
+     LIMIT 1`, [slug]
   )
   // العمل غير موجود → 404 فعلي (كان يُرجع { title: 'مسلسل غير موجود' } مع HTTP 200 — سبب الـ soft 404)
   if (!series) notFound()
@@ -82,7 +87,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SeriesDetails({ params }: PageProps) {
   const { slug }   = await params
-  const seriesData = await executeFirst('SELECT * FROM tv_series WHERE slug = ? LIMIT 1', [slug])
+  /* بوابة الإخفاء: المحجوب (blocked) → 404 نظيف بلا JSON-LD ولا بيانات صفحة */
+  const seriesData = await executeFirst(
+    `SELECT * FROM tv_series
+     WHERE slug = ?
+       AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+     AND first_air_year IS NOT NULL AND first_air_year >= 2000
+     LIMIT 1`,
+    [slug]
+  )
   if (!seriesData) notFound()
 
   let seasons: any[] = []

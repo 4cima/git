@@ -39,6 +39,19 @@ const ACCOUNT_ID    = process.env.CF_ACCOUNT_ID || '834bca43d616c73db23cf95311cf
 const DATABASE_ID   = process.env.CF_DATABASE_ID || 'b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6';
 const D1_QUERY_URL  = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`;
 
+/**
+ * قائمة إخفاء يدوية (قرارات إدارية موثّقة) — مفصولة حسب النوع (جولة الفجوات):
+ *   TMDB movie id و TV id فضاءان منفصلان — 39688 فيلم like-a-brother محجوب،
+ *   بينما 39688 مسلسل South Beach Tow أُلغي حجبه اليدوي.
+ *   226674 the-adolescent | 943315 taste-of-shellfish
+ *   269955 obsessed-2014  | 27     9-songs
+ * تُزامن دائمًا بـ filter_status='blocked' مهما كانت الحالة المحلية —
+ * منعًا لأي مزامنة قادمة من إعادة إظهارها على D1.
+ */
+const MANUAL_BLOCKED_MOVIE_IDS = new Set([226674, 39688, 943315, 269955, 27]);
+/** فارغة ما لم يوجد مسلسل يدوي مؤكد — جاهزة لأي قرار قادم */
+const MANUAL_BLOCKED_TV_IDS = new Set([]);
+
 const LOCAL_DB_PATH = path.join(__dirname, '../data/4cima-local.db');
 const CHUNK_INIT    = 100;    // statements per D1 request
 const MOVIE_BATCH   = 200;    // rows pulled from local.db at a time
@@ -211,6 +224,12 @@ function buildMovieInsert(tmdb_id) {
   const movie = localDb.prepare('SELECT * FROM movies WHERE tmdb_id = ?').get(tmdb_id);
   if (!movie) return null;
 
+  // قائمة إخفاء يدوية — أفلام فقط (جولة الفجوات: المجموعة حسب النوع)
+  if (MANUAL_BLOCKED_MOVIE_IDS.has(tmdb_id)) {
+    movie.filter_status = 'blocked';
+    movie.is_filtered = 1;
+  }
+
   const genres = localDb.prepare(`
     SELECT g.tmdb_id, g.name_en, g.name_ar, g.slug
     FROM genres g JOIN content_genres cg ON g.tmdb_id = cg.genre_tmdb_id
@@ -270,6 +289,12 @@ ON CONFLICT(tmdb_id) DO UPDATE SET ${upsertCols.map(c => `${c}=excluded.${c}`).j
 function buildSeriesInsert(tmdb_id) {
   const series = localDb.prepare('SELECT * FROM tv_series WHERE tmdb_id = ?').get(tmdb_id);
   if (!series) return null;
+
+  // حارس قائمة الإخفاء اليدوية — مسلسلات فقط (فارغة حاليًا — 39688 TV أُلغي حجبه بجولة الفجوات)
+  if (MANUAL_BLOCKED_TV_IDS.has(tmdb_id)) {
+    series.filter_status = 'blocked';
+    series.is_filtered = 1;
+  }
 
   const genres = localDb.prepare(`
     SELECT g.tmdb_id, g.name_en, g.name_ar, g.slug
@@ -395,36 +420,47 @@ async function main() {
     return;
   }
 
+  // جولة السياسة: --all (FORCE_ALL) معطّل في هذه الجولة — منع تجاوز البوابات
+  if (FORCE_ALL) {
+    console.error('⛔ FORCE_ALL (--all) معطّل في جولة سياسة المحتوى — لا مزامنة شاملة بدون قرار لاحق صريح.');
+    localDb.close();
+    process.exit(1);
+  }
+
   console.log('🚀 بدء المزامنة من Local DB → Cloudflare D1\n');
 
   const syncFilter = FORCE_ALL ? '' : 'AND synced_to_d1 = 0';
+  /* جولة السياسة: دفاع سنة/حالة في WHERE — لا يُزامن pre-2000 ولا empty_date
+     (تعبير السنة المتفق عليه: release_year/first_air_year مع NOT NULL و>= 2000) */
+  const MOVIE_YEAR_GUARD = "AND release_year IS NOT NULL AND release_year >= 2000";
+  const SERIES_YEAR_GUARD = "AND first_air_year IS NOT NULL AND first_air_year >= 2000";
 
   // Get eligible IDs upfront if limit is specified
   let movieIds = null, seriesIds = null;
   if (LIMIT_COUNT) {
     movieIds = localDb.prepare(`
       SELECT tmdb_id FROM movies
-      WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${syncFilter}
+      WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${MOVIE_YEAR_GUARD} ${syncFilter}
       LIMIT ?
     `).all(LIMIT_COUNT).map(r => r.tmdb_id);
     
     seriesIds = localDb.prepare(`
       SELECT tmdb_id FROM tv_series
       WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved')
-        AND slug IS NOT NULL AND slug != '' ${syncFilter}
+        AND slug IS NOT NULL AND slug != '' ${SERIES_YEAR_GUARD} ${syncFilter}
       LIMIT ?
     `).all(LIMIT_COUNT).map(r => r.tmdb_id);
   }
 
   const totalMovies = movieIds ? movieIds.length : localDb.prepare(`
     SELECT COUNT(*) as c FROM movies
-    WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${syncFilter}
+    WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${MOVIE_YEAR_GUARD} ${syncFilter}
   `).get().c;
 
   const totalSeries = seriesIds ? seriesIds.length : localDb.prepare(`
     SELECT COUNT(*) as c FROM tv_series
     WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved')
-      AND slug IS NOT NULL AND slug != '' ${syncFilter}
+      AND slug IS NOT NULL AND slug != '' ${SERIES_YEAR_GUARD} ${syncFilter}
   `).get().c;
 
   console.log(`📊 أفلام جديدة: ${totalMovies.toLocaleString('en-US')}`);
@@ -457,7 +493,8 @@ async function main() {
         // Normal mode: fetch batch from DB
         rows = localDb.prepare(`
           SELECT tmdb_id FROM movies
-          WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${syncFilter}
+          WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved')
+            AND release_year IS NOT NULL AND release_year >= 2000 ${syncFilter}
           LIMIT ?
         `).all(MOVIE_BATCH).map(r => r.tmdb_id);
         if (rows.length === 0) break;
@@ -492,7 +529,8 @@ async function main() {
         rows = localDb.prepare(`
           SELECT tmdb_id FROM tv_series
           WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved')
-            AND slug IS NOT NULL AND slug != '' ${syncFilter}
+            AND slug IS NOT NULL AND slug != ''
+            AND first_air_year IS NOT NULL AND first_air_year >= 2000 ${syncFilter}
           LIMIT ?
         `).all(SERIES_BATCH).map(r => r.tmdb_id);
         if (rows.length === 0) break;

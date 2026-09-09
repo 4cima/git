@@ -81,8 +81,9 @@ async function getHomeData(): Promise<HomeDataResult> {
                 l.vote_average, printf('%04d-01-01', l.release_year) AS release_date, l.overview_ar, l.genres_json
          FROM list_movies_popular l
          LEFT JOIN movies m ON m.tmdb_id = l.tmdb_id
-         WHERE l.release_year >= ${MIN_YEAR}
-         ORDER BY l.rank
+         $1
+            AND l.tmdb_id NOT IN (SELECT tmdb_id FROM movies WHERE filter_status NOT IN ('clean', 'reviewed_approved')
+              OR release_year IS NULL OR release_year < 2000)$2
          LIMIT 60`,
         []
       ),
@@ -93,8 +94,9 @@ async function getHomeData(): Promise<HomeDataResult> {
                 l.vote_average, printf('%04d-01-01', l.first_air_year) AS first_air_date, l.overview_ar, l.genres_json
          FROM list_series_popular l
          LEFT JOIN tv_series t ON t.tmdb_id = l.tmdb_id
-         WHERE l.first_air_year >= ${MIN_YEAR}
-         ORDER BY l.rank
+         $1
+            AND l.tmdb_id NOT IN (SELECT tmdb_id FROM tv_series WHERE filter_status NOT IN ('clean', 'reviewed_approved')
+              OR first_air_year IS NULL OR first_air_year < 2000)$2
          LIMIT 60`,
         []
       ),

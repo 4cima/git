@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeFirst, executeAll } from '@/lib/db'
-import { getGenreWithSiblings, getGenreWithTvSiblings, getTvGenreExclusions, buildGenreWhereClause, buildGenreParams, buildGenreExclusionClause, buildGenreExclusionParams } from '@/lib/genre-siblings'
+import { getGenreWithSiblings, getTvGenreIds, buildTvGenreClause, buildGenreWhereClause, buildGenreParams, buildGenreExclusionClause, buildGenreExclusionParams, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
@@ -27,7 +27,7 @@ export async function GET(
 
     const genre = await executeFirst(
       'SELECT tmdb_id, slug, name_en, name_ar FROM genres WHERE slug = ? LIMIT 1',
-      [slug]
+      [resolveGenreSlug(slug)]
     )
 
     if (!genre) {
@@ -42,18 +42,23 @@ export async function GET(
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
     const sortOrder  = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
 
-    // TV siblings فقط للمسلسلات — TMDB لا يوسم المسلسلات بـ Thriller(53)/Horror(27) بل Mystery(9648)
-    const genreIds = type === 'tv'
-      ? getGenreWithTvSiblings(Number(genre.tmdb_id))
-      : getGenreWithSiblings(Number(genre.tmdb_id))
+    // جولة التفريق: لا توحيد اسم ظاهر — أكشن/مغامرة يحتفظان باسميهما وسلاجهما.
+    // type=tv: يُبنى الشرط عبر buildTvGenreClause (قاعدة تفريق ID حدّي عبر json_each).
+    // type=movie: مطابقة ID صافية عبر getGenreWithSiblings (الآن = [id] فقط).
+    const gid = Number(genre.tmdb_id)
+    const genreIds = type === 'tv' ? getTvGenreIds(gid) : getGenreWithSiblings(gid)
     const whereClause = buildGenreWhereClause(genreIds, 'm')
-    const whereClauseSeries = buildGenreWhereClause(genreIds, 's')
     const genreParams = buildGenreParams(genreIds)
 
-    /* استبعادات أنواع التلفزيون — Horror(27) يستبعد Crime(80) حتى لا تكون
-       صفحة الرعب نسخة من صفحة الإثارة (كلاهما mystery على TMDB).
+    /* جولة التفريق: شرط المسلسلات — قاعدة أكشن×مغامرة/رعب/فانتازيا×ساي-فاي */
+    const tvClause = buildTvGenreClause(gid, 's')
+    const whereClauseSeries = tvClause.sql
+    const genreParamsSeries = tvClause.params
+
+    /* استبعادات أنواع التلفزيون — أُلغيت مع جولة التفريق: القواعد في buildTvGenreClause
+       تضمن صفر تكرار بالبناء (الأكشن يستبعد مشغّلات المغامرة، والفانتازيا تستبعد sci-fi).
        للأفلام لا استبعاد إطلاقًا. */
-    const excludedTvIds = type === 'movie' ? [] : getTvGenreExclusions(Number(genre.tmdb_id))
+    const excludedTvIds: number[] = []
     const exclusionSeries = buildGenreExclusionClause(excludedTvIds, 's')
     const exclusionSeriesParams = buildGenreExclusionParams(excludedTvIds)
 
@@ -94,12 +99,17 @@ export async function GET(
     const strictSeries  = strict ? `json_extract(s.genres_json, '$[0].tmdb_id') IN (${genreIdPlaceholders})` : '1=1'
 
     /* شرط المحتوى المعتمد — يمنع ظهور أعمال غير مراجعة في الترتيبات غير الافتراضية */
+    /* جولة السياسة: + فلتر السنة (>= 2000) على كل فرع — لا ظهور لما قبل 2000 أو بلا سنة */
     const approvedClause = isMovie
-      ? "(m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL)"
-      : "(s.filter_status IN ('clean', 'reviewed_approved') OR s.filter_status IS NULL)"
+      ? "(m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL) AND m.release_year IS NOT NULL AND m.release_year >= 2000"
+      : "(s.filter_status IN ('clean', 'reviewed_approved') OR s.filter_status IS NULL) AND s.first_air_year IS NOT NULL AND s.first_air_year >= 2000"
 
     // Use cache for first page default sort (popularity) movie/tv type with single genre
     // — الكاش يتجاوز في الوضع الصارم (strict=1) لأن رتبته لا تمثل "التصنيف الأساسي فقط"
+    // مفتاح الكاش: للأفلام genreIds[0] = gid؛ ولـTV gid الأصلي لكل صفحة (28/12/14/878/27/10765)
+    // — أكشن (28) ومغامرة (12) لكلٍّ منهما مفتاح مستقل مطابق لقواعد buildTvGenreClause،
+    //   وصفحة الأب action-adventure تقرأ 10759 بقاعدتها الحية has(10759).
+    // حارس المخفي: جداول الكاش مبنية مسبقًا وقد تحوي عناصر حُجبت لاحقًا.
     if (page === 1 && sort === 'popularity' && genreIds.length === 1 && !strict) {
       if (type === 'movie') {
         try {
@@ -110,9 +120,11 @@ export async function GET(
                     'movie' as media_type
              FROM list_movies_genre
              WHERE genre_tmdb_id = ?
+               AND tmdb_id NOT IN (SELECT tmdb_id FROM movies WHERE filter_status = 'blocked'
+                 OR release_year IS NULL OR release_year < 2000)
              ORDER BY rank ASC
              LIMIT ? OFFSET ?`,
-            [genre.tmdb_id, limit + 1, offset]
+            [genreIds[0], limit + 1, offset]
           )
           const hasMore = cacheRows.length > limit
           if (hasMore) cacheRows.pop()
@@ -140,9 +152,11 @@ export async function GET(
                     'tv' as media_type
              FROM list_series_genre
              WHERE genre_tmdb_id = ?
+               AND tmdb_id NOT IN (SELECT tmdb_id FROM tv_series WHERE filter_status = 'blocked'
+                 OR first_air_year IS NULL OR first_air_year < 2000)
              ORDER BY rank ASC
              LIMIT ? OFFSET ?`,
-            [genre.tmdb_id, limit + 1, offset]
+            [gid, limit + 1, offset]
           )
           const hasMore = cacheRows.length > limit
           if (hasMore) cacheRows.pop()
@@ -197,7 +211,7 @@ export async function GET(
            AND ${strictSeries}
          ORDER BY s.${sortColumn} ${sortOrder}
          LIMIT ? OFFSET ?`,
-        [...genreParams, ...exclusionSeriesParams, ...strictSeriesParams, limit + 1, offset]
+        [...genreParamsSeries, ...exclusionSeriesParams, ...strictSeriesParams, limit + 1, offset]
       )
       const hasMore = rows.length > limit
       if (hasMore) rows.pop()
@@ -223,6 +237,7 @@ export async function GET(
                   'movie' as media_type
            FROM movies m WHERE ${whereClause}
              AND (m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL)
+             AND m.release_year IS NOT NULL AND m.release_year >= 2000
              AND ${strictMovies}
            ORDER BY m.${sortColumn} ${sortOrder} LIMIT ? OFFSET ?`,
           [...genreParams, ...strictMoviesParams, perType + 1, perOffset]
@@ -235,9 +250,10 @@ export async function GET(
            FROM tv_series s WHERE ${whereClauseSeries}
              AND ${exclusionSeries}
              AND (s.filter_status IN ('clean', 'reviewed_approved') OR s.filter_status IS NULL)
+             AND s.first_air_year IS NOT NULL AND s.first_air_year >= 2000
              AND ${strictSeries}
            ORDER BY s.${sortColumn} ${sortOrder} LIMIT ? OFFSET ?`,
-          [...genreParams, ...exclusionSeriesParams, ...strictSeriesParams, perType + 1, perOffset]
+          [...genreParamsSeries, ...exclusionSeriesParams, ...strictSeriesParams, perType + 1, perOffset]
         )
       ])
 

@@ -42,6 +42,8 @@ export function homeSectionGenreQuery(
       FROM list_movies_genre l
       WHERE l.genre_tmdb_id IN (${moviePlaceholders})
         AND l.release_year >= ?
+        AND l.tmdb_id NOT IN (SELECT tmdb_id FROM movies WHERE filter_status = 'blocked'
+          OR release_year IS NULL OR release_year < 2000)
       ORDER BY l.popularity DESC
       LIMIT ?
     )
@@ -51,6 +53,8 @@ export function homeSectionGenreQuery(
       FROM list_series_genre s
       WHERE s.genre_tmdb_id IN (${seriesPlaceholders})
         AND s.first_air_year >= ?
+        AND s.tmdb_id NOT IN (SELECT tmdb_id FROM tv_series WHERE filter_status = 'blocked'
+          OR first_air_year IS NULL OR first_air_year < 2000)
       ORDER BY s.popularity DESC
       LIMIT ?
     )`

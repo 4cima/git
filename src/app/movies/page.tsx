@@ -36,6 +36,9 @@ async function getInitialMovies() {
       `SELECT id, slug, title_ar, title_en, poster_path, vote_average, 
               printf('%04d-01-01', release_year) AS release_date, genres_json
        FROM list_movies_popular
+       WHERE release_year >= 2000
+         AND tmdb_id NOT IN (SELECT tmdb_id FROM movies WHERE filter_status NOT IN ('clean', 'reviewed_approved')
+           OR release_year IS NULL OR release_year < 2000)
        ORDER BY rank
        LIMIT ${LISTING_PAGE_SIZE + 1}`,
       []

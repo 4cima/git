@@ -46,6 +46,7 @@ export async function GET(
        FROM tv_series 
        WHERE tmdb_id IN (${placeholders})
          AND (filter_status IS NULL OR filter_status IN ('clean', 'reviewed_approved'))
+         AND (first_air_year IS NOT NULL AND first_air_year >= 2000)
        LIMIT 12`,
       ids
     )

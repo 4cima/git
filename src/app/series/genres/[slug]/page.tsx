@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { SeriesGenrePageClient } from '@/components/pages/SeriesGenrePageClient'
-import { getGenreWithTvSiblings, getTvGenreExclusions, buildGenreWhereClause, buildGenreParams, buildGenreExclusionClause, buildGenreExclusionParams } from '@/lib/genre-siblings'
+import { buildTvGenreClause, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres, EXCLUDED_GENRE_SQL_CLAUSE } from '@/utils/excludedGenres'
 
 interface PageProps {
@@ -12,8 +12,9 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   try {
-    const genre = await executeFirst('SELECT name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [slug])
+    const genre = await executeFirst('SELECT tmdb_id, name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(slug)])
     if (!genre) return { title: 'تصنيف غير موجود' }
+    /* جولة التفريق: الاسم الظاهر = اسم التصنيف كما هو (أكشن / مغامرة) — لا توحيد */
     const genreName = String(genre.name_ar || genre.name_en || 'تصنيف')
     const genreTitle = `مسلسلات ${genreName}`
     const genreDescription = `استكشف أفضل مسلسلات ${genreName} - جودة عالية ومترجم`
@@ -47,7 +48,7 @@ export const revalidate = 3600
 export default async function SeriesGenrePage({ params }: PageProps) {
   const { slug } = await params
   try {
-    const genre = await executeFirst('SELECT * FROM genres WHERE slug = ? LIMIT 1', [slug])
+    const genre = await executeFirst('SELECT * FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(slug)])
     if (!genre) notFound()
 
     const plainGenre = {
@@ -55,19 +56,22 @@ export default async function SeriesGenrePage({ params }: PageProps) {
       name_en: genre.name_en, name_ar: genre.name_ar, slug: genre.slug
     }
 
-    const genreIds = getGenreWithTvSiblings(Number(genre.tmdb_id))
-    const excludedTvIds = getTvGenreExclusions(Number(genre.tmdb_id))
-    const whereClause = buildGenreWhereClause(genreIds)
-    const genreParams = [...buildGenreParams(genreIds), ...buildGenreExclusionParams(excludedTvIds)]
+    /* جولة التفريق: صفحة التصنيف تبقى على سلاجها واسمها الأصليين — أكشن / مغامرة.
+       الاستعلام يُبنى بقاعدة تفريق ID حدّي عبر json_each (buildTvGenreClause). */
+    const displayGenre = plainGenre
+
+    const gid = Number(genre.tmdb_id)
+    const tvClause = buildTvGenreClause(gid)
+    const whereClause = tvClause.sql
+    const genreParams = tvClause.params
 
     const initialSeries = await executeAll(
       `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, backdrop_path,
               vote_average, first_air_year, overview_ar, genres_json
        FROM tv_series
        WHERE ${whereClause}
-         AND ${buildGenreExclusionClause(excludedTvIds)}
          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-         AND ${EXCLUDED_GENRE_SQL_CLAUSE}
+         AND first_air_year IS NOT NULL AND first_air_year >= 2000
        ORDER BY popularity DESC
        LIMIT 21`,
       genreParams
@@ -93,7 +97,7 @@ export default async function SeriesGenrePage({ params }: PageProps) {
             <div key={show.id} data-series-title={show.name_ar || show.name_en} />
           ))}
         </div>
-        <SeriesGenrePageClient genre={plainGenre} slug={slug} initialSeries={enhancedSeries} initialHasMore={hasMore} />
+        <SeriesGenrePageClient genre={displayGenre} slug={slug} initialSeries={enhancedSeries} initialHasMore={hasMore} />
       </>
     )
   } catch { notFound() }

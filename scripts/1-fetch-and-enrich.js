@@ -5,7 +5,7 @@ const db = require('./services/local-db');
 const { generateUniqueSlug } = require('./services/slug-generator');
 const { fetchMovieDetails, fetchSeriesDetails, fetchSeasonDetails } = require('./services/tmdb-api');
 const { translateField } = require('./services/translation-service');
-const { shouldFilterContent, getFilterReason, getFilterDetails } = require('./services/content-filter');
+const { shouldFilterContent, getFilterReason, getFilterDetails, shouldRejectWork } = require('./services/content-filter');
 const { getGenreNameAr } = require('./services/genre-translations');
 
 const CONCURRENCY = 40;
@@ -43,7 +43,18 @@ async function processMovie(tmdbId) {
       stats.moviesNotFound++; return;
     }
 
-    const filterDetails = getFilterDetails(movie);
+    /* جولة السياسة: بوابة shouldRejectWork أولاً — المرفوض لا يُنظَّف ولا يكتمل أبداً */
+    const policy = shouldRejectWork(movie, { mediaType: 'movie', mode: 'ingest' });
+    if (policy.reject) {
+      db.prepare(`
+        UPDATE movies
+        SET is_fetched=1, is_filtered=1, filter_status='blocked', filter_reason=?, is_complete=0, updated_at=datetime('now')
+        WHERE tmdb_id=?
+      `).run(policy.reason, tmdbId);
+      stats.moviesFiltered++; return;
+    }
+
+    const filterDetails = getFilterDetails(movie, { mediaType: 'movie', mode: 'ingest' });
     
     if (filterDetails.blocked) {
       if (filterDetails.needsReview) {
@@ -156,7 +167,18 @@ async function processSeries(tmdbId) {
       stats.seriesNotFound++; return;
     }
 
-    const filterDetails = getFilterDetails(series);
+    /* جولة السياسة: بوابة shouldRejectWork أولاً — المرفوض لا يُنظَّف ولا يكتمل أبداً */
+    const policy = shouldRejectWork(series, { mediaType: 'tv', mode: 'ingest' });
+    if (policy.reject) {
+      db.prepare(`
+        UPDATE tv_series
+        SET is_fetched=1, is_filtered=1, filter_status='blocked', filter_reason=?, is_complete=0, updated_at=datetime('now')
+        WHERE tmdb_id=?
+      `).run(policy.reason, tmdbId);
+      stats.seriesFiltered++; return;
+    }
+
+    const filterDetails = getFilterDetails(series, { mediaType: 'tv', mode: 'ingest' });
     
     if (filterDetails.blocked) {
       if (filterDetails.needsReview) {

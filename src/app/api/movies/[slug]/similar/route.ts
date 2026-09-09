@@ -46,6 +46,7 @@ export async function GET(
        FROM movies 
        WHERE tmdb_id IN (${placeholders})
          AND (filter_status IS NULL OR filter_status IN ('clean', 'reviewed_approved'))
+         AND (release_year IS NOT NULL AND release_year >= 2000)
        LIMIT 12`,
       ids
     )

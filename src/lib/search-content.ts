@@ -89,6 +89,7 @@ async function cascadingSearch(query: string, queryLength: number) {
            JOIN movies_fts ON movies.id = movies_fts.rowid
            WHERE movies_fts MATCH ?
              AND (movies.filter_status IN ('clean', 'reviewed_approved') OR movies.filter_status IS NULL)
+           AND (movies.release_year IS NOT NULL AND movies.release_year >= 2000)
            ORDER BY rank
            LIMIT 30`,
           [searchTerm]
@@ -102,6 +103,7 @@ async function cascadingSearch(query: string, queryLength: number) {
            JOIN series_fts ON tv_series.id = series_fts.rowid
            WHERE series_fts MATCH ?
              AND (tv_series.filter_status IN ('clean', 'reviewed_approved') OR tv_series.filter_status IS NULL)
+           AND (tv_series.first_air_year IS NOT NULL AND tv_series.first_air_year >= 2000)
            ORDER BY rank
            LIMIT 30`,
           [searchTerm]
@@ -138,6 +140,8 @@ export async function searchContent(q: string): Promise<SearchContentResult> {
          AND (LOWER(title_ar) LIKE LOWER(?) || '%' OR LOWER(title_en) LIKE LOWER(?) || '%'
            OR LOWER(name_ar)  LIKE LOWER(?) || '%' OR LOWER(name_en)  LIKE LOWER(?) || '%')
          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+         AND ((media_type = 'movie' AND release_year IS NOT NULL AND release_year >= 2000)
+           OR (media_type = 'tv' AND first_air_year IS NOT NULL AND first_air_year >= 2000))
        ORDER BY
          CASE WHEN LOWER(title_ar) = LOWER(?) OR LOWER(title_en) = LOWER(?)
                    OR LOWER(name_ar) = LOWER(?) OR LOWER(name_en) = LOWER(?) THEN 1

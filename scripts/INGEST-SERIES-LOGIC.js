@@ -9,7 +9,7 @@
 require('dotenv').config({ path: './.env.local' })
 const db = require('./services/local-db')
 const { translateContent } = require('./services/translation-service-cjs')
-const { shouldFilterContent, getFilterReason, pickDisplayCertification } = require('./services/content-filter')
+const { shouldFilterContent, getFilterReason, getFilterDetails, shouldRejectWork, isLowQualityContent, pickDisplayCertification } = require('./services/content-filter')
 const { generateCompleteSEO } = require('./services/seo-generator')
 const pLimit = require('p-limit').default || require('p-limit')
 
@@ -440,11 +440,20 @@ async function processSeries(tmdbId) {
     }
 
     // ── فحص السلامة/الجودة قبل أي معالجة أو ترجمة ──
-    if (shouldFilterContent(series)) {
-      const reason = getFilterReason(series)
+    // جولة السياسة: shouldRejectWork هو بوابة الرفض — المرفوض blocked دائماً بلا اكتمال.
+    const policy = shouldRejectWork(series, { mediaType: 'tv', mode: 'ingest' })
+    if (policy.reject) {
       db.prepare(`
-        UPDATE tv_series 
-        SET is_filtered = 1, filter_reason = ?, is_complete = 0 
+        UPDATE tv_series SET is_filtered = 1, filter_status = 'blocked', filter_reason = ?, is_complete = 0
+        WHERE tmdb_id = ?
+      `).run(policy.reason, tmdbId)
+      stats.filtered++ // ← منفصل عن errors
+      return
+    }
+    if (isLowQualityContent(series).blocked) {
+      const reason = isLowQualityContent(series).reason
+      db.prepare(`
+        UPDATE tv_series SET is_filtered = 1, filter_reason = ?, is_complete = 0
         WHERE tmdb_id = ?
       `).run(reason, tmdbId)
       stats.filtered++ // ← منفصل عن errors

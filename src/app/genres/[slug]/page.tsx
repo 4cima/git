@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { GenreOverviewPageClient } from '@/components/pages/GenreOverviewPageClient'
-import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams } from '@/lib/genre-siblings'
+import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams, buildTvGenreClause, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 interface PageProps {
@@ -45,31 +45,35 @@ export const revalidate = 3600
 export default async function GenreOverviewPage({ params }: PageProps) {
   const { slug } = await params
   try {
-    const genre = await executeFirst('SELECT * FROM genres WHERE slug = ? LIMIT 1', [slug])
+    const genre = await executeFirst('SELECT * FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(slug)])
     if (!genre) notFound()
 
     const genreIds = getGenreWithSiblings(Number(genre.tmdb_id))
-    const whereClause = buildGenreWhereClause(genreIds)
-    const genreParams = buildGenreParams(genreIds)
+    const movieWhere = buildGenreWhereClause(genreIds)
+    const movieParams = buildGenreParams(genreIds)
+    /* جولة التفريق: استعلام المسلسلات في الصفحة العامة يتبع قاعدة تفريق TV */
+    const tvClause = buildTvGenreClause(Number(genre.tmdb_id))
 
     const [topMovies, topSeries] = await Promise.all([
       executeAll(
         `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, vote_average, release_year, overview_ar, genres_json
          FROM movies
-         WHERE ${whereClause}
+         WHERE ${movieWhere}
            AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+           AND release_year IS NOT NULL AND release_year >= 2000
            AND poster_path IS NOT NULL
          ORDER BY popularity DESC LIMIT 12`,
-        genreParams
+        movieParams
       ),
       executeAll(
         `SELECT id, tmdb_id, slug, name_ar as title_ar, name_en as title_en, poster_path, vote_average, first_air_year as release_year, overview_ar, genres_json
          FROM tv_series
-         WHERE ${whereClause}
+         WHERE ${tvClause.sql}
            AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+           AND first_air_year IS NOT NULL AND first_air_year >= 2000
            AND poster_path IS NOT NULL
          ORDER BY popularity DESC LIMIT 12`,
-        genreParams
+        tvClause.params
       )
     ])
 

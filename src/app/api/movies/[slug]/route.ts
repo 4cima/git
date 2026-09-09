@@ -20,6 +20,7 @@ export async function GET(
       `SELECT * FROM movies
             WHERE (slug = ?${isNumeric ? ' OR tmdb_id = ?' : ''})
               AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+              AND release_year IS NOT NULL AND release_year >= 2000
             LIMIT 1`,
       isNumeric ? [slug, Number(slug)] : [slug]
     )
