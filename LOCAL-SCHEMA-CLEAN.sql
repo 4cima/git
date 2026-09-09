@@ -394,3 +394,15 @@ CREATE TRIGGER IF NOT EXISTS series_fts_update_ins AFTER UPDATE ON tv_series
 BEGIN
   INSERT INTO series_fts(rowid, name_ar, name_en) VALUES (new.tmdb_id, new.name_ar, new.name_en);
 END;
+
+-- ---------------------------------------------------------------------------
+-- TRANSLATION CACHE (DeepLX + fallback providers — shared with ingest scripts)
+-- مفتاح الكاش: (source_text, target_lang) — target_lang بحروف صغيرة ('ar')
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS translation_cache (
+  source_text      TEXT NOT NULL,
+  target_lang      TEXT NOT NULL DEFAULT 'ar',
+  translated_text  TEXT,
+  created_at       TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (source_text, target_lang)
+);

@@ -4,9 +4,13 @@ const pLimit = pLimitModule.default || pLimitModule;
 const db = require('./services/local-db');
 const { generateUniqueSlug } = require('./services/slug-generator');
 const { fetchMovieDetails, fetchSeriesDetails, fetchSeasonDetails } = require('./services/tmdb-api');
-const { translateField } = require('./services/translation-service');
 const { shouldFilterContent, getFilterReason, getFilterDetails, shouldRejectWork } = require('./services/content-filter');
 const { getGenreNameAr } = require('./services/genre-translations');
+
+// DeepLX Worker (مجاني، بدون مفتاح) — منشور على Cloudflare Workers (الجزء أ)
+// ملاحظة: ريبو Atticus6/deeplx-worker يستخدم /hi/translate بحقول camelCase + ترويسة Bearer
+const DEEPLX_URL = 'https://deeplx-worker.iaaelsadek.workers.dev/hi/translate';
+const DEEPLX_TOKEN = 'test123';
 
 const CONCURRENCY = 40;
 const limiter = pLimit(CONCURRENCY);
@@ -16,12 +20,66 @@ const limitArg = args.find(a => a.startsWith('--limit'));
 const BATCH_LIMIT = limitArg ? parseInt(limitArg.split('=')[1] || args[args.indexOf(limitArg) + 1], 10) : null;
 const typeArg = args.find(a => a.startsWith('--type'));
 const TYPE_FILTER = typeArg ? typeArg.split('=')[1] : 'all';
+const startIdArg = args.find(a => a.startsWith('--start-id'));
+const START_ID = startIdArg ? parseInt(startIdArg.split('=')[1] || args[args.indexOf(startIdArg) + 1], 10) : null;
 
 const stats = { moviesProcessed: 0, moviesFiltered: 0, moviesNotFound: 0, moviesErrors: 0,
   seriesProcessed: 0, seriesFiltered: 0, seriesNotFound: 0, seriesErrors: 0,
   moviesKeywordsEmpty: 0, seriesKeywordsEmpty: 0, startTime: Date.now() };
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── الترجمة عبر DeepLX (بدلاً من Groq/سلسلة المزودات) ────────
+async function translateWithDeepLX(text, targetLang = 'AR') {
+  try {
+    const response = await fetch(DEEPLX_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPLX_TOKEN}`
+      },
+      body: JSON.stringify({
+        sourceLang: 'EN',
+        targetLang: targetLang,
+        text: text
+      })
+    });
+    const result = await response.json();
+    if (result.code === 200) {
+      return result.data;
+    } else {
+      console.warn(`DeepLX error: ${result.message || 'Unknown error'}`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`DeepLX fetch error: ${error.message}`);
+    return null;
+  }
+}
+
+// ─── كاش الترجمة (SQLite translation_cache — نفس جدول translation-service) ───
+async function translateWithCache(text, targetLang = 'AR') {
+  try {
+    // مفتاح الكاش بحروف صغيرة ('ar') لمطابقة 584k صف مترجم موجود مسبقاً
+    const cacheLang = targetLang.toLowerCase();
+    // 1) البحث في الكاش
+    const cached = db.prepare('SELECT translated_text FROM translation_cache WHERE source_text = ? AND target_lang = ?').get(text, cacheLang);
+    if (cached) return cached.translated_text;
+
+    // 2) الترجمة عبر DeepLX
+    const translation = await translateWithDeepLX(text, targetLang);
+
+    // 3) حفظ في الكاش (INSERT OR REPLACE — نفس نمط translation-service)
+    if (translation) {
+      db.prepare('INSERT OR REPLACE INTO translation_cache (source_text, target_lang, translated_text) VALUES (?, ?, ?)')
+        .run(text, cacheLang, translation);
+    }
+    return translation;
+  } catch (error) {
+    console.warn(`Cache/translate error: ${error.message}`);
+    return null;
+  }
+}
 
 function updateProgress(scriptName, updates) {
   const existing = db.prepare(`SELECT * FROM ingestion_progress WHERE script_name = ?`).get(scriptName);
@@ -78,15 +136,17 @@ async function processMovie(tmdbId) {
     }
 
     const title_en = movie.title || movie.original_title;
-    const title_ar = await translateField(title_en, movie.translations?.translations, 'title');
-    const overview_ar = await translateField(movie.overview, movie.translations?.translations, 'overview');
+    /* الترجمة عبر DeepLX + كاش SQLite — عند الفشل يبقى الحقل null ويُعتمد الإنجليزية في شرط الاكتمال */
+    const title_ar = await translateWithCache(title_en);
+    const overview_ar = await translateWithCache(movie.overview);
     
     // Exclude content genres from sync: news, talk, documentary, reality (if single-genre)
     const excludedGenreSlugs = ['news', 'talk', 'documentary', 'reality'];
     const genreSlugs = (movie.genres || []).map(g => g.slug || g.name?.toLowerCase().replace(/\s+/g, '-'));
     const isSingleExcludedGenre = genreSlugs.length === 1 && excludedGenreSlugs.includes(genreSlugs[0]);
     
-    const isComplete = (title_ar && movie.vote_average >= 5 && !isSingleExcludedGenre) ? 1 : 0;
+    /* is_complete لا يتأثر سلباً بفشل الترجمة — يعتمد الإنجليزية كثاني خيار للعنوان */
+    const isComplete = ((title_ar || title_en) && movie.vote_average >= 5 && !isSingleExcludedGenre) ? 1 : 0;
 
     const release_year = movie.release_date ? parseInt(movie.release_date.split('-')[0], 10) : null;
     const primary_genre = movie.genres?.[0]?.name?.toLowerCase() || null;
@@ -209,15 +269,17 @@ async function processSeries(tmdbId) {
     }
 
     const name_en = series.name || series.original_name;
-    const name_ar = await translateField(name_en, series.translations?.translations, 'name');
-    const overview_ar = await translateField(series.overview, series.translations?.translations, 'overview');
+    /* الترجمة عبر DeepLX + كاش SQLite — عند الفشل يبقى الحقل null ويُعتمد الإنجليزية في شرط الاكتمال */
+    const name_ar = await translateWithCache(name_en);
+    const overview_ar = await translateWithCache(series.overview);
     
     // Exclude content genres from sync: news, talk, documentary, reality (if single-genre)
     const excludedGenreSlugs = ['news', 'talk', 'documentary', 'reality'];
     const genreSlugs = (series.genres || []).map(g => g.slug || g.name?.toLowerCase().replace(/\s+/g, '-'));
     const isSingleExcludedGenre = genreSlugs.length === 1 && excludedGenreSlugs.includes(genreSlugs[0]);
     
-    const isComplete = (name_ar && series.vote_average >= 5 && !isSingleExcludedGenre) ? 1 : 0;
+    /* is_complete لا يتأثر سلباً بفشل الترجمة — يعتمد الإنجليزية كثاني خيار للاسم */
+    const isComplete = ((name_ar || name_en) && series.vote_average >= 5 && !isSingleExcludedGenre) ? 1 : 0;
 
     const first_air_year = series.first_air_date ? parseInt(series.first_air_date.split('-')[0], 10) : null;
     const primary_genre = series.genres?.[0]?.name?.toLowerCase() || null;
@@ -348,7 +410,9 @@ async function main() {
   console.log(`🚀 بدء السحب | Concurrency: ${CONCURRENCY} | Limit: ${BATCH_LIMIT || 'الكل'} | Type: ${TYPE_FILTER}\n`);
 
   if (TYPE_FILTER === 'all' || TYPE_FILTER === 'movies') {
-    let q = `SELECT tmdb_id FROM movies WHERE is_fetched = 0 ORDER BY tmdb_id`;
+    let q = `SELECT tmdb_id FROM movies WHERE is_fetched = 0`;
+    if (START_ID) q += ` AND tmdb_id >= ${START_ID}`;
+    q += ` ORDER BY tmdb_id`;
     if (BATCH_LIMIT) q += ` LIMIT ${BATCH_LIMIT}`;
     const ids = db.prepare(q).all();
     console.log(`🎬 ${ids.length.toLocaleString()} فيلم في الانتظار`);
@@ -356,7 +420,9 @@ async function main() {
   }
 
   if (TYPE_FILTER === 'all' || TYPE_FILTER === 'tv') {
-    let q = `SELECT tmdb_id FROM tv_series WHERE is_fetched = 0 ORDER BY tmdb_id`;
+    let q = `SELECT tmdb_id FROM tv_series WHERE is_fetched = 0`;
+    if (START_ID) q += ` AND tmdb_id >= ${START_ID}`;
+    q += ` ORDER BY tmdb_id`;
     if (BATCH_LIMIT) q += ` LIMIT ${BATCH_LIMIT}`;
     const ids = db.prepare(q).all();
     console.log(`📺 ${ids.length.toLocaleString()} مسلسل في الانتظار`);
