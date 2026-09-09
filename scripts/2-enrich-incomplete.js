@@ -13,9 +13,13 @@ const BATCH_SIZE = limitArg ? parseInt(limitArg.split('=')[1] || args[args.index
 const stats = { moviesFixed: 0, moviesStillFailed: 0, moviesPolicyBlocked: 0, seriesFixed: 0, seriesStillFailed: 0, seriesPolicyBlocked: 0 };
 
 /* جولة السياسة: لا يكتمل أبداً ما ترفضه shouldRejectWork على الصف المخزون.
-   ملاحظة: عمود keywords غير مخزّن محلياً — باب keyword/erotic_genre غير مُقيَّم هنا
-   (يُقيَّم فقط على أ أبواب السنة/التاريخ/اليدوي/الشهادة/الشركات/النص). */
+   جولة keywords: الكلمات المخزّنة في keywords_json تُحمَّل في content قبل الفحص —
+   باب keyword/erotic_genre يعمل الآن من التخزين (بلا نداء حي بعد الإثراء). */
 function policyRejectFromRow(row, mediaType) {
+  let storedKeywords = []
+  if (row.keywords_json) {
+    try { storedKeywords = JSON.parse(row.keywords_json) || [] } catch { storedKeywords = [] }
+  }
   const content = mediaType === 'tv'
     ? {
         id: row.tmdb_id, name: row.name_en, name_original: row.name_original,
@@ -23,6 +27,7 @@ function policyRejectFromRow(row, mediaType) {
         first_air_date: row.first_air_date, first_air_year: row.first_air_year,
         age_rating: row.age_rating, production_companies: row.production_companies,
         vote_count: row.vote_count,
+        keywords: { results: storedKeywords },
       }
     : {
         id: row.tmdb_id, title: row.title_en, title_original: row.title_original,
@@ -30,6 +35,7 @@ function policyRejectFromRow(row, mediaType) {
         release_date: row.release_date, release_year: row.release_year,
         runtime: row.runtime, age_rating: row.age_rating,
         production_companies: row.production_companies, vote_count: row.vote_count,
+        keywords: { keywords: storedKeywords },
       }
   if (typeof content.production_companies === 'string') {
     try { content.production_companies = JSON.parse(content.production_companies) } catch { content.production_companies = [] }
@@ -90,11 +96,11 @@ async function main() {
   console.log('🚀 إكمال السجلات الناقصة\n');
 
   // جولة السياسة: لا يُلمس المحجوب (blocked) ولا المرفوض — فقط النظيف/بحاجة مراجعة/بلا حالة
-  const movies = db.prepare(`SELECT tmdb_id, title_en, title_original, overview_en, title_ar, overview_ar, release_date, release_year, runtime, vote_count, age_rating, production_companies FROM movies WHERE is_complete=0 AND is_filtered=0 AND is_fetched=1 AND (filter_status IS NULL OR filter_status IN ('clean','needs_review')) LIMIT ?`).all(BATCH_SIZE);
+  const movies = db.prepare(`SELECT tmdb_id, title_en, title_original, overview_en, title_ar, overview_ar, release_date, release_year, runtime, vote_count, age_rating, production_companies, keywords_json FROM movies WHERE is_complete=0 AND is_filtered=0 AND is_fetched=1 AND (filter_status IS NULL OR filter_status IN ('clean','needs_review')) LIMIT ?`).all(BATCH_SIZE);
   console.log(`🎬 ${movies.length} فيلم ناقص`);
   await Promise.all(movies.map(m => limiter(() => enrichMovie(m))));
 
-  const series = db.prepare(`SELECT tmdb_id, name_en, name_original, overview_en, name_ar, overview_ar, first_air_date, first_air_year, vote_count, age_rating, production_companies FROM tv_series WHERE is_complete=0 AND is_filtered=0 AND is_fetched=1 AND (filter_status IS NULL OR filter_status IN ('clean','needs_review')) LIMIT ?`).all(BATCH_SIZE);
+  const series = db.prepare(`SELECT tmdb_id, name_en, name_original, overview_en, name_ar, overview_ar, first_air_date, first_air_year, vote_count, age_rating, production_companies, keywords_json FROM tv_series WHERE is_complete=0 AND is_filtered=0 AND is_fetched=1 AND (filter_status IS NULL OR filter_status IN ('clean','needs_review')) LIMIT ?`).all(BATCH_SIZE);
   console.log(`📺 ${series.length} مسلسل ناقص`);
   await Promise.all(series.map(s => limiter(() => enrichSeries(s))));
 

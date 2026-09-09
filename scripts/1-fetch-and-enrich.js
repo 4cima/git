@@ -18,7 +18,8 @@ const typeArg = args.find(a => a.startsWith('--type'));
 const TYPE_FILTER = typeArg ? typeArg.split('=')[1] : 'all';
 
 const stats = { moviesProcessed: 0, moviesFiltered: 0, moviesNotFound: 0, moviesErrors: 0,
-  seriesProcessed: 0, seriesFiltered: 0, seriesNotFound: 0, seriesErrors: 0, startTime: Date.now() };
+  seriesProcessed: 0, seriesFiltered: 0, seriesNotFound: 0, seriesErrors: 0,
+  moviesKeywordsEmpty: 0, seriesKeywordsEmpty: 0, startTime: Date.now() };
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -94,6 +95,13 @@ async function processMovie(tmdbId) {
     const usRelease = movie.release_dates?.results?.find(r => r.iso_3166_1 === 'US');
     if (usRelease?.release_dates?.[0]?.certification) age_rating = usRelease.release_dates[0].certification;
 
+    /* جولة keywords: تخزين كلمات TMDB ([[{"id":1,"name":"..."}]]) وقت الإثراء —
+       نفس الشكل محلياً وعلى D1. الكلمات تُحفظ في نفس INSERT قبل علم complete،
+       وإن كانت فارغة يُسجَّل keywords_empty صراحة في العدّاد. */
+    const keywordsList = movie.keywords?.keywords || []
+    const keywordsJson = keywordsList.length > 0 ? JSON.stringify(keywordsList) : null
+    if (!keywordsJson) stats.moviesKeywordsEmpty++
+
     const insertMovie = db.transaction(() => {
       const slug = generateUniqueSlug(db, title_en, release_year, primary_genre, 'movies');
 
@@ -102,9 +110,9 @@ async function processMovie(tmdbId) {
           tmdb_id, slug, title_en, title_ar, title_original, overview_en, overview_ar,
           poster_path, backdrop_path, release_date, release_year, runtime,
           vote_average, vote_count, popularity, trailer_key, imdb_id,
-          original_language, country_of_origin, primary_genre, age_rating,
+          original_language, country_of_origin, primary_genre, age_rating, keywords_json,
           is_fetched, is_filtered, filter_status, is_complete, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,'clean',?,datetime('now'))
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,'clean',?,datetime('now'))
         ON CONFLICT(tmdb_id) DO UPDATE SET
           slug=excluded.slug, title_en=excluded.title_en, title_ar=excluded.title_ar,
           title_original=excluded.title_original, overview_en=excluded.overview_en,
@@ -115,14 +123,14 @@ async function processMovie(tmdbId) {
           popularity=excluded.popularity, trailer_key=excluded.trailer_key,
           imdb_id=excluded.imdb_id, original_language=excluded.original_language,
           country_of_origin=excluded.country_of_origin, primary_genre=excluded.primary_genre,
-          age_rating=excluded.age_rating, is_fetched=1, is_filtered=0, filter_status='clean',
+          age_rating=excluded.age_rating, keywords_json=excluded.keywords_json, is_fetched=1, is_filtered=0, filter_status='clean',
           is_complete=excluded.is_complete, updated_at=datetime('now')
       `).run(
         tmdbId, slug, title_en, title_ar || null, movie.original_title, movie.overview, overview_ar || null,
         movie.poster_path, movie.backdrop_path, movie.release_date, release_year, movie.runtime,
         movie.vote_average, movie.vote_count, movie.popularity, trailer?.key || null, movie.imdb_id,
         movie.original_language, movie.production_countries?.[0]?.iso_3166_1 || null,
-        primary_genre, age_rating, isComplete
+        primary_genre, age_rating, keywordsJson, isComplete
       );
 
       for (const genre of movie.genres || []) {
@@ -228,6 +236,11 @@ async function processSeries(tmdbId) {
       await sleep(50);
     }
 
+    /* جولة keywords: مسلسلات — شكل TMDB TV هو keywords.results (نخزّن [{id,name}] نفسه) */
+    const keywordsList = series.keywords?.results || []
+    const keywordsJson = keywordsList.length > 0 ? JSON.stringify(keywordsList) : null
+    if (!keywordsJson) stats.seriesKeywordsEmpty++
+
     const insertSeries = db.transaction(() => {
       const slug = generateUniqueSlug(db, name_en, first_air_year, primary_genre, 'tv_series');
 
@@ -237,8 +250,9 @@ async function processSeries(tmdbId) {
           poster_path, backdrop_path, first_air_date, first_air_year, last_air_date,
           number_of_seasons, number_of_episodes, status, vote_average, vote_count,
           popularity, trailer_key, imdb_id, original_language, country_of_origin,
-          primary_genre, age_rating, is_fetched, is_filtered, filter_status, is_complete, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,'clean',?,datetime('now'))
+          primary_genre, age_rating, keywords_json,
+          is_fetched, is_filtered, filter_status, is_complete, updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,'clean',?,datetime('now'))
         ON CONFLICT(tmdb_id) DO UPDATE SET
           slug=excluded.slug, name_en=excluded.name_en, name_ar=excluded.name_ar,
           name_original=excluded.name_original, overview_en=excluded.overview_en,
@@ -250,6 +264,7 @@ async function processSeries(tmdbId) {
           popularity=excluded.popularity, trailer_key=excluded.trailer_key, imdb_id=excluded.imdb_id,
           original_language=excluded.original_language, country_of_origin=excluded.country_of_origin,
           primary_genre=excluded.primary_genre, age_rating=excluded.age_rating,
+          keywords_json=excluded.keywords_json,
           is_fetched=1, is_filtered=0, filter_status='clean', is_complete=excluded.is_complete, updated_at=datetime('now')
       `).run(
         tmdbId, slug, name_en, name_ar || null, series.original_name, series.overview, overview_ar || null,
@@ -257,7 +272,7 @@ async function processSeries(tmdbId) {
         series.number_of_seasons, series.number_of_episodes, status, series.vote_average, series.vote_count,
         series.popularity, trailer?.key || null, series.external_ids?.imdb_id || null,
         series.original_language, series.production_countries?.[0]?.iso_3166_1 || null,
-        primary_genre, age_rating, isComplete
+        primary_genre, age_rating, keywordsJson, isComplete
       );
 
       for (const genre of series.genres || []) {
@@ -313,6 +328,8 @@ function printProgress() {
   console.log(`\n⏱️ ${elapsed} دقيقة`);
   console.log(`🎬 ✅${stats.moviesProcessed} 🚫${stats.moviesFiltered} ❓${stats.moviesNotFound} ❌${stats.moviesErrors}`);
   console.log(`📺 ✅${stats.seriesProcessed} 🚫${stats.seriesFiltered} ❓${stats.seriesNotFound} ❌${stats.seriesErrors}`);
+  /* جولة keywords: تسجيل صريح للصفوف بلا كلمات — لا يُعلَّم complete قبل حفظ الكلمات أو هذا السجل */
+  console.log(`🔑 keywords_empty: أفلام=${stats.moviesKeywordsEmpty} مسلسلات=${stats.seriesKeywordsEmpty}`);
 }
 
 async function processBatch(ids, processFn) {

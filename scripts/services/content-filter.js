@@ -57,7 +57,18 @@ const SOFT_KEYWORDS_TEXT = [
 
 // استثناءات موثّقة يدويًا (أفلام سينمائية معروفة اتصنفت غلط بسبب
 // كلمة "xxx" جوه العنوان الأصلي بتاعها - راجع أي ID جديد يدويًا قبل الإضافة)
-const ALLOWLIST_IDS = ['398', '1576', '369885', '1408', '37135', '37136']
+const ALLOWLIST_IDS = [
+  '398', '1576', '369885', '1408', '37135', '37136',
+  // جولة استرجاع 2026-09-09 (المرحلة 6): 30 عملاً من دفعة reject-sexual كانت محجوبة
+  // بـ erotic_genre/keyword_hard/text_hard حصراً (لا cert_18 ولا manual_block ولا tmdb_adult بينهم).
+  // RESTORE_MOVIES (27):
+  '1266798', '910571', '250225', '451955', '10876', '1006947', '8653', '1145810',
+  '156236', '424762', '179129', '37432', '544575', '14428', '675414', '177248',
+  '67415', '46086', '1163263', '304034', '417975', '362714', '624480', '289491',
+  '484328', '874490', '911719',
+  // RESTORE_TV (3):
+  '32766', '10488', '202277',
+]
 
 // ─────────────────────────────────────────────────────────────
 // 2) TMDB Structured Keywords — المصدر الأدق لأنه tags منظّمة
@@ -115,11 +126,14 @@ const ADULT_CERTIFICATIONS_HARD = new Set([
 const ADULT_CERT_EXPLICIT_SCAN = new Set([...ADULT_CERTIFICATIONS_HARD].filter(v => v !== '18+'))
 
 // أنماط النص الصارم (title ثم overview) — جولة السياسة: بلا nudity/nude/sex/prostitute وحدها
+// جولة إصلاح الإيجابيات الكاذبة (2026-09-09): حُذف نمطا النقحرة /بورن/ و/سكس/ —
+// «بورن» هي النقحرة المعيارية لـ Bourne/Osbourne/Annapurna (ثلاثية Bourne مُحجوبة خطأً)،
+// و«سكس» داخل «الأنجلو-سكسونية». الإنجليزية \bporn\b تلتقط الحقيقي، و/إباحي/ يبقى.
 const HARD_TEXT_PATTERNS = [
   /\bporn(?:o|ography)?\b/i, /\bxxx\b/i, /\bhentai\b/i,
   /\bsoftcore\b/i, /\bhardcore\b/i,
   /\bunsimulated sex\b/i, /\bpink film\b/i, /\bvivamax\b/i,
-  /إباحي/, /اباحي/, /بورن/, /سكس/
+  /إباحي/, /اباحي/
 ]
 
 /**
@@ -217,13 +231,15 @@ function getProductionCompanyNames(content) {
   return (content?.production_companies || []).map(c => (c?.name || '').toLowerCase().trim())
 }
 
-/** أفضل تصنيف عمري نعرضه في القاعدة (أولوية: مصر/السعودية/الإمارات ثم أمريكا ثم أول واحد متاح) */
+/** أفضل تصنيف عمري نعرضه في القاعدة (أولوية: مصر ثم السعودية ثم الإمارات ثم أمريكا — بلا أي fallback)
+ *  جولة إصلاح الإيجابيات الكاذبة (2026-09-09): حُذف fallback certs[0] —
+ *  كان يُخرج شهادة دولة أجنبية (مثل RU 18+) وتُخزَّن age_rating ثم تُعامَل لاحقاً كأنها
+ *  من مصدر مفضّل ⇒ إعادة دخول علّة «18+ CZ» من الباب الخلفي. بلا دولة مفضّلة ⇒ null. */
 function pickDisplayCertification(content) {
   const certs = getCertifications(content)
   if (certs.length === 0) return null
   const preferred = certs.find(c => ['EG', 'SA', 'AE'].includes(c.country))
     || certs.find(c => c.country === 'US')
-    || certs[0]
   return preferred?.certification || null
 }
 
@@ -257,17 +273,25 @@ function shouldRejectWork(content, opts = {}) {
 
   // 5) cert_18 — جولة تصحيح الشهادات: لا رفض بسبب «18+» من دولة خارج EG/SA/AE/US
   //    (R / R-rated / TV-MA لا ترفض إطلاقاً — ليست في القائمتين)
+  //    جولة إصلاح الإيجابيات الكاذبة (2026-09-09) — باب القيمة المخزنة age_rating:
+  //    • القيمة ضمن القائمة الصريحة (NC-17, X, X18, XXX, X18+, R18, R18+, 청소년관람불가, 18금) → cert_18
+  //    • القيمة «18+» أو «18» بلا دولة معروفة EG/SA/AE/US → لا ترفض (كانت تُمسك 39 مسلسلاً
+  //      بـ age_rating='18+' التُقطت من دولة أجنبية عبر fallback certs[0] القديم)
+  //    • شهادة عرض من دولة مفضّلة (EG/SA/AE/US) تُطبَّق القاعدة كاملة (18+ منها ترفض)
   const certs = getCertifications(content)
   const storedCert = String(content.age_rating || '').toUpperCase().trim()
   const displayCert = String(pickDisplayCertification(content) || storedCert || '').toUpperCase().trim()
   if (displayCert) {
-    // مصدر الشهادة المعروضة: إن كانت من دولة مفضلة (EG/SA/AE/US) أو من age_rating المخزنة
-    // تُقارن بقائمة العرض الكاملة؛ أما fallback دولة أجنبية (certs[0]) فتُقارن بالقائمة الصريحة فقط
     const picked = certs.find(c => String(c.certification || '').toUpperCase().trim() === displayCert)
     const pickCountry = picked?.country || null
-    const fromPreferred = pickCountry === null || ['EG', 'SA', 'AE', 'US'].includes(pickCountry)
-    if (ADULT_CERTIFICATIONS_HARD.has(displayCert) && (fromPreferred || ADULT_CERT_EXPLICIT_SCAN.has(displayCert))) {
+    const fromPreferred = pickCountry !== null && ['EG', 'SA', 'AE', 'US'].includes(pickCountry)
+    // القائمة الصريحة ترفض أياً كان مصدرها (تشمل R18/R18+/X18+/الكورية/اليابانية — بلا 18+)
+    if (ADULT_CERT_EXPLICIT_SCAN.has(displayCert)) {
       return { reject: true, reason: pickCountry ? `cert_18:${displayCert}(${pickCountry})` : `cert_18:${displayCert}` }
+    }
+    // 18+/18 ترفض فقط إن ثبت مصدرها من دولة مفضّلة؛ المخزنة بلا دولة لا ترفض
+    if ((displayCert === '18+' || displayCert === '18') && fromPreferred) {
+      return { reject: true, reason: `cert_18:${displayCert}(${pickCountry})` }
     }
   }
   // مسح شهادات كل الدول — القائمة الصريحة فقط (بلا 18+)
@@ -289,10 +313,17 @@ function shouldRejectWork(content, opts = {}) {
   // 7) keyword_hard / erotic_genre — أسماء كلمات TMDB (exact، lower)
   if (!allowlisted) {
     const keywordNames = getKeywordNames(content)
-    const hardHit = keywordNames.find(kw => KEYWORD_HARD_SET.has(kw))
+    // جولة تضييق erotic على TV (2026-09-09): الكلمة «erotic» وحدها ترفض الأفلام فقط —
+    // TMDB يعطي keyword «erotic» لأعمال TV شائعة (موشوكو تينسي 94664، My Dress-Up Darling 123249).
+    // البقية ترفض للنوعين: hentai, erotica, erotic movie, erotic film, pink film,
+    // porn, pornography, xxx, softcore, hardcore, unsimulated sex.
+    const hardHit = keywordNames.find(kw => KEYWORD_HARD_SET.has(kw) && kw !== 'erotic')
     if (hardHit) {
       const eroticKw = keywordNames.find(kw => EROTIC_GENRE_KEYWORDS.has(kw))
       return { reject: true, reason: eroticKw ? 'erotic_genre' : `keyword_hard:${hardHit}` }
+    }
+    if (keywordNames.includes('erotic') && mediaType === 'movie') {
+      return { reject: true, reason: 'erotic_genre' }
     }
     // sex scene: فقط مع كلمة صارمة مرافقة (تركيب) — وحدها لا ترفض
     if (keywordNames.includes(SEX_SCENE_COMPOSITE) && hardHit) {
@@ -488,5 +519,11 @@ module.exports = {
   getCastArray,
   getKeywordNames,
   getCertifications,
-  pickDisplayCertification
+  pickDisplayCertification,
+  // مصادر الحقيقة للقوائم — لتُستهلك من سكربتات المسح دون نسخ يدوي
+  KEYWORD_HARD_SET,
+  EROTIC_GENRE_KEYWORDS,
+  ADULT_PRODUCTION_COMPANIES,
+  ADULT_CERTIFICATIONS_HARD,
+  ADULT_CERT_EXPLICIT_SCAN
 }

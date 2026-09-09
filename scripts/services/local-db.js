@@ -28,6 +28,12 @@ const schemaPath = path.join(__dirname, '../../LOCAL-SCHEMA-CLEAN.sql')
 const schema = fs.readFileSync(schemaPath, 'utf-8')
 db.exec(schema)
 
+// جولة keywords: عمود التخزين الموحّد لكلمات TMDB ([[{"id":1,"name":"..."}]]) —
+// موجود في LOCAL-SCHEMA-CLEAN.sql لكن القاعدة الفعلية أقدم من إضافته (CREATE TABLE
+// IF NOT EXISTS لا يعدّل جدولاً قائماً) — ترقية idempotent بنفس أسلوب synced_to_d1 أعلاه
+try { db.prepare('ALTER TABLE movies    ADD COLUMN keywords_json TEXT').run() } catch {}
+try { db.prepare('ALTER TABLE tv_series ADD COLUMN keywords_json TEXT').run() } catch {}
+
 console.log('✅ Database initialized successfully!')
 console.log(`📊 Database: ${dbPath}`)
 
