@@ -54,6 +54,7 @@ export default async function ArabicMoviesPage() {
         initialMovies={filteredMovies}
         initialHasMore={hasMore}
         listingPath="/api/listing/arabic"
+        seriesHref="/series/arabic"
       />
     )
   } catch {
@@ -64,6 +65,7 @@ export default async function ArabicMoviesPage() {
         initialMovies={[]}
         initialHasMore={false}
         listingPath="/api/listing/arabic"
+        seriesHref="/series/arabic"
       />
     )
   }

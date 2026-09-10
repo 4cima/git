@@ -36,9 +36,11 @@ interface MovieGenrePageClientProps {
   initialHasMore: boolean
   /** مسار API مخصص للتحميل اللانهائي (افتراضي: /api/genres/{slug}) — تستخدمه صفحة /movies/arabic */
   listingPath?: string
+  /** رابط صفحة نظير المسلسلات (افتراضي: /series/genres/{slug}) — تستخدمه صفحة /movies/arabic */
+  seriesHref?: string
 }
 
-export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMore, listingPath }: MovieGenrePageClientProps) {
+export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMore, listingPath, seriesHref }: MovieGenrePageClientProps) {
 
   const [content, setContent] = useState<any[]>(initialMovies)
   const [loading, setLoading] = useState(false)
@@ -198,7 +200,7 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
               نظرة عامة على {genre.name_ar}
             </Link>
             <Link
-              href={`/series/genres/${slug}`}
+              href={seriesHref ?? `/series/genres/${slug}`}
               className="group flex items-center gap-2 rounded-xl border border-blue-500/25 bg-blue-600/10 px-4 py-2 text-sm font-bold text-blue-300 transition-all duration-300 hover:border-blue-500/60 hover:bg-blue-600/25"
             >
               <span>مسلسلات {genre.name_ar}</span>
