@@ -36,9 +36,13 @@ async function downloadExportWithFallback(fileType) {
   return null;
 }
 
+// ─── حد أدنى للـ tmdb_id (قابل للتعديل) — يستبعد الأعمال القديمة جداً ───
+const MIN_TMDB_ID = { movies: 500000, tv_series: 50000 };
+
 function importIdsToTable(buffer, table) {
+  const minId = MIN_TMDB_ID[table] || 0;
   const lines = buffer.toString('utf-8').split('\n');
-  let inserted = 0, skipped = 0;
+  let inserted = 0, skipped = 0, belowThreshold = 0;
 
   const insertStmt = db.prepare(`INSERT OR IGNORE INTO ${table} (tmdb_id, is_fetched, is_complete) VALUES (?, 0, 0)`);
 
@@ -49,12 +53,13 @@ function importIdsToTable(buffer, table) {
       let data;
       try { data = JSON.parse(trimmed); } catch { skipped++; continue; }
       if (!data.id || data.adult === true) { skipped++; continue; }
+      if (data.id < minId) { belowThreshold++; continue; }
       const result = insertStmt.run(data.id);
       if (result.changes > 0) inserted++;
     }
   })(lines);
 
-  console.log(`✅ ${inserted.toLocaleString()} ID جديد في ${table} | ⏭️ ${skipped.toLocaleString()} متجاهل`);
+  console.log(`✅ ${inserted.toLocaleString()} ID جديد في ${table} | ⏭️ ${skipped.toLocaleString()} متجاهل | 🚫 ${belowThreshold.toLocaleString()} تحت الحد الأدنى (${minId})`);
 }
 
 async function main() {

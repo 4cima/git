@@ -412,7 +412,7 @@ async function main() {
   if (TYPE_FILTER === 'all' || TYPE_FILTER === 'movies') {
     let q = `SELECT tmdb_id FROM movies WHERE is_fetched = 0`;
     if (START_ID) q += ` AND tmdb_id >= ${START_ID}`;
-    q += ` ORDER BY tmdb_id`;
+    q += ` ORDER BY tmdb_id DESC`;
     if (BATCH_LIMIT) q += ` LIMIT ${BATCH_LIMIT}`;
     const ids = db.prepare(q).all();
     console.log(`🎬 ${ids.length.toLocaleString()} فيلم في الانتظار`);
@@ -422,7 +422,7 @@ async function main() {
   if (TYPE_FILTER === 'all' || TYPE_FILTER === 'tv') {
     let q = `SELECT tmdb_id FROM tv_series WHERE is_fetched = 0`;
     if (START_ID) q += ` AND tmdb_id >= ${START_ID}`;
-    q += ` ORDER BY tmdb_id`;
+    q += ` ORDER BY tmdb_id DESC`;
     if (BATCH_LIMIT) q += ` LIMIT ${BATCH_LIMIT}`;
     const ids = db.prepare(q).all();
     console.log(`📺 ${ids.length.toLocaleString()} مسلسل في الانتظار`);
