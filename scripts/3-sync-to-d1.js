@@ -59,6 +59,13 @@ const SERIES_BATCH  = 50;     // smaller — episodes_json can be large
 const FORCE_ALL     = process.argv.includes('--all');
 const TEST_LIMIT    = process.argv.find(a => a.startsWith('--limit'));
 const LIMIT_COUNT   = TEST_LIMIT ? parseInt(TEST_LIMIT.split('=')[1], 10) : null;
+/* جولة e2e: --tmdb-id لمزامنة صف واحد محدد بالمعرف (movies فقط) — يُتجاهل مع --all/--limit */
+const TMDB_ID_ARG   = process.argv.find(a => a.startsWith('--tmdb-id'));
+const TMDB_ID       = TMDB_ID_ARG ? parseInt(TMDB_ID_ARG.split('=')[1], 10) : null;
+/* وضع دفعة المعرفات: --ids-file=path (ملف JSON: {"movies":[...],"series":[...]})
+   — يُزامن الصفوف المحددة فقط بنفس بوابات الجودة/السنة/الحالة، ويُتجاهل مع --all/--limit */
+const IDS_FILE_ARG  = process.argv.find(a => a.startsWith('--ids-file'));
+const IDS_FILE      = IDS_FILE_ARG ? IDS_FILE_ARG.split('=')[1] : null;
 
 const CF_TOKEN = process.env.CLOUDFLARE_D1_TOKEN;
 if (!CF_TOKEN) {
@@ -438,7 +445,33 @@ async function main() {
 
   // Get eligible IDs upfront if limit is specified
   let movieIds = null, seriesIds = null;
-  if (LIMIT_COUNT) {
+  if (TMDB_ID) {
+    // جولة e2e: استهداف صف واحد بالمعرف — نفس بوابات الجودة/السنة/الحالة
+    movieIds = localDb.prepare(`
+      SELECT tmdb_id FROM movies
+      WHERE tmdb_id = ? AND is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${MOVIE_YEAR_GUARD} ${syncFilter}
+    `).all(TMDB_ID).map(r => r.tmdb_id);
+    seriesIds = [];
+    console.log(`🎯 وضع --tmdb-id: فيلم ${TMDB_ID} → ${movieIds.length > 0 ? 'مؤهل' : 'غير مؤهل (فلتَر الجودة/السنة/الحالة)'}`);
+  } else if (IDS_FILE) {
+    // وضع دفعة المعرفات: قراءة tmdb_ids من ملف JSON ({movies:[], series:[]}) — نفس بوابات الجودة/السنة/الحالة
+    const fs = require('fs');
+    const ids = JSON.parse(fs.readFileSync(IDS_FILE, 'utf8'));
+    const movieList = ids.movies || [];
+    const seriesList = ids.series || [];
+    const moviePh = movieList.length > 0 ? movieList.map(() => '?').join(',') : 'NULL';
+    const seriesPh = seriesList.length > 0 ? seriesList.map(() => '?').join(',') : 'NULL';
+    movieIds = movieList.length > 0 ? localDb.prepare(`
+      SELECT tmdb_id FROM movies
+      WHERE tmdb_id IN (${moviePh}) AND is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${MOVIE_YEAR_GUARD} ${syncFilter}
+    `).all(...movieList).map(r => r.tmdb_id) : [];
+    seriesIds = seriesList.length > 0 ? localDb.prepare(`
+      SELECT tmdb_id FROM tv_series
+      WHERE tmdb_id IN (${seriesPh}) AND is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved')
+        AND slug IS NOT NULL AND slug != '' ${SERIES_YEAR_GUARD} ${syncFilter}
+    `).all(...seriesList).map(r => r.tmdb_id) : [];
+    console.log(`🎯 وضع --ids-file: ${movieList.length} فيلم → ${movieIds.length} مؤهل | ${seriesList.length} مسلسل → ${seriesIds.length} مؤهل`);
+  } else if (LIMIT_COUNT) {
     movieIds = localDb.prepare(`
       SELECT tmdb_id FROM movies
       WHERE is_complete = 1 AND filter_status IN ('clean', 'reviewed_approved') ${MOVIE_YEAR_GUARD} ${syncFilter}
