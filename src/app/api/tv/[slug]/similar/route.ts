@@ -40,15 +40,23 @@ export async function GET(
     }
     
     // Fetch cards
-    const placeholders = ids.map(() => '?').join(',')
+    // ORDER BY مخصص يحافظ على ترتيب recommended_ids (المحسوب بالشعبية)
+    // ملاحظة: حد D1 هو 100 باراميتر لكل استعلام، وبما أن كل معرف يُستخدم مرتين
+    // (مرة في IN ومرة في CASE) نأخذ أول 50 معرفاً كحد أقصى.
+    const queryIds = ids.slice(0, 50)
+    const placeholders = queryIds.map(() => '?').join(',')
+    const orderCase = queryIds.map((_id, index) => `WHEN ? THEN ${index}`).join(' ')
+    const orderSql = `ORDER BY CASE tmdb_id ${orderCase} END`
+    const queryParams = [...queryIds, ...queryIds] // المجموعة الأولى للـ IN والمجموعة الثانية للـ CASE
     const similar = await executeAll(
       `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, vote_average, first_air_date, genres_json
        FROM tv_series 
        WHERE tmdb_id IN (${placeholders})
          AND (filter_status IS NULL OR filter_status IN ('clean', 'reviewed_approved'))
          AND (first_air_year IS NOT NULL AND first_air_year >= 2000)
+       ${orderSql}
        LIMIT 12`,
-      ids
+      queryParams
     )
     
     // فلتر: Talk Show + War & Politics + Documentary + History
