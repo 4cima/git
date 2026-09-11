@@ -59,23 +59,28 @@ export default async function MovieGenrePage({ params }: PageProps) {
     const whereClause = buildGenreWhereClause(genreIds)
     const genreParams = buildGenreParams(genreIds)
 
+    // استبعاد التصنيفات الأربعة (Talk Show + War & Politics + Documentary + History) داخل
+    // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT 21: hasMore يُحسب من نتيجة SQL
+    // (21 صفاً > 20) ويُضمن المعروض ≤ 20 بلا نقص بعد الاستبعاد.
     const initialMovies = await executeAll(
       `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
               vote_average, release_year, overview_ar, genres_json
        FROM movies
        WHERE ${whereClause}
-          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-          AND release_year IS NOT NULL AND release_year >= 2000
-       ORDER BY popularity DESC
+         AND ${EXCLUDED_GENRE_SQL_CLAUSE}
+         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+         AND release_year IS NOT NULL AND release_year >= 2000
+       ORDER BY popularity DESC, id DESC
        LIMIT 21`,
       genreParams
     )
 
-    // فلتر: Talk Show + War & Politics + Documentary + History
-    const filteredMovies = filterExcludedGenres(initialMovies)
+    // hasMore من نتيجة SQL (على سقف 21) ثم pop — المعروض بعدها ≤ 20
+    const hasMore = initialMovies.length > 20
+    if (hasMore) initialMovies.pop()
 
-    const hasMore = filteredMovies.length > 20
-    if (hasMore) filteredMovies.pop()
+    // فلتر أمان (طبقة JS): Talk Show + War & Politics + Documentary + History
+    const filteredMovies = filterExcludedGenres(initialMovies)
 
     return (
       <>

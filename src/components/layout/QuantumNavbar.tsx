@@ -47,7 +47,8 @@ export const QuantumNavbar = memo(() => {
   ], [])
 
   // لغات الأقسام — مصدر موحّد يشاركه Navbar وصفحات /movies/lang/[code] و /series/lang/[code]
-  // كل اللغات (بما فيها العربي) عبر /movies/lang/{filter} — لا مقطع خاص للعربي
+  // كل اللغات (بما فيها العربي) عبر /movies/lang/{code} — لا مقطع خاص للعربي.
+  // الفلتر مثل 'zh,cn' يبقى في الـ SQL وحده — المسار دائمًا بـ code نظيف (صيني = /movies/lang/zh).
   const countryLinks = NAVBAR_LANGUAGES
 
   const genreLinks = useMemo(() => [
@@ -431,7 +432,7 @@ export const QuantumNavbar = memo(() => {
                               </div>
                               {/* ثلث اليمين الشفاف (تدرج أحمر خفيف) → أفلام */}
                               <Link
-                                href={`/movies/lang/${country.filter}`}
+                                href={`/movies/lang/${country.code}`}
                                 onClick={() => setSidebarOpen(false)}
                                 title={`${country.label} — أفلام`}
                                 aria-label={`أفلام ${country.label}`}
@@ -439,7 +440,7 @@ export const QuantumNavbar = memo(() => {
                               />
                               {/* ثلث اليسار الشفاف (تدرج أزرق خفيف) → مسلسلات */}
                               <Link
-                                href={`/series/lang/${country.filter}`}
+                                href={`/series/lang/${country.code}`}
                                 onClick={() => setSidebarOpen(false)}
                                 title={`${country.label} — مسلسلات`}
                                 aria-label={`مسلسلات ${country.label}`}

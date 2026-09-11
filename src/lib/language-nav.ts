@@ -31,9 +31,10 @@ export const NAVBAR_LANGUAGES: NavLanguage[] = [
 
 /**
  * إيجاد لغة الـ Navbar من مقطع المسار (/movies/lang/[code]).
- * يوافق بـ filter أولاً (لأن الـ Navbar يبني الروابط بـ filter — مثل 'zh,cn')
- * ثم بـ code كاسم مستعار مقبول. غير الموجود في القائمة → undefined (notFound في الصفحة).
+ * يوافق بـ code أولاً (الروابط تُبنى الآن بـ country.code — مثل 'zh' بدل 'zh,cn')
+ * ثم بـ filter (مثل 'zh,cn') كتوافق مع أي روابط قديمة لا تزال موجودة.
+ * غير الموجود في القائمة → undefined (notFound في الصفحة).
  */
 export function findNavLanguage(value: string): NavLanguage | undefined {
-  return NAVBAR_LANGUAGES.find((l) => l.filter === value) ?? NAVBAR_LANGUAGES.find((l) => l.code === value)
+  return NAVBAR_LANGUAGES.find((l) => l.code === value) ?? NAVBAR_LANGUAGES.find((l) => l.filter === value)
 }

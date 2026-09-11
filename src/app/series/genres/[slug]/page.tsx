@@ -65,23 +65,28 @@ export default async function SeriesGenrePage({ params }: PageProps) {
     const whereClause = tvClause.sql
     const genreParams = tvClause.params
 
+    // استبعاد التصنيفات الأربعة (Talk Show + War & Politics + Documentary + History) داخل
+    // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT 21: hasMore يُحسب من نتيجة SQL
+    // (21 صفاً > 20) ويُضمن المعروض ≤ 20 بلا نقص بعد الاستبعاد.
     const initialSeries = await executeAll(
       `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, backdrop_path,
               vote_average, first_air_year, overview_ar, genres_json
        FROM tv_series
        WHERE ${whereClause}
+         AND ${EXCLUDED_GENRE_SQL_CLAUSE}
          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
          AND first_air_year IS NOT NULL AND first_air_year >= 2000
-       ORDER BY popularity DESC
+       ORDER BY popularity DESC, id DESC
        LIMIT 21`,
       genreParams
     )
 
-    // فلتر: Talk Show + War & Politics + Documentary + History
-    const filteredSeries = filterExcludedGenres(initialSeries)
+    // hasMore من نتيجة SQL (على سقف 21) ثم pop — المعروض بعدها ≤ 20
+    const hasMore = initialSeries.length > 20
+    if (hasMore) initialSeries.pop()
 
-    const hasMore = filteredSeries.length > 20
-    if (hasMore) filteredSeries.pop()
+    // فلتر أمان (طبقة JS): Talk Show + War & Politics + Documentary + History
+    const filteredSeries = filterExcludedGenres(initialSeries)
 
     // Enhance series data with media_type and isSeries
     const enhancedSeries = filteredSeries.map((show: any) => ({

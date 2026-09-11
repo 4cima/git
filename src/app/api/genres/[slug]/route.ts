@@ -3,6 +3,12 @@ import { executeFirst, executeAll } from '@/lib/db'
 import { getGenreWithSiblings, getTvGenreIds, buildTvGenreClause, buildGenreWhereClause, buildGenreParams, buildGenreExclusionClause, buildGenreExclusionParams, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
+/* فلتر التصنيفات الأربعة (Talk Show + War & Politics + Documentary + History) داخل SQL مباشرة —
+   يضمن عدد صفحة ثابتًا (20) وترقيم OFFSET على صفوف نظيفة فلا نقص ولا تداخل بين الصفحات.
+   `alias` = الاسم المستعار للجدول في الاستعلام ('' لجداول الكاش بلا alias). */
+const excludedGenreSqlClause = (alias: string): string =>
+  `NOT EXISTS (SELECT 1 FROM json_each(${alias}genres_json) WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36))`
+
 export const dynamic = 'force-dynamic'
 
 interface RouteParams {
@@ -120,6 +126,7 @@ export async function GET(
                     'movie' as media_type
              FROM list_movies_genre
              WHERE genre_tmdb_id = ?
+               AND ${excludedGenreSqlClause('')}
                AND tmdb_id NOT IN (SELECT tmdb_id FROM movies WHERE filter_status = 'blocked'
                  OR release_year IS NULL OR release_year < 2000)
              ORDER BY rank ASC
@@ -152,6 +159,7 @@ export async function GET(
                     'tv' as media_type
              FROM list_series_genre
              WHERE genre_tmdb_id = ?
+               AND ${excludedGenreSqlClause('')}
                AND tmdb_id NOT IN (SELECT tmdb_id FROM tv_series WHERE filter_status = 'blocked'
                  OR first_air_year IS NULL OR first_air_year < 2000)
              ORDER BY rank ASC
@@ -186,8 +194,9 @@ export async function GET(
          FROM movies m
          WHERE ${whereClause}
            AND ${approvedClause}
+           AND ${excludedGenreSqlClause('m.')}
            AND ${strictMovies}
-         ORDER BY m.${sortColumn} ${sortOrder}
+         ORDER BY m.${sortColumn} ${sortOrder}, m.id ${sortOrder}
          LIMIT ? OFFSET ?`,
         [...genreParams, ...strictMoviesParams, limit + 1, offset]
       )
@@ -208,8 +217,9 @@ export async function GET(
          WHERE ${whereClauseSeries}
            AND ${exclusionSeries}
            AND ${approvedClause}
+           AND ${excludedGenreSqlClause('s.')}
            AND ${strictSeries}
-         ORDER BY s.${sortColumn} ${sortOrder}
+         ORDER BY s.${sortColumn} ${sortOrder}, s.id ${sortOrder}
          LIMIT ? OFFSET ?`,
         [...genreParamsSeries, ...exclusionSeriesParams, ...strictSeriesParams, limit + 1, offset]
       )
@@ -236,10 +246,11 @@ export async function GET(
                   m.overview_ar, m.overview_en, m.genres_json, m.original_language,
                   'movie' as media_type
            FROM movies m WHERE ${whereClause}
+             AND ${excludedGenreSqlClause('m.')}
              AND (m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL)
              AND m.release_year IS NOT NULL AND m.release_year >= 2000
              AND ${strictMovies}
-           ORDER BY m.${sortColumn} ${sortOrder} LIMIT ? OFFSET ?`,
+           ORDER BY m.${sortColumn} ${sortOrder}, m.id ${sortOrder} LIMIT ? OFFSET ?`,
           [...genreParams, ...strictMoviesParams, perType + 1, perOffset]
         ),
         executeAll(
@@ -249,10 +260,11 @@ export async function GET(
                   'tv' as media_type
            FROM tv_series s WHERE ${whereClauseSeries}
              AND ${exclusionSeries}
+             AND ${excludedGenreSqlClause('s.')}
              AND (s.filter_status IN ('clean', 'reviewed_approved') OR s.filter_status IS NULL)
              AND s.first_air_year IS NOT NULL AND s.first_air_year >= 2000
              AND ${strictSeries}
-           ORDER BY s.${sortColumn} ${sortOrder} LIMIT ? OFFSET ?`,
+           ORDER BY s.${sortColumn} ${sortOrder}, s.id ${sortOrder} LIMIT ? OFFSET ?`,
           [...genreParamsSeries, ...exclusionSeriesParams, ...strictSeriesParams, perType + 1, perOffset]
         )
       ])
