@@ -368,11 +368,16 @@ function shouldRejectWork(content, opts = {}) {
   }
 
   // 11) no_runtime_low_votes — ingest فقط، أفلام فقط
+  // الشرط: runtime==0/null AND vote_count<20 AND vote_average<5 AND popularity<5
+  // (2026-09-11) أُضيف vote_average/popularity حتى لا تُرفض أعمال حية/حفلات
+  // قليلة الأصوات لكن مرتفعة التقييم (مثل BABYMETAL) — تُحسم لاحقاً بقرار مسح D1.
   if (mode === 'ingest' && mediaType === 'movie') {
     const voteCount = Number(content.vote_count || 0)
     const runtimeRaw = content.runtime
     const noRuntime = runtimeRaw == null || Number(runtimeRaw) === 0
-    if (voteCount < 20 && noRuntime) return { reject: true, reason: 'no_runtime_low_votes' }
+    const voteAverage = Number(content.vote_average || 0)
+    const popularity = Number(content.popularity || 0)
+    if (voteCount < 20 && noRuntime && voteAverage < 5 && popularity < 5) return { reject: true, reason: 'no_runtime_low_votes' }
   }
 
   return { reject: false, reason: null }

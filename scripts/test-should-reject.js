@@ -110,6 +110,12 @@ console.log('— اختبارات جولة keywords المخزّنة (2026-09-09
 check('فيلم بكلمات مخزّنة hentai → keyword_hard', shouldRejectWork({ ...baseMovie, id: 81, keywords: { keywords: [{ id: 1, name: 'hentai' }] } }, { mediaType: 'movie' }), true, 'keyword_hard:hentai')
 check('فيلم بكلمات مخزّنة sex scene فقط — لا رفض', shouldRejectWork({ ...baseMovie, id: 82, keywords: { keywords: [{ id: 2, name: 'sex scene' }] } }, { mediaType: 'movie' }), false, null)
 
+console.log('— اختبارات no_runtime_low_votes الموسّعة (2026-09-11) —')
+check('runtime=null, vote_count=15, vote_average=7.8, popularity=2 → لا يُرفض', shouldRejectWork({ ...baseMovie, id: 201, runtime: null, vote_count: 15, vote_average: 7.8, popularity: 2 }, { mediaType: 'movie', mode: 'ingest' }), false, null)
+check('runtime=null, vote_count=1, vote_average=1, popularity=0.5 → يُرفض (no_runtime_low_votes)', shouldRejectWork({ ...baseMovie, id: 202, runtime: null, vote_count: 1, vote_average: 1, popularity: 0.5 }, { mediaType: 'movie', mode: 'ingest' }), true, 'no_runtime_low_votes')
+check('runtime=0, vote_count=5, vote_average=9, popularity=3 → لا يُرفض (BABYMETAL-style)', shouldRejectWork({ ...baseMovie, id: 203, runtime: 0, vote_count: 5, vote_average: 9, popularity: 3 }, { mediaType: 'movie', mode: 'ingest' }), false, null)
+check('runtime=0, vote_count=3, vote_average=4, popularity=4 → يُرفض', shouldRejectWork({ ...baseMovie, id: 204, runtime: 0, vote_count: 3, vote_average: 4, popularity: 4 }, { mediaType: 'movie', mode: 'ingest' }), true, 'no_runtime_low_votes')
+
 console.log(`\nالنتيجة: ${pass} نجاح / ${fail} فشل`)
 if (fail > 0) require('fs').writeFileSync(__dirname + '/tmp-test-failures.txt', failures.join('\n'), 'utf8')
 process.exit(fail > 0 ? 1 : 0)
