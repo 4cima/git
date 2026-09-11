@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
 /** صفحة القسم المختلط «عربي» — لغة (original_language = 'ar') لا تصنيف TMDB.
- *  بوابتان: أفلام عربي (/movies/arabic) ومسلسلات عربي (/series/arabic). */
+ *  بوابتان: أفلام عربي (/movies/lang/ar) ومسلسلات عربي (/series/lang/ar). */
 export default async function ArabicOverviewPage() {
   try {
     const [topMovies, topSeries] = await Promise.all([
@@ -103,8 +103,8 @@ export default async function ArabicOverviewPage() {
           slug="arabic"
           topMovies={filteredMovies}
           topSeries={filteredSeries}
-          moviesHref="/movies/arabic"
-          seriesHref="/series/arabic"
+          moviesHref="/movies/lang/ar"
+          seriesHref="/series/lang/ar"
         />
       </>
     )

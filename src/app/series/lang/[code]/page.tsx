@@ -1,5 +1,8 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { executeAll } from '@/lib/db'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
+import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 import { SeriesPageClient } from '@/components/pages/SeriesPageClient'
 import { findNavLanguage } from '@/lib/language-nav'
 
@@ -33,14 +36,62 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
- * صفحة قسم لغة: /series/lang/[code]
+ * صفحة قسم لغة: /series/lang/[code] — كل اللغات بما فيها /series/lang/ar للعربي.
  * allowlist = لغات الـ Navbar المشتركة (مع findNavLanguage — يوافق بـ filter ثم code).
  * أي كود غير مسموح → 404. لا generateStaticParams ولا revalidate — القائمة ديناميكية من D1.
+ *
+ * أول صفحة SSR بنفس استعلام /api/series?language=<filter>&sort=popularity&order=desc&page=1
+ * حتى يكون تحميل المزيد (نفس الـ API مع اللغة نفسها) متسقة بلا تكرار/قفز.
  */
 export default async function SeriesLangPage({ params }: PageProps) {
   const { code } = await params
   const lang = findNavLanguage(code)
   if (!lang) notFound()
 
-  return <SeriesPageClient forcedLanguage={lang.filter} title={`مسلسلات ${lang.label}`} />
+  try {
+    // نفس بناء شرط اللغة في /api/series: filter قد يكون متعددًا ('zh,cn') → IN ('zh','cn')
+    const languages = lang.filter.split(',').map(l => l.trim()).filter(l => l)
+    const languageSql =
+      languages.length > 1
+        ? `original_language IN (${languages.map(() => '?').join(',')})`
+        : 'original_language = ?'
+
+    const rows = await executeAll(
+      `SELECT tv_series.id, tv_series.tmdb_id, tv_series.slug,
+              tv_series.name_ar AS title_ar, tv_series.name_en AS title_en,
+              tv_series.poster_path, tv_series.backdrop_path, tv_series.vote_average, tv_series.first_air_year,
+              tv_series.genres_json, tv_series.overview_ar
+       FROM tv_series
+       WHERE ${languageSql}
+         AND (genres_json IS NULL OR NOT EXISTS (
+           SELECT 1 FROM json_each(tv_series.genres_json)
+           WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
+         ))
+         AND (tv_series.filter_status IN ('clean', 'reviewed_approved') OR tv_series.filter_status IS NULL)
+         AND (tv_series.first_air_year IS NOT NULL AND tv_series.first_air_year >= 2000)
+       ORDER BY popularity DESC
+       LIMIT ${LISTING_PAGE_SIZE + 1}`,
+      languages
+    )
+
+    // نفس الفلتر اللاحق الذي يطبّقه /api/series على كل دفعة — يحافظ على تطابق الصف الأول
+    const filteredSeries = filterExcludedGenres(rows)
+
+    const hasMore = filteredSeries.length > LISTING_PAGE_SIZE
+    if (hasMore) filteredSeries.pop()
+
+    return (
+      <SeriesPageClient
+        initialSeries={filteredSeries}
+        initialHasMore={hasMore}
+        forcedLanguage={lang.filter}
+        title={`مسلسلات ${lang.label}`}
+      />
+    )
+  } catch (error) {
+    console.error(`Error fetching series/lang/${code} page data:`, error)
+    // لا نعيد قائمة فاضية على استثناء D1/SSR كي لا تُخبز الصفحة فارغة وقت البناء —
+    // الإعادة (throw) تجعل Next يسقط التخزين المسبق ويُصدِّر الصفحة عند الطلب (D1 متاح وقت التشغيل).
+    throw error
+  }
 }

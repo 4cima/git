@@ -34,9 +34,9 @@ interface SeriesGenrePageClientProps {
   slug: string
   initialSeries: any[]
   initialHasMore: boolean
-  /** مسار API مخصص للتحميل اللانهائي (افتراضي: /api/genres/{slug}) — تستخدمه صفحة /series/arabic */
+  /** مسار API مخصص للتحميل اللانهائي (افتراضي: /api/genres/{slug}) */
   listingPath?: string
-  /** رابط صفحة نظير الأفلام (افتراضي: /movies/genres/{slug}) — تستخدمه صفحة /series/arabic */
+  /** رابط صفحة نظير الأفلام (افتراضي: /movies/genres/{slug}) */
   moviesHref?: string
 }
 

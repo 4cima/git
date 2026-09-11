@@ -4,7 +4,8 @@
  * مصدر موحّد يشاركه QuantumNavbar وصفحات اللغات (مستهلكان) — نُقل هنا حرفيًا
  * من مصفوفة countryLinks التي كانت داخل QuantumNavbar كي لا تتكسر التسميات/الفلاتر بينهما.
  *
- * العربي (filter === 'ar') له «قسم» مسار خاص: /movies/arabic و /series/arabic — لا /movies/lang/ar.
+ * كل اللغات بما فيها العربي (ar) عبر نفس المسار الموحّد: /movies/lang/[code] —
+ * عربي = /movies/lang/ar مثل ألماني = /movies/lang/de — صفر استثناء للعربي.
  */
 export interface NavLanguage {
   /** كود ISO 639-1 — يُستخدم كمفتاح React في الـ Navbar وليس بالضرورة في المسار */
@@ -13,12 +14,10 @@ export interface NavLanguage {
   label: string
   /** قيمة فلتر original_language المرسلة للـ API (يدعم التعدد: 'zh,cn' → IN ('zh','cn')) */
   filter: string
-  /** مقطع مسار خاص بالعربي فقط ('arabic') — بقية اللغات عبر /movies/lang/[filter] */
-  section?: string
 }
 
 export const NAVBAR_LANGUAGES: NavLanguage[] = [
-  { code: 'ar', label: 'عربي', filter: 'ar', section: 'arabic' },
+  { code: 'ar', label: 'عربي', filter: 'ar' },
   { code: 'en', label: 'أجنبي', filter: 'en' },
   { code: 'tr', label: 'تركي', filter: 'tr' },
   { code: 'hi', label: 'هندي', filter: 'hi' },

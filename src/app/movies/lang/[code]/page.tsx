@@ -1,5 +1,8 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { executeAll } from '@/lib/db'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
+import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 import { MoviesPageClient } from '@/components/pages/MoviesPageClient'
 import { findNavLanguage } from '@/lib/language-nav'
 
@@ -33,14 +36,61 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
- * صفحة قسم لغة: /movies/lang/[code]
+ * صفحة قسم لغة: /movies/lang/[code] — كل اللغات بما فيها /movies/lang/ar للعربي.
  * allowlist = لغات الـ Navbar المشتركة (مع findNavLanguage — يوافق بـ filter ثم code).
  * أي كود غير مسموح → 404. لا generateStaticParams ولا revalidate — القائمة ديناميكية من D1.
+ *
+ * أول صفحة SSR بنفس استعلام /api/movies?language=<filter>&sort=popularity&order=desc&page=1
+ * حتى يكون تحميل المزيد (نفس الـ API مع اللغة نفسها) متسقة بلا تكرار/قفز.
  */
 export default async function MovieLangPage({ params }: PageProps) {
   const { code } = await params
   const lang = findNavLanguage(code)
   if (!lang) notFound()
 
-  return <MoviesPageClient forcedLanguage={lang.filter} title={`أفلام ${lang.label}`} />
+  try {
+    // نفس بناء شرط اللغة في /api/movies: filter قد يكون متعددًا ('zh,cn') → IN ('zh','cn')
+    const languages = lang.filter.split(',').map(l => l.trim()).filter(l => l)
+    const languageSql =
+      languages.length > 1
+        ? `original_language IN (${languages.map(() => '?').join(',')})`
+        : 'original_language = ?'
+
+    const rows = await executeAll(
+      `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en,
+              movies.poster_path, movies.backdrop_path, movies.vote_average, movies.release_year,
+              movies.genres_json, movies.overview_ar, movies.original_language
+       FROM movies
+       WHERE ${languageSql}
+         AND (genres_json IS NULL OR NOT EXISTS (
+           SELECT 1 FROM json_each(movies.genres_json)
+           WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
+         ))
+         AND (movies.filter_status IN ('clean', 'reviewed_approved') OR movies.filter_status IS NULL)
+         AND (movies.release_year IS NOT NULL AND movies.release_year >= 2000)
+       ORDER BY popularity DESC
+       LIMIT ${LISTING_PAGE_SIZE + 1}`,
+      languages
+    )
+
+    // نفس الفلتر اللاحق الذي يطبّقه /api/movies على كل دفعة — يحافظ على تطابق الصف الأول
+    const filteredMovies = filterExcludedGenres(rows)
+
+    const hasMore = filteredMovies.length > LISTING_PAGE_SIZE
+    if (hasMore) filteredMovies.pop()
+
+    return (
+      <MoviesPageClient
+        initialMovies={filteredMovies}
+        initialHasMore={hasMore}
+        forcedLanguage={lang.filter}
+        title={`أفلام ${lang.label}`}
+      />
+    )
+  } catch (error) {
+    console.error(`Error fetching movies/lang/${code} page data:`, error)
+    // لا نعيد قائمة فاضية على استثناء D1/SSR كي لا تُخبز الصفحة فارغة وقت البناء —
+    // الإعادة (throw) تجعل Next يسقط التخزين المسبق ويُصدِّر الصفحة عند الطلب (D1 متاح وقت التشغيل).
+    throw error
+  }
 }

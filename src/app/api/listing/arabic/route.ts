@@ -5,7 +5,8 @@ import { filterExcludedGenres } from '@/utils/excludedGenres'
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/listing/arabic — قوائم الأفلام/المسلسلات العربية (لصفحات /movies/arabic و /series/arabic)
+ * GET /api/listing/arabic — قوائم الأفلام/المسلسلات العربية (لصفحات /movies/lang/ar و /series/lang/ar
+ * ونظرة /genres/arabic وقسم «عربي» في الرئيسية)
  *
  * Query params:
  *   type  : 'movie' | 'tv'  (افتراضي movie)

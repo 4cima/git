@@ -333,8 +333,8 @@ export function HomeTrendingSections({
       title: 'عربي',
       icon: 'globe',
       labelHref: '/genres/arabic',
-      moviesHref: '/movies/arabic',
-      seriesHref: '/series/arabic',
+      moviesHref: '/movies/lang/ar',
+      seriesHref: '/series/lang/ar',
       items: interleave([
         ...mapItems(extraRaw?.arabicMovies, 'movie').slice(0, 50),
         ...mapItems(extraRaw?.arabicSeries, 'tv').slice(0, 50),

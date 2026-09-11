@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { Film, Search, X, ChevronDown, ChevronLeft } from 'lucide-react'
+import { Film, Search, X, ChevronDown } from 'lucide-react'
 import { Footer } from '@/components/layout/Footer'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
@@ -131,7 +130,7 @@ interface MoviesPageClientProps {
   initialHasMore?: boolean
   /** قفل اللغة (وضع صفحة قسم لغة): اللغة ثابتة من أول رندر — ممنوع fallback إلى 'all' ولو لحظة */
   forcedLanguage?: string
-  /** عنوان مخصص (H1 + breadcrumb) — يُعرض فقط في وضع اللغة المقفولة ولا يغيّر شكل /movies */
+  /** عنوان مخصص (H1) — يُعرض فقط في وضع اللغة المقفولة ولا يغيّر شكل /movies */
   title?: string
 }
 
@@ -480,15 +479,6 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
 
       {/* Single page H1 for SEO (visually hidden) */}
       <h1 className="sr-only">{title ?? 'الأفلام المترجمة'}</h1>
-
-      {/* Breadcrumb — وضع اللغة المقفولة فقط (لا يغيّر شكل /movies العامة) */}
-      {forcedLanguage && title && (
-        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-sm text-slate-400 mb-3">
-          <Link href="/" className="text-slate-300 hover:text-red-400 transition-colors">الرئيسية</Link>
-          <ChevronLeft className="h-3.5 w-3.5 text-slate-500 rtl:rotate-180" />
-          <span className="text-slate-200 font-bold">{title}</span>
-        </nav>
-      )}
 
       {/* Header banner — إعلان 1 (728×90): يتمدد مركزيًا ويصغر تلقائيًا على الموبايل */}
       <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 py-3">

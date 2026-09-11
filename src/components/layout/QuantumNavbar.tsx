@@ -47,7 +47,7 @@ export const QuantumNavbar = memo(() => {
   ], [])
 
   // لغات الأقسام — مصدر موحّد يشاركه Navbar وصفحات /movies/lang/[code] و /series/lang/[code]
-  // (العربي فقط بمقطع خاص 'arabic'؛ الباقي عبر /movies/lang/{filter})
+  // كل اللغات (بما فيها العربي) عبر /movies/lang/{filter} — لا مقطع خاص للعربي
   const countryLinks = NAVBAR_LANGUAGES
 
   const genreLinks = useMemo(() => [
@@ -431,7 +431,7 @@ export const QuantumNavbar = memo(() => {
                               </div>
                               {/* ثلث اليمين الشفاف (تدرج أحمر خفيف) → أفلام */}
                               <Link
-                                href={country.filter === 'ar' ? `/movies/arabic` : `/movies/lang/${country.filter}`}
+                                href={`/movies/lang/${country.filter}`}
                                 onClick={() => setSidebarOpen(false)}
                                 title={`${country.label} — أفلام`}
                                 aria-label={`أفلام ${country.label}`}
@@ -439,7 +439,7 @@ export const QuantumNavbar = memo(() => {
                               />
                               {/* ثلث اليسار الشفاف (تدرج أزرق خفيف) → مسلسلات */}
                               <Link
-                                href={country.filter === 'ar' ? `/series/arabic` : `/series/lang/${country.filter}`}
+                                href={`/series/lang/${country.filter}`}
                                 onClick={() => setSidebarOpen(false)}
                                 title={`${country.label} — مسلسلات`}
                                 aria-label={`مسلسلات ${country.label}`}
