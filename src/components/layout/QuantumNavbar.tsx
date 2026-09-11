@@ -46,7 +46,7 @@ export const QuantumNavbar = memo(() => {
   ], [])
 
   const countryLinks = useMemo(() => [
-    { code: 'ar', label: 'عربي', filter: 'ar' },
+    { code: 'ar', label: 'عربي', filter: 'ar', section: 'arabic' },
     { code: 'en', label: 'أجنبي', filter: 'en' },
     { code: 'tr', label: 'تركي', filter: 'tr' },
     { code: 'hi', label: 'هندي', filter: 'hi' },
@@ -439,7 +439,7 @@ export const QuantumNavbar = memo(() => {
                               </div>
                               {/* ثلث اليمين الشفاف (تدرج أحمر خفيف) → أفلام */}
                               <Link
-                                href={`/movies?language=${country.filter}`}
+                                href={country.section ? `/movies/${country.section}` : `/movies?language=${country.filter}`}
                                 onClick={() => setSidebarOpen(false)}
                                 title={`${country.label} — أفلام`}
                                 aria-label={`أفلام ${country.label}`}
@@ -447,7 +447,7 @@ export const QuantumNavbar = memo(() => {
                               />
                               {/* ثلث اليسار الشفاف (تدرج أزرق خفيف) → مسلسلات */}
                               <Link
-                                href={`/series?language=${country.filter}`}
+                                href={country.section ? `/series/${country.section}` : `/series?language=${country.filter}`}
                                 onClick={() => setSidebarOpen(false)}
                                 title={`${country.label} — مسلسلات`}
                                 aria-label={`مسلسلات ${country.label}`}
