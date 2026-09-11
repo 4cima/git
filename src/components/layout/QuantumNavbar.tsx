@@ -9,6 +9,7 @@ import { UserMenu } from './UserMenu'
 import { useAuth } from '@/hooks/useAuth'
 import { SearchBox } from './SearchBox'
 import { getAvatarUrl } from '@/utils/avatarUtils'
+import { NAVBAR_LANGUAGES } from '@/lib/language-nav'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
@@ -45,18 +46,9 @@ export const QuantumNavbar = memo(() => {
     { to: '/series', label: 'مسلسلات', icon: Tv, tint: '#38bdf8', divider: false, exact: false }
   ], [])
 
-  const countryLinks = useMemo(() => [
-    { code: 'ar', label: 'عربي', filter: 'ar', section: 'arabic' },
-    { code: 'en', label: 'أجنبي', filter: 'en' },
-    { code: 'tr', label: 'تركي', filter: 'tr' },
-    { code: 'hi', label: 'هندي', filter: 'hi' },
-    { code: 'ko', label: 'كوري', filter: 'ko' },
-    { code: 'zh', label: 'صيني', filter: 'zh,cn' },
-    { code: 'ja', label: 'ياباني', filter: 'ja' },
-    { code: 'fr', label: 'فرنسي', filter: 'fr' },
-    { code: 'es', label: 'إسباني', filter: 'es' },
-    { code: 'de', label: 'ألماني', filter: 'de' }
-  ], [])
+  // لغات الأقسام — مصدر موحّد يشاركه Navbar وصفحات /movies/lang/[code] و /series/lang/[code]
+  // (العربي فقط بمقطع خاص 'arabic'؛ الباقي عبر /movies/lang/{filter})
+  const countryLinks = NAVBAR_LANGUAGES
 
   const genreLinks = useMemo(() => [
     { slug: 'action', label: 'أكشن' },
@@ -439,7 +431,7 @@ export const QuantumNavbar = memo(() => {
                               </div>
                               {/* ثلث اليمين الشفاف (تدرج أحمر خفيف) → أفلام */}
                               <Link
-                                href={country.section ? `/movies/${country.section}` : `/movies?language=${country.filter}`}
+                                href={country.filter === 'ar' ? `/movies/arabic` : `/movies/lang/${country.filter}`}
                                 onClick={() => setSidebarOpen(false)}
                                 title={`${country.label} — أفلام`}
                                 aria-label={`أفلام ${country.label}`}
@@ -447,7 +439,7 @@ export const QuantumNavbar = memo(() => {
                               />
                               {/* ثلث اليسار الشفاف (تدرج أزرق خفيف) → مسلسلات */}
                               <Link
-                                href={country.section ? `/series/${country.section}` : `/series?language=${country.filter}`}
+                                href={country.filter === 'ar' ? `/series/arabic` : `/series/lang/${country.filter}`}
                                 onClick={() => setSidebarOpen(false)}
                                 title={`${country.label} — مسلسلات`}
                                 aria-label={`مسلسلات ${country.label}`}

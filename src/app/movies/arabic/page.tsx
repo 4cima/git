@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
 import { executeAll } from '@/lib/db'
-import { MovieGenrePageClient } from '@/components/pages/MovieGenrePageClient'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
+import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
+import { MoviesPageClient } from '@/components/pages/MoviesPageClient'
 
 export const metadata: Metadata = {
   // بدون «| فور سيما» — template في layout يضيفها تلقائياً
@@ -23,38 +24,41 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
 /**
- * صفحة «أفلام عربي» — كل الأفلام ذات original_language = 'ar'
- * تستخدم نفس عميل صفحة التصنيف (شبكة + ترتيب + تحميل لانهائي)
- * مع مسار API مخصص: /api/listing/arabic?type=movie
+ * صفحة «أفلام عربي» — قائمة لغة كاملة (وليس شبكة تصنيف 20 وتقف).
+ * أول صفحة SSR بنفس استعلام /api/movies?language=ar&sort=popularity&order=desc&page=1
+ * حتى يكون تحميل المزيد (نفس الـ API مع language=ar) متسقة بلا تكرار/قفز.
  */
 export default async function ArabicMoviesPage() {
   try {
-    const initialMovies = await executeAll(
-      `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
-              vote_average, release_year, overview_ar, genres_json
+    const rows = await executeAll(
+      `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en,
+              movies.poster_path, movies.backdrop_path, movies.vote_average, movies.release_year,
+              movies.genres_json, movies.overview_ar, movies.original_language
        FROM movies
        WHERE original_language = 'ar'
-         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-         AND slug IS NOT NULL AND tmdb_id IS NOT NULL
+         AND (genres_json IS NULL OR NOT EXISTS (
+           SELECT 1 FROM json_each(movies.genres_json)
+           WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
+         ))
+         AND (movies.filter_status IN ('clean', 'reviewed_approved') OR movies.filter_status IS NULL)
+         AND (movies.release_year IS NOT NULL AND movies.release_year >= 2000)
        ORDER BY popularity DESC
-       LIMIT 21`,
+       LIMIT ${LISTING_PAGE_SIZE + 1}`,
       []
     )
 
-    // فلتر: Talk Show + War & Politics + Documentary + History (نفس فلتر صفحات التصنيفات)
-    const filteredMovies = filterExcludedGenres(initialMovies)
+    // نفس الفلتر اللاحق الذي يطبّقه /api/movies على كل دفعة — يحافظ على تطابق الصف الأول
+    const filteredMovies = filterExcludedGenres(rows)
 
-    const hasMore = filteredMovies.length > 20
+    const hasMore = filteredMovies.length > LISTING_PAGE_SIZE
     if (hasMore) filteredMovies.pop()
 
     return (
-      <MovieGenrePageClient
-        genre={{ id: 0, tmdb_id: 0, name_en: 'Arabic', name_ar: 'عربي', slug: 'arabic' }}
-        slug="arabic"
+      <MoviesPageClient
         initialMovies={filteredMovies}
         initialHasMore={hasMore}
-        listingPath="/api/listing/arabic"
-        seriesHref="/series/arabic"
+        forcedLanguage="ar"
+        title="أفلام عربي"
       />
     )
   } catch (error) {

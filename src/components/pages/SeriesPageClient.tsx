@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Tv, Search, X, ChevronDown } from 'lucide-react'
+import Link from 'next/link'
+import { Tv, Search, X, ChevronDown, ChevronLeft } from 'lucide-react'
 import { Footer } from '@/components/layout/Footer'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
@@ -125,7 +126,16 @@ function readFiltersFromURL(searchParams: { get(name: string): string | null }) 
   return { genre, country, year, rating, search, language }
 }
 
-export function SeriesPageClient({ initialSeries = [], initialHasMore = false }: { initialSeries?: any[]; initialHasMore?: boolean }) {
+interface SeriesPageClientProps {
+  initialSeries?: any[]
+  initialHasMore?: boolean
+  /** قفل اللغة (وضع صفحة قسم لغة): اللغة ثابتة من أول رندر — ممنوع fallback إلى 'all' ولو لحظة */
+  forcedLanguage?: string
+  /** عنوان مخصص (H1 + breadcrumb) — يُعرض فقط في وضع اللغة المقفولة ولا يغيّر شكل /series */
+  title?: string
+}
+
+export function SeriesPageClient({ initialSeries = [], initialHasMore = false, forcedLanguage, title }: SeriesPageClientProps) {
   const { user } = useAuth() // Check if user is logged in
   const searchParams = useSearchParams()
   /* قائمة تصنيفات ديناميكية من قاعدة البيانات (GENRES احتياطية حتى وصول الاستجابة) */
@@ -144,7 +154,7 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false }:
   const [selectedYear, setSelectedYear]       = useState<string>(initialFilters.year)
   const [selectedRating, setSelectedRating]   = useState<string>(initialFilters.rating)
   const [selectedCountry, setSelectedCountry] = useState<string>(initialFilters.country)
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(initialFilters.language || 'all')
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(forcedLanguage ?? initialFilters.language ?? 'all')
   const [sortBy, setSortBy]                   = useState('popularity')
   const [sortOrder, setSortOrder]             = useState('desc')
   const [page, setPage]                       = useState(1)
@@ -205,13 +215,17 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false }:
       setSelectedGenre('all')
     }
     
-    // Read language from URL (maps to country filter)
-    const urlLanguage = searchParams.get('language')
-    if (urlLanguage) {
-      // Sent directly to the API — accurate original_language filter (no lossy country mapping)
-      setSelectedLanguage(urlLanguage.toLowerCase())
+    // Read language from URL (maps to country filter) — الوضع المقفول لا يتغيّر أبدًا
+    if (forcedLanguage) {
+      setSelectedLanguage(forcedLanguage)
     } else {
-      setSelectedLanguage('all')
+      const urlLanguage = searchParams.get('language')
+      if (urlLanguage) {
+        // Sent directly to the API — accurate original_language filter (no lossy country mapping)
+        setSelectedLanguage(urlLanguage.toLowerCase())
+      } else {
+        setSelectedLanguage('all')
+      }
     }
     
     // Read country from URL
@@ -257,7 +271,7 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false }:
     
     // Reset to page 1 when URL changes — المحتوى يبقى حتى وصول النتائج الجديدة
     setPage(1)
-  }, [searchParams]) // Re-run whenever URL search params change
+  }, [searchParams, forcedLanguage]) // Re-run whenever URL search params change
 
   // Debounce search
   useEffect(() => {
@@ -435,18 +449,27 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false }:
       chips.push({ key: 'rating', label: RATINGS.find(r => r.value === selectedRating)?.label || selectedRating, clear: () => resetAndFetch(() => setSelectedRating('all')) })
     if (selectedCountry !== 'all')
       chips.push({ key: 'country', label: COUNTRIES.find(c => c.value === selectedCountry)?.label || selectedCountry, clear: () => resetAndFetch(() => setSelectedCountry('all')) })
-    if (selectedLanguage !== 'all')
+    if (selectedLanguage !== 'all' && !forcedLanguage)
       chips.push({ key: 'language', label: LANGUAGE_LABELS[selectedLanguage] || selectedLanguage, clear: () => resetAndFetch(() => setSelectedLanguage('all')) })
     if (debouncedSearch.trim())
       chips.push({ key: 'search', label: `"${debouncedSearch.trim()}"`, clear: () => resetAndFetch(() => { setSearchQuery(''); setDebouncedSearch('') }) })
     return chips
-  }, [selectedGenre, selectedYear, selectedRating, selectedCountry, debouncedSearch, resetAndFetch])
+  }, [selectedGenre, selectedYear, selectedRating, selectedCountry, debouncedSearch, resetAndFetch, forcedLanguage])
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
 
       {/* Single page H1 for SEO (visually hidden) */}
-      <h1 className="sr-only">المسلسلات المترجمة</h1>
+      <h1 className="sr-only">{title ?? 'المسلسلات المترجمة'}</h1>
+
+      {/* Breadcrumb — وضع اللغة المقفولة فقط (لا يغيّر شكل /series العامة) */}
+      {forcedLanguage && title && (
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-sm text-slate-400 mb-3">
+          <Link href="/" className="text-slate-300 hover:text-cyan-400 transition-colors">الرئيسية</Link>
+          <ChevronLeft className="h-3.5 w-3.5 text-slate-500 rtl:rotate-180" />
+          <span className="text-slate-200 font-bold">{title}</span>
+        </nav>
+      )}
 
       {/* Header banner — إعلان 1 (728×90): يتمدد مركزيًا ويصغر تلقائيًا على الموبايل */}
       <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 py-3">

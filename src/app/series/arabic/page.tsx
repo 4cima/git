@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
 import { executeAll } from '@/lib/db'
-import { SeriesGenrePageClient } from '@/components/pages/SeriesGenrePageClient'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
+import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
+import { SeriesPageClient } from '@/components/pages/SeriesPageClient'
 
 export const metadata: Metadata = {
   // بدون «| فور سيما» — template في layout يضيفها تلقائياً
@@ -23,39 +24,42 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
 /**
- * صفحة «مسلسلات عربي» — كل المسلسلات ذات original_language = 'ar'
- * تستخدم نفس عميل صفحة التصنيف (شبكة + ترتيب + تحميل لانهائي)
- * مع مسار API مخصص: /api/listing/arabic?type=tv
+ * صفحة «مسلسلات عربي» — قائمة لغة كاملة (وليس شبكة تصنيف 20 وتقف).
+ * أول صفحة SSR بنفس استعلام /api/series?language=ar&sort=popularity&order=desc&page=1
+ * حتى يكون تحميل المزيد (نفس الـ API مع language=ar) متسقة بلا تكرار/قفز.
  */
 export default async function ArabicSeriesPage() {
   try {
-    const initialSeries = await executeAll(
-      `SELECT id, tmdb_id, slug, name_ar as title_ar, name_en as title_en,
-              poster_path, backdrop_path,
-              vote_average, first_air_year, overview_ar, genres_json
+    const rows = await executeAll(
+      `SELECT tv_series.id, tv_series.tmdb_id, tv_series.slug,
+              tv_series.name_ar AS title_ar, tv_series.name_en AS title_en,
+              tv_series.poster_path, tv_series.backdrop_path, tv_series.vote_average, tv_series.first_air_year,
+              tv_series.genres_json, tv_series.overview_ar
        FROM tv_series
        WHERE original_language = 'ar'
-         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-         AND slug IS NOT NULL AND tmdb_id IS NOT NULL
+         AND (genres_json IS NULL OR NOT EXISTS (
+           SELECT 1 FROM json_each(tv_series.genres_json)
+           WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
+         ))
+         AND (tv_series.filter_status IN ('clean', 'reviewed_approved') OR tv_series.filter_status IS NULL)
+         AND (tv_series.first_air_year IS NOT NULL AND tv_series.first_air_year >= 2000)
        ORDER BY popularity DESC
-       LIMIT 21`,
+       LIMIT ${LISTING_PAGE_SIZE + 1}`,
       []
     )
 
-    // فلتر: Talk Show + War & Politics + Documentary + History (نفس فلتر صفحات التصنيفات)
-    const filteredSeries = filterExcludedGenres(initialSeries)
+    // نفس الفلتر اللاحق الذي يطبّقه /api/series على كل دفعة — يحافظ على تطابق الصف الأول
+    const filteredSeries = filterExcludedGenres(rows)
 
-    const hasMore = filteredSeries.length > 20
+    const hasMore = filteredSeries.length > LISTING_PAGE_SIZE
     if (hasMore) filteredSeries.pop()
 
     return (
-      <SeriesGenrePageClient
-        genre={{ id: 0, tmdb_id: 0, name_en: 'Arabic', name_ar: 'عربي', slug: 'arabic' }}
-        slug="arabic"
+      <SeriesPageClient
         initialSeries={filteredSeries}
         initialHasMore={hasMore}
-        listingPath="/api/listing/arabic"
-        moviesHref="/movies/arabic"
+        forcedLanguage="ar"
+        title="مسلسلات عربي"
       />
     )
   } catch (error) {
