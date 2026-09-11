@@ -169,11 +169,18 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
         <nav aria-label="مسار التنقل" className="mb-5 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
           <Link href="/" className="transition-colors hover:text-zinc-300">الرئيسية</Link>
           <span aria-hidden="true">/</span>
-          <Link href="/genres" className="transition-colors hover:text-zinc-300">التصنيفات</Link>
-          <span aria-hidden="true">/</span>
-          <Link href={`/genres/${slug}`} className="transition-colors hover:text-zinc-300">{genre.name_ar}</Link>
-          <span aria-hidden="true">/</span>
-          <span className="font-bold text-sky-400">مسلسلات</span>
+          {slug === 'arabic' ? (
+            /* «عربي» قسم لغة (original_language = 'ar') لا تصنيف TMDB — بلا «التصنيفات» ولا رابط /genres/arabic كأب تصنيف */
+            <span className="font-bold text-sky-400">مسلسلات عربي</span>
+          ) : (
+            <Fragment>
+              <Link href="/genres" className="transition-colors hover:text-zinc-300">التصنيفات</Link>
+              <span aria-hidden="true">/</span>
+              <Link href={`/genres/${slug}`} className="transition-colors hover:text-zinc-300">{genre.name_ar}</Link>
+              <span aria-hidden="true">/</span>
+              <span className="font-bold text-sky-400">مسلسلات</span>
+            </Fragment>
+          )}
         </nav>
 
         {/* Header */}

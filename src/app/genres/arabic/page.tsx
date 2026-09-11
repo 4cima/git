@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
 }
 
-export const revalidate = 3600
+export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
 /** صفحة القسم المختلط «عربي» — لغة (original_language = 'ar') لا تصنيف TMDB.
  *  بوابتان: أفلام عربي (/movies/arabic) ومسلسلات عربي (/series/arabic). */
@@ -108,16 +108,11 @@ export default async function ArabicOverviewPage() {
         />
       </>
     )
-  } catch {
-    return (
-      <GenreOverviewPageClient
-        genre={{ id: 0, tmdb_id: 0, name_en: 'Arabic', name_ar: 'عربي', slug: 'arabic' }}
-        slug="arabic"
-        topMovies={[]}
-        topSeries={[]}
-        moviesHref="/movies/arabic"
-        seriesHref="/series/arabic"
-      />
-    )
+  } catch (error) {
+    console.error('Error fetching genres/arabic overview data:', error)
+    // لا نعيد قائمة فاضية على استثناء D1/SSR كي لا تُخبز الصفحة فارغة وقت البناء —
+    // الإعادة (throw) تجعل Next يسقط التخزين المسبق ويُصدِّر الصفحة عند الطلب (D1 متاح وقت التشغيل)،
+    // وهو نفس نهج صفحات التصنيفات الحقيقية (لا مصفوفات فاضية في مسار الخطأ).
+    throw error
   }
 }
