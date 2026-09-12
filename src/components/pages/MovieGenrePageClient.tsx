@@ -237,12 +237,12 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
             </button>
           ))}
           </div>
+          </div>          {/* إغلاق خلية الهيدر */}
 
           {/* الإعلان الجانبي: بجانب الهيدر فقط (صف واحد). ديسكتوب فقط؛ على الجوال مخفي تمامًا */}
           <aside className="hidden lg:flex flex-col items-start lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start mt-0">
             <AdFrame ad={AD_SIDE_RECT} variant="y" />
           </aside>
-          </div>
         </div>
 
         {/* تحت: الكروت بعرض كامل — بدون grid جانبي */}
