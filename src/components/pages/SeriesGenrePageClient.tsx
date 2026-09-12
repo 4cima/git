@@ -182,6 +182,13 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
           )}
         </nav>
 
+        {/* البلوك العلوي (الهيدر + الكروت) + الإعلان بجانبهما على الديسكتوب — CSS grid فقط.
+            الصف 1: الهيدر + السورت | الصف 2: أول 16 كارت | الصف 3: البقية بعرض كامل.
+            الإعلان col-start-2 مع row-span-2 بجانب (الهيدر + الكروت) — sticky كما هو.
+            الجوال: ترتيب DOM (الهيدر ← السورت ← الكروت ← الإعلان أسفل الكل). */}
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
@@ -229,12 +236,12 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
               {option.icon} {option.label}
             </button>
           ))}
-        </div>
+          </div>
 
-        {/* البلوك العلوي (أول 16) + العمود الجانبي بجانبه على الديسكتوب — CSS grid فقط.
-            الجوال: الشبكتان متتابعتان بنفس فجوة صفوف الشبكة ثم الإعلان أسفل الكل. */}
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
-          <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+          </div>
+
+          {/* البلوك العلوي: أول 16 كارت — الصف 2 (بجانبه الإعلان الممتد row-span-2) */}
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
 
         {/* Error State */}
         {error && (
@@ -307,7 +314,7 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
 
           {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — ديسكتوب: صف بعرض كامل تحت البلوك.
               جوال: تلي الشبكة العلوية بنفس فجوة صفوفها (بلا فجوة ظاهرة) */}
-          <div className="min-w-0 mt-4 lg:mt-0 lg:col-start-1 lg:col-span-2 lg:row-start-2">
+          <div className="min-w-0 mt-4 lg:mt-0 lg:col-start-1 lg:col-span-2 lg:row-start-3">
             {restItems.length > 0 && (
               <div className="grid-responsive gap-4" suppressHydrationWarning>
                 {restItems.map((item: any, i: number) => {
@@ -344,8 +351,8 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
           </div>
 
           {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) دائمًا.
-              ديسكتوب: بجانب البلوك العلوي. جوال: أسفل كل الكروت — عبر CSS grid فقط */}
-          <aside className="mt-8 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
+              ديسكتوب: بجانب (الهيدر + السورت + البلوك العلوي) — row-span-2. جوال: أسفل كل الكروت */}
+          <aside className="mt-8 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
             <AdFrame ad={AD_SIDE_RECT} variant="y" />
           </aside>
         </div>
