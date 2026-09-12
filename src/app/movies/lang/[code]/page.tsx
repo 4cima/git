@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       siteName: '4cima',
       title: `${title} | فور سيما`,
       description: `شاهد أفضل الأفلام ${lang.label} بجودة عالية ومترجمة`,
-      images: [{ url: '/og-image.png', width: 1200, height: 630, alt: title }],
+      images: [{ url: 'https://4cima.com/og-image.png', width: 1200, height: 630, alt: title }],
     },
   }
 }

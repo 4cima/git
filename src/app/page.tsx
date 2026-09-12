@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     description: 'مشاهدة أحدث الأفلام والمسلسلات المترجمة بجودة عالية — الرائج والأقسام المختلطة (أفلام + مسلسلات).',
     images: [
       {
-        url: '/og-image.png',
+        url: 'https://4cima.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'فور سيما | شاهد أحدث الأفلام والمسلسلات المترجمة',
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'فور سيما | شاهد أحدث الأفلام والمسلسلات المترجمة',
     description: 'مشاهدة أحدث الأفلام والمسلسلات المترجمة بجودة عالية على فور سيما.',
-    images: ['/og-image.png'],
+    images: ['https://4cima.com/og-image.png'],
   },
 }
 

@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description: genreDescription,
         images: [
           {
-            url: '/og-image.png',
+            url: 'https://4cima.com/og-image.png',
             width: 1200,
             height: 630,
             alt: genreTitle,

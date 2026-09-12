@@ -75,7 +75,7 @@ export const metadata: Metadata = {
     description: 'مشاهدة وتحميل احدث الافلام والمسلسلات المترجمة بجودة عالية HD مجاناً',
     images: [
       {
-        url: '/og-image.png',
+        url: 'https://4cima.com/og-image.png',
         width: 1200,
         height: 630,
         alt: '4cima — شاهد أحدث الأفلام والمسلسلات المترجمة',
@@ -86,7 +86,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '4cima - مشاهدة افلام ومسلسلات مترجمة',
     description: 'مشاهدة وتحميل احدث الافلام والمسلسلات المترجمة بجودة عالية HD مجاناً',
-    images: ['/og-image.png'],
+    images: ['https://4cima.com/og-image.png'],
   },
   robots: {
     index: true,

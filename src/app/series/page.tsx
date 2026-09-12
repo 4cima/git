@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     description: 'استكشف آلاف المسلسلات المترجمة بجودة عالية - دراما، أكشن، كوميديا، وأكثر',
     images: [
       {
-        url: '/og-image.png',
+        url: 'https://4cima.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'المسلسلات المترجمة',

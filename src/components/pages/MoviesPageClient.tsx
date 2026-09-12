@@ -489,7 +489,7 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
         <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4">
           <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-x-6 lg:gap-y-8">
 
-            {/* Main column — filters + top grid (appears on the RIGHT in RTL) */}
+            {/* الصف 1: الفلاتر + شريط النتائج (يمين في RTL) — الإعلان بجانبها */}
             <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
 
           {/* Search & Filters */}
@@ -628,6 +628,11 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
             </div>
           )}
 
+          </div>
+
+          {/* شبكة الكروت — الصف 2: الإعلان الجانبي يمتد بجانب (الفلاتر + الكروت) */}
+          <div className="min-w-0 mt-6 lg:mt-0 lg:col-start-1 lg:row-start-2">
+
           {/* Grid */}
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
@@ -710,7 +715,7 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
 
             {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — ديسكتوب: صف بعرض كامل تحت البلوك.
                 جوال: تلي الشبكة العلوية بنفس فجوة صفوفها (بلا فجوة ظاهرة) */}
-            <div className="min-w-0 mt-6 lg:mt-0 lg:col-start-1 lg:col-span-2 lg:row-start-2">
+            <div className="min-w-0 mt-6 lg:mt-0 lg:col-start-1 lg:col-span-2 lg:row-start-3">
               {restItems.length > 0 && (
                 <div className="grid-responsive gap-6">
                   {restItems.map((item: any, i: number) => {
@@ -761,9 +766,9 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
               )}
             </div>
 
-            {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) — موحّد في كل الصفحات (عام/لغة/تصنيف).
-                ديسكتوب: بجانب البلوك العلوي. جوال: أسفل كل الكروت — عبر CSS grid فقط */}
-            <aside className="mt-6 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
+            {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) — موحّد في كل الصفحات.
+                ديسكتوب: بجانب (الفلاتر + البلوك العلوي) — row-span-2. جوال: أسفل كل الكروت */}
+            <aside className="mt-6 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
               <AdFrame ad={AD_SIDE_RECT} variant="y" />
             </aside>
 
