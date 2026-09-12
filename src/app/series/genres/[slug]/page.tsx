@@ -95,8 +95,42 @@ export default async function SeriesGenrePage({ params }: PageProps) {
       isSeries: true
     }))
 
+    const genreName = String(displayGenre.name_ar || displayGenre.name_en || 'تصنيف')
+    const genrePageUrl = `https://4cima.com/series/genres/${slug}`
+
+    /* JSON-LD — Breadcrumb + CollectionPage بأول الأعمال الظاهرة (مطابق لنموذج genres/[slug]) */
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: 'https://4cima.com/' },
+            { '@type': 'ListItem', position: 2, name: 'المسلسلات', item: 'https://4cima.com/series' },
+            { '@type': 'ListItem', position: 3, name: genreName, item: genrePageUrl },
+          ],
+        },
+        {
+          '@type': 'CollectionPage',
+          name: `مسلسلات ${genreName}`,
+          url: genrePageUrl,
+          mainEntity: {
+            '@type': 'ItemList',
+            numberOfItems: filteredSeries.slice(0, 20).length,
+            itemListElement: filteredSeries.slice(0, 20).map((s: any, i: number) => ({
+              '@type': 'ListItem',
+              position: i + 1,
+              url: `https://4cima.com/series/${s.slug}`,
+              name: s.name_ar || s.name_en,
+            })),
+          },
+        },
+      ],
+    }
+
     return (
       <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <div className="hidden" aria-hidden="true" data-ssr-content="series">
           {filteredSeries.map((show: any) => (
             <div key={show.id} data-series-title={show.name_ar || show.name_en} />

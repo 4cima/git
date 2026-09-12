@@ -82,8 +82,42 @@ export default async function MovieGenrePage({ params }: PageProps) {
     // فلتر أمان (طبقة JS): Talk Show + War & Politics + Documentary + History
     const filteredMovies = filterExcludedGenres(initialMovies)
 
+    const genreName = String(plainGenre.name_ar || plainGenre.name_en || 'تصنيف')
+    const genrePageUrl = `https://4cima.com/movies/genres/${slug}`
+
+    /* JSON-LD — Breadcrumb + CollectionPage بأول الأعمال الظاهرة (مطابق لنموذج genres/[slug]) */
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: 'https://4cima.com/' },
+            { '@type': 'ListItem', position: 2, name: 'الأفلام', item: 'https://4cima.com/movies' },
+            { '@type': 'ListItem', position: 3, name: genreName, item: genrePageUrl },
+          ],
+        },
+        {
+          '@type': 'CollectionPage',
+          name: `أفلام ${genreName}`,
+          url: genrePageUrl,
+          mainEntity: {
+            '@type': 'ItemList',
+            numberOfItems: filteredMovies.slice(0, 20).length,
+            itemListElement: filteredMovies.slice(0, 20).map((m: any, i: number) => ({
+              '@type': 'ListItem',
+              position: i + 1,
+              url: `https://4cima.com/movies/${m.slug}`,
+              name: m.title_ar || m.title_en,
+            })),
+          },
+        },
+      ],
+    }
+
     return (
       <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <div className="hidden" aria-hidden="true" data-ssr-content="movies">
           {filteredMovies.map((movie: any) => (
             <div key={movie.id} data-movie-title={movie.title_ar || movie.title_en} />

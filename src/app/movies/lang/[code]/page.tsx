@@ -79,13 +79,49 @@ export default async function MovieLangPage({ params }: PageProps) {
     const hasMore = filteredMovies.length > LISTING_PAGE_SIZE
     if (hasMore) filteredMovies.pop()
 
+    const pageTitle = `أفلام ${lang.label}`
+    const pageUrl = `https://4cima.com/movies/lang/${code}`
+
+    /* JSON-LD — Breadcrumb + CollectionPage بأول الأعمال الظاهرة (مطابق لنموذج genres/[slug]) */
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'الرئيسية', item: 'https://4cima.com/' },
+            { '@type': 'ListItem', position: 2, name: 'الأفلام', item: 'https://4cima.com/movies' },
+            { '@type': 'ListItem', position: 3, name: pageTitle, item: pageUrl },
+          ],
+        },
+        {
+          '@type': 'CollectionPage',
+          name: pageTitle,
+          url: pageUrl,
+          mainEntity: {
+            '@type': 'ItemList',
+            numberOfItems: filteredMovies.slice(0, 20).length,
+            itemListElement: filteredMovies.slice(0, 20).map((m: any, i: number) => ({
+              '@type': 'ListItem',
+              position: i + 1,
+              url: `https://4cima.com/movies/${m.slug}`,
+              name: m.title_ar || m.title_en,
+            })),
+          },
+        },
+      ],
+    }
+
     return (
+      <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <MoviesPageClient
         initialMovies={filteredMovies}
         initialHasMore={hasMore}
         forcedLanguage={lang.filter}
         title={`أفلام ${lang.label}`}
       />
+      </>
     )
   } catch (error) {
     console.error(`Error fetching movies/lang/${code} page data:`, error)
