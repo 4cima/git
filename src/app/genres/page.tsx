@@ -37,6 +37,14 @@ export const metadata: Metadata = {
     siteName: '4cima',
     type: 'website',
     locale: 'ar_EG',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'التصنيفات — تصفح الأفلام والمسلسلات حسب النوع',
+      },
+    ],
   },
 }
 
