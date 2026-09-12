@@ -6,7 +6,7 @@ import { Film, ChevronLeft } from 'lucide-react'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { getGenreColor } from '@/utils/genreColors'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
-import { MobileStickyAd, DesktopOnly } from '@/components/features/system/MobileStickyAd'
+import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { Footer } from '@/components/layout/Footer'
 import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { getAdByNum } from '@/data/ads/4cima.com'
@@ -18,7 +18,6 @@ import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config
    6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
 const AD_HEADER = getAdByNum(1)! // 728×90
 const AD_SIDE_RECT = getAdByNum(2)! // 300×250
-const AD_SIDE_SKY = getAdByNum(3)! // 160×600
 const AD_FOOTER_MID = getAdByNum(4)! // 468×60
 
 const SORT_OPTIONS = [
@@ -342,15 +341,10 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
             )}
           </div>
 
-          {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط.
+          {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) دائمًا.
               ديسكتوب: بجانب البلوك العلوي. جوال: أسفل كل الكروت — عبر CSS grid فقط */}
           <aside className="mt-8 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
             <AdFrame ad={AD_SIDE_RECT} variant="y" />
-            <DesktopOnly>
-              <div className="w-full">
-                <AdFrame ad={AD_SIDE_SKY} variant="y" />
-              </div>
-            </DesktopOnly>
           </aside>
         </div>
 

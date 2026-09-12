@@ -21,6 +21,7 @@ const AD_HEADER = getAdByNum(1)!
 const AD_SIDE_RECT = getAdByNum(2)!
 const AD_SIDE_SKY = getAdByNum(3)!
 const AD_FOOTER_MID = getAdByNum(4)!
+const AD_IN_ROW = getAdByNum(5)! // 160×300 — sidebar صفحات اللغة فقط (وضع forcedLanguage)
 
 const GENRES = [
   { name: 'دراما',        slug: 'drama',            emoji: '🎭' },
@@ -762,15 +763,23 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
               )}
             </div>
 
-            {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط.
+            {/* العمود الجانبي (يسار في RTL):
+                - /movies العامة: إعلان 2 (300×250) دائمًا + إعلان 3 (160×600) ديسكتوب فقط.
+                - صفحات اللغة (forcedLanguage): إعلان 5 (160×300) بدلًا منهما.
                 ديسكتوب: بجانب البلوك العلوي. جوال: أسفل كل الكروت — عبر CSS grid فقط */}
             <aside className="mt-6 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
-              <AdFrame ad={AD_SIDE_RECT} variant="y" />
-              <DesktopOnly>
-                <div className="w-full">
-                  <AdFrame ad={AD_SIDE_SKY} variant="y" />
-                </div>
-              </DesktopOnly>
+              {forcedLanguage ? (
+                <AdFrame ad={AD_IN_ROW} variant="y" />
+              ) : (
+                <>
+                  <AdFrame ad={AD_SIDE_RECT} variant="y" />
+                  <DesktopOnly>
+                    <div className="w-full">
+                      <AdFrame ad={AD_SIDE_SKY} variant="y" />
+                    </div>
+                  </DesktopOnly>
+                </>
+              )}
             </aside>
 
           </div>
