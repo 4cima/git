@@ -487,10 +487,10 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
       {/* Main Content */}
       <section className="w-full bg-slate-950">
         <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4">
-          <div className="grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-x-6 lg:gap-y-8">
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-x-6">
 
-            {/* الصف 1: الفلاتر + شريط النتائج (يمين في RTL) — الإعلان بجانبها */}
-            <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
+            {/* الفلاتر + شريط النتائج (يمين في RTL) — الإعلان بجانبها في صف واحد */}
+            <div className="min-w-0 space-y-6">
 
           {/* Search & Filters */}
           <div ref={filtersRef} className="flex flex-col md:flex-row items-stretch md:items-center gap-4 bg-slate-800/40 border border-slate-700 p-4 rounded-xl">
@@ -630,8 +630,16 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
 
           </div>
 
-          {/* شبكة الكروت — الصف 2: الإعلان الجانبي يمتد بجانب (الفلاتر + الكروت) */}
-          <div className="min-w-0 mt-6 lg:mt-0 lg:col-start-1 lg:row-start-2">
+            {/* الإعلان الجانبي (يسار في RTL): 300×250 — بجانب الفلاتر فقط (صف واحد).
+                ديسكتوب فقط؛ على الجوال مخفي تمامًا */}
+            <aside className="hidden lg:flex flex-col items-start lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start mt-0">
+              <AdFrame ad={AD_SIDE_RECT} variant="y" />
+            </aside>
+          </div>
+
+          {/* الكروت بعرض كامل تحت صف (الفلاتر + الإعلان) */}
+          <div className="mt-6">
+          <div className="min-w-0">
 
           {/* Grid */}
           {error && (
@@ -713,9 +721,8 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
           )}
             </div>
 
-            {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — ديسكتوب: صف بعرض كامل تحت البلوك.
-                جوال: تلي الشبكة العلوية بنفس فجوة صفوفها (بلا فجوة ظاهرة) */}
-            <div className="min-w-0 mt-6 lg:mt-0 lg:col-start-1 lg:col-span-2 lg:row-start-3">
+            {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — بعرض كامل */}
+            <div className="min-w-0 mt-6">
               {restItems.length > 0 && (
                 <div className="grid-responsive gap-6">
                   {restItems.map((item: any, i: number) => {
@@ -765,13 +772,6 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
                 </>
               )}
             </div>
-
-            {/* العمود الجانبي (يسار في RTL): إعلان 2 (300×250) — موحّد في كل الصفحات.
-                ديسكتوب: بجانب (الفلاتر + البلوك العلوي) — row-span-2. جوال: أسفل كل الكروت */}
-            <aside className="mt-6 flex w-full flex-col items-center gap-6 lg:mt-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:w-[300px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
-              <AdFrame ad={AD_SIDE_RECT} variant="y" />
-            </aside>
-
           </div>
         </div>
       </section>
