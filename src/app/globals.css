@@ -1766,6 +1766,8 @@ select option {
     0 0 6px rgba(232, 163, 23, 0.4);
   transform: rotateY(-18deg) rotateX(8deg);
   animation: site-favicon-turn 6s ease-in-out infinite;
+}
+
 /* تموّج وجه العملة (أُعيدت إضافته — ضاعت أثناء تعديلات الكاميرا) */
 @keyframes site-favicon-turn {
   0%,
@@ -1775,8 +1777,6 @@ select option {
   50% {
     transform: rotateY(24deg) rotateX(6deg);
   }
-}
-
 }
 
 .site-logo-favicon {
