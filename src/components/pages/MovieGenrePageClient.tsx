@@ -193,7 +193,7 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
         <div className="mb-8">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
             <div className={`w-3.5 h-3.5 rounded-full ${genreColorScheme.bg} ${genreColorScheme.border} border-2 ${genreColorScheme.glow} shadow-xl`} />
-            <h1 className={`text-4xl md:text-6xl font-black ${genreColorScheme.text} drop-shadow-lg`}>
+            <h1 className="text-4xl md:text-6xl font-black title-gradient drop-shadow-lg">
               أفلام {genre.name_ar}
             </h1>
             {genre.name_en && genre.name_en !== genre.name_ar && (
@@ -206,13 +206,13 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href={`/genres/${slug}`}
-              className="rounded-xl border border-zinc-700/60 bg-slate-900/60 px-4 py-2 text-sm font-bold text-zinc-300 transition-all duration-300 hover:border-zinc-500 hover:text-white"
+              className="btn-polished rounded-xl border border-zinc-700/60 bg-slate-900/60 px-4 py-2 text-sm font-bold text-zinc-300 transition-all duration-300 hover:border-zinc-500 hover:text-white"
             >
               نظرة عامة على {genre.name_ar}
             </Link>
             <Link
               href={seriesHref ?? `/series/genres/${slug}`}
-              className="group flex items-center gap-2 rounded-xl border border-blue-500/25 bg-blue-600/10 px-4 py-2 text-sm font-bold text-blue-300 transition-all duration-300 hover:border-blue-500/60 hover:bg-blue-600/25"
+              className="btn-polished group flex items-center gap-2 rounded-xl border border-blue-500/25 bg-blue-600/10 px-4 py-2 text-sm font-bold text-blue-300 transition-all duration-300 hover:border-blue-500/60 hover:bg-blue-600/25"
             >
               <span>مسلسلات {genre.name_ar}</span>
               <ChevronLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />

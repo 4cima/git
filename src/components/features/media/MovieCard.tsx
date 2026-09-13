@@ -351,7 +351,7 @@ export const MovieCard = memo(({
         onMouseLeave={() => setIsHovered(false)}
         draggable={false}
         onDragStart={(e: DragEvent<HTMLAnchorElement>) => e.preventDefault()}
-        className="block relative h-full w-full lumen-focus-ring rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-lumen-gold focus-visible:outline-offset-2 touch-pan-y"
+        className="block relative h-full w-full lumen-focus-ring card-polished focus-visible:outline focus-visible:outline-2 focus-visible:outline-lumen-gold focus-visible:outline-offset-2 touch-pan-y"
       >
         <div className="lumen-card h-full flex flex-col transition-transform duration-300 ease-lumen hover:scale-[1.03] focus-within:scale-[1.02]">
           {/* Poster with Overlay Badges */}

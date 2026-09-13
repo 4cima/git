@@ -748,24 +748,6 @@ a:focus-visible,
   }
 }
 
-@keyframes cinema-filming {
-  0% {
-    transform: rotate(-8deg) translateY(0) translateX(-6px);
-  }
-  25% {
-    transform: rotate(-5deg) translateY(-1px) translateX(-3px);
-  }
-  50% {
-    transform: rotate(8deg) translateY(0) translateX(6px);
-  }
-  75% {
-    transform: rotate(5deg) translateY(-1px) translateX(3px);
-  }
-  100% {
-    transform: rotate(-8deg) translateY(0) translateX(-6px);
-  }
-}
-
 @keyframes infinite-scroll {
   0% {
     transform: translateX(0);
@@ -1435,6 +1417,8 @@ select option {
   position: relative;
   flex-shrink: 0;
   transform-style: preserve-3d;
+  /* محور الهزاز عند مركز عملة "i" المعلقة — بديل ثابت عن قياس JS السابق */
+  transform-origin: 50% 22%;
 }
 
 .site-logo-mark {
@@ -1500,6 +1484,11 @@ select option {
   position: relative;
   display: inline-block;
   color: #38bdf8;
+  /* تقصير ديل حرف الـ c المائل (~5%): قصّ شريط رفيع من الطرف الأيمن
+     حيث ينتهي ذيل الحرف — دون لمس جسم الحرف ولا الكاميرا 🎥 فوقه */
+  clip-path: inset(0 6% 0 0);
+  /* إنزال حرف الـ c 2px وتكبيره 5% (هو + m + a فقط) */
+  transform: translateY(2px) scale(1.05);
   -webkit-text-stroke: 1px #111;
   text-shadow:
     0 1px 0 #0369a1,
@@ -1509,21 +1498,223 @@ select option {
     0 0 12px rgba(56, 189, 248, 0.4);
 }
 
-.site-logo-cam-slot {
+/* ===== كاميرا مصغّرة 3D تدور حول النقطة وتسلّط شعاعاً مخروطياً صغيراً عليها =====
+   المدار دائرة صغيرة مركزها العملة (النقطة)، والكاميرا تلف عليها باستمرار
+   والشعاع يبدأ نقطة من الكاميرا ويكبر حتى النقطة (بعرض لا يتجاوز 120% منها) */
+.site-logo-camrig {
   position: absolute;
-  top: -0.15em;
   left: 50%;
-  font-size: 0.75rem;
-  font-style: normal;
-  line-height: 1;
-  transform: translateX(-50%);
+  top: -0.35em;               /* الكاميرا أبعد عن النقطة (أعلى-يمين) */
+  width: 0.9em;
+  height: 0.6em;
+  margin-left: 0.1em;
+  z-index: 4;
   pointer-events: none;
+  /* حومة أوسع وبإيقاع مختلف عن تموّج اللوجو والنقطة = عدم تزامن واضح */
+  animation: cam-hover 9.5s ease-in-out infinite;
 }
 
-.site-logo-cam {
-  display: inline-block;
-  transform-origin: 50% 80%;
-  animation: cinema-filming 4s ease-in-out infinite;
+/* الكاميرا في منتصف الحامل — تنحرف كعامل تصوير يضبط الزاوية ومركزة على النقطة */
+.site-logo-cam-camera {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.32em;
+  height: 0.24em;
+  margin-left: -0.16em;
+  margin-top: -0.12em;
+  animation: cam-aim 7s ease-in-out infinite;
+}
+
+/* جسم الكاميرا — معدني فاتح بلمعان، بخط لوحة جانبي */
+.site-logo-cam-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.04em 0.04em 0.08em 0.04em;
+  background: linear-gradient(165deg, #d6dbe3 0%, #a4adba 45%, #7b8496 100%);
+  box-shadow:
+    inset 0 0.02em 0.04em rgba(255, 255, 255, 0.65),
+    inset 0 -0.02em 0.05em rgba(0, 0, 0, 0.5),
+    inset 0.04em 0 0.03em rgba(0, 0, 0, 0.22),
+    0 0.05em 0.09em rgba(0, 0, 0, 0.85),
+    0 0 0.06em rgba(120, 180, 255, 0.3);
+}
+.site-logo-cam-body::after {
+  content: '';
+  position: absolute;
+  top: 0.06em;
+  left: 0.17em;
+  width: 0.008em;
+  height: 0.1em;
+  border-radius: 0.004em;
+  background: rgba(56, 64, 80, 0.55);
+}
+
+/* عدسة بارزة (برميل) بدرع حضي + حلقة ضبط — زجاج أزرق متوهج */
+.site-logo-cam-lens {
+  position: absolute;
+  left: -0.06em;
+  top: 50%;
+  width: 0.14em;
+  height: 0.16em;
+  margin-top: -0.08em;
+  border-radius: 0.03em 0.06em 0.06em 0.03em;
+  background: linear-gradient(180deg, #15151b, #25252e);
+  box-shadow:
+    inset 0 0 0.02em #0a0a0f,
+    0 0.02em 0.04em rgba(0, 0, 0, 0.8);
+}
+.site-logo-cam-lens::before {
+  content: '';
+  position: absolute;
+  left: 0.07em;
+  top: 50%;
+  width: 0.058em;
+  height: 0.058em;
+  margin-top: -0.029em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #8fd0ff, #1d3f74 60%, #0b1226);
+  box-shadow: 0 0 0.05em rgba(120, 195, 255, 0.95), inset 0 0 0.015em #fff;
+}
+.site-logo-cam-lens::after {
+  content: '';
+  position: absolute;
+  left: 0.02em;
+  top: 50%;
+  width: 0.1em;
+  height: 0.185em;
+  margin-top: -0.0925em;
+  border-radius: 0.05em;
+  border: 0.012em solid rgba(210, 220, 235, 0.8);
+  box-shadow: 0 0.015em 0.03em rgba(0, 0, 0, 0.6);
+}
+
+/* معين النظر الإلكتروني (Viewfinder) — زجاجة خضراء نيون صغيرة */
+.site-logo-cam-top {
+  position: absolute;
+  top: -0.045em;
+  right: 0.015em;
+  width: 0.1em;
+  height: 0.06em;
+  border-radius: 0.02em;
+  background: linear-gradient(180deg, #191922, #0d0d13);
+  box-shadow:
+    0 0.01em 0.02em rgba(0, 0, 0, 0.7),
+    inset 0 0 0.01em rgba(255, 255, 255, 0.22);
+}
+.site-logo-cam-top::before {
+  content: '';
+  position: absolute;
+  left: 0.12em;
+  top: 0.02em;
+  width: 0.03em;
+  height: 0.03em;
+  border-radius: 50%;
+  background: #52ffa0;
+  box-shadow: 0 0 0.035em #52ffa0;
+}
+
+/* مقبض علوي (Handle) كحوامل السينما */
+.site-logo-cam-handle {
+  position: absolute;
+  top: -0.08em;
+  left: 50%;
+  width: 0.24em;
+  height: 0.04em;
+  margin-left: -0.12em;
+  border-radius: 0.02em;
+  background: linear-gradient(180deg, #3a3f4c, #23262e);
+  box-shadow: 0 0.015em 0.03em rgba(0, 0, 0, 0.85);
+}
+
+/* لمبة REC الحمراء (تومض) */
+.site-logo-cam-rec {
+  position: absolute;
+  top: 0.04em;
+  right: 0.03em;
+  width: 0.028em;
+  height: 0.028em;
+  border-radius: 50%;
+  background: #ff2b2b;
+  box-shadow: 0 0 0.03em #ff4d4d;
+  animation: cam-rec-blink 1.2s steps(2, end) infinite;
+}
+
+/* شعاع بروجيكتور: قمة المخروط عند عدسة الكاميرا وقاعدته على النقطة تماماً
+   (منتصف الكتلة = منتصف المسافة بين الكاميرا والنقطة، والطول = المسافة،
+   والدوران -18° يوجّه المحور نحو النقطة) */
+.site-logo-cam-beam {
+  position: absolute;
+  left: 0.175em;              /* منتصف المسافة بين الكاميرا والنقطة */
+  top: 0.39em;
+  width: 0.58em;              /* المسافة الكاملة الكاميرا ← النقطة */
+  height: 0.34em;
+  margin-left: -0.29em;
+  margin-top: -0.17em;
+  transform: rotate(-18deg);
+  background: linear-gradient(90deg, rgba(150, 210, 255, 0.34), rgba(96, 156, 255, 0.05));
+  clip-path: polygon(100% 50%, 0% 0%, 0% 100%);
+  filter: blur(0.012em);
+  pointer-events: none;
+  animation: cam-beam-pulse 1.4s ease-in-out infinite;
+}
+/* خطوط البروجيكتور المتنوعة — تنساب فتبدو أشعة متغيرة */
+.site-logo-cam-beam::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -58deg,
+    rgba(185, 228, 255, 0.85) 0 0.018em,
+    transparent 0.018em 0.055em
+  );
+  mix-blend-mode: screen;
+  animation: cam-rays 1.1s linear infinite;
+}
+/* توهج خفيف عند موضع سقوط الشعاع على النقطة */
+.site-logo-cam-beam::after {
+  content: '';
+  position: absolute;
+  right: 78%;
+  width: 0.1em;
+  height: 0.19em;
+  background: radial-gradient(ellipse at center, rgba(150, 215, 255, 0.55), transparent 70%);
+  animation: cam-beam-pulse 1.4s ease-in-out infinite;
+}
+
+/* التحوّم: مسار متعدد الاتجاهات أوسع، بإيقاع مختلف عن اللوجو = عدم تزامن */
+@keyframes cam-hover {
+  0%, 100% { transform: translate(0, 0); }
+  14% { transform: translate(-0.07em, -0.05em); }
+  28% { transform: translate(0.06em, 0.02em); }
+  42% { transform: translate(0.04em, 0.09em); }
+  56% { transform: translate(-0.08em, 0.03em); }
+  70% { transform: translate(0.02em, -0.08em); }
+  84% { transform: translate(-0.04em, -0.02em); }
+}
+
+/* ضبط بؤرة الكاميرا: إيقاع مختلف (7s) عن الحومة (9.5s) عن اللوجو (3s) */
+@keyframes cam-aim {
+  0%, 100% { transform: rotateZ(3.5deg); }
+  25% { transform: rotateZ(-4.5deg); }
+  50% { transform: rotateZ(2deg); }
+  75% { transform: rotateZ(-2deg); }
+}
+
+/* انسياب خطوط شعاع البروجيكتور */
+@keyframes cam-rays {
+  from { background-position: 0% 0%; }
+  to   { background-position: 0.12em 0.09em; }
+}
+
+@keyframes cam-rec-blink {
+  0%, 45% { opacity: 1; }
+  55%, 100% { opacity: 0.2; }
+}
+
+@keyframes cam-beam-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 .site-logo-hang {
@@ -1536,7 +1727,9 @@ select option {
   font-style: normal;
   vertical-align: baseline;
   transform-style: preserve-3d;
-  transform: translateZ(16px);
+  /* تحريك مجموعة حرف i فقط (الحبل + العملة + العمود) شمال 3px
+     حتى لا تتأثر باقي الحروف c/m/a — الـ transform لا يزيح العناصر المجاورة */
+  transform: translateZ(16px) translateY(0.26em) translateX(5px);
 }
 
 .site-logo-tittle {
@@ -1573,6 +1766,17 @@ select option {
     0 0 6px rgba(232, 163, 23, 0.4);
   transform: rotateY(-18deg) rotateX(8deg);
   animation: site-favicon-turn 6s ease-in-out infinite;
+/* تموّج وجه العملة (أُعيدت إضافته — ضاعت أثناء تعديلات الكاميرا) */
+@keyframes site-favicon-turn {
+  0%,
+  100% {
+    transform: rotateY(-24deg) rotateX(10deg);
+  }
+  50% {
+    transform: rotateY(24deg) rotateX(6deg);
+  }
+}
+
 }
 
 .site-logo-favicon {
@@ -1582,13 +1786,17 @@ select option {
 }
 
 .site-logo-rope {
+  /* الحبل داخل العملة — طرفه السفلي مربوط بها ويمتد لأعلى:
+     طوله (640px) أكبر من مسافة السقوط فتظل قمته خارج الشاشة فوق =
+     "سقف الموقع"، فيبدو دائماً موصولاً وغير مقطوع */
   position: absolute;
   left: 50%;
+  top: -640px;
   width: 3px;
-  height: 2.05rem;
-  top: calc(-2.05rem + 0.13em);
+  height: 640px;
   margin-left: -1.5px;
-  transform-origin: bottom center;
+  z-index: -1; /* خلف وجه العملة ليبدو الحبل مُركَّبًا داخلها */
+  transform-origin: bottom center; /* التمدد من طرف العملة لأعلى */
   border-radius: 2px 2px 1px 1px;
   background: repeating-linear-gradient(
     180deg,
@@ -1601,26 +1809,49 @@ select option {
     inset -1px 0 2px rgba(0, 0, 0, 0.45),
     inset 1px 0 1px rgba(255, 255, 255, 0.28);
   pointer-events: none;
-  z-index: 1;
+}
+
+/* عقدة التثبيت أعلى الحبل — تظهر كطرف مثبت أعلى الصفحة */
+.site-logo-rope::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 11px;
+  height: 7px;
+  margin-left: -5.5px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #3f3f46, #18181b);
+  box-shadow:
+    0 0 0 1px #000,
+    0 1px 3px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .site-logo-i {
   position: absolute;
   left: 50%;
-  top: 0.28em;
+  /* فراغ بسيط بين العملة (النقطة) وعمود الحرف — كان لازقًا فيها (0.28em) فيبدو مرتفعًا */
+  top: 0.40em;
   bottom: 0.04em;
   width: 0.13em;
   margin-left: -0.065em;
   border-radius: 0.065em;
   background: currentColor;
   box-shadow:
+    0 0 0 1px #111,
     1px 2px 0 #065f46,
     2px 3px 6px rgba(0, 0, 0, 0.4),
     0 0 10px rgba(16, 185, 129, 0.45);
 }
 
 .site-logo-m {
+  display: inline-block;
   color: #d946ef;
+  /* تقصير ديل حرف الـ m المائل ~5% (نفس قصّ حرف الـ c) */
+  clip-path: inset(0 6% 0 0);
+  /* إنزال حرف الـ m 2px وتكبيره 5% (هو + c + a فقط) */
+  transform: translateY(2px) scale(1.05);
   -webkit-text-stroke: 1px #111;
   text-shadow:
     0 1px 0 #a21caf,
@@ -1631,7 +1862,12 @@ select option {
 }
 
 .site-logo-a {
+  display: inline-block;
   color: #fbbf24;
+  /* تقصير ديل حرف الـ a المائل ~5% (نفس قصّ حرف الـ c) */
+  clip-path: inset(0 6% 0 0);
+  /* إنزال حرف الـ a 2px وتكبيره 5% (هو + c + m فقط) */
+  transform: translateY(2px) scale(1.05);
   -webkit-text-stroke: 1px #111;
   text-shadow:
     0 1px 0 #d97706,
@@ -1643,44 +1879,113 @@ select option {
 
 @keyframes site-logo-drop {
   0% {
-    transform: translateY(-7.5rem) rotateX(28deg) rotateZ(-9deg);
+    transform: translateY(-600px) rotate(0deg);
     opacity: 0;
   }
-  62% {
-    transform: translateY(0.35rem) rotateX(8deg) rotateZ(3.5deg);
+  3% {
     opacity: 1;
   }
-  82% {
-    transform: translateY(-0.2rem) rotateX(16deg) rotateZ(-1.5deg);
+  35% {
+    transform: translateY(45px) rotate(20deg);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+  48% {
+    transform: translateY(-20px) rotate(-16deg);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  58% {
+    transform: translateY(22px) rotate(11deg);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+  66% {
+    transform: translateY(-12px) rotate(-7deg);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  73% {
+    transform: translateY(11px) rotate(4.5deg);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+  79% {
+    transform: translateY(-6px) rotate(-2.5deg);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  84% {
+    transform: translateY(4px) rotate(1.2deg);
+  }
+  88% {
+    transform: translateY(-2px) rotate(-0.6deg);
+  }
+  92% {
+    transform: translateY(1px) rotate(0.2deg);
   }
   100% {
-    transform: translateY(0) rotateX(12deg) rotateZ(0deg);
+    transform: translateY(0) rotate(0deg);
     opacity: 1;
   }
 }
 
+/* الحبل يتمدد مع سقوط العملة — يبدأ قصيراً ملاصقاً للعملة (scaleY 0.18)
+   ويمتد تدريجياً مع نزول اللوجو حتى الطول الكامل — مرئي دائماً وغير مقطوع */
 @keyframes site-rope-drop {
   0% {
-    transform: scaleY(0.12);
-    opacity: 0;
+    transform: scaleY(0.18);
   }
-  62% {
+  35% {
+    transform: scaleY(0.6);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+  48% {
+    transform: scaleY(0.95);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  58% {
     transform: scaleY(1.08);
-    opacity: 1;
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
   }
-  82% {
-    transform: scaleY(0.96);
+  66% {
+    transform: scaleY(1.04);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  73% {
+    transform: scaleY(1.07);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+  79% {
+    transform: scaleY(1.03);
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  84% {
+    transform: scaleY(1.05);
+  }
+  88% {
+    transform: scaleY(1.02);
+  }
+  92% {
+    transform: scaleY(1.03);
   }
   100% {
     transform: scaleY(1);
-    opacity: 1;
+  }
+}
+
+/* اهتزاز الحبل بعد الاستقرار */
+@keyframes site-rope-vibrate {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  25% {
+    transform: scaleX(1.08);
+  }
+  75% {
+    transform: scaleX(0.95);
   }
 }
 
 @keyframes site-logo-sway {
   0%,
   100% {
-    transform: rotateX(12deg) rotateY(0deg) rotateZ(0deg);
+    transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
   }
   35% {
     transform: rotateX(16deg) rotateY(14deg) rotateZ(-2.4deg);
@@ -1690,26 +1995,23 @@ select option {
   }
 }
 
-@keyframes site-favicon-turn {
-  0%,
-  100% {
-    transform: rotateY(-24deg) rotateX(10deg);
-  }
-  50% {
-    transform: rotateY(24deg) rotateX(6deg);
-  }
-}
-
 .site-logo[data-state='drop'] {
-  animation: site-logo-drop 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top center;
+  animation: site-logo-drop 3.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  will-change: transform;
 }
 
 .site-logo[data-state='drop'] .site-logo-rope {
-  animation: site-rope-drop 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: site-rope-drop 3.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 .site-logo[data-state='idle'] {
   animation: site-logo-sway 3s ease-in-out infinite;
+}
+
+/* الحبل يهتز لحظتين بعد أن يستقر اللوجو */
+.site-logo[data-state='idle'] .site-logo-rope {
+  animation: site-rope-vibrate 0.6s ease-in-out 0.2s 3;
 }
 
 .site-logo[data-state='tucked'] {
@@ -1717,9 +2019,9 @@ select option {
   transition: transform 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
-.site-logo-link:hover .site-logo-mark {
-  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.45));
-}
+
+/* ملاحظة: لا تُضف filter على .site-logo-mark عند الهوفر — أي filter يسطّح
+   (flatten) السياق ثلاثي الأبعاد فيقفز شكل الحروف فجأة (مشكلة "بيرجع عدل عند الهوفر") */
 
 
 /* -------------------------------------------------------------------------- */
@@ -2148,8 +2450,42 @@ input[type="range"].slider::-moz-range-track {
   animation-play-state: paused;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .meteor-shower {
-    display: none;
-  }
+/* === 4cima — Visual Polish (13/09/2026) === */
+
+h1 {
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.title-gradient {
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.card-polished {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+.card-polished:hover {
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25);
+  transform: translateY(-2px);
+}
+
+.btn-polished {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.btn-polished:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+}
+.btn-polished:active {
+  transform: translateY(0);
 }

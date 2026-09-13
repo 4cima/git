@@ -1,83 +1,63 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type LogoState = 'drop' | 'idle' | 'tucked'
 
+const INTRO_MS = 3700
+
 export function SiteLogo() {
   const [state, setState] = useState<LogoState>('drop')
-  const logoRef = useRef<HTMLDivElement>(null)
-  const hangRef = useRef<HTMLSpanElement>(null)
-  const pivotRef = useRef<HTMLSpanElement>(null)
-  const ropeRef = useRef<HTMLSpanElement>(null)
-
-  useLayoutEffect(() => {
-    const logo = logoRef.current
-    const hang = hangRef.current
-    const pivot = pivotRef.current
-    const rope = ropeRef.current
-    if (!logo || !hang || !pivot || !rope) return
-
-    const sync = () => {
-      logo.style.animation = 'none'
-      logo.style.transform = 'none'
-
-      const logoBox = logo.getBoundingClientRect()
-      const hangBox = hang.getBoundingClientRect()
-      const tittleBox = pivot.getBoundingClientRect()
-      if (!logoBox.width || !tittleBox.width || !hangBox.height) {
-        logo.style.animation = ''
-        logo.style.transform = ''
-        return
-      }
-
-      const tittleCx = tittleBox.left + tittleBox.width / 2
-      const tittleCy = tittleBox.top + tittleBox.height / 2
-      const ropeH = rope.offsetHeight
-
-      rope.style.left = `${tittleCx - hangBox.left}px`
-      rope.style.marginLeft = `${-rope.offsetWidth / 2}px`
-      rope.style.top = `${tittleCy - hangBox.top - ropeH + tittleBox.height * 0.28}px`
-
-      logo.style.transformOrigin = `${tittleCx - logoBox.left}px ${tittleCy - logoBox.top}px`
-      logo.style.animation = ''
-      logo.style.transform = ''
-    }
-
-    sync()
-    void document.fonts?.ready.then(sync)
-    const ro = new ResizeObserver(sync)
-    ro.observe(logo)
-    window.addEventListener('resize', sync)
-    return () => {
-      ro.disconnect()
-      window.removeEventListener('resize', sync)
-    }
-  }, [state])
+  const stateRef = useRef<LogoState>('drop')
+  const introTimer = useRef<number | null>(null)
+  const didIntro = useRef(false)
 
   useEffect(() => {
-    let introDone = false
-    const introMs = 1300
+    const updateState = (next: LogoState) => {
+      stateRef.current = next
+      setState(next)
+    }
+
+    // تشغيل سقوط اللوجو ثم التحول للتأرجح بعد انتهاء مدة السقوط
+    const playDrop = () => {
+      updateState('drop')
+      if (introTimer.current !== null) {
+        window.clearTimeout(introTimer.current)
+      }
+      introTimer.current = window.setTimeout(() => {
+        if (stateRef.current === 'drop') {
+          updateState('idle')
+        }
+      }, INTRO_MS)
+    }
 
     const apply = () => {
       if (window.scrollY > 100) {
-        setState('tucked')
+        // نزلنا تحت — نُخفي اللوجو
+        updateState('tucked')
         return
       }
-      setState(introDone ? 'idle' : 'drop')
+      if (!didIntro.current) {
+        // بداية التحميل — سقوط أول مرة
+        didIntro.current = true
+        playDrop()
+        return
+      }
+      // رجعنا لفوق بعد ما كنا مخفيين تحت — يُعاد تشغيل السقوط
+      if (stateRef.current === 'tucked') {
+        playDrop()
+      }
     }
 
     apply()
     window.addEventListener('scroll', apply, { passive: true })
-    const timer = window.setTimeout(() => {
-      introDone = true
-      apply()
-    }, introMs)
 
     return () => {
       window.removeEventListener('scroll', apply)
-      window.clearTimeout(timer)
+      if (introTimer.current !== null) {
+        window.clearTimeout(introTimer.current)
+      }
     }
   }, [])
 
@@ -87,19 +67,16 @@ export function SiteLogo() {
       className="site-logo-link group"
       aria-label="4cima — الرئيسية"
     >
-      <div ref={logoRef} className="site-logo" data-state={state}>
+      <div className="site-logo" data-state={state}>
         <span className="site-logo-mark" dir="ltr">
           <span className="site-logo-4">4</span>
           <span className="site-logo-cima">
             <span className="site-logo-c">
-              <span className="site-logo-cam-slot" aria-hidden="true">
-                <span className="site-logo-cam">🎥</span>
-              </span>
               c
             </span>
-            <span ref={hangRef} className="site-logo-hang">
-              <span ref={ropeRef} className="site-logo-rope" aria-hidden="true" />
-              <span ref={pivotRef} className="site-logo-tittle" aria-hidden="true">
+            <span className="site-logo-hang">
+              <span className="site-logo-tittle" aria-hidden="true">
+                <span className="site-logo-rope" aria-hidden="true" />
                 <span className="site-logo-tittle-face">
                   <svg viewBox="0 0 64 64" className="site-logo-favicon" aria-hidden="true">
                     <circle cx="32" cy="32" r="29.5" fill="#E8A317" />
@@ -110,6 +87,18 @@ export function SiteLogo() {
                     </g>
                   </svg>
                 </span>
+              </span>
+              {/* كاميرا مصغّرة 3D تدور حول النقطة وتسلّط شعاعاً مخروطياً صغيراً عليها */}
+              <span className="site-logo-camrig" aria-hidden="true">
+                <span className="site-logo-cam-camera">
+                  <span className="site-logo-cam-body">
+                    <span className="site-logo-cam-lens" aria-hidden="true" />
+                    <span className="site-logo-cam-top" aria-hidden="true" />
+                    <span className="site-logo-cam-handle" aria-hidden="true" />
+                    <span className="site-logo-cam-rec" aria-hidden="true" />
+                  </span>
+                </span>
+                <span className="site-logo-cam-beam" aria-hidden="true" />
               </span>
               <span className="site-logo-i" aria-hidden="true" />
             </span>
