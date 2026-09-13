@@ -106,7 +106,7 @@ export interface ActivityItem {
   content_id?: string;
   content_type?: 'movie' | 'tv' | 'anime' | 'game' | 'software';
   description: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at?: string;
 }
 

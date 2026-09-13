@@ -1,12 +1,18 @@
+/**
+ * @deprecated Use logger from './logger' instead. This class will be removed in a future version.
+ */
 export class ErrorHandler {
+  /** @deprecated Use logger.error() instead */
   static handle(error: any, context?: string): void {
     console.error(`Error${context ? ` in ${context}` : ''}:`, error)
   }
 
+  /** @deprecated Use logger.error() instead */
   static async handleAsync(error: any, context?: string): Promise<void> {
     console.error(`Error${context ? ` in ${context}` : ''}:`, error)
   }
 
+  /** @deprecated Use logger.error() instead */
   static handleAPIError(error: any): Error {
     console.error('API Error:', error)
     return new Error(error?.message || 'API request failed')

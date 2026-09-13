@@ -15,13 +15,16 @@ export function useInitAuth() {
     let mounted = true;
 
     const init = async () => {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
       try {
-        const timeout = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Auth timeout')), 5000)
-        );
+        const timeout = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Auth timeout')), 5000);
+        });
         await Promise.race([refreshProfile(), timeout]);
       } catch {
         if (mounted) useAuth.getState().setLoading(false);
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
     };
 

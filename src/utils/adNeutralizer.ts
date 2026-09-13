@@ -5,7 +5,7 @@ export const adNeutralizer = {
   cleanup: () => {
     // Ad neutralizer cleanup
   },
-  injectIntoIframe: (iframe: HTMLIFrameElement | null) => {
+  injectIntoIframe: (_iframe: HTMLIFrameElement | null) => {
     // Inject ad neutralizer into iframe
   },
 }

@@ -5,7 +5,17 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin', '/api', '/profile', '/login', '/register'],
+      disallow: [
+        '/admin',
+        '/api',
+        '/profile',
+        '/login',
+        '/register',
+        '/ads-lab',
+        '/ads-test',
+        '/forgot-password',
+        '/search',
+      ],
     },
     sitemap: 'https://4cima.com/sitemap-index.xml',
   }

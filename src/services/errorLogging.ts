@@ -81,8 +81,12 @@ class ErrorLoggingService {
   }
 
   private saveQueue() {
-    if (typeof localStorage === 'undefined') return;
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.queue));
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.queue));
+    } catch (error) {
+      logger.error('Failed to save error queue to localStorage', error);
+    }
   }
 
   private setupGlobalErrorHandlers() {

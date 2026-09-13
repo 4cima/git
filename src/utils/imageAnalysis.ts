@@ -16,6 +16,11 @@ export interface OverlayConfig {
  * @returns Promise with overlay configuration
  */
 export const analyzeImageBrightness = async (imagePath: string): Promise<OverlayConfig> => {
+  // Return default for SSR/Workers environment
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return getDefaultDarkOverlay()
+  }
+  
   return new Promise((resolve) => {
     const img = new Image()
     img.crossOrigin = 'Anonymous'

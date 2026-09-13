@@ -1,26 +1,8 @@
 // Content utilities for genre translation and country detection
 import { getMediaTypeColor as getMediaTypeColorScheme } from '@/utils/genreColors'
+import { translateGenre, GENRE_TRANSLATIONS } from './genre-translations'
 
-export const GENRE_TRANSLATIONS: Record<string, string> = {
-  'Action': 'أكشن',
-  'Adventure': 'مغامرة',
-  'Animation': 'رسوم متحركة',
-  'Comedy': 'كوميدي',
-  'Crime': 'جريمة',
-  'Documentary': 'وثائقي',
-  'Drama': 'دراما',
-  'Family': 'عائلي',
-  'Fantasy': 'فانتازيا',
-  'History': 'تاريخي',
-  'Horror': 'رعب',
-  'Music': 'موسيقى',
-  'Mystery': 'غموض',
-  'Romance': 'رومانسي',
-  'Science Fiction': 'خيال علمي',
-  'Thriller': 'إثارة',
-  'War': 'حرب',
-  'Western': 'غربي'
-}
+export { translateGenre, GENRE_TRANSLATIONS }
 
 export const COUNTRY_TRANSLATIONS: Record<string, string> = {
   'US': 'أمريكي',
@@ -43,10 +25,6 @@ export const COUNTRY_TRANSLATIONS: Record<string, string> = {
   'MA': 'مغربي',
   'TN': 'تونسي',
   'DZ': 'جزائري'
-}
-
-export function translateGenre(genre: string): string {
-  return GENRE_TRANSLATIONS[genre] || genre
 }
 
 export function getCountryLabel(originalLanguage: string, productionCountries?: string[]): string {
