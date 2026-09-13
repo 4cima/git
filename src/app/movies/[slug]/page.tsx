@@ -2,7 +2,6 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst } from '@/lib/db'
 import { MovieDetailsClient } from '@/components/pages/MovieDetailsClient'
-import { truncateDescription } from '@/utils/textSanitizer'
 
 export const revalidate = 60
 
@@ -13,7 +12,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const movie = await executeFirst(
-    `SELECT title_ar, title_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path
+    `SELECT title_ar, title_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path, release_year, genres_json
      FROM movies
      WHERE slug = ?
        AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
@@ -35,13 +34,53 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const nameAr = stripBrand(movie.title_ar || movie.title_en) || 'فيلم'
   const nameEn = stripBrand(movie.title_en)
-  const title = nameEn && nameEn !== nameAr ? `فيلم ${nameAr} | ${nameEn}` : `فيلم ${nameAr}`
-  const description = truncateDescription(String(
-    (movie.seo_description_ar && String(movie.seo_description_ar).trim()) || 
-    movie.overview_ar || 
-    'شاهد الفيلم على فور سيما'
-    )
-)
+
+  // القاعدة الجديدة (Max 60 حرف) — suffix بـ 11 حرف بدل 19 من قالب layout
+  // يُعاد عبر { absolute } لتجاوز قالب layout («%s | فور سيما | 4cima») ومنع تكرار العلامة
+  const suffix = ' | فور سيما'
+  const brandPrefix = 'فيلم'
+  const base = `${brandPrefix} ${nameAr}`
+  const enPart = nameEn && nameEn !== nameAr ? ` | ${nameEn}` : ''
+
+  // جرّب العنوان الكامل
+  let title = `${base}${enPart}${suffix}`
+
+  // لو طويل: شيل الجزء الإنجليزي
+  if (title.length > 60) {
+    title = `${base}${suffix}`
+  }
+
+  // لو لسه طويل: اقتطع الاسم العربي
+  if (title.length > 60) {
+    const maxBase = 60 - suffix.length - brandPrefix.length - 2 // -2 للنقاط
+    const truncated = nameAr.slice(0, maxBase).trim()
+    title = `${brandPrefix} ${truncated}…${suffix}`
+  }
+
+  // الوصف: أول تصنيفين عربيين من genres_json + سنة الإصدار كبادئة قبل النص الأساسي
+  let genres: string[] = []
+  try {
+    const parsed = movie.genres_json ? JSON.parse(String(movie.genres_json)) : []
+    if (Array.isArray(parsed)) {
+      genres = parsed.map((g: any) => g?.name_ar || g?.name_en).filter(Boolean).slice(0, 2)
+    }
+  } catch {}
+
+  const prefixParts: string[] = []
+  if (genres.length) prefixParts.push(genres.join(' · '))
+  if (movie.release_year) prefixParts.push(String(movie.release_year))
+  const prefix = prefixParts.length ? `${prefixParts.join(' · ')} — ` : ''
+
+  const baseDesc = String(
+    (movie.seo_description_ar && String(movie.seo_description_ar).trim()) ||
+    movie.overview_ar ||
+    'شاهد على فور سيما'
+  ).trim().replace(/\s+/g, ' ')
+
+  let description = prefix + baseDesc
+  if (description.length > 158) {
+    description = description.slice(0, 155).trim() + '…'
+  }
   
   let keywords: string | undefined
   try {
@@ -65,7 +104,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const pageUrl = `https://4cima.com/movies/${slug}`
 
   return {
-    title,
+    title: { absolute: title },
     description,
     keywords,
     alternates: { canonical: pageUrl },
