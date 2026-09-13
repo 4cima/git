@@ -10,12 +10,11 @@ import { useAuth } from '@/hooks/useAuth'
 import { SearchBox } from './SearchBox'
 import { getAvatarUrl } from '@/utils/avatarUtils'
 import { NAVBAR_LANGUAGES } from '@/lib/language-nav'
+import { SiteLogo } from './SiteLogo'
 
 export const QuantumNavbar = memo(() => {
   const router = useRouter()
   const pathname = usePathname()
-  const [scrolled, setScrolled] = useState(false)
-  const [logoScrolled, setLogoScrolled] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, profile, signOut } = useAuth()
@@ -28,16 +27,6 @@ export const QuantumNavbar = memo(() => {
     setLoginHref(`/login?next=${encodeURIComponent(next)}`)
   }, [])
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY
-      setScrolled(scrollPosition > 50)
-      setLogoScrolled(scrollPosition > 100)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-  
   // الأزرار الثلاثة للشريط المنقسم ثلاثي الأبعاد: أفلام (يمين) | الرئيسية (وسط) | مسلسلات (يسار)
   // بألوان هادئة: وردي هادئ للأفلام، عنبري ذهبي للرئيسية، سماوي للمسلسلات
   const navSegments = useMemo(() => [
@@ -82,57 +71,7 @@ export const QuantumNavbar = memo(() => {
               <Menu size={26} className="relative z-10" />
             </button>
 
-            {/* Logo with Rope — flex-shrink-0 + w-max make it impossible to compress or wrap at any viewport width */}
-            <Link href="/" className="group flex items-center cursor-pointer transition-transform relative shrink-0 grow-0" style={{ marginTop: '30px' }}>
-              <div className={`relative shrink-0 ${logoScrolled ? 'logo-pulled-up' : 'logo-drop-animation'}`}>
-                {/* Realistic Rope with stretch animation */}
-                <div className={`absolute left-1/2 -translate-x-1/2 -top-16 w-1 ${logoScrolled ? 'rope-pulled-up' : 'rope-stretch-animation'}`} 
-                  style={{
-                    background: 'repeating-linear-gradient(0deg, #8B7355 0px, #8B7355 2px, #6B5845 2px, #6B5845 4px, #8B7355 4px, #8B7355 6px, #A0826D 6px, #A0826D 8px)',
-                    boxShadow: 'inset -1px 0 2px rgba(0,0,0,0.5), inset 1px 0 1px rgba(255,255,255,0.2)',
-                    borderRadius: '2px',
-                    marginLeft: '-3px',
-                    marginTop: '-10px'
-                  }}
-                ></div>
-                
-                <div className="relative flex items-center justify-center">
-                  <div className="relative z-10 font-black text-4xl sm:text-5xl tracking-tighter lowercase transition-transform duration-300 flex flex-nowrap items-center gap-0.5 whitespace-nowrap shrink-0 w-max" dir="ltr">
-                    <span
-                      className="text-red-600 text-5xl sm:text-6xl animate-wiggle drop-shadow-[0_0_12px_rgba(220,38,38,0.9)] shrink-0"
-                      style={{
-                        display: 'inline-block',
-                        transformOrigin: 'center',
-                        WebkitTextStroke: '1px black'
-                      }}
-                    >
-                      4
-                    </span>
-                    <span
-                      className="animate-neon-flicker-cyan drop-shadow-[0_0_8px_rgba(34,211,238,0.6)] relative shrink-0 whitespace-nowrap"
-                      style={{ 
-                        fontFamily: '"Brush Script MT", cursive',
-                        fontStyle: 'italic',
-                        letterSpacing: '0.05em',
-                        WebkitTextStroke: '1px black'
-                      }}
-                    >
-                      {/* Cinema Camera above 'c' */}
-                      <span className="relative inline-block">
-                        <span className="absolute top-0 left-1/2 -translate-x-1/2 text-xs leading-none" style={{ animation: 'cinema-filming 4s ease-in-out infinite' }}>
-                          🎥
-                        </span>
-                        <span className="text-sky-400" style={{ textShadow: '0 0 10px rgba(56,189,248,0.5), 0 0 20px rgba(56,189,248,0.3)' }}>c</span>
-                      </span>
-                      <span className="text-emerald-500 inline-block" style={{ textShadow: '0 0 10px rgba(16,185,129,0.5), 0 0 20px rgba(16,185,129,0.3)', animation: 'spinY 4s linear infinite', fontStyle: 'normal', fontSize: '120%', fontWeight: 'bold' }}>i</span>
-                      <span className="text-fuchsia-500" style={{ textShadow: '0 0 10px rgba(217,70,239,0.6), 0 0 20px rgba(217,70,239,0.4)' }}>m</span>
-                      <span className="text-amber-400" style={{ textShadow: '0 0 10px rgba(251,191,36,0.6), 0 0 20px rgba(251,191,36,0.4), 0 0 30px rgba(251,191,36,0.2)' }}>a</span>
-                    </span>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-cyan-500/20 to-purple-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full animate-pulse" />
-                </div>
-              </div>
-            </Link>
+            <SiteLogo />
           </div>
 
           {/* Search and actions — min-w-0 lets it absorb all squeezing so the logo side never shrinks */}
