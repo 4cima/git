@@ -116,6 +116,37 @@ export const Footer = () => {
             </div>
           </div>
 
+          {/* Genres SEO - Full Width (تصنيفات الأفلام والمسلسلات — روابط داخلية في كل الصفحات) */}
+          <div className="md:col-span-12">
+            <div className="mb-6">
+              <h3 className="text-sm font-bold text-slate-300 mb-3">تصنيفات الأفلام</h3>
+              <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-400">
+                <li><Link href="/movies/genres/action">أكشن</Link></li>
+                <li><Link href="/movies/genres/comedy">كوميديا</Link></li>
+                <li><Link href="/movies/genres/drama">دراما</Link></li>
+                <li><Link href="/movies/genres/horror">رعب</Link></li>
+                <li><Link href="/movies/genres/romance">رومانسي</Link></li>
+                <li><Link href="/movies/genres/thriller">إثارة</Link></li>
+                <li><Link href="/movies/genres/animation">أنيميشن</Link></li>
+                <li><Link href="/movies/genres/family">عائلي</Link></li>
+              </ul>
+            </div>
+
+            <div className="mb-6">
+              <h3 className="text-sm font-bold text-slate-300 mb-3">تصنيفات المسلسلات</h3>
+              <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-400">
+                <li><Link href="/series/genres/action">أكشن</Link></li>
+                <li><Link href="/series/genres/comedy">كوميديا</Link></li>
+                <li><Link href="/series/genres/drama">دراما</Link></li>
+                <li><Link href="/series/genres/horror">رعب</Link></li>
+                <li><Link href="/series/genres/romance">رومانسي</Link></li>
+                <li><Link href="/series/genres/mystery">غموض</Link></li>
+                <li><Link href="/series/genres/animation">أنيميشن</Link></li>
+                <li><Link href="/genres">كل التصنيفات →</Link></li>
+              </ul>
+            </div>
+          </div>
+
           {/* Copyright - Full Width */}
           <div className="md:col-span-12 text-center border-t border-white/5 pt-3">
             <p className="text-[10px] text-zinc-600">
