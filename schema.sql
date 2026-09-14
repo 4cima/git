@@ -400,3 +400,165 @@ CREATE TRIGGER IF NOT EXISTS series_fts_update_ins AFTER UPDATE ON tv_series
 BEGIN
   INSERT INTO series_fts(rowid, name_ar, name_en) VALUES (new.id, new.name_ar, new.name_en);
 END;
+
+-- ---------------------------------------------------------------------------
+-- MISSING PRODUCTION TABLES (reconciled with live D1 introspection 2026-09-14)
+-- These exist in production D1 and were missing from this schema — mirrored
+-- here so the reference schema matches production.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS users (
+  id                TEXT PRIMARY KEY,
+  email             TEXT NOT NULL UNIQUE,
+  name              TEXT,
+  avatar_url        TEXT,
+  role              TEXT NOT NULL DEFAULT 'user',
+  created_at        TEXT DEFAULT (datetime('now')),
+  last_login_at     TEXT,
+  name_last_changed TEXT
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id         TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL REFERENCES users(id),
+  created_at TEXT DEFAULT (datetime('now')),
+  expires_at TEXT NOT NULL,
+  user_agent TEXT,
+  ip         TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_user    ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+
+-- Rate-limiting events for user actions (created at runtime by the app —
+-- now also defined here so it can be created/migrated explicitly).
+CREATE TABLE IF NOT EXISTS rate_events (
+  user_id TEXT NOT NULL,
+  kind    TEXT NOT NULL,
+  tmdb_id INTEGER,
+  ts      TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_events_user_kind_ts ON rate_events(user_id, kind, ts);
+
+-- Ad delivery tables (managed from the admin panel)
+CREATE TABLE IF NOT EXISTS ad_providers (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL,
+  slug       TEXT NOT NULL UNIQUE,
+  status     TEXT NOT NULL DEFAULT 'paused' CHECK (status IN ('active','paused')),
+  notes      TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ad_slots (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  slot_key   TEXT NOT NULL UNIQUE,
+  name       TEXT NOT NULL,
+  types      TEXT NOT NULL,
+  page_scope TEXT NOT NULL DEFAULT 'all' CHECK (page_scope IN ('all','watch_only')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ad_zones (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  provider_id  INTEGER NOT NULL REFERENCES ad_providers(id),
+  name         TEXT NOT NULL,
+  type         TEXT NOT NULL CHECK (type IN ('popunder','banner','native','push','preroll_vast','midroll_vast','interstitial')),
+  integration  TEXT NOT NULL CHECK (integration IN ('script','html','click_url','vast_url')),
+  script_url   TEXT NULL CHECK (script_url IS NULL OR script_url LIKE 'http://%' OR script_url LIKE 'https://%'),
+  html_snippet TEXT NULL,
+  click_url    TEXT NULL CHECK (click_url IS NULL OR click_url LIKE 'http://%' OR click_url LIKE 'https://%'),
+  vast_url     TEXT NULL CHECK (vast_url IS NULL OR vast_url LIKE 'http://%' OR vast_url LIKE 'https://%'),
+  zone_key     TEXT NULL,
+  width        INTEGER NULL,
+  height       INTEGER NULL,
+  active       INTEGER NOT NULL DEFAULT 0,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ad_zones_provider ON ad_zones(provider_id);
+CREATE INDEX IF NOT EXISTS idx_ad_zones_active   ON ad_zones(active);
+
+CREATE TABLE IF NOT EXISTS ad_slot_assignments (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  slot_key        TEXT NOT NULL REFERENCES ad_slots(slot_key),
+  zone_id         INTEGER NOT NULL REFERENCES ad_zones(id),
+  priority        INTEGER NOT NULL DEFAULT 1,
+  weight          INTEGER NOT NULL DEFAULT 1,
+  device          TEXT NOT NULL DEFAULT 'all' CHECK (device IN ('all','mobile','desktop')),
+  start_at        TEXT NULL,
+  end_at          TEXT NULL,
+  frequency_cap   INTEGER NOT NULL DEFAULT 1,
+  frequency_hours INTEGER NOT NULL DEFAULT 24,
+  active          INTEGER NOT NULL DEFAULT 1,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_ad_assign_slot ON ad_slot_assignments(slot_key);
+CREATE INDEX IF NOT EXISTS idx_ad_assign_zone ON ad_slot_assignments(zone_id);
+
+CREATE TABLE IF NOT EXISTS ads (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  title           TEXT NOT NULL,
+  type            TEXT NOT NULL CHECK (type IN ('popunder','banner','preroll','midroll')),
+  content         TEXT NOT NULL,
+  position        TEXT,
+  active          INTEGER DEFAULT 1,
+  impressions     INTEGER DEFAULT 0,
+  clicks          INTEGER DEFAULT 0,
+  created_at      TEXT DEFAULT (datetime('now')),
+  click_url       TEXT NULL CHECK (click_url IS NULL OR click_url LIKE 'http://%' OR click_url LIKE 'https://%'),
+  weight          INTEGER NOT NULL DEFAULT 1,
+  device          TEXT NOT NULL DEFAULT 'all',
+  start_at        TEXT NULL,
+  end_at          TEXT NULL,
+  frequency_cap   INTEGER NOT NULL DEFAULT 1,
+  frequency_hours INTEGER NOT NULL DEFAULT 24,
+  impression_cap  INTEGER NULL,
+  updated_at      TEXT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_ads_type     ON ads(type);
+CREATE INDEX IF NOT EXISTS idx_ads_position ON ads(position);
+CREATE INDEX IF NOT EXISTS idx_ads_active   ON ads(active);
+
+CREATE TABLE IF NOT EXISTS site_config (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS completed_watch (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id      TEXT NOT NULL,
+  content_type TEXT NOT NULL,
+  tmdb_id      INTEGER NOT NULL,
+  title        TEXT,
+  poster_path  TEXT,
+  added_at     TEXT DEFAULT (datetime('now')),
+  UNIQUE(user_id, content_type, tmdb_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_completed_watch_user ON completed_watch(user_id);
+
+CREATE TABLE IF NOT EXISTS movie_similar_cache (
+  tmdb_id         INTEGER PRIMARY KEY,
+  recommended_ids TEXT NOT NULL,
+  updated_at      TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS series_similar_cache (
+  tmdb_id         INTEGER PRIMARY KEY,
+  recommended_ids TEXT NOT NULL,
+  updated_at      TEXT DEFAULT (datetime('now'))
+);
+
+-- Extra watch_history indexes (present in migrations but were missing from D1)
+CREATE INDEX IF NOT EXISTS idx_watch_history_date    ON watch_history(watch_date);
+CREATE INDEX IF NOT EXISTS idx_watch_history_content ON watch_history(content_type, content_id);
+
+-- operations_log timestamp index (was missing from D1)
+CREATE INDEX IF NOT EXISTS idx_operations_log_timestamp ON operations_log(timestamp DESC);
