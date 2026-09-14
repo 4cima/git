@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { executeAll } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth-server';
 
-const MAX_BYTES = 200 * 1024;
+const MAX_BYTES = 1024 * 1024; // 1MB — موحّد مع حد صفحة الإعدادات
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser(request);
@@ -12,12 +12,14 @@ export async function POST(request: NextRequest) {
   try { form = await request.formData(); }
   catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }); }
 
-  const file = form.get('file');
-  if (!(file instanceof File)) return NextResponse.json({ error: 'No file' }, { status: 400 });
+  // الواجهة القديمة ترسل 'avatar' والجديدة قد ترسل 'file' — نقبل الاثنين
+  const raw = form.get('file') ?? form.get('avatar');
+  const file = raw instanceof File ? raw : null;
+  if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 });
   if (!file.type.startsWith('image/')) return NextResponse.json({ error: 'Image only' }, { status: 400 });
 
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (bytes.length > MAX_BYTES) return NextResponse.json({ error: 'Max 200KB' }, { status: 413 });
+  if (bytes.length > MAX_BYTES) return NextResponse.json({ error: 'Max 1MB' }, { status: 413 });
 
   let bin = '';
   const chunk = 0x8000;

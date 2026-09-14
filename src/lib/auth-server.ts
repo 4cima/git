@@ -22,6 +22,7 @@ export type AuthUser = {
   name: string;
   avatar_url: string;
   role: 'user' | 'admin' | 'supervisor';
+  created_at?: string | null;
 };
 
 async function getGoogleEnv() {
@@ -140,11 +141,11 @@ export async function handleAuthCallback(req: NextRequest) {
 
 export async function getUserById(id: string): Promise<AuthUser | null> {
   const row = await executeFirst<any>(
-    `SELECT id, email, name, avatar_url, role FROM users WHERE id = ?`,
+    `SELECT id, email, name, avatar_url, role, created_at FROM users WHERE id = ?`,
     [id],
   );
   return row
-    ? { id: row.id, email: row.email, name: row.name, avatar_url: row.avatar_url, role: row.role }
+    ? { id: row.id, email: row.email, name: row.name, avatar_url: row.avatar_url, role: row.role, created_at: row.created_at ?? null }
     : null;
 }
 
@@ -153,7 +154,7 @@ export async function getCurrentUser(req: NextRequest): Promise<AuthUser | null>
   if (!sessionId) return null;
 
   const row = await executeFirst<any>(
-    `SELECT s.expires_at, u.id, u.email, u.name, u.avatar_url, u.role
+    `SELECT s.expires_at, u.id, u.email, u.name, u.avatar_url, u.role, u.created_at
      FROM sessions s
      JOIN users u ON u.id = s.user_id
      WHERE s.id = ?`,
@@ -168,6 +169,7 @@ export async function getCurrentUser(req: NextRequest): Promise<AuthUser | null>
     name:       row.name,
     avatar_url: row.avatar_url,
     role:       row.role,
+    created_at: row.created_at ?? null,
   };
 }
 

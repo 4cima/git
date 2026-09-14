@@ -51,6 +51,7 @@ function d1UserToUser(u: AuthUser): User {
   return {
     id: u.id,
     email: u.email,
+    created_at: u.created_at ?? undefined,
     user_metadata: { full_name: u.name, avatar_url: u.avatar_url, name: u.name },
   };
 }

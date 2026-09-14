@@ -17,6 +17,14 @@ export default function ProfileSettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [activeSection, setActiveSection] = useState<'profile' | 'privacy' | 'notifications'>('profile')
+
+  // رابط عميق من قسم «الإعدادات» بالبروفايل: /profile/settings?section=privacy
+  // يُقرأ بعد التركيب لتفادي اختلاف الترطيب بين السيرفر والكلاينت
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const s = new URLSearchParams(window.location.search).get('section')
+    if (s === 'profile' || s === 'privacy' || s === 'notifications') setActiveSection(s)
+  }, [])
   
   // Profile settings
   const [username, setUsername] = useState(profile?.username || '')
