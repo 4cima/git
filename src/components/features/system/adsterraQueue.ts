@@ -20,6 +20,45 @@
 // حيّد أي طلب لدومينات التوصيل الميتة قبل التركيب — راجع deadDeliveryGuard.ts
 import './deadDeliveryGuard'
 
+/**
+ * Parse an `atOptions` object literal (a balanced `{ ... }` string) into plain
+ * data WITHOUT executing it. Accepts the Adsterra-style snippet syntax:
+ *   { 'key' : 'x', 'format' : 'iframe', 'params' : {} }
+ * Returns null when the source can't be safely interpreted as JSON-ish data
+ * (the caller then falls back to the raw segment).
+ */
+function parseAtOptionsObject(src: string): Record<string, unknown> | null {
+  const text = (src || '').trim()
+  if (!text) return null
+
+  // 1. Strip JS comments.
+  let jsonish = text
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/[^\n\r]*/g, '')
+
+  // 2. Quote bare identifier keys (identifier immediately before ':').
+  jsonish = jsonish.replace(/([{,]\s*)([A-Za-z_$][\w$]*)(\s*:)/g, '$1"$2"$3')
+
+  // 3. Convert single-quoted strings to JSON double-quoted strings.
+  jsonish = jsonish.replace(/'((?:[^'\\]|\\.)*)'/g, (_m, inner: string) => {
+    const unescaped = inner.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+    return JSON.stringify(unescaped)
+  })
+
+  // 4. Validate shape: a plain JSON object only.
+  if (!/^\s*\{[\s\S]*\}\s*$/.test(jsonish)) return null
+
+  try {
+    const value: unknown = JSON.parse(jsonish)
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value as Record<string, unknown>
+    }
+    return null
+  } catch {
+    return null // never execute — caller falls back to the raw segment
+  }
+}
+
 let adsterraQueue: Promise<void> = Promise.resolve()
 
 /* ------------------------------------------------------------------
@@ -87,14 +126,12 @@ export function mountAdInto(container: HTMLElement, html: string) {
           }
           if (depth === 0) {
             const rawObj = text.slice(i, j + 1)
-            try {
-              // eslint-disable-next-line no-new-func
-              const parsed = new Function(`return (${rawObj});`)() as Record<string, unknown>
+            const parsed = parseAtOptionsObject(rawObj)
+            if (parsed) {
               segments.push({ atOptions: parsed })
               return
-            } catch {
-              // malformed — fall through and keep raw
             }
+            // malformed / not parseable as data — fall through and keep raw
           }
         }
       }

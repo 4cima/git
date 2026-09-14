@@ -630,12 +630,20 @@ export const VideoPlayer = ({ url, subtitles = [], introStart, introEnd, title, 
               {/* Control Buttons */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 md:gap-6">
-                  <button onClick={handlePlayPause} className="text-white hover:text-primary transition-colors">
+                  <button
+                    onClick={handlePlayPause}
+                    className="text-white hover:text-primary transition-colors"
+                    aria-label={playing ? (lang === 'ar' ? 'إيقاف مؤقت' : 'Pause') : (lang === 'ar' ? 'تشغيل' : 'Play')}
+                  >
                     {playing ? <Pause size={24} /> : <Play size={24} fill="currentColor" />}
                   </button>
 
                   <div className="flex items-center gap-2 group/volume">
-                    <button onClick={handleToggleMuted} className="text-white hover:text-primary transition-colors">
+                    <button
+                      onClick={handleToggleMuted}
+                      className="text-white hover:text-primary transition-colors"
+                      aria-label={muted || volume === 0 ? (lang === 'ar' ? 'إلغاء كتم الصوت' : 'Unmute') : (lang === 'ar' ? 'كتم الصوت' : 'Mute')}
+                    >
                       {muted || volume === 0 ? <VolumeX size={24} /> : <Volume2 size={24} />}
                     </button>
                     <input
@@ -658,6 +666,7 @@ export const VideoPlayer = ({ url, subtitles = [], introStart, introEnd, title, 
                   <button
                     onClick={() => setShowSettings(!showSettings)}
                     className={clsx("text-white hover:text-primary transition-colors", showSettings && "text-primary")}
+                    aria-label={lang === 'ar' ? 'الإعدادات' : 'Settings'}
                   >
                     <Settings size={22} />
                   </button>
@@ -668,6 +677,7 @@ export const VideoPlayer = ({ url, subtitles = [], introStart, introEnd, title, 
                       setShowSettings(false)
                     }}
                     className={clsx("text-white hover:text-primary transition-colors", showSubtitlesMenu && "text-primary")}
+                    aria-label={lang === 'ar' ? 'الترجمة واللغة' : 'Subtitles & Audio'}
                   >
                     <Subtitles size={22} />
                   </button>
@@ -683,7 +693,11 @@ export const VideoPlayer = ({ url, subtitles = [], introStart, introEnd, title, 
                     </button>
                   )}
 
-                  <button onClick={handleToggleFullscreen} className="text-white hover:text-primary transition-colors">
+                  <button
+                    onClick={handleToggleFullscreen}
+                    className="text-white hover:text-primary transition-colors"
+                    aria-label={isFullscreen ? (lang === 'ar' ? 'إنهاء ملء الشاشة' : 'Exit Fullscreen') : (lang === 'ar' ? 'ملء الشاشة' : 'Fullscreen')}
+                  >
                     {isFullscreen ? <Minimize size={24} /> : <Maximize size={24} />}
                   </button>
                 </div>

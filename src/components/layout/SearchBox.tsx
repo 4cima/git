@@ -857,7 +857,7 @@ export function SearchBox() {
                             className="py-8 text-center px-3"
                           >
                             <p className="text-slate-300 text-sm font-semibold mb-1">لا توجد نتائج</p>
-                            <p className="text-slate-500 text-xs">جرب كلمات بحث مختلفة</p>
+                            <p className="text-slate-400 text-xs">جرب كلمات بحث مختلفة</p>
                           </motion.div>
                         )
                       )}

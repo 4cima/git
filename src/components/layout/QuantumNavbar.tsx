@@ -169,7 +169,7 @@ export const QuantumNavbar = memo(() => {
                                     <p className="truncate text-[12.5px] font-extrabold text-slate-100">
                                       {profile?.username || user.email?.split('@')[0]}
                                     </p>
-                                    <p className="truncate text-[10.5px] text-slate-500">{user.email}</p>
+                                    <p className="truncate text-[10.5px] text-slate-400">{user.email}</p>
                                     {(profile?.role === 'admin' || profile?.role === 'supervisor') && (
                                       <span className="mt-1 inline-block rounded-md bg-cyan-400/10 px-1.5 py-0.5 text-[9.5px] font-bold text-cyan-300 ring-1 ring-cyan-400/30">
                                         مشرف
