@@ -23,6 +23,23 @@ const websiteJsonLd = {
   },
 }
 
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'فور سيما',
+  alternateName: '4cima',
+  url: 'https://4cima.com',
+  logo: {
+    '@type': 'ImageObject',
+    url: 'https://4cima.com/og-image.png',
+    width: 1200,
+    height: 630,
+  },
+  sameAs: [
+    'https://www.facebook.com/4cima2',
+  ],
+}
+
 const cairo = Cairo({ 
   subsets: ['arabic', 'latin'],
   display: 'swap',
@@ -126,6 +143,10 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
         <AuthProvider>
           <ClientInit />

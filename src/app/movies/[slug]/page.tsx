@@ -160,6 +160,19 @@ export default async function MovieDetails({ params }: PageProps) {
       ratingCount: movie.vote_count || 0, bestRating: 10, worstRating: 0
     } : undefined
   }
+  const videoJsonLd = {
+    '@context':    'https://schema.org',
+    '@type':       'VideoObject',
+    name:          `فيلم ${movie.title_ar || movie.title_en}`,
+    description:   (movie.overview_ar || '').slice(0, 200),
+    thumbnailUrl:  movie.backdrop_path
+      ? `https://4cima.com/tmdb/w1280${movie.backdrop_path}`
+      : (movie.poster_path ? `https://4cima.com/tmdb/w500${movie.poster_path}` : 'https://4cima.com/og-image.png'),
+    uploadDate:    movie.release_date || '2000-01-01',
+    duration:      movie.runtime ? `PT${movie.runtime}M` : undefined,
+    contentUrl:    `https://4cima.com/movies/${movie.slug}`,
+    embedUrl:      `https://4cima.com/movies/${movie.slug}`,
+  }
   const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -172,6 +185,7 @@ export default async function MovieDetails({ params }: PageProps) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <MovieDetailsClient movie={movie} />
     </>
