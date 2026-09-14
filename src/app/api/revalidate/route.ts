@@ -1,13 +1,15 @@
 import { revalidateTag } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
+import { safeEqual } from '@/lib/timingSafeEqual'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { secret, tag } = body
 
-    // Verify the secret
-    if (secret !== process.env.REVALIDATE_SECRET) {
+    // Verify the secret (constant-time comparison)
+    const secretOk = await safeEqual(String(secret ?? ''), process.env.REVALIDATE_SECRET ?? '')
+    if (!secretOk) {
       return NextResponse.json(
         { error: 'Invalid secret' },
         { status: 401 }

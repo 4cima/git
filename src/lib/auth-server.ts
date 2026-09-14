@@ -10,7 +10,11 @@ const GOOGLE_CERTS = 'https://www.googleapis.com/oauth2/v3/certs';
 export const SESSION_COOKIE  = '4cima_session';
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-const ADMIN_EMAILS = ['cairo.tv@gmail.com'];
+// Admin emails from env (comma separated) — falls back to the legacy default.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'cairo.tv@gmail.com')
+  .split(',')
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 export type AuthUser = {
   id: string;

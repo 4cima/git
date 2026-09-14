@@ -6,6 +6,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
+import { safeEqual } from '@/lib/timingSafeEqual';
 
 export async function requireAdmin(request: Request): Promise<NextResponse | null> {
   const username = process.env.ADMIN_USERNAME;
@@ -18,8 +19,8 @@ export async function requireAdmin(request: Request): Promise<NextResponse | nul
       const colonIndex = decoded.indexOf(':');
       if (
         colonIndex !== -1 &&
-        decoded.slice(0, colonIndex) === username &&
-        decoded.slice(colonIndex + 1) === password
+        (await safeEqual(decoded.slice(0, colonIndex), username)) &&
+        (await safeEqual(decoded.slice(colonIndex + 1), password))
       ) {
         return null;
       }

@@ -3,7 +3,9 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 // Short-lived signed player-token (bridge) — HMAC-SHA256 over a compact
 // payload. Issued on 4cima.com, carried to 4cima.stream as ?pt=… and
 // verified by /api/player/* endpoints. Never contains session secrets.
-export const PLAYER_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
+// TTL shortened to 24h so a token leaked via URL/referrer/log is valueless
+// quickly.
+export const PLAYER_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
 type PlayerTokenPayload = {
   uid: string;

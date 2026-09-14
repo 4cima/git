@@ -126,6 +126,15 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), geolocation=()',
           },
+          // Safe subset of CSP that ad networks don't break:
+          // - base-uri 'self' — blocks <base> tag injection / URL rewriting
+          // - frame-ancestors 'self' — clickjacking defense (XFO still set)
+          // - form-action 'self' — no cross-origin form submission
+          // Deliberately does NOT restrict script-src/style-src (would break ads).
+          {
+            key: 'Content-Security-Policy',
+            value: "base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
+          },
         ],
       },
       // Homepage: public catalog HTML (no per-user SSR content) — force-dynamic

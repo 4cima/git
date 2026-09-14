@@ -18,9 +18,9 @@
     "full-workflow": "npm run download-ids && npm run fetch && npm run sync",
     "check-secrets": "node scripts/check-secrets.js",
     "setup-secrets": "node scripts/setup-secrets.js",
-    "predeploy:production": "node scripts/check-secrets.js",
+    "predeploy:production": "node scripts/check-secrets.js && node scripts/verify-build-secrets.js",
     "deploy:production": "node -e \"const {execSync}=require('child_process');execSync('npx wrangler deploy',{cwd:process.cwd(),stdio:'inherit',env:{...process.env,OPEN_NEXT_DEPLOY:'true'}})\"",
-    "build:cloudflare": "node -e \"fs.rmSync('.next',{recursive:true,force:true})\" && opennextjs-cloudflare build",
+    "build:cloudflare": "node -e \"fs.rmSync('.next',{recursive:true,force:true})\" && opennextjs-cloudflare build && node scripts/verify-build-secrets.js",
     "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --name 4cima-staging",
     "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"

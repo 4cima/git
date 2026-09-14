@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { spawn } from 'child_process'
 import { executeAll } from '@/lib/db'
 import { getCurrentUser } from '@/lib/auth-server'
+import { requireAdmin } from '@/lib/requireAdmin'
+import { safeEqual } from '@/lib/timingSafeEqual'
 
 const ALLOWED_COMMANDS: Record<string, { cmd: string; args: string[]; risk: 'low' | 'medium' | 'high' }> = {
   'npm run download-ids':                        { cmd: 'npm',  args: ['run', 'download-ids'],                       risk: 'low'    },
@@ -26,8 +28,9 @@ export async function POST(request: NextRequest) {
   try {
     const { action, confirm } = await request.json()
 
-    const opsPassword = request.headers.get('x-operations-password')
-    if (opsPassword !== process.env.OPERATIONS_PANEL_PASSWORD)
+    const opsPassword = request.headers.get('x-operations-password') ?? ''
+    const passwordOk = await safeEqual(opsPassword, process.env.OPERATIONS_PANEL_PASSWORD ?? '')
+    if (!passwordOk)
       return NextResponse.json({ error: 'Invalid operations password' }, { status: 403 })
 
     const commandConfig = ALLOWED_COMMANDS[action]
@@ -55,7 +58,9 @@ export async function POST(request: NextRequest) {
 
         controller.enqueue(encoder.encode(`event: start\ndata: ${JSON.stringify({ logId, timestamp: new Date().toISOString() })}\n\n`))
 
-        const child = spawn(commandConfig.cmd, commandConfig.args, { cwd: process.cwd(), env: { ...process.env }, shell: true })
+        // shell:false — command + args come from the static ALLOWED_COMMANDS allowlist,
+        // so no shell interpolation surface is needed (defense-in-depth).
+        const child = spawn(commandConfig.cmd, commandConfig.args, { cwd: process.cwd(), env: { ...process.env }, shell: false })
 
         child.stdout.on('data', (data) => {
           const text = data.toString()
@@ -94,10 +99,17 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // Defense-in-depth: middleware already guards /api/admin; requireAdmin() adds a
+  // second layer + gives a proper 401 for direct route calls.
+  const denied = await requireAdmin(request)
+  if (denied) return denied
+
   try {
-    const limit = Number(request.nextUrl.searchParams.get('limit')) || 50
+    const parsed = Number.parseInt(request.nextUrl.searchParams.get('limit') || '50', 10)
+    // bounded limit — no unbounded log dumps
+    const limit = Number.isFinite(parsed) ? Math.min(200, Math.max(1, parsed)) : 50
     const logs  = await executeAll('SELECT * FROM operations_log ORDER BY timestamp DESC LIMIT ?', [limit])
-    return NextResponse.json({ ok: true, logs })
+    return NextResponse.json({ ok: true, logs, limit })
   } catch (error: unknown) {
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
   }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
+import { safeEqual } from '@/lib/timingSafeEqual';
 
 const BUILD_SHA = process.env.NEXT_PUBLIC_BUILD_SHA || 'unknown';
 
@@ -27,7 +28,9 @@ export async function middleware(request: NextRequest) {
       const decoded = atob(base64);
       const colonIndex = decoded.indexOf(':');
       if (colonIndex !== -1) {
-        if (decoded.slice(0, colonIndex) === username && decoded.slice(colonIndex + 1) === password) {
+        const userOk = await safeEqual(decoded.slice(0, colonIndex), username);
+        const passOk = await safeEqual(decoded.slice(colonIndex + 1), password);
+        if (userOk && passOk) {
           return response;
         }
       }

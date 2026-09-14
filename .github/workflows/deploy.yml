@@ -31,6 +31,9 @@ jobs:
     - name: Build (OpenNext for Cloudflare)
       run: npm run build:cloudflare
 
+    - name: Verify no secrets leaked into build output
+      run: node scripts/verify-build-secrets.js
+
     - name: Deploy with Wrangler
       run: npx wrangler deploy
       env:

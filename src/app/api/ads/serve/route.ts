@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import { executeAll, executeFirst } from '@/lib/db';
 import { isHostAllowed, isSafeAdUrl } from '@/lib/adsAllowlist';
+import { clientKey, rateLimit } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,6 +124,15 @@ export async function GET(request: Request) {
 
   if (!slot || !VALID_SLOTS.has(slot)) {
     return emptyResponse(slot);
+  }
+
+  // Light burst protection (best effort — in-memory per isolate).
+  const rl = rateLimit(clientKey(request, `serve:${slot}`), 240, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { source: null, slot, error: 'rate_limited', remaining: 0 },
+      { status: 429, headers: { 'Cache-Control': 'private, no-store' } },
+    );
   }
 
   try {
