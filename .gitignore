@@ -66,3 +66,6 @@ measure-*.js
 
 # OAuth credentials file
 4cima-oauth.txt
+
+# Secrets migration helper (manual run only)
+migrate-secrets.ps1
