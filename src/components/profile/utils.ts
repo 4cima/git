@@ -1,107 +1,75 @@
-import { generateContentUrl, generateWatchUrl } from '@/lib/utils';
+/**
+ * src/components/profile/utils.ts
+ * أدوات مشتركة — أهمها دالة توليد روابط البطاقات (القاعدة الذهبية).
+ */
+import type { MediaType } from './types'
 
-const isTextSlug = (s: unknown): s is string =>
-  typeof s === 'string' && s.trim() !== '' && !/^\d+$/.test(s.trim());
-
-/** هل العنصر مسلسل؟ (نوحد tv/series معاً) */
-export const isTvKind = (t: unknown): boolean =>
-  String(t || '').toLowerCase() !== 'movie';
-
-export const normKind = (t: unknown): 'movie' | 'tv' =>
-  (isTvKind(t) ? 'tv' : 'movie');
-
-/** رابط صفحة التفاصيل — null لو لا يوجد slug نصي (لا نعرض لينك مكسور) */
-export function contentUrl(
-  contentType: unknown,
-  slug?: string | null,
-  tmdbId?: number | null
-): string | null {
-  if (!isTextSlug(slug)) return null;
-  try {
-    return generateContentUrl({
-      slug: String(slug).trim(),
-      media_type: normKind(contentType),
-      id: tmdbId ?? undefined,
-    });
-  } catch {
-    return null;
-  }
+/** توحيد النوع: أي شيء غير 'movie' يُعامل كـ tv (الـAPIs نفسها توحّد series → tv) */
+export function normalizeType(t: unknown): MediaType {
+  return String(t ?? '').toLowerCase() === 'movie' ? 'movie' : 'tv'
 }
 
-/** رابط المتابعة/المشاهدة — null لو لا يوجد slug نصي */
-export function watchUrl(
-  contentType: unknown,
-  slug?: string | null,
-  tmdbId?: number | null,
-  season?: number | null,
-  episode?: number | null
+/**
+ * القاعدة الذهبية — توليد رابط البطاقة.
+ *
+ * المسارات منسوخة حرفياً من صفحات التفاصيل الفعلية:
+ *   فيلم  → src/app/movies/[slug]/page.tsx  → /movies/[slug]
+ *   مسلسل → src/app/series/[slug]/page.tsx  → /series/[slug]
+ *
+ * slug فاضي → null: البطاقة تظهر عادي (بوستر + عنوان + سنة) لكنها غير قابلة للنقر
+ * مع شارة رمادية «غير متوفر مؤقتاً». ممنوع أي fallback رقمي — والـAPIs نفسها
+ * (favorites/completed/reviews/continue-watching/activity) تُرجع slug=null للقيم الرقمية.
+ */
+export function mediaHref(
+  item: { content_type?: unknown; media_type?: unknown; slug?: unknown }
 ): string | null {
-  if (!isTextSlug(slug)) return null;
-  try {
-    return generateWatchUrl(
-      { slug: String(slug).trim(), media_type: normKind(contentType), id: tmdbId ?? undefined },
-      season ?? undefined,
-      episode ?? undefined
-    );
-  } catch {
-    return null;
-  }
+  const slug = typeof item.slug === 'string' ? item.slug.trim() : ''
+  if (!slug) return null
+  const type = normalizeType(item.content_type ?? item.media_type)
+  return type === 'movie' ? `/movies/${slug}` : `/series/${slug}`
 }
 
-/** عنوان العرض: العربي أولاً ثم الإنجليزي */
+/** أفضل عنوان متاح للعرض */
 export function displayTitle(item: {
-  title_ar?: string | null;
-  title?: string | null;
-  title_en?: string | null;
-  name?: string | null;
+  title_ar?: string | null
+  title_en?: string | null
+  title?: string | null
 }): string {
-  return (
-    item.title_ar?.trim() ||
-    item.title?.trim() ||
-    item.title_en?.trim() ||
-    (item.name?.trim() ?? '') ||
-    'بدون عنوان'
-  );
+  return item.title_ar || item.title_en || item.title || 'بدون عنوان'
 }
 
-/** تنسيق المدة الكلية من الثواني: "3 س 20 د" / "45 د" / "—" */
-export function formatWatchTime(totalSeconds: number): string {
-  const s = Math.max(0, Math.round(totalSeconds || 0));
-  if (s <= 0) return '—';
-  const h = Math.floor(s / 3600);
-  const m = Math.round((s % 3600) / 60);
-  if (h <= 0) return `${m} د`;
-  if (m <= 0) return `${h} س`;
-  return `${h} س ${m} د`;
+/** سنة الإصدار إن وُجدت */
+export function yearOf(item: { release_year?: number | null }): number | null {
+  const y = Number(item.release_year)
+  return Number.isFinite(y) && y > 1900 ? y : null
 }
 
-/** تنسيق آخر موضع مشاهدة (ثواني → دقائق) */
-export function formatPosition(seconds?: number | null): string {
-  const s = Math.max(0, Math.round(seconds || 0));
-  if (s < 60) return `أقل من دقيقة`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m} دقيقة`;
-  const h = Math.floor(m / 60);
-  return `${h} س ${m % 60} د`;
+/** تقييم رقمي آمن للعرض */
+export function safeRating(v: unknown): number | null {
+  const n = Number(v)
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 10) / 10 : null
 }
 
-/** وقت نسبي بالعربية */
-export function timeAgo(dateStr?: string | null): string {
-  if (!dateStr) return '';
-  const t = new Date(String(dateStr).replace(' ', 'T')).getTime();
-  if (Number.isNaN(t)) return '';
-  const diff = Date.now() - t;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return 'الآن';
-  if (min < 60) return `منذ ${min} دقيقة`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `منذ ${h} ساعة`;
-  const d = Math.floor(h / 24);
-  if (d === 1) return 'أمس';
-  if (d < 30) return `منذ ${d} يوم`;
-  const mo = Math.floor(d / 30);
-  if (mo < 12) return `منذ ${mo} شهر`;
-  return `منذ ${Math.floor(mo / 12)} سنة`;
+/** تنسيق تاريخ عربي — يُستخدم داخل مكونات client فقط (لا خطر hydration) */
+export function formatDateAr(iso?: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return new Intl.DateTimeFormat('ar', { year: 'numeric', month: 'long', day: 'numeric' }).format(d)
 }
 
-export { isTextSlug };
+/** «منذ...» تقريبي للنشاط */
+export function timeAgoAr(iso?: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const diff = Date.now() - d.getTime()
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return 'الآن'
+  if (mins < 60) return `منذ ${mins} دقيقة`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `منذ ${hours} ساعة`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `منذ ${days} يوم`
+  return formatDateAr(iso)
+}

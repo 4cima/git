@@ -1,110 +1,88 @@
 /**
  * src/components/profile/types.ts
- * أنواع مشتركة لصفحة البروفايل — كل البيانات القادمة من APIs الحقيقية فقط.
+ * أنواع مشتركة لصفحة البروفايل — مطابقة لشكل استجابات الـAPIs الفعلية.
  */
 
-export type ContentKind = 'movie' | 'tv';
+export type MediaType = 'movie' | 'tv'
 
-export interface ProfileStats {
-  favoritesCount: number;
-  completedCount: number;
-  reviewsCount: number;
-  avgRating: number | null;
-  watchEntries: number;
-  completedEntries: number;
-  totalSeconds: number;
-  totalMinutes: number;
-  totalHours: number;
-  moviesCount: number;
-  seriesCount: number;
-  resumeCount: number;
-  // توافق خلفي
-  favorites?: number;
-  user_reviews?: number;
-  watch_history?: number;
-  total_watch_duration_minutes?: number;
+export type TabKey = 'overview' | 'favorites' | 'history' | 'reviews' | 'settings'
+
+/** عنصر وسائط كما تعيده /api/user/favorites و /api/user/completed و /api/continue-watching */
+export interface MediaItem {
+  tmdb_id: number
+  content_type: MediaType
+  /** null = غير متوفر مؤقتاً (الـAPI يُرجع null للـslug الفاضي أو الرقمي) */
+  slug: string | null
+  title?: string | null
+  title_ar?: string | null
+  title_en?: string | null
+  poster_path?: string | null
+  backdrop_path?: string | null
+  vote_average?: number | null
+  release_year?: number | null
+  overview_ar?: string | null
+  added_at?: string
+  updated_at?: string
+  /** حقول continue-watching */
+  season?: number | null
+  episode?: number | null
+  /** ثوانٍ مشاهدة فعلية (watch_duration) — لا توجد مدة كلية مخزنة */
+  progress?: number | null
 }
 
-export interface LibraryItem {
-  tmdb_id: number;
-  content_type: ContentKind | string;
-  media_type?: string;
-  title?: string | null;
-  title_ar?: string | null;
-  title_en?: string | null;
-  poster_path?: string | null;
-  vote_average?: number | null;
-  release_year?: number | null;
-  overview_ar?: string | null;
-  genres_json?: string | null;
-  primary_genre?: string | null;
-  slug?: string | null;
-  added_at?: string | null;
+/** تقييم كما تعيده /api/user/reviews */
+export interface ReviewItem {
+  content_type: MediaType
+  content_id: number
+  tmdb_id: number
+  title: string | null
+  rating: number
+  review_text: string | null
+  created_at: string
+  updated_at?: string | null
+  slug: string | null
+  title_ar?: string | null
+  title_en?: string | null
+  poster_path?: string | null
+  vote_average?: number | null
 }
 
-export interface ResumeItem {
-  tmdb_id: number;
-  content_type: ContentKind | string;
-  content_id?: number | null;
-  title?: string | null;
-  title_ar?: string | null;
-  title_en?: string | null;
-  poster_path?: string | null;
-  backdrop_path?: string | null;
-  vote_average?: number | null;
-  slug?: string | null;
-  progress?: number | null; // ثواني آخر موضع
-  duration?: number | null;
-  season?: number | null;
-  episode?: number | null;
-  updated_at?: string;
-  meta?: {
-    id: number;
-    slug?: string | null;
-    poster_path?: string | null;
-    title?: string | null;
-    name?: string | null;
-    vote_average?: number | null;
-    media_type?: string;
-  } | null;
-}
-
+/** نشاط كما يعيده /api/profile/activity */
 export interface ActivityItem {
-  type: 'watch' | 'favorite' | 'review';
-  tmdb_id: number;
-  content_type: string;
-  title: string | null;
-  title_ar?: string | null;
-  poster_path: string | null;
-  vote_average?: number | null;
-  slug?: string | null;
-  date: string;
-  data: Record<string, unknown>;
+  type: 'watch' | 'favorite' | 'review'
+  tmdb_id: number
+  content_type: MediaType
+  title: string | null
+  poster_path: string | null
+  vote_average: number | null
+  slug: string | null
+  date: string
 }
 
-export interface MyReview {
-  content_type: ContentKind | string;
-  content_id?: number;
-  tmdb_id: number;
-  title?: string | null;
-  title_ar?: string | null;
-  title_en?: string | null;
-  poster_path?: string | null;
-  vote_average?: number | null;
-  rating: number;
-  review_text?: string | null;
-  slug?: string | null;
-  created_at?: string;
-  updated_at?: string;
+/** إحصائيات كما تعيدها /api/profile/stats */
+export interface ProfileStats {
+  favoritesCount: number
+  completedCount: number
+  reviewsCount: number
+  avgRating: number | null
+  watchEntries: number
+  completedEntries: number
+  totalSeconds: number
+  totalMinutes: number
+  totalHours: number
+  moviesCount: number
+  seriesCount: number
+  resumeCount: number
 }
 
-/** أقسام البروفايل الخمسة — كل قسم له مصدر بيانات حقيقي مستقل */
-export type ProfileTab = 'overview' | 'favorites' | 'watch' | 'reviews' | 'settings';
+/** إعدادات الخصوصية — GET/PUT /api/profile/privacy */
+export interface PrivacySettings {
+  showWatchHistory: boolean
+  showFavorites: boolean
+}
 
-export const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
-  { id: 'overview', label: 'نظرة عامة' },
-  { id: 'favorites', label: 'المفضلة' },
-  { id: 'watch', label: 'سجل المشاهدة' },
-  { id: 'reviews', label: 'التقييمات' },
-  { id: 'settings', label: 'الإعدادات' },
-];
+/** إعدادات الإشعارات — GET/PUT /api/profile/notifications */
+export interface NotificationSettings {
+  emailNotifications: boolean
+  newContentNotif: boolean
+}

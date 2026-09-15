@@ -1,148 +1,98 @@
-'use client';
+'use client'
 
-import { memo } from 'react';
-import { CheckCircle2, Clock3, Film, Heart, LayoutGrid, Settings, Star, Tv } from 'lucide-react';
-import type { ProfileTab } from './types';
-import type { ProfileStats } from './types';
-import { formatWatchTime } from './utils';
+/**
+ * src/components/profile/ProfileTabs.tsx
+ * تنقّل أقسام البروفايل الخمسة:
+ * - ديسكتوب (md+): sidebar عمودي
+ * - موبايل: tabs أفقية sticky
+ * - التبويب النشط: خلفية ذهبية + نص داكن غامق — التلوين فوري عبر onSelect (state متزامن)
+ */
+import { motion } from 'framer-motion'
+import type { LucideIcon } from 'lucide-react'
+import { Heart, History, LayoutDashboard, Settings, Star } from 'lucide-react'
+import type { TabKey } from './types'
 
-interface TabsProps {
-  active: ProfileTab;
-  onChange: (t: ProfileTab) => void;
-  counts: { watch: number; favorites: number; reviews: number };
+export interface TabDef {
+  key: TabKey
+  label: string
+  icon: LucideIcon
 }
 
-const TABS: { id: ProfileTab; label: string; icon: typeof LayoutGrid }[] = [
-  { id: 'overview', label: 'نظرة عامة', icon: LayoutGrid },
-  { id: 'favorites', label: 'المفضلة', icon: Heart },
-  { id: 'watch', label: 'سجل المشاهدة', icon: Clock3 },
-  { id: 'reviews', label: 'التقييمات', icon: Star },
-  { id: 'settings', label: 'الإعدادات', icon: Settings },
-];
+export const TAB_DEFS: TabDef[] = [
+  { key: 'overview', label: 'نظرة عامة', icon: LayoutDashboard },
+  { key: 'favorites', label: 'المفضلة', icon: Heart },
+  { key: 'history', label: 'سجل المشاهدة', icon: History },
+  { key: 'reviews', label: 'التقييمات', icon: Star },
+  { key: 'settings', label: 'الإعدادات', icon: Settings },
+]
 
-export const ProfileTabs = memo(function ProfileTabs({ active, onChange, counts }: TabsProps) {
-  const badge = (id: ProfileTab): number | null => {
-    if (id === 'favorites') return counts.favorites > 0 ? counts.favorites : null;
-    if (id === 'watch') return counts.watch > 0 ? counts.watch : null;
-    if (id === 'reviews') return counts.reviews > 0 ? counts.reviews : null;
-    return null;
-  };
+interface ProfileTabsProps {
+  active: TabKey
+  onSelect: (tab: TabKey) => void
+}
+
+/** شارة النشط المشتركة — ذهبي صريح + نص غامق داكن (تباين عالٍ) */
+function TabButton({
+  tab,
+  active,
+  onSelect,
+  fullWidth,
+}: {
+  tab: TabDef
+  active: boolean
+  onSelect: (k: TabKey) => void
+  fullWidth?: boolean
+}) {
+  const Icon = tab.icon
   return (
-    <nav
-      role="tablist"
-      aria-label="أقسام البروفايل"
-      className="sticky top-0 z-20 -mx-1 flex gap-1.5 overflow-x-auto bg-[#08080c]/90 px-1 py-3 backdrop-blur"
+    <button
+      type="button"
+      onClick={() => onSelect(tab.key)}
+      aria-current={active ? 'page' : undefined}
+      className={[
+        'relative flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm transition-colors duration-150',
+        fullWidth ? 'w-full justify-start' : 'justify-center',
+        active
+          ? 'bg-amber-500 font-extrabold text-zinc-950 shadow-lg shadow-amber-500/25'
+          : 'font-semibold text-zinc-400 hover:bg-white/5 hover:text-zinc-100',
+      ].join(' ')}
     >
-      {TABS.map(({ id, label, icon: Icon }) => {
-        const selected = active === id;
-        const n = badge(id);
-        return (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={selected}
-            onClick={() => onChange(id)}
-            className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-black transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-lumen-gold ${
-              selected
-                ? 'bg-lumen-gold text-black'
-                : 'border border-white/10 bg-white/5 text-lumen-silver hover:border-lumen-gold/40 hover:text-white'
-            }`}
-          >
-            <Icon size={15} />
-            {label}
-            {n != null && (
-              <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-black ${
-                  selected ? 'bg-white/20 text-white' : 'bg-red-500/15 text-red-400'
-                }`}
-              >
-                {n}
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </nav>
-  );
-});
-
-interface StatCardsProps {
-  stats?: ProfileStats;
-  loading: boolean;
-  onGo: (t: ProfileTab) => void;
+      <Icon className={`h-4 w-4 ${active ? 'text-zinc-950' : 'text-amber-500/80'}`} />
+      <span className="whitespace-nowrap">{tab.label}</span>
+      {active && (
+        <motion.span
+          layoutId={fullWidth ? 'tab-underline-sidebar' : 'tab-underline-mobile'}
+          className={`bg-amber-300/70 ${fullWidth ? 'absolute inset-y-2 right-0 w-1 rounded-full' : 'absolute inset-x-4 -bottom-px h-0.5 rounded-full'}`}
+          transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+        />
+      )}
+    </button>
+  )
 }
 
-/** 4 كروت فقط — كل رقم حقيقي وقابل للضغط ويودي لمحتواه */
-export const StatCards = memo(function StatCards({ stats, loading, onGo }: StatCardsProps) {
-  const cards = [
-    {
-      label: 'ساعات المشاهدة',
-      value: stats ? formatWatchTime(stats.totalSeconds) : '—',
-      sub: stats ? `${stats.watchEntries} عنصر في السجل` : '',
-      icon: Clock3,
-      go: 'watch' as ProfileTab,
-    },
-    {
-      label: 'المفضلة',
-      value: stats ? String(stats.favoritesCount) : '—',
-      sub: stats ? `${stats.moviesCount} أفلام · ${stats.seriesCount} مسلسلات` : '',
-      icon: Heart,
-      go: 'favorites' as ProfileTab,
-    },
-    {
-      label: 'المكتملة',
-      value: stats ? String(stats.completedCount) : '—',
-      sub: 'شاهدتها وأنهيتها',
-      icon: CheckCircle2,
-      go: 'watch' as ProfileTab,
-    },
-    {
-      label: 'تقييماتي',
-      value: stats ? String(stats.reviewsCount) : '—',
-      sub: stats?.avgRating != null ? `متوسط ${stats.avgRating}/10` : 'قيّم ما شاهدت',
-      icon: Star,
-      go: 'reviews' as ProfileTab,
-    },
-  ];
+export function ProfileTabsDesktop({ active, onSelect }: ProfileTabsProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {cards.map(({ label, value, sub, icon: Icon, go }) => (
-        <button
-          key={label}
-          onClick={() => onGo(go)}
-          className="group rounded-2xl border border-white/5 bg-lumen-surface p-4 text-right transition hover:border-red-500/30"
-        >
-          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/10 text-red-400 transition group-hover:bg-red-600 group-hover:text-white">
-            <Icon size={18} />
-          </div>
-          <div className="text-xl font-black text-white">
-            {loading ? <span className="inline-block h-6 w-12 animate-pulse rounded bg-white/10" /> : value}
-          </div>
-          <div className="mt-0.5 text-xs font-black text-lumen-silver">{label}</div>
-          {!loading && sub && <div className="mt-1 line-clamp-1 text-[11px] text-lumen-silver/60">{sub}</div>}
-        </button>
-      ))}
-    </div>
-  );
-});
+    <aside className="hidden md:block">
+      <nav
+        aria-label="أقسام البروفايل"
+        className="sticky top-24 flex flex-col gap-1 rounded-2xl border border-white/5 bg-zinc-900/60 p-2"
+      >
+        {TAB_DEFS.map((tab) => (
+          <TabButton key={tab.key} tab={tab} active={active === tab.key} onSelect={onSelect} fullWidth />
+        ))}
+      </nav>
+    </aside>
+  )
+}
 
-export function SplitBadge({ movies, series }: { movies: number; series: number }) {
-  const total = movies + series;
-  if (total <= 0) return null;
-  const pct = Math.round((movies / total) * 100);
+export function ProfileTabsMobile({ active, onSelect }: ProfileTabsProps) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-lumen-surface p-4">
-      <div className="mb-2 flex items-center justify-between text-xs font-black">
-        <span className="flex items-center gap-1.5 text-white">
-          <Film size={13} className="text-lumen-gold" /> أفلام {movies}
-        </span>
-        <span className="flex items-center gap-1.5 text-white">
-          مسلسلات {series} <Tv size={13} className="text-lumen-gold" />
-        </span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/10" dir="ltr">
-        <div className="h-full rounded-full bg-lumen-gold" style={{ width: `${pct}%` }} />
-      </div>
+    <div className="sticky top-0 z-30 -mx-4 border-b border-white/5 bg-zinc-950/90 px-4 py-2 backdrop-blur md:hidden">
+      <nav aria-label="أقسام البروفايل" className="flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {TAB_DEFS.map((tab) => (
+          <TabButton key={tab.key} tab={tab} active={active === tab.key} onSelect={onSelect} />
+        ))}
+      </nav>
     </div>
-  );
+  )
 }

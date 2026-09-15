@@ -1,81 +1,47 @@
-'use client';
+'use client'
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ActivityItem, LibraryItem, MyReview, ProfileStats, ResumeItem } from '@/components/profile/types';
+/**
+ * src/components/profile/hooks.ts
+ * hook بسيط لجلب البيانات (بدون مكتبات إضافية) — مع إلغاء عند unmount وإعادة تحميل.
+ */
+import { useCallback, useEffect, useState } from 'react'
 
-async function getJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) throw new Error(`request failed: ${res.status}`);
-  return res.json() as Promise<T>;
+export interface ApiState<T> {
+  data: T | null
+  loading: boolean
+  error: string | null
+  reload: () => void
 }
 
-export function useProfileStats() {
-  return useQuery({
-    queryKey: ['profile', 'stats'],
-    queryFn: async () => {
-      const json = await getJSON<{ ok: boolean; stats: ProfileStats }>('/api/profile/stats');
-      return json.stats;
-    },
-    staleTime: 60 * 1000,
-  });
-}
+export function useApi<T>(fetcher: () => Promise<T>, deps: ReadonlyArray<unknown> = []): ApiState<T> {
+  const [data, setData] = useState<T | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [nonce, setNonce] = useState(0)
 
-export function useResumeList(enabled: boolean) {
-  return useQuery({
-    queryKey: ['profile', 'resume'],
-    queryFn: async () => {
-      const json = await getJSON<{ ok: boolean; items: ResumeItem[] }>('/api/continue-watching?limit=30');
-      return json.items || [];
-    },
-    enabled,
-    staleTime: 60 * 1000,
-  });
-}
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    setError(null)
+    fetcher()
+      .then((d) => {
+        if (alive) {
+          setData(d)
+          setError(null)
+        }
+      })
+      .catch((e: unknown) => {
+        if (alive) setError(e instanceof Error ? e.message : String(e))
+      })
+      .finally(() => {
+        if (alive) setLoading(false)
+      })
+    return () => {
+      alive = false
+    }
+  }, [...deps, nonce])
 
-export function useLibraryList(kind: 'favorites' | 'completed', enabled: boolean) {
-  return useQuery({
-    queryKey: ['profile', 'library', kind],
-    queryFn: async () => {
-      const json = await getJSON<{ ok: boolean; items: LibraryItem[] }>(
-        kind === 'favorites' ? '/api/user/favorites' : '/api/user/completed'
-      );
-      return json.items || [];
-    },
-    enabled,
-    staleTime: 60 * 1000,
-  });
-}
+  const reload = useCallback(() => setNonce((n) => n + 1), [])
 
-export function useActivityFeed(kind: 'all' | 'watch_history' | 'favorites' | 'reviews', enabled: boolean) {
-  return useQuery({
-    queryKey: ['profile', 'activity', kind],
-    queryFn: async () => {
-      const json = await getJSON<{ ok: boolean; activities: ActivityItem[] }>(
-        `/api/profile/activity?type=${kind}&limit=30`
-      );
-      return json.activities || [];
-    },
-    enabled,
-    staleTime: 60 * 1000,
-  });
-}
-
-export function useMyReviews(enabled: boolean) {
-  return useQuery({
-    queryKey: ['profile', 'reviews'],
-    queryFn: async () => {
-      const json = await getJSON<{ ok: boolean; items: MyReview[] }>('/api/user/reviews?limit=50');
-      return json.items || [];
-    },
-    enabled,
-    staleTime: 60 * 1000,
-  });
-}
-
-export function useInvalidateProfile() {
-  const qc = useQueryClient();
-  return () => {
-    qc.invalidateQueries({ queryKey: ['profile'] });
-    qc.invalidateQueries({ queryKey: ['continue-watching'] });
-  };
+  return { data, loading, error, reload }
 }
