@@ -41,11 +41,9 @@ function getTabsForContentType(contentType: ContentType, basePath: string): Tab[
       ]
     case 'gaming':
       // Gaming uses standard navigation tabs (All, Trending, Top Rated, Latest)
-      // Platform filtering is done via UnifiedFilters component
       return base
     case 'software':
       // Software uses standard navigation tabs (All, Trending, Top Rated, Latest)
-      // OS filtering is done via UnifiedFilters component
       return base
     default:
       return base

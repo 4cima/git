@@ -38,7 +38,6 @@ const STATIC_ROUTES: { path: string; priority: string }[] = [
   { path: '/series/lang/ar', priority: SECTION_PRIORITY },
   { path: '/genres', priority: SECTION_PRIORITY },
   { path: '/genres/arabic', priority: SECTION_PRIORITY },
-  { path: '/anime', priority: SECTION_PRIORITY },
   { path: '/contact', priority: '0.5' },
   { path: '/dmca', priority: '0.3' },
   { path: '/privacy', priority: '0.3' },
