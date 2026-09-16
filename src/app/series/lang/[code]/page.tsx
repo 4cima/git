@@ -67,7 +67,7 @@ export default async function SeriesLangPage({ params }: PageProps) {
            SELECT 1 FROM json_each(tv_series.genres_json)
            WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
          ))
-         AND (tv_series.filter_status IN ('clean', 'reviewed_approved') OR tv_series.filter_status IS NULL)
+         AND (IFNULL(tv_series.filter_status, 'clean') IN ('clean', 'reviewed_approved'))
          AND (tv_series.first_air_year IS NOT NULL AND tv_series.first_air_year >= 2000)
        ORDER BY popularity DESC
        LIMIT ${LISTING_PAGE_SIZE + 1}`,

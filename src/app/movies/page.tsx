@@ -51,7 +51,7 @@ async function getInitialMovies() {
          SELECT 1 FROM json_each(movies.genres_json)
          WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
        ))
-         AND (movies.filter_status IN ('clean', 'reviewed_approved') OR movies.filter_status IS NULL)
+         AND (IFNULL(movies.filter_status, 'clean') IN ('clean', 'reviewed_approved'))
          AND (movies.release_year IS NOT NULL AND movies.release_year >= 2000)
        ORDER BY popularity DESC, movies.id DESC
        LIMIT ${LISTING_PAGE_SIZE + 1}`,

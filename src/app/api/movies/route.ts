@@ -110,7 +110,10 @@ export async function GET(request: NextRequest) {
 
     // بوابة الإخفاء — لا يظهر المحجوب (blocked) ولا المحتاج للمراجعة في أي قائمة أو بحث
     // جولة السياسة: + فلتر السنة (release_year >= 2000) وempty_date مستبعد
-    conditions.push(`(movies.filter_status IN ('clean', 'reviewed_approved') OR movies.filter_status IS NULL)`)
+    /* بوابة الإخفاء — صياغة موحّدة حرفيًا مع الفهرس الجزئي idx_movies_listing:
+       IFNULL(filter_status,'clean') IN (…) مكافئة منطقيًا 100% لـ IN (…) OR IS NULL،
+       وبدونها لا يستخدم المُخطِّط الفهرس الجزئي وتعود USE TEMP B-TREE (أثر: 468030 صفًا مقروءًا). */
+    conditions.push(`(IFNULL(movies.filter_status, 'clean') IN ('clean', 'reviewed_approved'))`)
     conditions.push(`(movies.release_year IS NOT NULL AND movies.release_year >= 2000)`)
     
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''

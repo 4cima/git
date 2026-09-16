@@ -106,9 +106,13 @@ export async function GET(
 
     /* شرط المحتوى المعتمد — يمنع ظهور أعمال غير مراجعة في الترتيبات غير الافتراضية */
     /* جولة السياسة: + فلتر السنة (>= 2000) على كل فرع — لا ظهور لما قبل 2000 أو بلا سنة */
+    /* جولة السياسة: + فلتر السنة (>= 2000) على كل فرع — لا ظهور لما قبل 2000 أو بلا سنة.
+       صياغة البوابة موحّدة حرفيًا مع الفهرسين الجزئيين idx_movies_listing / idx_tv_listing:
+       IFNULL(filter_status,'clean') IN (…) مكافئة منطقيًا 100% لـ IN (…) OR IS NULL،
+       وبدونها لا يستخدم المُخطِّط الفهرس الجزئي ويعود USE TEMP B-TREE. */
     const approvedClause = isMovie
-      ? "(m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL) AND m.release_year IS NOT NULL AND m.release_year >= 2000"
-      : "(s.filter_status IN ('clean', 'reviewed_approved') OR s.filter_status IS NULL) AND s.first_air_year IS NOT NULL AND s.first_air_year >= 2000"
+      ? "(IFNULL(m.filter_status, 'clean') IN ('clean', 'reviewed_approved')) AND m.release_year IS NOT NULL AND m.release_year >= 2000"
+      : "(IFNULL(s.filter_status, 'clean') IN ('clean', 'reviewed_approved')) AND s.first_air_year IS NOT NULL AND s.first_air_year >= 2000"
 
     // Use cache for first page default sort (popularity) movie/tv type with single genre
     // — الكاش يتجاوز في الوضع الصارم (strict=1) لأن رتبته لا تمثل "التصنيف الأساسي فقط"
@@ -247,7 +251,7 @@ export async function GET(
                   'movie' as media_type
            FROM movies m WHERE ${whereClause}
              AND ${excludedGenreSqlClause('m.')}
-             AND (m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL)
+             AND (IFNULL(m.filter_status, 'clean') IN ('clean', 'reviewed_approved'))
              AND m.release_year IS NOT NULL AND m.release_year >= 2000
              AND ${strictMovies}
            ORDER BY m.${sortColumn} ${sortOrder}, m.id ${sortOrder} LIMIT ? OFFSET ?`,
@@ -261,7 +265,7 @@ export async function GET(
            FROM tv_series s WHERE ${whereClauseSeries}
              AND ${exclusionSeries}
              AND ${excludedGenreSqlClause('s.')}
-             AND (s.filter_status IN ('clean', 'reviewed_approved') OR s.filter_status IS NULL)
+             AND (IFNULL(s.filter_status, 'clean') IN ('clean', 'reviewed_approved'))
              AND s.first_air_year IS NOT NULL AND s.first_air_year >= 2000
              AND ${strictSeries}
            ORDER BY s.${sortColumn} ${sortOrder}, s.id ${sortOrder} LIMIT ? OFFSET ?`,
