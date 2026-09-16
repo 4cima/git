@@ -47,6 +47,10 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
   const [order, setOrder] = useState<'asc' | 'desc'>('desc')
   /* إعادة المحاولة: زيادة الرقم تجبر الـeffect على العمل حتى لو نفس الصفحة/الترتيب */
   const [retryNonce, setRetryNonce] = useState(0)
+  /* حارس «تخطي الجلب الأول» يعمل مرة واحدة فقط في عمر المكوّن (useRef):
+     بلا هذا كان يتخطى أي جلب لاحق تعود فيه الحالة للقيم الافتراضية —
+     مثلاً الرجوع من «الأعلى تقييماً» إلى «الأكثر شهرة» (popularity + desc + page 1) لا يجلب شيئاً. */
+  const skipInitialFetchRef = useRef(true)
 
   /* فلاتر موحّدة — نفس فلاتر صفحات اللغة (التصنيف مثبّت كفلتر الصفحة نفسه، مثل قفل اللغة هناك) */
   const [openDropdown, setOpenDropdown]       = useState<'year'|'rating'|'country'|'language'|null>(null)
@@ -58,6 +62,9 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
   const [searchQuery, setSearchQuery]         = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const filtersRef = useRef<HTMLDivElement>(null)
+  /* مرجع يقطع حلقة الرابط⇄الحالة: يُملأ من useListingUrlSync عند كتابتنا للرابط،
+     وeffect القراءة أدناه يتجاهل أي searchParams يطابقه (صدى كتابتنا لا رجوع/تقدّم). */
+  const lastWrittenQueryRef = useRef<string | null>(null)
 
   const observerTarget = useRef<HTMLDivElement>(null)
   const SKELETON_COUNT = 24
@@ -87,8 +94,12 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
 
   // Fetch series — نفس منطق صفحات اللغة: /api/series والتصنيف مثبّت كفلتر + الفلاتر الكاملة
   useEffect(() => {
-    // Skip initial fetch if we already have data from SSR (unless retry requested)
+    // Skip initial fetch ONLY ONCE (useRef): if we already have data from SSR (unless retry requested).
+    // بلا ref كان الحارس يتخطى أي جلب لاحق تعود فيه الحالة للافتراضي (الرجوع إلى «الأكثر شهرة» مثلاً).
+    const isInitialRun = skipInitialFetchRef.current
+    skipInitialFetchRef.current = false
     if (
+      isInitialRun &&
       retryNonce === 0 && page === 1 && sort === 'popularity' && order === 'desc' && content.length > 0 &&
       selectedYear === 'all' && selectedRating === 'all' && selectedCountry === 'all' &&
       selectedLanguage === 'all' && !debouncedSearch.trim()
@@ -198,6 +209,10 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
      - زر «رجوع» ⇒ يُعاد تطبيق الفلتر السابق بنفس الطريق.
      التصنيف مقفول من المسار (لا يُقرأ ولا يُكتب في الرابط) — مثل قفل اللغة في صفحات اللغة. */
   useEffect(() => {
+    /* صدى كتابتنا الخاصة (state→URL) لا يُعاد تطبيقه على الـstate —
+       فقط رجوع/تقدّم في المتصفح أو رابط خارجي أو الفتح الأول (قيمة مختلفة) يُطبَّق. */
+    if (lastWrittenQueryRef.current === searchParams.toString()) return
+    lastWrittenQueryRef.current = null
     const urlFilters = readCommonFiltersFromSearchParams(searchParams)
     const urlSort    = readSortFromSearchParams(searchParams, SORT_OPTIONS)
     setSelectedYear(urlFilters.year)
@@ -222,7 +237,7 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
     search: debouncedSearch,
     sort,
     order,
-  })
+  }, lastWrittenQueryRef)
 
   /* Debounce للبحث — نفس سلوك صفحات اللغة */
   useEffect(() => {

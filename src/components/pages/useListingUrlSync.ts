@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { buildListingQueryString, isSameListingFilters, type ListingUrlFilterState } from './listingFilters'
 
@@ -20,7 +20,14 @@ import { buildListingQueryString, isSameListingFilters, type ListingUrlFilterSta
  *    - هذا ما يمنع الحلقة: بعد الكتابة يصبح الرابط مطابقاً للحالة فيتوقف الأثر.
  * 5) scroll:false — تحديث الفلاتر لا يقفز بالصفحة لأعلى (السكرول مسؤولية المستخدم).
  */
-export function useListingUrlSync(state: ListingUrlFilterState) {
+export function useListingUrlSync(
+  state: ListingUrlFilterState,
+  /* مرجع مشترك مع effect القراءة (URL→state) في الصفحة:
+     يُملأ بآخر query كتبناه نحن بعد كل push/replace، ليُتجاهله القارئ كصدى لكتابتنا
+     — هذا ما يقطع الحلقة (كتابة ⇒ searchParams يتغيّر ⇒ قراءة ⇒ كتابة...).
+     أي رابط آخر (رجوع/تقدّم/رابط خارجي) لا يطابقه ⇒ يُطبَّع على الحالة طبيعياً. */
+  lastWrittenQueryRef?: RefObject<string | null>
+) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -53,5 +60,6 @@ export function useListingUrlSync(state: ListingUrlFilterState) {
     else router.push(target, { scroll: false })
 
     lastQueryRef.current = nextQuery
+    if (lastWrittenQueryRef) lastWrittenQueryRef.current = nextQuery
   }, [nextQuery, currentQuery, pathname, router])
 }

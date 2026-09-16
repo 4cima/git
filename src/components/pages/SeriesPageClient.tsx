@@ -106,6 +106,10 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
   const observerTarget = useRef<HTMLDivElement>(null)
   /* هوية آخر طلب fetch — الـfinally يفرّغ الحالات للطلب الأخير فقط (يمنع «جاري التحميل...» العالق) */
   const fetchRunRef = useRef(0)
+  /* حارس «تخطي الجلب الأول» يعمل مرة واحدة فقط في عمر المكوّن (useRef):
+     بلا هذا كان يتخطى أي جلب لاحق تعود فيه الحالة للقيم الافتراضية —
+     مثلاً الرجوع من «الأعلى تقييماً» إلى «الأكثر شهرة» (popularity + desc + page 1) لا يجلب شيئاً. */
+  const skipInitialFetchRef = useRef(true)
 
   // Batch card states for heart buttons
   const [cardStates, setCardStates] = useState<Record<string, 'neutral' | 'favorite' | 'completed'>>({})
@@ -143,11 +147,18 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
   // Sync filters from URL params on navigation — first mount is already handled
   // by the useState initializers above (skipping it here avoids a duplicate fetch)
   const isFirstUrlSync = useRef(true)
+  /* مرجع يقطع حلقة الرابط⇄الحالة: يُملأ من useListingUrlSync عند كتابتنا للرابط،
+     وeffect القراءة أدناه يتجاهل أي searchParams يطابقه (صدى كتابتنا لا رجوع/تقدّم). */
+  const lastWrittenQueryRef = useRef<string | null>(null)
   useEffect(() => {
     if (isFirstUrlSync.current) {
       isFirstUrlSync.current = false
       return
     }
+    /* صدى كتابتنا الخاصة (state→URL) لا يُعاد تطبيقه على الـstate —
+       فقط رجوع/تقدّم في المتصفح أو رابط خارجي (قيمة مختلفة) يُطبَّق. */
+    if (lastWrittenQueryRef.current === searchParams.toString()) return
+    lastWrittenQueryRef.current = null
     // Read genre from URL (expects slug format)
     const urlGenre = searchParams.get('genre')
     if (urlGenre) {
@@ -237,7 +248,7 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
     search: debouncedSearch,
     sort: sortBy,
     order: sortOrder,
-  })
+  }, lastWrittenQueryRef)
 
   // Debounce search
   useEffect(() => {
@@ -273,9 +284,12 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
     if (selectedLanguage  !== 'all') params.set('language',   selectedLanguage)
     if (debouncedSearch.trim())      params.set('search',     debouncedSearch.trim())
 
-    /* تخطي الجلب الأول: بيانات الـSSR جاهزة ولا توجد فلاتر نشطة أو إعادة محاولة
-       (نفس حارس MoviesPageClient.tsx:258-274 — يوفر طلبًا كاملًا ويمنع وميض القائمة) */
+    /* تخطي الجلب الأول فقط (مرة واحدة عبر ref): بيانات الـSSR جاهزة ولا توجد فلاتر نشطة أو إعادة محاولة.
+       الحارس كان بلا ref فيتخطى أي جلب لاحق تعود فيه الحالة للافتراضي — نفس حارس MoviesPageClient. */
+    const isInitialRun = skipInitialFetchRef.current
+    skipInitialFetchRef.current = false
     if (
+      isInitialRun &&
       retryNonce === 0 &&
       page === 1 &&
       sortBy === 'popularity' &&

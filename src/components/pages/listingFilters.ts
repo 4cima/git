@@ -177,9 +177,14 @@ export interface ListingUrlFilterState {
   order?: string
 }
 
+/** الترتيب الافتراضي الموحّد للقوائم — لا يُكتب في الرابط (يبقى نظيفاً) ولا يُعدّ فلتراً نشطاً */
+export const DEFAULT_LISTING_SORT = 'popularity'
+export const DEFAULT_LISTING_ORDER: 'asc' | 'desc' = 'desc'
+
 /**
  * بناء سلسلة استعلام الفلاتر من الحالة (بلا المسار) — ترتيب ثابت للمفاتيح.
  * القيم الافتراضية ('all'/فراغ) تُحذف ليبقى الرابط نظيفاً وقابلاً للنسخ والمشاركة.
+ * الترتيب الافتراضي (popularity + desc) لا يُكتب أيضاً — /movies تبقى بلا params.
  */
 export function buildListingQueryString(state: ListingUrlFilterState): string {
   const params = new URLSearchParams()
@@ -190,8 +195,13 @@ export function buildListingQueryString(state: ListingUrlFilterState): string {
   if (state.language && state.language !== 'all') params.set('language', state.language)
   const search = state.search?.trim()
   if (search) params.set('search', search)
-  if (state.sort) params.set('sort', state.sort)
-  if (state.order) params.set('order', normalizeOrder(state.order))
+  const order = normalizeOrder(state.order)
+  /* المشكلة 2: الترتيب الافتراضي (popularity desc) لا يُكتب — الرابط يبقى نظيفاً بلا params.
+     أي ترتيب غير افتراضي يُكتب زوجاً واحداً (sort+order معاً) ليقرأه readSortFromSearchParams صحيحاً. */
+  if (state.sort && !(state.sort === DEFAULT_LISTING_SORT && order === DEFAULT_LISTING_ORDER)) {
+    params.set('sort', state.sort)
+    params.set('order', order)
+  }
   return params.toString()
 }
 
@@ -207,8 +217,8 @@ export function isSameListingFilters(
   b: string,
   opts: { ignoreSearch?: boolean; defaultSort?: string; defaultOrder?: 'asc' | 'desc' } = {}
 ): boolean {
-  const defaultSort  = opts.defaultSort  ?? 'popularity'
-  const defaultOrder = opts.defaultOrder ?? 'desc'
+  const defaultSort  = opts.defaultSort  ?? DEFAULT_LISTING_SORT
+  const defaultOrder = opts.defaultOrder ?? DEFAULT_LISTING_ORDER
   const norm = (query: string) => {
     const p = new URLSearchParams(query)
     const parts = [
