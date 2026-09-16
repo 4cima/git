@@ -399,7 +399,14 @@ export function HomeTrendingSections({
       )}
 
       {/* الأقسام الإضافية — نفس المفهوم بالضبط (زر منقسم + كروت مختلطة) */}
-      <HomeExtraSections sections={extraSections} loading={extraLoading} />
+      <HomeExtraSections
+        sections={extraSections}
+        loading={extraLoading}
+        isLoggedIn={isLoggedIn}
+        getCardState={getCardState}
+        isCardLoading={isCardLoading}
+        toggleCardState={toggleCardState}
+      />
     </>
   )
 }

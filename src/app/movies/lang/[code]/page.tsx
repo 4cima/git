@@ -120,6 +120,8 @@ export default async function MovieLangPage({ params }: PageProps) {
         initialHasMore={hasMore}
         forcedLanguage={lang.filter}
         title={`أفلام ${lang.label}`}
+        langCode={code}
+        langLabel={lang.label}
       />
       </>
     )

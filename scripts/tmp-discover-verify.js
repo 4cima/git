@@ -1,0 +1,16 @@
+const Database = require('better-sqlite3');
+const fs = require('fs');
+const path = require('path');
+const db = new Database(path.join(__dirname, '../data/4cima-local.db'), { readonly: true });
+db.pragma('busy_timeout = 30000');
+const batch = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/backups/discover-2026-09-12/batch-500.json'), 'utf8'));
+const ph = batch.map(() => '?').join(',');
+console.log('== outcomes of batch-500 ==');
+console.log(JSON.stringify(db.prepare(`SELECT is_fetched, filter_status, COALESCE(filter_reason,'(null)') r, COUNT(*) c FROM movies WHERE tmdb_id IN (${ph}) GROUP BY is_fetched, filter_status, filter_reason ORDER BY c DESC`).all(...batch), null, 1));
+console.log('== fetched/complete summary batch-500 ==');
+console.log(JSON.stringify(db.prepare(`SELECT SUM(CASE WHEN is_fetched=1 THEN 1 ELSE 0 END) fetched, SUM(CASE WHEN is_complete=1 THEN 1 ELSE 0 END) complete, SUM(CASE WHEN filter_status='clean' THEN 1 ELSE 0 END) clean FROM movies WHERE tmdb_id IN (${ph})`).get(...batch)));
+console.log('== waiting now ==');
+console.log('movies_waiting=' + db.prepare('SELECT COUNT(*) c FROM movies WHERE is_fetched=0').get().c);
+console.log('== part C sample 20 (spec query) ==');
+console.log(JSON.stringify(db.prepare("SELECT tmdb_id, title_en, title_ar, release_year, vote_average, filter_status FROM movies WHERE is_fetched=1 AND filter_status='clean' AND is_complete=1 ORDER BY tmdb_id DESC LIMIT 20").all(), null, 1));
+db.close();

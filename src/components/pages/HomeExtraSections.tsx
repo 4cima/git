@@ -12,7 +12,8 @@ import { StarIcon } from '../common/StarIcon'
 import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle } from '@/utils/textSanitizer'
 import { useDragScroll } from '@/hooks/useDragScroll'
-import type { MediaItem } from './HomeTrendingSections'
+import type { CardState, MediaItem } from './HomeTrendingSections'
+import { HomeCardHeart } from './HomeCardHeart'
 import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { SectionSplitHeader, SectionNavArrows } from './SectionSplitHeader'
 
@@ -50,8 +51,22 @@ function SectionIcon({ name }: { name: ExtraSectionDef['icon'] }) {
   }
 }
 
-/** كارت بنفس هوية كارت الرائج بالظبط (بوستر + شارات + عنوان) */
-function ExtraCard({ item, onCardClick }: { item: MediaItem; onCardClick?: (e: React.MouseEvent) => void }) {
+/** كارت بنفس هوية كارت الرائج بالظبط (بوستر + شارات + قلب الحالة + عنوان) */
+function ExtraCard({
+  item,
+  isLoggedIn,
+  getCardState,
+  isCardLoading,
+  toggleCardState,
+  onCardClick,
+}: {
+  item: MediaItem
+  isLoggedIn: boolean
+  getCardState: (item: MediaItem) => CardState
+  isCardLoading: (item: MediaItem) => boolean
+  toggleCardState: (item: MediaItem, e?: React.MouseEvent) => void
+  onCardClick?: (e: React.MouseEvent) => void
+}) {
   const mediaColorScheme = getMediaTypeColor(item.media_type)
   const genreColorScheme = item.primary_genre ? getGenreColor(item.primary_genre) : null
   const href = item.media_type === 'movie' ? `/movies/${item.slug}` : `/series/${item.slug}`
@@ -86,6 +101,16 @@ function ExtraCard({ item, onCardClick }: { item: MediaItem; onCardClick?: (e: R
 
           {/* Dark gradient on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+          {/* Top Left - Heart Button — نفس كتلة TrendingCard بالضبط (يختفي لو غير مسجل داخل HomeCardHeart) */}
+          <div className="absolute top-2 left-2 z-40">
+            <HomeCardHeart
+              state={getCardState(item)}
+              loading={isCardLoading(item)}
+              onClick={(e) => toggleCardState(item, e)}
+              isLoggedIn={isLoggedIn}
+            />
+          </div>
 
           {/* Top Right - Media Type Badge */}
           <div className="absolute top-2 right-2 z-20">
@@ -145,7 +170,19 @@ function ExtraCard({ item, onCardClick }: { item: MediaItem; onCardClick?: (e: R
 type ScrollRef = React.RefObject<HTMLDivElement | null>
 
 /** صف قسم واحد — نفس آلية صفوف الرائج (سحب + أسهم + عرض ثابت 25 + تحميل كسول + إعلان وسط الكروت) */
-function ExtraRow({ section }: { section: ExtraSectionDef }) {
+function ExtraRow({
+  section,
+  isLoggedIn,
+  getCardState,
+  isCardLoading,
+  toggleCardState,
+}: {
+  section: ExtraSectionDef
+  isLoggedIn: boolean
+  getCardState: (item: MediaItem) => CardState
+  isCardLoading: (item: MediaItem) => boolean
+  toggleCardState: (item: MediaItem, e?: React.MouseEvent) => void
+}) {
   const [displayCount, setDisplayCount] = useState(Math.min(EXTRA_PAGE_SIZE, section.items.length))
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -200,7 +237,14 @@ function ExtraRow({ section }: { section: ExtraSectionDef }) {
         <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
               {section.items.slice(0, displayCount).map((item, idx) => (
                 <Fragment key={`${section.title}-${item.media_type}-${item.tmdb_id || item.id}`}>
-                  <ExtraCard item={item} onCardClick={(e) => { if (drag.consumeIfDragged()) e.preventDefault() }} />
+                  <ExtraCard
+                    item={item}
+                    isLoggedIn={isLoggedIn}
+                    getCardState={getCardState}
+                    isCardLoading={isCardLoading}
+                    toggleCardState={toggleCardState}
+                    onCardClick={(e) => { if (drag.consumeIfDragged()) e.preventDefault() }}
+                  />
                   {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < displayCount && (
                     <AdInRowCard pos={`x-${idx + 1}-${section.title}`} />
                   )}
@@ -254,7 +298,21 @@ function ExtraSkeletonRow() {
   )
 }
 
-export function HomeExtraSections({ sections, loading }: { sections: ExtraSectionDef[]; loading?: boolean }) {
+export function HomeExtraSections({
+  sections,
+  loading,
+  isLoggedIn,
+  getCardState,
+  isCardLoading,
+  toggleCardState,
+}: {
+  sections: ExtraSectionDef[]
+  loading?: boolean
+  isLoggedIn: boolean
+  getCardState: (item: MediaItem) => CardState
+  isCardLoading: (item: MediaItem) => boolean
+  toggleCardState: (item: MediaItem, e?: React.MouseEvent) => void
+}) {
   const visible = sections.filter((s) => s.items.length > 0)
   if (visible.length === 0) {
     // أثناء التحميل: هيكل عظمي بدل فراغ — وبعد فشل الجلب: لا شيء (صامت)
@@ -274,7 +332,14 @@ export function HomeExtraSections({ sections, loading }: { sections: ExtraSectio
   return (
     <>
       {visible.map((section) => (
-        <ExtraRow key={section.title} section={section} />
+        <ExtraRow
+          key={section.title}
+          section={section}
+          isLoggedIn={isLoggedIn}
+          getCardState={getCardState}
+          isCardLoading={isCardLoading}
+          toggleCardState={toggleCardState}
+        />
       ))}
     </>
   )

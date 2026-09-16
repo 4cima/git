@@ -692,46 +692,62 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
             toggleCardState={toggleCardState}
           />
 
-          {/* بوابة المكتبة — ثلاث خلايا متجاورة: زر الأفلام | إعلان رقم 2 (300×250 بالمقاس الأصلي بالظبط) | زر المسلسلات.
-              بدون ارتفاع ثابت: الخلية الوسطى محددة بمقاس الإعلان الأصلي (300×250 + الإطار) والزران يمدّدان لنفس الارتفاع — ممنوع أي قص */}
-          <div className="mt-8 grid w-full grid-cols-1 overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-900/50 sm:grid-cols-3">
-            {/* الخلية 1 — زر كل الأفلام */}
+          {/* بوابة المكتبة — كارتان سينمائيتان ثلاثيتا الأبعاد: زر الأفلام (أحمر) | إعلان رقم 2 (300×250، lg فقط) | زر المسلسلات (ذهبي).
+              gap بين الخلايا يسمح بظهور الـglow الخارجي لكل زر بلا قص، وكل زر يحمل طبقاته الخاصة (gradient + highlight + inner shadow + ring + glow) */}
+          <div className="mt-8 grid w-full grid-cols-1 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+            {/* الخلية 1 — زر كل الأفلام — كارت سينمائي 3D (أحمر داكن: #7f1d1d → #dc2626) */}
             <Link
               href="/movies"
-              className="group relative flex min-h-[180px] flex-col items-center justify-center gap-3 border-b border-slate-800/60 p-4 text-center transition-all duration-300 hover:bg-red-600/10 sm:min-h-0 sm:border-b-0 sm:border-l"
+              className="group relative z-10 flex min-h-[150px] transform-gpu flex-col items-center justify-center gap-3 rounded-2xl border border-red-300/35 bg-[linear-gradient(160deg,#dc2626_0%,#991b1b_45%,#7f1d1d_100%)] p-4 text-center shadow-[0_16px_36px_-10px_rgba(220,38,38,0.5),0_6px_16px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.28),inset_0_-12px_24px_rgba(0,0,0,0.5)] transition-[transform,box-shadow] duration-300 ease-out will-change-transform hover:-translate-y-0.5 hover:shadow-[0_28px_60px_-12px_rgba(220,38,38,0.7),0_10px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-14px_28px_rgba(0,0,0,0.55)] active:translate-y-px active:shadow-[0_8px_18px_-6px_rgba(220,38,38,0.45),0_4px_12px_rgba(0,0,0,0.6),inset_0_8px_20px_rgba(0,0,0,0.6),inset_0_-6px_14px_rgba(0,0,0,0.55)] sm:min-h-[190px] lg:min-h-[220px]"
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-red-500/40 bg-red-600/15 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
-                <Film className="h-7 w-7 text-red-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-slate-100 sm:text-xl">شاهد كل الأفلام</h3>
-                <p className="mt-0.5 text-xs text-slate-400">اكتشف المكتبة الكاملة</p>
-              </div>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-red-500/40 bg-red-600/15 transition-all duration-300 group-hover:bg-red-600">
-                <ArrowLeft className="h-4 w-4 text-red-400 transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:text-white" />
-              </div>
+              {/* طبقة 2 — highlight علوي (شفاف → أبيض خفيف) */}
+              <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-white/25 via-white/[0.06] to-transparent" />
+              {/* طبقة 2.5 — glossy/glass shine: لمعة زجاجية علوية بحدود ناعمة (إحساس iOS فاخر) */}
+              <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[6%] h-[15%] w-[60%] -translate-x-1/2 rounded-full bg-gradient-to-b from-white/40 via-white/20 to-transparent blur-sm" />
+              {/* طبقة 5 — توهج أحمر خافت داخلي أعلى الكارت */}
+              <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-2 h-12 rounded-full bg-red-400/20 blur-2xl" />
+
+              <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/25 bg-black/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_8px_18px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+                <Film className="h-9 w-9 text-red-100 drop-shadow-[0_0_12px_rgba(254,202,202,0.85)]" />
+              </span>
+              <span className="relative">
+                <span className="block font-['Cairo',sans-serif] text-xl font-black text-red-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.65)] sm:text-2xl">شاهد كل الأفلام</span>
+                <span className="mt-1 block text-xs font-bold text-red-100/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] sm:text-sm">اكتشف المكتبة الكاملة</span>
+              </span>
+              <span className="relative mt-1 flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-black/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group-hover:bg-red-500 group-hover:shadow-[0_0_18px_rgba(248,113,113,0.75)]">
+                <ArrowLeft className="h-4 w-4 text-red-50 transition-transform duration-300 group-hover:-translate-x-0.5" />
+              </span>
             </Link>
 
-            {/* الخلية 2 — إعلان رقم 2 (300×250) بمقاسه الأصلي بالظبط داخل إطار موحّد — بلا أي قص */}
-            <div className="relative flex items-center justify-center overflow-visible py-2">
+            {/* الخلية 2 — إعلان رقم 2 (300×250) بمقاسه الأصلي بالظبط داخل إطار موحّد — بلا أي قص.
+                على التابلت (sm→lg) عرض الخلية < 300px فيفيض الإعلان فوق نصّي الزرين → مخفي تحت lg.
+                على lg+ (3 أعمدة) الخلية أوسع من الإعلان فيظهر بمقاسه الأصلي كما هو. */}
+            <div className="relative hidden items-center justify-center overflow-visible py-2 lg:flex">
               <AdFrame ad={AD_CTA} variant="x" />
             </div>
 
-            {/* الخلية 3 — زر كل المسلسلات */}
+            {/* الخلية 3 — زر كل المسلسلات — كارت سينمائي 3D (ذهبي: #78350f → #f59e0b) */}
             <Link
               href="/series"
-              className="group relative flex min-h-[180px] flex-col items-center justify-center gap-3 border-b border-slate-800/60 p-4 text-center transition-all duration-300 hover:bg-blue-600/10 sm:min-h-0 sm:border-b-0"
+              className="group relative z-10 flex min-h-[150px] transform-gpu flex-col items-center justify-center gap-3 rounded-2xl border border-amber-300/40 bg-[linear-gradient(160deg,#f59e0b_0%,#b45309_45%,#78350f_100%)] p-4 text-center shadow-[0_16px_36px_-10px_rgba(245,158,11,0.45),0_6px_16px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.3),inset_0_-12px_24px_rgba(0,0,0,0.5)] transition-[transform,box-shadow] duration-300 ease-out will-change-transform hover:-translate-y-0.5 hover:shadow-[0_28px_60px_-12px_rgba(245,158,11,0.65),0_10px_24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.38),inset_0_-14px_28px_rgba(0,0,0,0.55)] active:translate-y-px active:shadow-[0_8px_18px_-6px_rgba(245,158,11,0.4),0_4px_12px_rgba(0,0,0,0.6),inset_0_8px_20px_rgba(0,0,0,0.6),inset_0_-6px_14px_rgba(0,0,0,0.55)] sm:min-h-[190px] lg:min-h-[220px]"
             >
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-500/40 bg-blue-600/15 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110">
-                <Tv className="h-7 w-7 text-blue-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-slate-100 sm:text-xl">شاهد كل المسلسلات</h3>
-                <p className="mt-0.5 text-xs text-slate-400">اكتشف المكتبة الكاملة</p>
-              </div>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-blue-500/40 bg-blue-600/15 transition-all duration-300 group-hover:bg-blue-600">
-                <ArrowLeft className="h-4 w-4 text-blue-400 transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:text-white" />
-              </div>
+              {/* طبقة 2 — highlight علوي (شفاف → أبيض خفيف) */}
+              <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-white/25 via-white/[0.06] to-transparent" />
+              {/* طبقة 2.5 — glossy/glass shine: لمعة زجاجية علوية بحدود ناعمة (إحساس iOS فاخر) */}
+              <span aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[6%] h-[15%] w-[60%] -translate-x-1/2 rounded-full bg-gradient-to-b from-white/40 via-white/20 to-transparent blur-sm" />
+              {/* طبقة 5 — توهج ذهبي خافت داخلي أعلى الكارت */}
+              <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-2 h-12 rounded-full bg-amber-300/25 blur-2xl" />
+
+              <span className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/25 bg-black/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_8px_18px_rgba(0,0,0,0.45)] transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110">
+                <Tv className="h-9 w-9 text-amber-100 drop-shadow-[0_0_12px_rgba(253,230,138,0.85)]" />
+              </span>
+              <span className="relative">
+                <span className="block font-['Cairo',sans-serif] text-xl font-black text-amber-50 drop-shadow-[0_2px_4px_rgba(0,0,0,0.65)] sm:text-2xl">شاهد كل المسلسلات</span>
+                <span className="mt-1 block text-xs font-bold text-amber-100/85 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] sm:text-sm">اكتشف المكتبة الكاملة</span>
+              </span>
+              <span className="relative mt-1 flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-black/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group-hover:bg-amber-400 group-hover:shadow-[0_0_18px_rgba(252,211,77,0.75)]">
+                <ArrowLeft className="h-4 w-4 text-amber-50 transition-transform duration-300 group-hover:-translate-x-0.5" />
+              </span>
             </Link>
           </div>
         </div>

@@ -35,6 +35,8 @@ const GENRE_OPTIONS: Record<ContentType, { value: string; labelAr: string; label
     { value: 'science-fiction', labelAr: 'خيال علمي', labelEn: 'Sci-Fi' },
     { value: 'animation', labelAr: 'رسوم متحركة', labelEn: 'Animation' }
   ],
+  /* ⚠️ سلاجات D1 الحقيقية بصيغة شرطية (action-adventure=10759، sci-fi-fantasy=10765) —
+     تحقق حي 2026-09-16. صيغة الـ«&» غير موجودة في D1 ⇒ قائمة فارغة صامتة. */
   series: [
     { value: 'drama', labelAr: 'دراما', labelEn: 'Drama' },
     { value: 'comedy', labelAr: 'كوميديا', labelEn: 'Comedy' },

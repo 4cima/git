@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeAll, executeFirst } from '@/lib/db'
 import { sanitizeSearchInput } from '@/lib/search-utils'
+import { resolveGenreSlug, buildTvGenreClause } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
@@ -9,17 +10,15 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
 
-    const page        = Math.max(1, parseInt(searchParams.get('page')   || '1')  || 1)
-    const limit       = Math.min(60, Math.max(1, parseInt(searchParams.get('limit')  || '24') || 24))
-    const offsetParam = searchParams.get('offset')
-    const offset      = offsetParam !== null ? Math.max(0, parseInt(offsetParam) || 0) : (page - 1) * limit
+    const page   = Math.max(1, parseInt(searchParams.get('page')  || '1')  || 1)
+    const limit  = Math.min(60, Math.max(1, parseInt(searchParams.get('limit') || '24') || 24))
+    const offset = (page - 1) * limit
     
     const genre     = searchParams.get('genre')
     const year      = searchParams.get('year')
     const country   = searchParams.get('country')
     const language  = searchParams.get('language')
     const ratingMin = searchParams.get('rating_min')
-    const status    = searchParams.get('status')
     const search    = searchParams.get('search')
     const sort      = searchParams.get('sort')  || 'popularity'
     const order     = searchParams.get('order') || 'desc'
@@ -28,16 +27,24 @@ export async function GET(request: NextRequest) {
     const args: (string | number)[] = []
     
     if (genre) {
-      /* مطابقة دقيقة وموحّدة: slug → tmdb_id من جدول genres ثم مطابقة المعرّف داخل genres_json
-         (تتجنب تضارب صيغة الـslug بين جدول genres و genres_json وتصادم أرقام المعرّفات) */
-      const genreRow = await executeFirst('SELECT tmdb_id FROM genres WHERE slug = ? LIMIT 1', [genre]).catch(() => null)
-      if (genreRow && genreRow.tmdb_id != null) {
-        conditions.push(`EXISTS (SELECT 1 FROM json_each(tv_series.genres_json) WHERE json_extract(value, '$.tmdb_id') = ?)`)
-        args.push(Number(genreRow.tmdb_id))
-      } else {
-        conditions.push(`genres_json LIKE ?`)
-        args.push(`%"slug":"${genre}"%`)
+      /* مطابقة موحّدة مع SSR (src/app/series/genres/[slug]/page.tsx:52-67) — نفس المنطق حرفياً:
+         1) alias السلاج (resolveGenreSlug: sci-fi/scifi → science-fiction)
+         2) slug → tmdb_id من جدول genres
+         3) buildTvGenreClause — قاعدة تفريق TV الحدّية (أكشن = 10759 AND NOT 53/10765/14/878،
+            مغامرة = 10765 AND 10759 AND NOT 16 …) بدل المطابقة المباشرة القديمة التي كانت
+            تنتج 28 (تصنيف أفلام لا يوسم به TMDB المسلسلات) = صفر صفوف على TV. */
+      const genreRow = await executeFirst('SELECT tmdb_id FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(genre)]).catch(() => null)
+      if (!genreRow || genreRow.tmdb_id == null) {
+        // تصنيف غير معروف — مكافئ notFound() في SSR: قائمة فارغة بلا شرط WHERE خاطئ
+        const unknownGenre = NextResponse.json({
+          series: [],
+          pagination: { page, limit, hasMore: false, totalPages: 1 }
+        })
+        return unknownGenre
       }
+      const tvClause = buildTvGenreClause(Number(genreRow.tmdb_id))
+      conditions.push(tvClause.sql)
+      args.push(...tvClause.params)
     }
     
     let ftsJoin = ''
@@ -81,8 +88,14 @@ export async function GET(request: NextRequest) {
     }
     
     if (country) {
-      conditions.push('country_of_origin = ?')
-      args.push(country)
+      /* E-6: توحيد شكل شرط الدولة مع /api/movies (country_of_origin OR countries_json LIKE).
+         قياس حي على D1 (2026-09-16): عمود tv_series.countries_json فارغ تماماً
+         (0 صف غير NULL من 38,338)، لذا فرع LIKE لا يستعيد شيئاً اليوم والنتائج مطابقة
+         تماماً للسابق (TR: 586، US: 6086، KR: 2376). استرجاع الصفوف ذات
+         country_of_origin = NULL (5,226) يحتاج backfill لعمود countries_json —
+         خارج نطاق هذه الجولة، والشرط جاهز له بلا تغيير في الواجهة. */
+      conditions.push('(country_of_origin = ? OR countries_json LIKE ?)')
+      args.push(country, `%${country}%`)
     }
     
     if (ratingMin) {
@@ -96,11 +109,6 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    if (status) {
-      if (status === 'ongoing') conditions.push(`status = 'ongoing'`)
-      else if (status === 'ended') conditions.push(`status = 'ended'`)
-    }
-
     // Exclude unwanted genres (Talk Show, War & Politics, Documentary, History) at SQL level
     // — keeps pagination accurate (no short pages from post-JS filtering)
     conditions.push(`(genres_json IS NULL OR NOT EXISTS (
@@ -119,7 +127,7 @@ export async function GET(request: NextRequest) {
     const sortOrder   = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
     // Use cache for first page top rated with no filters
-    if (page === 1 && sort === 'vote_average' && !genre && !year && !country && !language && !ratingMin && !status && !search) {
+    if (page === 1 && sort === 'vote_average' && !genre && !year && !country && !language && !ratingMin && !search) {
       try {
         const cacheRows = await executeAll(
           `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path,
@@ -155,7 +163,7 @@ export async function GET(request: NextRequest) {
        FROM tv_series
        ${ftsJoin}
        ${whereClause}
-       ORDER BY ${search ? 'rank,' : ''} ${sortColumn} ${sortOrder}
+       ORDER BY ${search ? 'rank,' : ''} ${sortColumn} ${sortOrder}, tv_series.id ${sortOrder}
        LIMIT ? OFFSET ?`,
       [...args, limit + 1, offset]
     )

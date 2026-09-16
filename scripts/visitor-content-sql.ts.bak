@@ -1,0 +1,43 @@
+/**
+ * src/lib/visitor-content-sql.ts
+ *
+ * بوابة المحتوى الموحّدة لكل سطح زائر (جولة سياسة المحتوى):
+ *   1) الحالة: filter_status IN ('clean','reviewed_approved') OR filter_status IS NULL
+ *   2) السنة: أفلام release_year >= 2000 — مسلسلات first_air_year >= 2000
+ *      (empty_date على القراءة = استبعاد، لأن العمود NULL يُستبعد تلقائياً)
+ *
+ * الأعمدة منسوخة من PRAGMA/CREATE TABLE الفعلية:
+ *   movies.release_year / tv_series.first_air_year / movies.filter_status
+ * السايت ماب لا يستخدم هذا الملف (له بوابته الخاصة 2015/1000 — لا تُلمس).
+ */
+
+export const VISITOR_STATUS_MOVIE = `(filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)`
+export const VISITOR_STATUS_SERIES = `(filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)`
+
+/** بوابة كاملة للأفلام (بدون اسم جدول) */
+export const VISITOR_GATE_MOVIE = `((filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL) AND release_year IS NOT NULL AND release_year >= 2000)`
+
+/** بوابة كاملة للمسلسلات (بدون اسم جدول) */
+export const VISITOR_GATE_SERIES = `((filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL) AND first_air_year IS NOT NULL AND first_air_year >= 2000)`
+
+/** بوابة أفلام ببادئة جدول/اسم مستعار، مثال: VISITOR_GATE_MOVIE_ALIASED('m.') */
+export function VISITOR_GATE_MOVIE_ALIASED(alias = '') {
+  const p = alias ? (alias.endsWith('.') ? alias : `${alias}.`) : ''
+  return `((${p}filter_status IN ('clean', 'reviewed_approved') OR ${p}filter_status IS NULL) AND ${p}release_year IS NOT NULL AND ${p}release_year >= 2000)`
+}
+
+/** بوابة مسلسلات ببادئة جدول/اسم مستعار */
+export function VISITOR_GATE_SERIES_ALIASED(alias = '') {
+  const p = alias ? (alias.endsWith('.') ? alias : `${alias}.`) : ''
+  return `((${p}filter_status IN ('clean', 'reviewed_approved') OR ${p}filter_status IS NULL) AND ${p}first_air_year IS NOT NULL AND ${p}first_air_year >= 2000)`
+}
+
+/**
+ * شرط سنة لجداول كاش list_* التي تحمل release_year/first_air_year كأعمدة.
+ * تُستخدم مع NOT IN على الجدول الأساسي لضمان الحالة + السنة حتى لو تأخر إعادة بناء الكاش.
+ */
+export const VISITOR_EXCLUDE_UNCLEAN_MOVIES_SQL =
+  `SELECT tmdb_id FROM movies WHERE (filter_status IS NOT NULL AND filter_status NOT IN ('clean', 'reviewed_approved')) OR release_year IS NULL OR release_year < 2000`
+
+export const VISITOR_EXCLUDE_UNCLEAN_SERIES_SQL =
+  `SELECT tmdb_id FROM tv_series WHERE (filter_status IS NOT NULL AND filter_status NOT IN ('clean', 'reviewed_approved')) OR first_air_year IS NULL OR first_air_year < 2000`

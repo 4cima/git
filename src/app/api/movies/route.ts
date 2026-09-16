@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeAll, executeFirst } from '@/lib/db'
 import { sanitizeSearchInput } from '@/lib/search-utils'
+import { resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
 
     const page  = Math.max(1, parseInt(searchParams.get('page')  || '1')  || 1)
-    const limit = Math.min(60, Math.max(1, parseInt(searchParams.get('limit') || '20') || 20))
+    const limit = Math.min(60, Math.max(1, parseInt(searchParams.get('limit') || '24') || 24))
     const offset = (page - 1) * limit
     
     const genre    = searchParams.get('genre')
@@ -18,9 +19,6 @@ export async function GET(request: NextRequest) {
     const country  = searchParams.get('country')
     const language = searchParams.get('language')
     const ratingMin = searchParams.get('rating_min')
-    const ratingMax = searchParams.get('rating_max')
-    const runtimeMin = searchParams.get('runtime_min')
-    const runtimeMax = searchParams.get('runtime_max')
     const search   = searchParams.get('search')
     const sort     = searchParams.get('sort') || 'popularity'
     const order    = searchParams.get('order') || 'desc'
@@ -39,17 +37,20 @@ export async function GET(request: NextRequest) {
     }
 
     if (genre) {
-      /* مطابقة دقيقة وموحّدة: slug → tmdb_id من جدول genres ثم مطابقة المعرّف داخل genres_json.
-         تحل مشكلتين: تضارب صيغة الـslug بين جدول genres و genres_json (مثل action-adventure
-         مقابل action-&-adventure)، وأي تصادم substring في أرقام المعرّفات. */
-      const genreRow = await executeFirst('SELECT tmdb_id FROM genres WHERE slug = ? LIMIT 1', [genre]).catch(() => null)
-      if (genreRow && genreRow.tmdb_id != null) {
-        conditions.push(`EXISTS (SELECT 1 FROM json_each(movies.genres_json) WHERE json_extract(value, '$.tmdb_id') = ?)`)
-        args.push(Number(genreRow.tmdb_id))
-      } else {
-        conditions.push(`genres_json LIKE ?`)
-        args.push(`%"slug":"${genre}"%`)
+      /* مطابقة دقيقة وموحّدة مع /api/series و SSR (src/app/movies/genres/[slug]/page.tsx:51):
+         1) alias السلاج (resolveGenreSlug: sci-fi/scifi → science-fiction)
+         2) slug → tmdb_id من جدول genres ثم مطابقة المعرّف داخل genres_json (ID حدّي بلا LIKE).
+         تصنيف مجهول ⇒ قائمة فارغة صريحة (مكافئ notFound() في SSR) بدل شرط WHERE باطل
+         أو LIKE fallback صامت كان يعطي «صفر نتائج» بلا تفسير. */
+      const genreRow = await executeFirst('SELECT tmdb_id FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(genre)]).catch(() => null)
+      if (!genreRow || genreRow.tmdb_id == null) {
+        return NextResponse.json({
+          movies: [],
+          pagination: { page, limit, hasMore: false, totalPages: 1 }
+        })
       }
+      conditions.push(`EXISTS (SELECT 1 FROM json_each(movies.genres_json) WHERE json_extract(value, '$.tmdb_id') = ?)`)
+      args.push(Number(genreRow.tmdb_id))
     }
     
     if (year) {
@@ -98,20 +99,7 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    if (ratingMax) {
-      conditions.push('vote_average <= ?')
-      args.push(parseFloat(ratingMax))
-    }
-    
-    if (runtimeMin) {
-      conditions.push('runtime >= ?')
-      args.push(parseInt(runtimeMin))
-    }
-    
-    if (runtimeMax) {
-      conditions.push('runtime <= ?')
-      args.push(parseInt(runtimeMax))
-    }
+    /* (E-13) الفلاتر المزالة من هذا المسار: rating_max + runtime_min/max — لا ترسلها أي واجهة */
 
     // Exclude unwanted genres (Talk Show, War & Politics, Documentary, History) at SQL level
     // — keeps pagination accurate (no short pages from post-JS filtering)
@@ -131,7 +119,7 @@ export async function GET(request: NextRequest) {
     const sortOrder  = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
     
     // Use cache for first page top rated with no filters
-    if (page === 1 && sort === 'vote_average' && !genre && !year && !country && !language && !ratingMin && !ratingMax && !runtimeMin && !runtimeMax && !search) {
+    if (page === 1 && sort === 'vote_average' && !genre && !year && !country && !language && !ratingMin && !search) {
       try {
         const cacheRows = await executeAll(
           `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path,
@@ -166,7 +154,7 @@ export async function GET(request: NextRequest) {
        FROM movies
        ${ftsJoin}
        ${whereClause}
-       ORDER BY ${search ? 'rank,' : ''} ${sortColumn} ${sortOrder}
+       ORDER BY ${search ? 'rank,' : ''} ${sortColumn} ${sortOrder}, movies.id ${sortOrder}
        LIMIT ? OFFSET ?`,
       [...args, limit + 1, offset]
     )
@@ -176,7 +164,7 @@ export async function GET(request: NextRequest) {
     const filteredRows = filterExcludedGenres(rows)
 
     // Broad listings are stable — cache longer at the CDN; narrow/heavy filters less so
-    const cacheTime = (genre || ratingMin || ratingMax || runtimeMin || runtimeMax || search) ? 120 : 300
+    const cacheTime = (genre || ratingMin || search) ? 120 : 300
     const response = NextResponse.json({
       movies: filteredRows,
       pagination: { page, limit, hasMore, totalPages: hasMore ? page + 1 : page }

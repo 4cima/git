@@ -4,6 +4,7 @@ import { executeFirst, executeAll } from '@/lib/db'
 import { MovieGenrePageClient } from '@/components/pages/MovieGenrePageClient'
 import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres, EXCLUDED_GENRE_SQL_CLAUSE } from '@/utils/excludedGenres'
+import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -60,8 +61,8 @@ export default async function MovieGenrePage({ params }: PageProps) {
     const genreParams = buildGenreParams(genreIds)
 
     // استبعاد التصنيفات الأربعة (Talk Show + War & Politics + Documentary + History) داخل
-    // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT 21: hasMore يُحسب من نتيجة SQL
-    // (21 صفاً > 20) ويُضمن المعروض ≤ 20 بلا نقص بعد الاستبعاد.
+    // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT LISTING_PAGE_SIZE + 1: hasMore يُحسب
+    // من نتيجة SQL ويُضمن المعروض ≤ LISTING_PAGE_SIZE بلا نقص بعد الاستبعاد.
     const initialMovies = await executeAll(
       `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
               vote_average, release_year, overview_ar, genres_json
@@ -71,12 +72,12 @@ export default async function MovieGenrePage({ params }: PageProps) {
          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
          AND release_year IS NOT NULL AND release_year >= 2000
        ORDER BY popularity DESC, id DESC
-       LIMIT 21`,
+       LIMIT ${LISTING_PAGE_SIZE + 1}`,
       genreParams
     )
 
-    // hasMore من نتيجة SQL (على سقف 21) ثم pop — المعروض بعدها ≤ 20
-    const hasMore = initialMovies.length > 20
+    // hasMore من نتيجة SQL (على سقف +1) ثم pop — المعروض بعدها ≤ LISTING_PAGE_SIZE
+    const hasMore = initialMovies.length > LISTING_PAGE_SIZE
     if (hasMore) initialMovies.pop()
 
     // فلتر أمان (طبقة JS): Talk Show + War & Politics + Documentary + History
@@ -103,8 +104,8 @@ export default async function MovieGenrePage({ params }: PageProps) {
           url: genrePageUrl,
           mainEntity: {
             '@type': 'ItemList',
-            numberOfItems: filteredMovies.slice(0, 20).length,
-            itemListElement: filteredMovies.slice(0, 20).map((m: any, i: number) => ({
+            numberOfItems: filteredMovies.slice(0, LISTING_PAGE_SIZE).length,
+            itemListElement: filteredMovies.slice(0, LISTING_PAGE_SIZE).map((m: any, i: number) => ({
               '@type': 'ListItem',
               position: i + 1,
               url: `https://4cima.com/movies/${m.slug}`,

@@ -121,6 +121,8 @@ export default async function SeriesLangPage({ params }: PageProps) {
         initialHasMore={hasMore}
         forcedLanguage={lang.filter}
         title={`مسلسلات ${lang.label}`}
+        langCode={code}
+        langLabel={lang.label}
       />
       </>
     )

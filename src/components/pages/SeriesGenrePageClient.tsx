@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
-import { Tv, ChevronLeft } from 'lucide-react'
-import Link from 'next/link'
+import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from 'react'
+import { Tv, X } from 'lucide-react'
 import { MovieCard } from '@/components/features/media/MovieCard'
-import { getGenreColor } from '@/utils/genreColors'
+import { ListingPageHeader, HeaderLinkButton } from './ListingPageHeader'
+import { CinematicFilterBar, CinematicDropdown, CinematicSearch, CinematicSortGroup } from './CinematicFilterBar'
+import { YEARS, RATINGS, COUNTRIES, LANGUAGES, SERIES_SORT_OPTIONS as SORT_OPTIONS } from './listingFilters'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { Footer } from '@/components/layout/Footer'
@@ -20,26 +21,16 @@ const AD_HEADER = getAdByNum(1)! // 728×90
 const AD_SIDE_RECT = getAdByNum(2)! // 300×250
 const AD_FOOTER_MID = getAdByNum(4)! // 468×60
 
-const SORT_OPTIONS = [
-  { value: 'popularity',   order: 'desc', label: 'الأكثر شهرة',     icon: '🔥' },
-  { value: 'vote_average', order: 'desc', label: 'الأعلى تقييماً',  icon: '⭐' },
-  { value: 'vote_count',   order: 'desc', label: 'الأكثر تقييماً',  icon: '📊' },
-  { value: 'first_air_year', order: 'desc', label: 'الأحدث',       icon: '📅' },
-  { value: 'first_air_year', order: 'asc',  label: 'الأقدم',       icon: '🕰️' },
-]
-
 interface SeriesGenrePageClientProps {
   genre: any
   slug: string
   initialSeries: any[]
   initialHasMore: boolean
-  /** مسار API مخصص للتحميل اللانهائي (افتراضي: /api/genres/{slug}) */
-  listingPath?: string
   /** رابط صفحة نظير الأفلام (افتراضي: /movies/genres/{slug}) */
   moviesHref?: string
 }
 
-export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMore, listingPath, moviesHref }: SeriesGenrePageClientProps) {
+export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMore, moviesHref }: SeriesGenrePageClientProps) {
   const [content, setContent] = useState<any[]>(initialSeries)
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -53,10 +44,36 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
   /* إعادة المحاولة: زيادة الرقم تجبر الـeffect على العمل حتى لو نفس الصفحة/الترتيب */
   const [retryNonce, setRetryNonce] = useState(0)
 
+  /* فلاتر موحّدة — نفس فلاتر صفحات اللغة (التصنيف مثبّت كفلتر الصفحة نفسه، مثل قفل اللغة هناك) */
+  const [openDropdown, setOpenDropdown]       = useState<'year'|'rating'|'country'|'language'|null>(null)
+  const [selectedYear, setSelectedYear]       = useState('all')
+  const [selectedRating, setSelectedRating]   = useState('all')
+  const [selectedCountry, setSelectedCountry] = useState('all')
+  /* (E-10) فلتر اللغة — كان غائباً في صفحات التصنيف (لم يكن متاحاً إلا بتمرير ?language= في الرابط) */
+  const [selectedLanguage, setSelectedLanguage] = useState('all')
+  const [searchQuery, setSearchQuery]         = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const filtersRef = useRef<HTMLDivElement>(null)
+
   const observerTarget = useRef<HTMLDivElement>(null)
   const SKELETON_COUNT = 24
 
-  const genreColorScheme = getGenreColor(genre.name_ar || genre.name_en)
+  /* الهيدر الموحّد: مسار التنقل + أزرار التنقّل السريع (نفس نظام كل صفحات القوائم) */
+  /* (E-11) فرع slug === 'arabic' حُذف: لا يوجد صف 'arabic' في جدول genres
+     (تحقق مباشر من قاعدة البيانات)، والقسم العربي مساره الرسمي /series/lang/ar
+     كما في src/lib/language-nav.ts — فالفرع كان كودًا ميتًا غير قابل للبلوغ. */
+  const headerBreadcrumb = [
+    { label: 'الرئيسية', href: '/' },
+    { label: 'التصنيفات', href: '/genres' },
+    { label: genre.name_ar, href: `/genres/${slug}` },
+    { label: 'مسلسلات' },
+  ]
+  const headerActions = (
+    <>
+      <HeaderLinkButton href={`/genres/${slug}`}>نظرة عامة على {genre.name_ar}</HeaderLinkButton>
+      <HeaderLinkButton href={moviesHref ?? `/movies/genres/${slug}`} accent="movie" chevron>أفلام {genre.name_ar}</HeaderLinkButton>
+    </>
+  )
 
   /* التقسيم ثابت في الـDOM (سيرفرًا وعميلًا): أول 16 كارت في البلوك العلوي والبقية
      في الشبكة السفلية. موضع الإعلان (جنب العلوي ديسكتوبًا / أسفل الكل على الجوال)
@@ -64,22 +81,34 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
   const topItems = content.slice(0, LISTING_TOP_CARDS_COUNT)
   const restItems = content.slice(LISTING_TOP_CARDS_COUNT)
 
-  // Fetch series
+  // Fetch series — نفس منطق صفحات اللغة: /api/series والتصنيف مثبّت كفلتر + الفلاتر الكاملة
   useEffect(() => {
     // Skip initial fetch if we already have data from SSR (unless retry requested)
-    if (retryNonce === 0 && page === 1 && sort === 'popularity' && order === 'desc' && content.length > 0) {
+    if (
+      retryNonce === 0 && page === 1 && sort === 'popularity' && order === 'desc' && content.length > 0 &&
+      selectedYear === 'all' && selectedRating === 'all' && selectedCountry === 'all' &&
+      selectedLanguage === 'all' && !debouncedSearch.trim()
+    ) {
       return
     }
     
     let cancelled = false
+    const abortController = new AbortController()
+    /* مهلة أمان: أي طلب معلّق يُجهَض بعد 20 ثانية — «جاري التحميل...» لا يبقى عالقًا أبدًا */
+    const abortTimeout = setTimeout(() => abortController.abort(), 20000)
     
     const params = new URLSearchParams({
-      type: 'tv',
+      genre: slug,
       page: page.toString(),
       limit: LISTING_PAGE_SIZE.toString(),
       sort,
       order
     })
+    if (selectedYear    !== 'all') params.set('year', selectedYear)
+    if (selectedRating  !== 'all') params.set('rating_min', selectedRating)
+    if (selectedCountry !== 'all') params.set('country', selectedCountry)
+    if (selectedLanguage !== 'all') params.set('language', selectedLanguage)
+    if (debouncedSearch.trim())    params.set('search', debouncedSearch.trim())
 
     const isFirstPage = page === 1
     if (isFirstPage) {
@@ -91,14 +120,14 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
     
     setError(null)
     
-    fetch(`${listingPath ?? `/api/genres/${slug}`}?${params}`)
+    fetch(`/api/series?${params}`, { signal: abortController.signal })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
         return r.json()
       })
       .then(data => {
         if (cancelled) return
-        const newContent = data.content || []
+        const newContent = data.series || []
         
         setContent(prevContent => {
           const combined = isFirstPage ? newContent : [...prevContent, ...newContent]
@@ -113,13 +142,15 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
         setHasMore(data.pagination?.hasMore || false)
       })
       .catch(err => {
-        if (!cancelled) {
+        // التجاهل الصامت للإلغاء (مهلة الأمان أو طلب متجاوز) — لا رسالة خطأ زائفة
+        if (!cancelled && err.name !== 'AbortError') {
           console.error('Failed to fetch series:', err)
           // نحتفظ بالمحتوى المعروض عند الخطأ — لا نسقطه (يمنع القفز)
           setError('فشل تحميل المسلسلات. حاول مرة أخرى.')
         }
       })
       .finally(() => {
+        clearTimeout(abortTimeout)
         if (!cancelled) {
           setLoading(false)
           setLoadingMore(false)
@@ -127,8 +158,8 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
         }
       })
     
-    return () => { cancelled = true }
-  }, [slug, sort, order, page, initialSeries.length, listingPath, retryNonce])
+    return () => { cancelled = true; abortController.abort() }
+  }, [slug, sort, order, page, initialSeries.length, retryNonce, selectedYear, selectedRating, selectedCountry, selectedLanguage, debouncedSearch])
 
   // Infinite scroll observer
   useEffect(() => {
@@ -156,85 +187,172 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
     setError(null)
   }, [])
 
+  /* Debounce للبحث — نفس سلوك صفحات اللغة */
+  useEffect(() => {
+    const t = setTimeout(() => { setPage(1); setDebouncedSearch(searchQuery) }, 400)
+    return () => clearTimeout(t)
+  }, [searchQuery])
+
+  // إغلاق القوائم المنسدلة عند النقر خارجها
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (filtersRef.current && !filtersRef.current.contains(e.target as Node)) setOpenDropdown(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const toggle = useCallback((name: 'year'|'rating'|'country'|'language') => {
+    setOpenDropdown(prev => prev === name ? null : name)
+  }, [])
+
+  // Clear every active filter at once
+  const clearAllFilters = useCallback(() => {
+    resetAndFetch(() => {
+      setSelectedYear('all')
+      setSelectedRating('all')
+      setSelectedCountry('all')
+      setSelectedLanguage('all')
+      setSearchQuery('')
+      setDebouncedSearch('')
+    })
+  }, [resetAndFetch])
+
+  // Active filter chips (بلا عدّاد نتائج)
+  const activeFilters = useMemo(() => {
+    const chips: { key: string; label: string; clear: () => void }[] = []
+    if (selectedYear !== 'all')
+      chips.push({ key: 'year', label: YEARS.find(y => y.value === selectedYear)?.label || selectedYear, clear: () => resetAndFetch(() => setSelectedYear('all')) })
+    if (selectedRating !== 'all')
+      chips.push({ key: 'rating', label: RATINGS.find(r => r.value === selectedRating)?.label || selectedRating, clear: () => resetAndFetch(() => setSelectedRating('all')) })
+    if (selectedCountry !== 'all')
+      chips.push({ key: 'country', label: COUNTRIES.find(c => c.value === selectedCountry)?.label || selectedCountry, clear: () => resetAndFetch(() => setSelectedCountry('all')) })
+    if (selectedLanguage !== 'all')
+      chips.push({ key: 'language', label: LANGUAGES.find(l => l.value === selectedLanguage)?.label || selectedLanguage, clear: () => resetAndFetch(() => setSelectedLanguage('all')) })
+    if (debouncedSearch.trim())
+      chips.push({ key: 'search', label: `"${debouncedSearch.trim()}"`, clear: () => resetAndFetch(() => { setSearchQuery(''); setDebouncedSearch('') }) })
+    return chips
+  }, [selectedYear, selectedRating, selectedCountry, selectedLanguage, debouncedSearch, resetAndFetch])
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 pt-20 pb-12">
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-12">
       <div className="page-container">
         {/* بنر 728×90 — نظام AdFrame */}
-        <div className="mb-6 flex justify-center">
+        <div className="flex justify-center">
           <AdFrame ad={AD_HEADER} variant="x" />
         </div>
-
-        {/* مسار التنقل */}
-        <nav aria-label="مسار التنقل" className="mb-5 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
-          <Link href="/" className="transition-colors hover:text-zinc-300">الرئيسية</Link>
-          <span aria-hidden="true">/</span>
-          {slug === 'arabic' ? (
-            /* «عربي» قسم لغة (original_language = 'ar') لا تصنيف TMDB — بلا «التصنيفات» ولا رابط /genres/arabic كأب تصنيف */
-            <span className="font-bold text-sky-400">مسلسلات عربي</span>
-          ) : (
-            <Fragment>
-              <Link href="/genres" className="transition-colors hover:text-zinc-300">التصنيفات</Link>
-              <span aria-hidden="true">/</span>
-              <Link href={`/genres/${slug}`} className="transition-colors hover:text-zinc-300">{genre.name_ar}</Link>
-              <span aria-hidden="true">/</span>
-              <span className="font-bold text-sky-400">مسلسلات</span>
-            </Fragment>
-          )}
-        </nav>
 
         {/* الصف الوحيد في الجريد: الهيدر + السورت، وبجانبهما الإعلان الجانبي (ديسكتوب فقط — مخفي تمامًا على الجوال).
             الكروت تحت بعرض كامل خارج الـgrid. */}
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-x-6">
           <div className="min-w-0">
 
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
-            <div className={`w-3.5 h-3.5 rounded-full ${genreColorScheme.bg} ${genreColorScheme.border} border-2 ${genreColorScheme.glow} shadow-xl`} />
-            <h1 className={`text-4xl md:text-6xl font-black ${genreColorScheme.text} drop-shadow-lg`}>
-              مسلسلات {genre.name_ar}
-            </h1>
-            {genre.name_en && genre.name_en !== genre.name_ar && (
-              <span className="text-lg font-bold text-zinc-500">{genre.name_en}</span>
-            )}
-          </div>
-          <p className="mb-5 text-lg text-zinc-400">استكشف جميع مسلسلات {genre.name_ar} المترجمة</p>
+        {/* Header موحّد (Breadcrumb + H1 + وصف + أزرار تنقّل) — نفس نظام كل صفحات القوائم */}
+        <ListingPageHeader
+          variant="series"
+          title={`مسلسلات ${genre.name_ar}`}
+          description={`استكشف جميع مسلسلات ${genre.name_ar} المترجمة`}
+          breadcrumb={headerBreadcrumb}
+          actions={headerActions}
+        />
 
-          {/* تنقّل سريع: نظرة عامة + نظير الأفلام */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href={`/genres/${slug}`}
-              className="rounded-xl border border-zinc-700/60 bg-slate-900/60 px-4 py-2 text-sm font-bold text-zinc-300 transition-all duration-300 hover:border-zinc-500 hover:text-white"
-            >
-              نظرة عامة على {genre.name_ar}
-            </Link>
-            <Link
-              href={moviesHref ?? `/movies/genres/${slug}`}
-              className="group flex items-center gap-2 rounded-xl border border-red-500/25 bg-red-600/10 px-4 py-2 text-sm font-bold text-red-300 transition-all duration-300 hover:border-red-500/60 hover:bg-red-600/25"
-            >
-              <span>أفلام {genre.name_ar}</span>
-              <ChevronLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
-            </Link>
-          </div>
+        {/* Bar الفلاتر السينمائي الموحّد — نفس فلاتر صفحات اللغة (التصنيف مثبّت كفلتر الصفحة) */}
+        <div ref={filtersRef}>
+          <CinematicFilterBar accent="series">
+            {/* Dropdowns row */}
+            <div className="flex flex-wrap items-center gap-3 order-2 md:order-1">
+              <CinematicDropdown
+                open={openDropdown==='year'}
+                onToggle={()=>toggle('year')}
+                currentLabel={YEARS.find(y=>y.value===selectedYear)?.label||'كل السنوات'}
+                ariaLabel="اختر السنة"
+                accent="series"
+                minWidth="min-w-[110px]"
+                options={YEARS.map(y => ({ value: y.value, label: y.label }))}
+                isSelected={v => selectedYear===v}
+                onSelect={v => { resetAndFetch(() => setSelectedYear(v)); setOpenDropdown(null) }}
+              />
+              <CinematicDropdown
+                open={openDropdown==='rating'}
+                onToggle={()=>toggle('rating')}
+                currentLabel={RATINGS.find(r=>r.value===selectedRating)?.label||'كل التقييمات'}
+                ariaLabel="اختر التقييم"
+                accent="series"
+                options={RATINGS.map(r => ({ value: r.value, label: r.label }))}
+                isSelected={v => selectedRating===v}
+                onSelect={v => { resetAndFetch(() => setSelectedRating(v)); setOpenDropdown(null) }}
+              />
+              <CinematicDropdown
+                open={openDropdown==='country'}
+                onToggle={()=>toggle('country')}
+                currentLabel={COUNTRIES.find(c=>c.value===selectedCountry)?.label||'كل الدول'}
+                ariaLabel="اختر الدولة"
+                accent="series"
+                minWidth="min-w-[100px]"
+                options={COUNTRIES.map(c => ({ value: c.value, label: c.label }))}
+                isSelected={v => selectedCountry===v}
+                onSelect={v => { resetAndFetch(() => setSelectedCountry(v)); setOpenDropdown(null) }}
+              />
+              {/* (E-10) فلتر اللغة — نفس CinematicDropdown الموحّد، ويُرسل original_language إلى /api/series */}
+              <CinematicDropdown
+                open={openDropdown==='language'}
+                onToggle={()=>toggle('language')}
+                currentLabel={LANGUAGES.find(l=>l.value===selectedLanguage)?.label||'كل اللغات'}
+                ariaLabel="اختر اللغة"
+                accent="series"
+                minWidth="min-w-[110px]"
+                options={LANGUAGES.map(l => ({ value: l.value, label: l.label }))}
+                isSelected={v => selectedLanguage===v}
+                onSelect={v => { resetAndFetch(() => setSelectedLanguage(v)); setOpenDropdown(null) }}
+              />
+            </div>
+
+            {/* Sort — أزرار ظاهرة مباشرة */}
+            <CinematicSortGroup
+              className="order-3 md:order-2"
+              accent="series"
+              options={SORT_OPTIONS}
+              value={sort}
+              order={order}
+              onChange={(v, o) => resetAndFetch(() => { setSort(v); setOrder(o as 'asc' | 'desc') })}
+            />
+
+            {/* Search */}
+            <CinematicSearch
+              id="genre-series-search"
+              value={searchQuery}
+              onChange={v => setSearchQuery(v)}
+              placeholder="ابحث عن مسلسل..."
+              ariaLabel="البحث عن مسلسل"
+              accent="series"
+            />
+          </CinematicFilterBar>
         </div>
 
-        {/* Sort Options */}
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
-          {SORT_OPTIONS.map((option, idx) => (
-            <button
-              key={`${option.value}-${option.order}-${idx}`}
-              onClick={() => resetAndFetch(() => { setSort(option.value); setOrder(option.order as 'asc' | 'desc') })}
-              className={`px-4 py-2 rounded-lg font-semibold transition-all text-sm ${
-                sort === option.value && order === option.order
-                  ? 'bg-sky-500 text-white border-2 border-sky-400 shadow-lg shadow-sky-900/40'
-                  : 'bg-slate-900/60 text-zinc-400 hover:bg-slate-800 border-2 border-transparent'
-              }`}
-              aria-label={`ترتيب حسب ${option.label}`}
-            >
-              {option.icon} {option.label}
-            </button>
-          ))}
+        {/* شرائح الفلاتر النشطة (بلا عدّاد نتائج) */}
+        {activeFilters.length > 0 && (
+          <div className="mt-3 mb-4 flex flex-wrap items-center gap-2">
+            {activeFilters.map(f => (
+              <button
+                key={f.key}
+                onClick={f.clear}
+                className="group flex items-center gap-1.5 bg-[#78350f]/25 hover:bg-[#78350f]/40 border border-[#b45309]/35 hover:border-[#b45309]/65 rounded-full pl-2 pr-3 py-1 text-xs font-bold text-[#fcd34d] transition-colors"
+                aria-label={`إزالة فلتر ${f.label}`}
+              >
+                <span className="max-w-[160px] truncate">{f.label}</span>
+                <X className="w-3.5 h-3.5 text-[#fcd34d]/70 group-hover:text-[#fcd34d] transition-all duration-200 group-hover:rotate-90" />
+              </button>
+            ))}
+            {activeFilters.length > 1 && (
+              <button
+                onClick={clearAllFilters}
+                className="text-xs font-bold text-zinc-500 hover:text-zinc-300 underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500 transition-colors mr-1"
+              >
+                مسح الكل
+              </button>
+            )}
           </div>
+        )}
           </div>          {/* إغلاق خلية الهيدر */}
 
           {/* الإعلان الجانبي: بجانب الهيدر فقط (صف واحد). ديسكتوب فقط؛ على الجوال مخفي تمامًا */}
@@ -243,8 +361,8 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
           </aside>
         </div>
 
-        {/* تحت: الكروت بعرض كامل — بدون grid جانبي */}
-        <div className="mt-6">
+        {/* تحت: الكروت بعرض كامل — بدون grid جانبي — بلا هامش زائد بعد البار */}
+        <div>
           <div className="min-w-0">
 
         {/* Error State */}
@@ -338,6 +456,19 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
 
             {content.length > 0 && (
               <>
+                {/* زر «تحميل المزيد» الموحّد — fallback يدوي يضمن التحميل حتى لو لم يعمل السكرول اللانهائي */}
+                {hasMore && !loading && !refreshing && (
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => setPage(prev => prev + 1)}
+                      disabled={loadingMore}
+                      className="px-8 py-3 bg-black/40 hover:bg-black/60 border border-[#b45309]/40 hover:border-[#b45309]/70 rounded-xl text-sm font-bold text-[#fcd34d] hover:text-[#fde68a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {loadingMore ? 'جاري التحميل...' : 'تحميل المزيد'}
+                    </button>
+                  </div>
+                )}
+
                 <div ref={observerTarget} className="h-10 mt-6"></div>
 
                 {loadingMore && (

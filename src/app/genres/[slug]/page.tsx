@@ -12,7 +12,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   try {
-    const genre = await executeFirst('SELECT name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [slug])
+    const genre = await executeFirst('SELECT name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(slug)])
     if (!genre) return { title: 'تصنيف غير موجود' }
     const genreName = String(genre.name_ar || genre.name_en || 'تصنيف')
     // بدون «| فور سيما» — template في layout يضيفها تلقائياً

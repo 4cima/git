@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Film, Search, X, ChevronDown } from 'lucide-react'
+import { Film, X } from 'lucide-react'
 import { Footer } from '@/components/layout/Footer'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
@@ -12,6 +12,9 @@ import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
 import { useListingGenres, isFallbackGenreList } from '@/hooks/useListingGenres'
+import { ListingPageHeader, HeaderLinkButton } from './ListingPageHeader'
+import { CinematicFilterBar, CinematicDropdown, CinematicSearch, CinematicSortGroup } from './CinematicFilterBar'
+import { YEARS, RATINGS, COUNTRIES, MOVIE_SORT_OPTIONS as SORT_OPTIONS } from './listingFilters'
 
 /* ===== خريطة إعلانات القسم — الأرقام من src/data/ads/4cima.com =====
    1: 728×90 هيدر | 2: 300×250 أعلى العمود الجانبي | 3: 160×600 سكرايبر ديسكتوب
@@ -37,72 +40,12 @@ const GENRES = [
   { name: 'حرب',          slug: 'war',              emoji: '⚔️' },
 ] as const
 
-const YEARS = [
-  { value: 'all', label: 'كل السنوات' },
-  { value: '2026', label: '2026' },
-  { value: '2025', label: '2025' },
-  { value: '2024', label: '2024' },
-  { value: '2023', label: '2023' },
-  { value: '2022', label: '2022' },
-  { value: '2021', label: '2021' },
-  { value: '2020', label: '2020' },
-  { value: '2019', label: '2019' },
-  { value: '2018', label: '2018' },
-  { value: '2017', label: '2017' },
-  { value: '2016', label: '2016' },
-  { value: '2015', label: '2015' },
-  { value: '2014', label: '2014' },
-  { value: '2013', label: '2013' },
-  { value: '2012', label: '2012' },
-  { value: '2011', label: '2011' },
-  { value: '2000-2010', label: 'الألفينات' },
-  { value: '1990-1999', label: 'التسعينات' },
-  { value: 'before-1990', label: 'كلاسيكي' },
-]
-
-const RATINGS = [
-  { value: 'all',     label: 'كل التقييمات' },
-  { value: '9.1-10',  label: '⭐ 10 مذهل' },
-  { value: '8.1-9',   label: '⭐ 9 ممتاز'     },
-  { value: '7.1-8',   label: '⭐ 8 جيد جداً'  },
-  { value: '6.1-7',   label: '⭐ 7 جيد'       },
-  { value: '5.1-6',   label: '⭐ 6 مقبول'    },
-  { value: '4.1-5',   label: '⭐ 5 متوسط'    },
-]
-
 // تسميات عربية لأكواد اللغات (تظهر في شرائح الفلاتر النشطة)
 const LANGUAGE_LABELS: Record<string, string> = {
   ar: 'عربي', en: 'إنجليزي', ko: 'كوري', ja: 'ياباني', zh: 'صيني',
   hi: 'هندي', tr: 'تركي', es: 'إسباني', fr: 'فرنسي', de: 'ألماني',
   pt: 'برتغالي', ru: 'روسي', it: 'إيطالي', th: 'تايلاندي',
 }
-
-const COUNTRIES = [
-  { value: 'all', label: 'كل الدول'      },
-  { value: 'US',  label: 'أمريكا'        },
-  { value: 'JP',  label: 'اليابان'       },
-  { value: 'GB',  label: 'بريطانيا'      },
-  { value: 'CN',  label: 'الصين'         },
-  { value: 'KR',  label: 'كوريا'         },
-  { value: 'CA',  label: 'كندا'          },
-  { value: 'FR',  label: 'فرنسا'         },
-  { value: 'DE',  label: 'ألمانيا'       },
-  { value: 'IN',  label: 'الهند'         },
-  { value: 'TH',  label: 'تايلاند'       },
-  { value: 'RU',  label: 'روسيا'         },
-  { value: 'AU',  label: 'أستراليا'      },
-  { value: 'BR',  label: 'البرازيل'      },
-  { value: 'MX',  label: 'المكسيك'       },
-  { value: 'TR',  label: 'تركيا'         },
-]
-
-const SORT_OPTIONS = [
-  { value: 'popularity',   order: 'desc', label: 'الأكثر شهرة',      icon: '🔥' },
-  { value: 'vote_average', order: 'desc', label: 'الأعلى تقييماً',   icon: '⭐' },
-  { value: 'vote_count',   order: 'desc', label: 'الأكثر تقييماً',   icon: '📊' },
-  { value: 'release_year', order: 'desc', label: 'الأحدث',          icon: '📅' },
-  { value: 'release_year', order: 'asc',  label: 'الأقدم',          icon: '🕰️' },
-]
 
 /** قراءة الفلاتر من الـURL مرة واحدة عند الـmount — يمنع الطلب المزدوج ومسح بيانات الـSSR */
 function readFiltersFromURL(searchParams: { get(name: string): string | null }) {
@@ -129,11 +72,15 @@ interface MoviesPageClientProps {
   initialHasMore?: boolean
   /** قفل اللغة (وضع صفحة قسم لغة): اللغة ثابتة من أول رندر — ممنوع fallback إلى 'all' ولو لحظة */
   forcedLanguage?: string
-  /** عنوان مخصص (H1) — يُعرض فقط في وضع اللغة المقفولة ولا يغيّر شكل /movies */
+  /** عنوان مخصص (H1) — وضع قسم اللغة يمرّر "أفلام {اللغة}"، والعام يستخدم الافتراضي */
   title?: string
+  /** كود اللغة في الـURL (مثل 'ar') — لرابط صفحة النظير في هيدر اللغة */
+  langCode?: string
+  /** اسم اللغة بالعربية (من findNavLanguage) — يظهر في الـbreadcrumb والـH1 */
+  langLabel?: string
 }
 
-export function MoviesPageClient({ initialMovies = [], initialHasMore = false, forcedLanguage, title }: MoviesPageClientProps) {
+export function MoviesPageClient({ initialMovies = [], initialHasMore = false, forcedLanguage, title, langCode, langLabel }: MoviesPageClientProps) {
   const { user } = useAuth() // Check if user is logged in
   const searchParams = useSearchParams()
   /* قائمة تصنيفات ديناميكية من قاعدة البيانات (GENRES احتياطية حتى وصول الاستجابة) */
@@ -160,6 +107,8 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
   const [hasMore, setHasMore]                 = useState(initialHasMore)
   const [retryNonce, setRetryNonce]           = useState(0)
   const observerTarget = useRef<HTMLDivElement>(null)
+  /* هوية آخر طلب fetch — الـfinally يفرّغ الحالات للطلب الأخير فقط (يمنع «جاري التحميل...» العالق) */
+  const fetchRunRef = useRef(0)
 
   // Batch card states for heart buttons
   const [cardStates, setCardStates] = useState<Record<string, 'neutral' | 'favorite' | 'completed'>>({})
@@ -290,6 +239,9 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
   // Fetch
   useEffect(() => {
     const abortController = new AbortController()
+    const runId = ++fetchRunRef.current
+    /* مهلة أمان: أي طلب معلّق يُجهَض بعد 20 ثانية حتى لا يبقى «جاري التحميل...» عالقًا */
+    const abortTimeout = setTimeout(() => abortController.abort(), 20000)
     
     const params = new URLSearchParams({ page: page.toString(), limit: limitRef.current.toString(), sort: sortBy, order: sortOrder })
     if (selectedGenre !== 'all') {
@@ -361,8 +313,9 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
         setError('فشل تحميل الأفلام. حاول مرة أخرى.')
       })
       .finally(() => { 
-        // Check if request was aborted before updating loading state
-        if (!abortController.signal.aborted) {
+        clearTimeout(abortTimeout)
+        // الطلبات المتجاوزة (الملغاة) لا تمس حالات الطلب الأحدث — وآخر طلب يفرّغ الحالات دائمًا
+        if (fetchRunRef.current === runId) {
           setLoading(false)
           setLoadingMore(false)
           setRefreshing(false)
@@ -473,14 +426,37 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
     return chips
   }, [selectedGenre, selectedYear, selectedRating, selectedCountry, debouncedSearch, resetAndFetch, forcedLanguage])
 
+  /* ===== الهيدر الموحّد (وضع اللغة + الوضع العام) — نفس نظام كل صفحات القوائم ===== */
+  const isLangMode = Boolean(langLabel && langCode)
+  const headerTitle = title ?? 'الأفلام المترجمة'
+  const headerDescription = isLangMode
+    ? `استكشف جميع أفلام ${langLabel} المترجمة`
+    : 'استكشف جميع الأفلام المترجمة بجودة عالية'
+  const headerBreadcrumb = isLangMode
+    ? [
+        { label: 'الرئيسية', href: '/' },
+        { label: 'التصنيفات', href: '/genres' },
+        { label: 'أفلام' },
+        { label: langLabel! },
+      ]
+    : [
+        { label: 'الرئيسية', href: '/' },
+        { label: 'الأفلام' },
+      ]
+  const headerActions = isLangMode ? (
+    <>
+      <HeaderLinkButton href="/movies">نظرة عامة على الأفلام</HeaderLinkButton>
+      <HeaderLinkButton href={`/series/lang/${langCode}`} accent="series" chevron>مسلسلات {langLabel}</HeaderLinkButton>
+    </>
+  ) : (
+    <HeaderLinkButton href="/series" accent="series" chevron>تصفح المسلسلات</HeaderLinkButton>
+  )
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
 
-      {/* Single page H1 for SEO (visually hidden) */}
-      <h1 className="sr-only">{title ?? 'الأفلام المترجمة'}</h1>
-
       {/* Header banner — إعلان 1 (728×90): يتمدد مركزيًا ويصغر تلقائيًا على الموبايل */}
-      <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 py-3">
+      <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12">
         <AdFrame ad={AD_HEADER} variant="x" />
       </div>
 
@@ -489,132 +465,111 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
         <div className="max-w-[1920px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4">
           <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-x-6">
 
-            {/* الفلاتر + شريط النتائج (يمين في RTL) — الإعلان بجانبها في صف واحد */}
-            <div className="min-w-0 space-y-6">
+            {/* الهيدر الموحّد + الفلاتر + شريط النتائج (يمين في RTL) — الإعلان الجانبي بجانبها في صف واحد */}
+            <div className="min-w-0">
 
-          {/* Search & Filters */}
-          <div ref={filtersRef} className="flex flex-col md:flex-row items-stretch md:items-center gap-4 bg-slate-800/40 border border-slate-700 p-4 rounded-xl">
+          {/* Header موحّد (Breadcrumb + H1 + وصف + أزرار تنقّل) — نفس نظام كل صفحات القوائم */}
+          <ListingPageHeader
+            variant="movie"
+            title={headerTitle}
+            description={headerDescription}
+            breadcrumb={headerBreadcrumb}
+            actions={headerActions}
+          />
+
+          {/* Bar الفلاتر السينمائي الموحّد (زجاجي داكن) */}
+          <div ref={filtersRef}>
+            <CinematicFilterBar accent="movie">
 
             {/* Dropdowns row */}
             <div className="flex flex-wrap items-center gap-3 order-2 md:order-1">
 
               {/* Genre */}
-              <div className="relative">
-                <button 
-                  onClick={()=>toggle('genre')} 
-                  className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/50 flex items-center gap-2 min-w-[120px] justify-between"
-                  aria-label="اختر التصنيف"
-                  aria-expanded={openDropdown==='genre'}
-                  aria-haspopup="listbox"
-                >
-                  <span>{selectedGenre==='all' ? 'كل التصنيفات' : genresList.find(g=>g.name===selectedGenre)?.emoji+' '+selectedGenre}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='genre'?'rotate-180':''}`}/>
-                </button>
-                {openDropdown==='genre' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain" role="listbox">
-                    <button onClick={()=>{resetAndFetch(() => setSelectedGenre('all'));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedGenre==='all'?'bg-slate-700 text-red-400':'text-slate-100'}`} role="option" aria-selected={selectedGenre==='all'}>كل التصنيفات</button>
-                    {genresList.map(g=>(
-                      <button key={g.name} onClick={()=>{resetAndFetch(() => setSelectedGenre(g.name));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 whitespace-nowrap ${selectedGenre===g.name?'bg-slate-700 text-red-400':'text-slate-100'}`} role="option" aria-selected={selectedGenre===g.name}>{g.emoji} {g.name}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <CinematicDropdown
+                open={openDropdown==='genre'}
+                onToggle={()=>toggle('genre')}
+                currentLabel={selectedGenre==='all' ? 'كل التصنيفات' : (genresList.find(g=>g.name===selectedGenre)?.emoji+' '+selectedGenre)}
+                ariaLabel="اختر التصنيف"
+                accent="movie"
+                options={[{ value: 'all', label: 'كل التصنيفات' }, ...genresList.map(g => ({ value: g.name, label: `${g.emoji} ${g.name}` }))]}
+                isSelected={v => selectedGenre===v}
+                onSelect={v => { resetAndFetch(() => setSelectedGenre(v)); setOpenDropdown(null) }}
+              />
 
               {/* Year */}
-              <div className="relative">
-                <button onClick={()=>toggle('year')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-red-500 flex items-center gap-2 min-w-[110px] justify-between" aria-label="اختر السنة" aria-expanded={openDropdown==='year'} aria-haspopup="listbox">
-                  <span>{YEARS.find(y=>y.value===selectedYear)?.label||'كل السنوات'}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='year'?'rotate-180':''}`}/>
-                </button>
-                {openDropdown==='year' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain" role="listbox">
-                    {YEARS.map(y=>(
-                      <button key={y.value} onClick={()=>{resetAndFetch(() => setSelectedYear(y.value));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedYear===y.value?'bg-slate-700 text-red-400':'text-slate-100'}`} role="option" aria-selected={selectedYear===y.value}>{y.label}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <CinematicDropdown
+                open={openDropdown==='year'}
+                onToggle={()=>toggle('year')}
+                currentLabel={YEARS.find(y=>y.value===selectedYear)?.label||'كل السنوات'}
+                ariaLabel="اختر السنة"
+                accent="movie"
+                minWidth="min-w-[110px]"
+                options={YEARS.map(y => ({ value: y.value, label: y.label }))}
+                isSelected={v => selectedYear===v}
+                onSelect={v => { resetAndFetch(() => setSelectedYear(v)); setOpenDropdown(null) }}
+              />
 
               {/* Rating */}
-              <div className="relative">
-                <button onClick={()=>toggle('rating')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-red-500 flex items-center gap-2 min-w-[120px] justify-between" aria-label="اختر التقييم" aria-expanded={openDropdown==='rating'} aria-haspopup="listbox">
-                  <span>{RATINGS.find(r=>r.value===selectedRating)?.label||'كل التقييمات'}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='rating'?'rotate-180':''}`}/>
-                </button>
-                {openDropdown==='rating' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain" role="listbox">
-                    {RATINGS.map(r=>(
-                      <button key={r.value} onClick={()=>{resetAndFetch(() => setSelectedRating(r.value));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedRating===r.value?'bg-slate-700 text-red-400':'text-slate-100'}`} role="option" aria-selected={selectedRating===r.value}>{r.label}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <CinematicDropdown
+                open={openDropdown==='rating'}
+                onToggle={()=>toggle('rating')}
+                currentLabel={RATINGS.find(r=>r.value===selectedRating)?.label||'كل التقييمات'}
+                ariaLabel="اختر التقييم"
+                accent="movie"
+                options={RATINGS.map(r => ({ value: r.value, label: r.label }))}
+                isSelected={v => selectedRating===v}
+                onSelect={v => { resetAndFetch(() => setSelectedRating(v)); setOpenDropdown(null) }}
+              />
 
               {/* Country */}
-              <div className="relative">
-                <button onClick={()=>toggle('country')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-red-500 flex items-center gap-2 min-w-[100px] justify-between" aria-label="اختر الدولة" aria-expanded={openDropdown==='country'} aria-haspopup="listbox">
-                  <span>{COUNTRIES.find(c=>c.value===selectedCountry)?.label||'كل الدول'}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='country'?'rotate-180':''}`}/>
-                </button>
-                {openDropdown==='country' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain" role="listbox">
-                    {COUNTRIES.map(c=>(
-                      <button key={c.value} onClick={()=>{resetAndFetch(() => setSelectedCountry(c.value));setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 ${selectedCountry===c.value?'bg-slate-700 text-red-400':'text-slate-100'}`} role="option" aria-selected={selectedCountry===c.value}>{c.label}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Sort */}
-              <div className="relative">
-                <button onClick={()=>toggle('sort')} className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-100 text-sm focus:outline-none focus:border-red-500 flex items-center gap-2 min-w-[120px] justify-between" aria-label="اختر الترتيب" aria-expanded={openDropdown==='sort'} aria-haspopup="listbox">
-                  <span>{SORT_OPTIONS.find(s=>s.value===sortBy && s.order===sortOrder)?.icon} {SORT_OPTIONS.find(s=>s.value===sortBy && s.order===sortOrder)?.label}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown==='sort'?'rotate-180':''}`}/>
-                </button>
-                {openDropdown==='sort' && (
-                  <div className="absolute top-full left-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-50 min-w-full max-h-[255px] overflow-y-scroll overflow-x-hidden custom-scrollbar overscroll-contain" role="listbox">
-                    {SORT_OPTIONS.map((o, idx)=>(
-                      <button key={`${o.value}-${o.order}-${idx}`} onClick={()=>{resetAndFetch(() => { setSortBy(o.value); setSortOrder(o.order) });setOpenDropdown(null)}} className={`w-full text-right px-3 py-2 text-sm hover:bg-slate-700 whitespace-nowrap ${sortBy===o.value && sortOrder===o.order?'bg-slate-700 text-red-400':'text-slate-100'}`} role="option" aria-selected={sortBy===o.value && sortOrder===o.order}>{o.icon} {o.label}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <CinematicDropdown
+                open={openDropdown==='country'}
+                onToggle={()=>toggle('country')}
+                currentLabel={COUNTRIES.find(c=>c.value===selectedCountry)?.label||'كل الدول'}
+                ariaLabel="اختر الدولة"
+                accent="movie"
+                minWidth="min-w-[100px]"
+                options={COUNTRIES.map(c => ({ value: c.value, label: c.label }))}
+                isSelected={v => selectedCountry===v}
+                onSelect={v => { resetAndFetch(() => setSelectedCountry(v)); setOpenDropdown(null) }}
+              />
 
             </div>
+
+            {/* Sort — أزرار ظاهرة مباشرة (توحيدًا مع صفحات التصنيفات، بلا dropdown) */}
+            <CinematicSortGroup
+              className="order-3 md:order-2"
+              accent="movie"
+              options={SORT_OPTIONS}
+              value={sortBy}
+              order={sortOrder}
+              onChange={(v, o) => resetAndFetch(() => { setSortBy(v); setSortOrder(o) })}
+            />
 
             {/* Search */}
-            <div className="relative flex-1 order-1 md:order-2">
-              <input 
-                type="text" 
-                id="movies-search"
-                name="search"
-                placeholder="ابحث عن فيلم..." 
-                value={searchQuery}
-                onChange={e=>setSearchQuery(e.target.value)}
-                className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 pr-10 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/50 text-sm"
-                aria-label="البحث عن فيلم"
-              />
-              <Search className="w-4 h-4 text-slate-500 absolute right-3.5 top-3.5"/>
-            </div>
-          </div>
+            <CinematicSearch
+              id="movies-search"
+              value={searchQuery}
+              onChange={v => setSearchQuery(v)}
+              placeholder="ابحث عن فيلم..."
+              ariaLabel="البحث عن فيلم"
+              accent="movie"
+            />
+          </CinematicFilterBar>
+        </div>
 
-          {/* Results toolbar: count + active filter chips */}
-          {(activeFilters.length > 0 || movies.length > 0) && (
-            <div className="flex flex-wrap items-center gap-2 mb-5">
-              {movies.length > 0 && (
-                <span className="text-sm font-bold text-slate-500 ml-1">
-                  {movies.length} <span className="font-medium">نتيجة</span>
-                </span>
-              )}
+          {/* Results toolbar: active filter chips */}
+          {activeFilters.length > 0 && (
+            <div className="mt-3 mb-4 flex flex-wrap items-center gap-2">
               {activeFilters.map(f => (
                 <button
                   key={f.key}
                   onClick={f.clear}
-                  className="group flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 hover:border-red-500/50 rounded-full pl-2 pr-3 py-1 text-xs font-bold text-red-300 transition-colors"
+                  className="group flex items-center gap-1.5 bg-[#7f1d1d]/20 hover:bg-[#7f1d1d]/35 border border-[#b91c1c]/30 hover:border-[#b91c1c]/60 rounded-full pl-2 pr-3 py-1 text-xs font-bold text-[#fca5a5] transition-colors"
                   aria-label={`إزالة فلتر ${f.label}`}
                 >
                   <span className="max-w-[160px] truncate">{f.label}</span>
-                  <X className="w-3.5 h-3.5 text-red-400/70 group-hover:text-red-300 transition-all duration-200 group-hover:rotate-90" />
+                  <X className="w-3.5 h-3.5 text-[#fca5a5]/70 group-hover:text-[#fca5a5] transition-all duration-200 group-hover:rotate-90" />
                 </button>
               ))}
               {activeFilters.length > 1 && (
@@ -637,8 +592,8 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
             </aside>
           </div>
 
-          {/* الكروت بعرض كامل تحت صف (الفلاتر + الإعلان) */}
-          <div className="mt-6">
+          {/* الكروت بعرض كامل تحت صف (الهيدر + الفلاتر + الإعلان) — بلا هامش زائد بعد البار */}
+          <div>
           <div className="min-w-0">
 
           {/* Grid */}
@@ -678,7 +633,7 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
               <div className="relative min-h-[320px]">
                 {refreshing && (
                   <div className="absolute top-0 left-0 right-0 z-20 h-0.5 overflow-hidden rounded-full bg-slate-800/80" aria-hidden="true">
-                    <div className="h-full w-1/2 rounded-full bg-gradient-to-l from-red-500 via-amber-400 to-red-500 animate-pulse" />
+                    <div className="h-full w-1/2 rounded-full bg-gradient-to-l from-[#b91c1c] via-[#f59e0b] to-[#b91c1c] animate-pulse" />
                   </div>
                 )}
                 <div className="grid-responsive gap-6">
@@ -757,6 +712,19 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
 
               {movies.length > 0 && (
                 <>
+                  {/* زر «تحميل المزيد» الموحّد — fallback يدوي يضمن التحميل حتى لو لم يعمل السكرول اللانهائي */}
+                  {hasMore && !loading && !refreshing && (
+                    <div className="flex justify-center">
+                      <button
+                        onClick={() => setPage(prev => prev + 1)}
+                        disabled={loadingMore}
+                        className="px-8 py-3 bg-black/40 hover:bg-black/60 border border-[#b91c1c]/40 hover:border-[#b91c1c]/70 rounded-xl text-sm font-bold text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {loadingMore ? 'جاري التحميل...' : 'تحميل المزيد'}
+                      </button>
+                    </div>
+                  )}
+
                   {/* Infinite scroll trigger */}
                   <div ref={observerTarget} className="h-10 mt-6"></div>
 
@@ -764,7 +732,7 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
                   {loadingMore && (
                     <div className="flex items-center justify-center py-8">
                       <div className="flex items-center gap-3 text-slate-400">
-                        <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-6 h-6 border-2 border-[#b91c1c] border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-sm font-bold">جاري التحميل...</span>
                       </div>
                     </div>

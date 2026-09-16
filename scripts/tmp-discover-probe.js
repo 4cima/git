@@ -1,0 +1,13 @@
+const Database = require('better-sqlite3');
+const path = require('path');
+const db = new Database(path.join(__dirname, '../data/4cima-local.db'), { readonly: true });
+db.pragma('busy_timeout = 30000');
+console.log('waiting total=' + db.prepare('SELECT COUNT(*) c FROM movies WHERE is_fetched=0').get().c);
+console.log('--- waiting by year bucket ---');
+console.log(JSON.stringify(db.prepare("SELECT CASE WHEN release_year IS NULL THEN 'NULL' WHEN release_year>=2024 THEN '2024+' WHEN release_year>=2020 THEN '2020-23' ELSE 'older' END b, COUNT(*) c FROM movies WHERE is_fetched=0 GROUP BY b").all(), null, 1));
+console.log('--- waiting sample 10 (any year) ---');
+console.log(JSON.stringify(db.prepare('SELECT tmdb_id FROM movies WHERE is_fetched=0 ORDER BY tmdb_id DESC LIMIT 10').all()));
+console.log('--- waiting 2024+ sample 10 ---');
+console.log(JSON.stringify(db.prepare('SELECT tmdb_id, release_year FROM movies WHERE is_fetched=0 AND release_year>=2024 ORDER BY tmdb_id DESC LIMIT 10').all()));
+console.log('--- check: are top-discover 2024-26 already fetched? sample probe page1 ---');
+db.close();

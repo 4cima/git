@@ -4,6 +4,7 @@ import { executeFirst, executeAll } from '@/lib/db'
 import { SeriesGenrePageClient } from '@/components/pages/SeriesGenrePageClient'
 import { buildTvGenreClause, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres, EXCLUDED_GENRE_SQL_CLAUSE } from '@/utils/excludedGenres'
+import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -66,8 +67,8 @@ export default async function SeriesGenrePage({ params }: PageProps) {
     const genreParams = tvClause.params
 
     // استبعاد التصنيفات الأربعة (Talk Show + War & Politics + Documentary + History) داخل
-    // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT 21: hasMore يُحسب من نتيجة SQL
-    // (21 صفاً > 20) ويُضمن المعروض ≤ 20 بلا نقص بعد الاستبعاد.
+    // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT LISTING_PAGE_SIZE + 1: hasMore يُحسب
+    // من نتيجة SQL ويُضمن المعروض ≤ LISTING_PAGE_SIZE بلا نقص بعد الاستبعاد.
     const initialSeries = await executeAll(
       `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, backdrop_path,
               vote_average, first_air_year, overview_ar, genres_json
@@ -77,12 +78,12 @@ export default async function SeriesGenrePage({ params }: PageProps) {
          AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
          AND first_air_year IS NOT NULL AND first_air_year >= 2000
        ORDER BY popularity DESC, id DESC
-       LIMIT 21`,
+       LIMIT ${LISTING_PAGE_SIZE + 1}`,
       genreParams
     )
 
-    // hasMore من نتيجة SQL (على سقف 21) ثم pop — المعروض بعدها ≤ 20
-    const hasMore = initialSeries.length > 20
+    // hasMore من نتيجة SQL (على سقف +1) ثم pop — المعروض بعدها ≤ LISTING_PAGE_SIZE
+    const hasMore = initialSeries.length > LISTING_PAGE_SIZE
     if (hasMore) initialSeries.pop()
 
     // فلتر أمان (طبقة JS): Talk Show + War & Politics + Documentary + History
@@ -116,8 +117,8 @@ export default async function SeriesGenrePage({ params }: PageProps) {
           url: genrePageUrl,
           mainEntity: {
             '@type': 'ItemList',
-            numberOfItems: filteredSeries.slice(0, 20).length,
-            itemListElement: filteredSeries.slice(0, 20).map((s: any, i: number) => ({
+            numberOfItems: filteredSeries.slice(0, LISTING_PAGE_SIZE).length,
+            itemListElement: filteredSeries.slice(0, LISTING_PAGE_SIZE).map((s: any, i: number) => ({
               '@type': 'ListItem',
               position: i + 1,
               url: `https://4cima.com/series/${s.slug}`,

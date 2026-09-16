@@ -24,8 +24,8 @@ export async function GET(
     const searchParams   = request.nextUrl.searchParams
 
     const page   = Math.max(1, parseInt(searchParams.get('page')  || '1') || 1)
-    const rawLimit = parseInt(searchParams.get('limit') || '20')
-    const limit  = Math.min(60, Math.max(1, rawLimit || 20))
+    const rawLimit = parseInt(searchParams.get('limit') || '24')
+    const limit  = Math.min(60, Math.max(1, rawLimit || 24))
     const offset = (page - 1) * limit
     const type   = searchParams.get('type')
     const sort   = searchParams.get('sort')  || 'popularity'

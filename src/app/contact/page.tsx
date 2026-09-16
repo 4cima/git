@@ -5,21 +5,29 @@ import { useState } from 'react';
 export default function ContactPage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
-    const res = await fetch('/api/suggestions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subject: fd.get('subject'),
-        message: fd.get('message')
-      })
-    });
-    if (res.ok) setSent(true);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: fd.get('subject'),
+          message: fd.get('message')
+        })
+      });
+      if (res.ok) setSent(true);
+      else setError('تعذّر إرسال الرسالة، حاول مرة أخرى.');
+    } catch {
+      setError('تعذّر الوصول للخادم، تأكد من الاتصال وحاول مرة أخرى.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,6 +41,11 @@ export default function ContactPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div role="alert" className="bg-red-600/20 p-4 rounded-2xl border border-red-500/60 text-red-300 font-bold text-center text-sm">
+              {error}
+            </div>
+          )}
           <input
             name="subject"
             placeholder="عنوان الموضوع"
