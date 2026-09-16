@@ -4,8 +4,6 @@ import {
   SHARD_SIZE,
   PRIORITY_PER_TYPE,
   SHARD_CACHE_CONTROL,
-  CLEAN_ITEM_SQL,
-  sitemapDetailFilterSql,
   sitemapQuery,
   urlset,
   urlEntry,
@@ -22,6 +20,15 @@ export const dynamic = 'force-dynamic'
 const ITEM_PRIORITY = '0.6'
 const SECTION_PRIORITY = '0.8'
 const GENRE_PRIORITY = '0.7'
+
+/*
+ * روابط التفاصيل (شظايا الأفلام/المسلسلات والأولوية) تُقرأ من جدول
+ * sitemap_urls المُبنى مسبقًا بـ scripts/build-sitemap-urls.js:
+ *   shard    → بحث نطاقي مغطّى (media_type, shard) ⇒ 10,000 صفًا مقروءًا
+ *   priority → فهرس مغطٍّ (media_type, updated_at DESC) ⇒ 1,000 صفًا
+ * بدل مسح movies/tv_series كاملًا لكل شظية (332,090 / 100,236 صفًا).
+ * ⚠️ الجدول مطلوب قبل نشر هذا الكود — بدونه تُرجع المسارات 503 (لا بيانات وهمية).
+ */
 
 /** Same exclusion list as src/lib/genres.ts (hidden/no-content genres). */
 const EXCLUDED_GENRE_TMDB_IDS = new Set([10767, 10768, 99, 36])
@@ -49,11 +56,12 @@ type SlugRow = { slug: string; updated_at?: string | null }
 
 /**
  * كاش ذاكرة الـWorker (isolate) لنتائج الشظايا — 24 ساعة.
- * استعلام الشظية يمسح الفهرس ويحلّل JSON لكل صف مرشّح (حتى ~267 ألف صف
- * للشظايا الأخيرة) — يُدفع مرة كل 24 ساعة لكل isolate بدل كل طلب زحف.
+ * بعد جدول sitemap_urls أصبح بناء الشظية بحثًا نطاقيًا مغطّى (10,000 صف مقروء
+ * و~50ms محليًا) بدل مسح movies/tv_series وتفكيك genres_json لكل شظية.
+ * الكاش يبقى مفيدًا: نتيجة الشظية ثابتة 24 ساعة (الجدول يُبنى دفعة واحدة).
  * المفتاح: "static" | "priority" | "movies:0" | "series:2" …
  * النتيجة الفارغة (شظية خارج النطاق) تُكاش أيضًا — الفهرس هو من يحدد
- * الشظايا الموجودة، ولا يُدرج شظية جديدة إلا بعد تجاوز العدد الحد.
+ * الشظايا الموجودة، ولا يُدرج شظية جديدة إلا بعد إعادة بناء الجدول.
  * فوق الذاكرة: Cache API (caches.default) بنفس المدة — الـisolates الأخرى
  * تُخدم من الحافة دون لمس D1. ترتيب الفحص: ذاكرة → حافة → D1 (miss فقط).
  */
@@ -105,38 +113,47 @@ async function buildStatic(): Promise<string[]> {
   return entries
 }
 
-/** Top 2000 items by real updated_at (DESC) — 1000 newest movies + 1000 newest series.
- *  نفس فلتر روابط التفاصيل (كل روابط التفاصيل في الخريطة = مجموعة B). */
+/**
+ * Top 1000 per type by real updated_at (DESC) — 1000 newest movies + 1000 newest series.
+ *
+ * من idx_sitemap_updated (media_type, updated_at DESC, slug): فهرس مغطٍّ ⇒
+ * rows_read = 1,000 لكل نوع بدل مسح movies/tv_series كاملًا (332,090 / 100,236).
+ * نفس مجموعة روابط التفاصيل (B) لأن الجدول بُني بنفس فلتر المجموعة.
+ */
 async function buildPriority(): Promise<string[]> {
-  const movies = await sitemapQuery<SlugRow>(
-    `SELECT slug, updated_at FROM movies WHERE ${CLEAN_ITEM_SQL}
-      AND ${sitemapDetailFilterSql('movies')}
-     ORDER BY updated_at DESC LIMIT ${PRIORITY_PER_TYPE}`
-  )
-  const series = await sitemapQuery<SlugRow>(
-    `SELECT slug, updated_at FROM tv_series WHERE ${CLEAN_ITEM_SQL}
-      AND ${sitemapDetailFilterSql('tv_series')}
-     ORDER BY updated_at DESC LIMIT ${PRIORITY_PER_TYPE}`
-  )
-  return [
-    ...movies.map((r) => urlEntry(`${SITEMAP_BASE_URL}/movies/${r.slug}`, r.updated_at, ITEM_PRIORITY)),
-    ...series.map((r) => urlEntry(`${SITEMAP_BASE_URL}/series/${r.slug}`, r.updated_at, ITEM_PRIORITY)),
-  ]
+  const out: string[] = []
+  for (const mediaType of ['movie', 'series'] as const) {
+    const prefix = mediaType === 'movie' ? '/movies/' : '/series/'
+    const rows = await sitemapQuery<SlugRow>(
+      `SELECT slug, updated_at FROM sitemap_urls
+        WHERE media_type = ?
+       ORDER BY updated_at DESC LIMIT ${PRIORITY_PER_TYPE}`,
+      [mediaType]
+    )
+    out.push(...rows.map((r) => urlEntry(`${SITEMAP_BASE_URL}${prefix}${r.slug}`, r.updated_at, ITEM_PRIORITY)))
+  }
+  return out
 }
 
-/** Catalog shard: page*10000 → (page+1)*10000, stable order by tmdb_id.
- *  فلتر روابط التفاصيل (مجموعة B) — لا يمس استعلامات صفحات الموقع. */
+/**
+ * Catalog shard: shard*10000 → (shard+1)*10000 في جدول sitemap_urls المُبنى مسبقًا.
+ *
+ * idx_sitemap_shard (media_type, shard, seq, slug, updated_at) فهرس مغطٍّ:
+ * البحث (media_type, shard) يخرج مرتّبًا بـ seq ⇒ rows_read = 10,000 بالضبط
+ * (بدل مسح الجدول: 332,090 للأفلام و100,236 للمسلسلات). ترتيب seq =
+ * نفس ترتيب tmdb_id ASC القديم (مثبّت في scripts/build-sitemap-urls.js).
+ */
 async function buildCatalog(
   type: 'movies' | 'series',
   page: number
 ): Promise<string[]> {
-  const table = type === 'movies' ? 'movies' : 'tv_series'
+  const mediaType = type === 'movies' ? 'movie' : 'series'
   const prefix = type === 'movies' ? '/movies/' : '/series/'
   const rows = await sitemapQuery<SlugRow>(
-    `SELECT slug, updated_at FROM ${table} WHERE ${CLEAN_ITEM_SQL}
-      AND ${sitemapDetailFilterSql(table)}
-     ORDER BY tmdb_id ASC LIMIT ${SHARD_SIZE} OFFSET ?`,
-    [page * SHARD_SIZE]
+    `SELECT slug, updated_at FROM sitemap_urls
+      WHERE media_type = ? AND shard = ?
+     ORDER BY seq LIMIT ${SHARD_SIZE}`,
+    [mediaType, page]
   )
   return rows.map((r) => urlEntry(`${SITEMAP_BASE_URL}${prefix}${r.slug}`, r.updated_at, ITEM_PRIORITY))
 }
