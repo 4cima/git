@@ -31,15 +31,29 @@ export const dynamic = 'force-dynamic' // D1 not available at build time on CI
 
 async function getInitialMovies() {
   try {
-    /* المنطق الموحد: الدفعة الأولى 20 عملًا (نجلب 21 لنعرف هل يوجد المزيد) */
+    /* ===== (E-3) مصدر واحد: أول صفحة SSR بنفس استعلام /api/movies حرفياً =====
+       نفس الجدول الحي movies + نفس البوابات + نفس الترتيب:
+         • استبعاد التصنيفات الأربعة في SQL (10767/10768/99/36) + فلتر JS كطبقة أمان
+         • بوابة الإخفاء (filter_status) + بوابة السنة (release_year >= 2000)
+         • ORDER BY popularity DESC, movies.id DESC — نفس ترتيب الـAPI بالحرف
+           (/api/movies: ORDER BY ${sortColumn} ${sortOrder}, movies.id ${sortOrder})
+       لماذا لا جدول الكاش list_movies_popular: ترتيبه بـ`rank` مختلف عن `popularity`،
+       و«تحميل المزيد» في الـclient يجلب من movies بدءاً من OFFSET 20 ⇒ أعمال الصفحة
+       الأولى كانت تعود في الصفحة الثانية = تكرار. كذلك id من جدول آخر كان يكسر
+       مناعة الدمج (dedupe by id) ومفاتيح حالة الكروت (tmdb_id) في الـclient.
+       نفس مبدأ صفحتي /movies/lang/* و /movies/genres/* — تستخدمان movies الحيّ من الأصل. */
     const rows = await executeAll(
-      `SELECT id, slug, title_ar, title_en, poster_path, vote_average, 
-              printf('%04d-01-01', release_year) AS release_date, genres_json
-       FROM list_movies_popular
-       WHERE release_year >= 2000
-         AND tmdb_id NOT IN (SELECT tmdb_id FROM movies WHERE filter_status NOT IN ('clean', 'reviewed_approved')
-           OR release_year IS NULL OR release_year < 2000)
-       ORDER BY rank
+      `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en,
+              movies.poster_path, movies.backdrop_path, movies.vote_average, movies.release_year,
+              movies.genres_json, movies.overview_ar, movies.original_language
+       FROM movies
+       WHERE (genres_json IS NULL OR NOT EXISTS (
+         SELECT 1 FROM json_each(movies.genres_json)
+         WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
+       ))
+         AND (movies.filter_status IN ('clean', 'reviewed_approved') OR movies.filter_status IS NULL)
+         AND (movies.release_year IS NOT NULL AND movies.release_year >= 2000)
+       ORDER BY popularity DESC, movies.id DESC
        LIMIT ${LISTING_PAGE_SIZE + 1}`,
       []
     )

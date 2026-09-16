@@ -22,7 +22,9 @@ const AD_SIDE_RECT = getAdByNum(2)! // 300×250
 const AD_SIDE_SKY = getAdByNum(3)! // 160×600
 const AD_FOOTER_MID = getAdByNum(4)! // 468×60
 
-import type { ContentType } from '../../types/unified-section'
+/* (E-5) حُذف الاستيراد السابق: import type { ContentType } from '../../types/unified-section'
+   كان يُستخدم في تحويل (as ContentType) لتمرير contentType إلى UnifiedFilters فقط،
+   وقد حُذف التحويل لأن المكوّن صار يستقبل 'movies' | 'series' مباشرةً (لا gaming/software). */
 
 /**
  * خريطة الأقسام — تُترجم إلى باراميترات /api/movies و /api/series الرسمية:
@@ -301,7 +303,7 @@ const CategoryHubInner = ({ type = 'movie', category, allowTypeSwitch = false }:
 
         {/* Unified Filters */}
         <UnifiedFilters
-          contentType={(mediaType === 'movie' ? 'movies' : 'series') as ContentType}
+          contentType={mediaType === 'movie' ? 'movies' : 'series'}
           year={year}
           rating={rating}
           language={language}

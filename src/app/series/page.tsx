@@ -31,15 +31,27 @@ export const dynamic    = 'force-dynamic' // D1 not available at build time on C
 
 async function getInitialSeries() {
   try {
-    /* المنطق الموحد: الدفعة الأولى 20 عملًا (نجلب 21 لنعرف هل يوجد المزيد) */
+    /* ===== (E-3) مصدر واحد: أول صفحة SSR بنفس استعلام /api/series حرفياً =====
+       نفس الجدول الحي tv_series + نفس البوابات + نفس الترتيب:
+         • استبعاد التصنيفات الأربعة في SQL (10767/10768/99/36) + فلتر JS كطبقة أمان
+         • بوابة الإخفاء (filter_status) + بوابة سنة العرض الأول (first_air_year >= 2000)
+         • ORDER BY popularity DESC, tv_series.id DESC — نفس ترتيب الـAPI بالحرف
+       لماذا لا جدول الكاش list_series_popular: ترتيبه بـ`rank` مختلف عن `popularity`،
+       و«تحميل المزيد» يجلب من tv_series بدءاً من OFFSET 20 ⇒ أعمال الصفحة الأولى
+       كانت تعود في الصفحة التالية = تكرار، وid من جدول آخر كان يكسر dedupe/مفاتيح الحالة.
+       نفس مبدأ صفحتي /series/lang/* و /series/genres/* — تستخدمان tv_series الحيّ من الأصل. */
     const rows = await executeAll(
-      `SELECT id, slug, name_ar, name_en, poster_path, vote_average,
-              printf('%04d-01-01', first_air_year) AS first_air_date, genres_json
-       FROM list_series_popular
-       WHERE first_air_year >= 2000
-         AND tmdb_id NOT IN (SELECT tmdb_id FROM tv_series WHERE filter_status NOT IN ('clean', 'reviewed_approved')
-           OR first_air_year IS NULL OR first_air_year < 2000)
-       ORDER BY rank
+      `SELECT tv_series.id, tv_series.tmdb_id, tv_series.slug, tv_series.name_ar, tv_series.name_en,
+              tv_series.poster_path, tv_series.vote_average, tv_series.first_air_year,
+              tv_series.genres_json, tv_series.overview_ar, tv_series.country_of_origin
+       FROM tv_series
+       WHERE (genres_json IS NULL OR NOT EXISTS (
+         SELECT 1 FROM json_each(tv_series.genres_json)
+         WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
+       ))
+         AND (tv_series.filter_status IN ('clean', 'reviewed_approved') OR tv_series.filter_status IS NULL)
+         AND (tv_series.first_air_year IS NOT NULL AND tv_series.first_air_year >= 2000)
+       ORDER BY popularity DESC, tv_series.id DESC
        LIMIT ${LISTING_PAGE_SIZE + 1}`,
       []
     )

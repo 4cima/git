@@ -3,8 +3,14 @@
 import { Fragment } from 'react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { motion } from 'framer-motion'
 import { ChevronLeft } from 'lucide-react'
-import { LISTING_ACCENT, LISTING_TITLE_GRADIENT, type ListingAccent } from './listingTheme'
+import {
+  LISTING_ACCENT,
+  LISTING_TITLE_3D,
+  LISTING_TITLE_TYPE,
+  type ListingAccent,
+} from './listingTheme'
 
 /* ============================================================
    ListingPageHeader — الهيدر الموحّد لكل صفحات القوائم
@@ -30,6 +36,7 @@ interface ListingPageHeaderProps {
 
 export function ListingPageHeader({ variant, title, description, breadcrumb, actions }: ListingPageHeaderProps) {
   const accent = LISTING_ACCENT[variant]
+  const title3d = LISTING_TITLE_3D[variant]
   const last = breadcrumb.length - 1
 
   return (
@@ -48,19 +55,29 @@ export function ListingPageHeader({ variant, title, description, breadcrumb, act
         ))}
       </nav>
 
-      {/* العنوان */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-2">
+      {/* العنوان — H1 مسطّح أنيق: لون صلب فاتح راقٍ + ظل نصي ناعم + خط سفلي زخرفي.
+          بلا bg-clip-text، بلا blur، بلا أي span فوق النص — لا يوجد أي عنصر مطلق هنا. */}
+      <div className="mb-2 flex items-center gap-3">
+        {/* شريط عمودي رفيع بلون القسم — عنصر شقيق بجانب النص (في تدفق RTL)، لا فوقه */}
         <span
           aria-hidden="true"
-          className={`w-3.5 h-3.5 rounded-full border-2 shadow-xl ${
-            variant === 'movie'
-              ? 'bg-[#7f1d1d] border-[#b91c1c] shadow-[0_0_16px_rgba(185,28,28,0.6)]'
-              : 'bg-[#78350f] border-[#b45309] shadow-[0_0_16px_rgba(180,83,9,0.6)]'
-          }`}
+          className={`h-9 w-1.5 shrink-0 self-center rounded-full bg-gradient-to-b md:h-12 ${title3d.underline}`}
         />
-        <h1 className={`text-4xl md:text-6xl font-black drop-shadow-lg ${LISTING_TITLE_GRADIENT}`}>
-          {title}
-        </h1>
+        <div className="min-w-0">
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: 'easeOut' }}
+            className={`${LISTING_TITLE_TYPE} ${title3d.title} ${title3d.shadow}`}
+          >
+            {title}
+          </motion.h1>
+          {/* خط سفلي زخرفي قصير تحت النص — عرض ثابت صغير لا يتمدد فوق المحتوى */}
+          <span
+            aria-hidden="true"
+            className={`mt-2 block h-[3px] w-24 rounded-full bg-gradient-to-l ${title3d.underline}`}
+          />
+        </div>
       </div>
 
       {/* الوصف */}

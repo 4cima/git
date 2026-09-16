@@ -1,11 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Film, X } from 'lucide-react'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { ListingPageHeader, HeaderLinkButton } from './ListingPageHeader'
 import { CinematicFilterBar, CinematicDropdown, CinematicSearch, CinematicSortGroup } from './CinematicFilterBar'
-import { YEARS, RATINGS, COUNTRIES, LANGUAGES, MOVIE_SORT_OPTIONS as SORT_OPTIONS } from './listingFilters'
+import { YEARS, RATINGS, COUNTRIES, LANGUAGES, MOVIE_SORT_OPTIONS as SORT_OPTIONS,
+         readCommonFiltersFromSearchParams, readSortFromSearchParams } from './listingFilters'
+import { useListingUrlSync } from './useListingUrlSync'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { Footer } from '@/components/layout/Footer'
@@ -32,6 +35,7 @@ interface MovieGenrePageClientProps {
 
 export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMore, seriesHref }: MovieGenrePageClientProps) {
 
+  const searchParams = useSearchParams()
   const [content, setContent] = useState<any[]>(initialMovies)
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -188,6 +192,39 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
     setPage(1)
     setError(null)
   }, [])
+
+  /* ===== (E-12) الرابط مصدر الفلاتر عند الفتح وعند «رجوع» في المتصفح =====
+     يُقرأ داخل effect (لا في useState الابتدائي): صفحات التصنيف ليست force-dynamic،
+     وقراءة الرابط في الرندر الأول تفتح باب عدم تطابق الهيدرايشن مع HTML المُسبَق.
+     - فتح رابط مفلتر ⇒ تُطبَّق الفلاتر ويُجلب من الـAPI (بيانات SSR غير مفلترة أصلاً).
+     - زر «رجوع» ⇒ يُعاد تطبيق الفلتر السابق بنفس الطريق.
+     التصنيف مقفول من المسار (لا يُقرأ ولا يُكتب في الرابط) — مثل قفل اللغة في صفحات اللغة. */
+  useEffect(() => {
+    const urlFilters = readCommonFiltersFromSearchParams(searchParams)
+    const urlSort    = readSortFromSearchParams(searchParams, SORT_OPTIONS)
+    setSelectedYear(urlFilters.year)
+    setSelectedRating(urlFilters.rating)
+    setSelectedCountry(urlFilters.country)
+    setSelectedLanguage(urlFilters.language)
+    setSearchQuery(urlFilters.search)
+    setDebouncedSearch(urlFilters.search)
+    setSort(urlSort.sortBy)
+    setOrder(urlSort.sortOrder)
+    setPage(1)
+  }, [searchParams])
+
+  /* (E-12) مزامنة الحالة → الرابط: push لكل تغيير فلتر (زر «رجوع» يرجّع الفلتر السابق)
+     وreplace لنص البحث وحده. التصنيف لا يُزامَن (من المسار). */
+  useListingUrlSync({
+    genreSlug: undefined,
+    language: selectedLanguage,
+    year: selectedYear,
+    rating: selectedRating,
+    country: selectedCountry,
+    search: debouncedSearch,
+    sort,
+    order,
+  })
 
   /* Debounce للبحث — نفس سلوك صفحات اللغة */
   useEffect(() => {

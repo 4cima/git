@@ -36,9 +36,31 @@ export const LISTING_ACCENT = {
   },
 } as const
 
-/** العنوان الكبير (H1): تدرّج سينمائي أحمر داكن → ذهبي — واحد للست صفحات (هوية موحّدة) */
-export const LISTING_TITLE_GRADIENT =
-  'bg-[linear-gradient(120deg,#b91c1c_0%,#b45309_55%,#f59e0b_100%)] bg-clip-text text-transparent'
+/* ---------- العنوان الكبير (H1) — نظام مسطّح أنيق بلا طبقات فوق النص ---------- */
+
+/** مقاسات H1 الموحّدة لكل صفحات القوائم — Cairo صريح + سماكة قصوى + تباعد مريح */
+export const LISTING_TITLE_TYPE =
+  "font-['Cairo',sans-serif] text-4xl md:text-5xl font-black leading-[1.25] tracking-tight"
+
+/**
+ * توكنات H1 لكل قسم — نظام مسطّح (flat) بلا bg-clip-text وبلا أي طبقة فوق النص:
+ * - title: لون النص النهائي (فاتح راقٍ للتباين فوق الداكن) — لا تدرّج، لا شفافية.
+ * - underline: خط زخرفي سفلي صغير بلون القسم (راقٍ غير فاقع) — تحت النص لا فوقه.
+ * - shadow: ظل نصي واحد ناعم (text-shadow بدون blur خلفي).
+ * ملاحظة: لا توجد هنا أي glow/blur خلفي ولا highlightLayer — ممنوع أي span فوق النص.
+ */
+export const LISTING_TITLE_3D: Record<ListingAccent, { title: string; underline: string; shadow: string }> = {
+  movie: {
+    title: 'text-[#e8b4b8]',
+    underline: 'from-[#b91c1c] to-[#7f1d1d]',
+    shadow: '[text-shadow:0_1px_0_rgba(0,0,0,0.8),0_4px_14px_rgba(0,0,0,0.55)]',
+  },
+  series: {
+    title: 'text-[#f3d08a]',
+    underline: 'from-[#b45309] to-[#78350f]',
+    shadow: '[text-shadow:0_1px_0_rgba(0,0,0,0.8),0_4px_14px_rgba(0,0,0,0.55)]',
+  },
+}
 
 /** زر نشط بحواف 3D (وفق المواصفة 2.2): حد أسود خارجي + inner علوي فاتح + inner سفلي غامق + ظل خارجي بلون الزر */
 export const activeBtnClasses = (accent: ListingAccent): string =>

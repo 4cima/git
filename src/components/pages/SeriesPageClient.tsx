@@ -13,7 +13,9 @@ import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config
 import { useListingGenres, isFallbackGenreList } from '@/hooks/useListingGenres'
 import { ListingPageHeader, HeaderLinkButton } from './ListingPageHeader'
 import { CinematicFilterBar, CinematicDropdown, CinematicSearch, CinematicSortGroup } from './CinematicFilterBar'
-import { YEARS, RATINGS, COUNTRIES, SERIES_SORT_OPTIONS as SORT_OPTIONS } from './listingFilters'
+import { YEARS, RATINGS, COUNTRIES, SERIES_SORT_OPTIONS as SORT_OPTIONS,
+         readCommonFiltersFromSearchParams, readSortFromSearchParams } from './listingFilters'
+import { useListingUrlSync } from './useListingUrlSync'
 
 /* ===== خريطة إعلانات القسم — الأرقام من src/data/ads/4cima.com =====
    1: 728×90 هيدر | 2: 300×250 أعلى العمود الجانبي | 3: 160×600 سكرايبر ديسكتوب
@@ -51,24 +53,14 @@ const LANGUAGE_LABELS: Record<string, string> = {
   pt: 'برتغالي', ru: 'روسي', it: 'إيطالي', th: 'تايلاندي',
 }
 
-/** قراءة الفلاتر من الـURL مرة واحدة عند الـmount — يمنع الطلب المزدوج ومسح بيانات الـSSR */
+/** قراءة الفلاتر من الـURL مرة واحدة عند الـmount — يمنع الطلب المزدوج ومسح بيانات الـSSR
+    (E-12: المنطق المشترك صار في listingFilters.ts — نفس القراءة للست صفحات) */
 function readFiltersFromURL(searchParams: { get(name: string): string | null }) {
   const urlGenre = searchParams.get('genre')
   const genre = urlGenre ? (GENRES.find(g => g.slug === urlGenre)?.name ?? 'all') : 'all'
 
-  // Language filter — passed directly to the API (original_language), no country mapping
-  const urlLanguage = searchParams.get('language')
-  const language    = urlLanguage ? urlLanguage.toLowerCase() : 'all'
-  const urlCountry  = searchParams.get('country')
-  const country     = urlCountry && COUNTRIES.some(c => c.value === urlCountry) ? urlCountry : 'all'
-
-  const urlYear   = searchParams.get('year')
-  const urlRating = searchParams.get('rating')
-  const year   = urlYear   && YEARS.some(y => y.value === urlYear)     ? urlYear   : 'all'
-  const rating = urlRating && RATINGS.some(r => r.value === urlRating) ? urlRating : 'all'
-  const search = searchParams.get('search') || searchParams.get('q') || ''
-
-  return { genre, country, year, rating, search, language }
+  // اللغة تُمرَّر مباشرة إلى الـAPI (original_language) بلا تحويل لدولة — والباقي مشترك
+  return { genre, ...readCommonFiltersFromSearchParams(searchParams) }
 }
 
 interface SeriesPageClientProps {
@@ -91,6 +83,8 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
   const genresList = useListingGenres('tv', GENRES)
   // Initialize filters from the URL exactly once (SSR data survives the first render)
   const [initialFilters] = useState(() => readFiltersFromURL(searchParams))
+  /* (E-12) الترتيب يُقرأ من الرابط أيضاً — مثال: ?sort=vote_average&order=asc */
+  const [initialSort]    = useState(() => readSortFromSearchParams(searchParams, SORT_OPTIONS))
   const [series, setSeries]                   = useState<any[]>(initialSeries)
   const [loading, setLoading]                 = useState(initialSeries.length === 0)
   const [loadingMore, setLoadingMore]         = useState(false)
@@ -104,8 +98,8 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
   const [selectedRating, setSelectedRating]   = useState<string>(initialFilters.rating)
   const [selectedCountry, setSelectedCountry] = useState<string>(initialFilters.country)
   const [selectedLanguage, setSelectedLanguage] = useState<string>(forcedLanguage ?? initialFilters.language ?? 'all')
-  const [sortBy, setSortBy]                   = useState('popularity')
-  const [sortOrder, setSortOrder]             = useState('desc')
+  const [sortBy, setSortBy]                   = useState(initialSort.sortBy)
+  const [sortOrder, setSortOrder]             = useState<string>(initialSort.sortOrder)
   const [page, setPage]                       = useState(1)
   const [hasMore, setHasMore]                 = useState(initialHasMore)
   const [retryNonce, setRetryNonce]           = useState(0)
@@ -220,9 +214,30 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
       setDebouncedSearch('')
     }
     
+    // (E-12) الترتيب من الرابط — يكمّل قراءة سنة/تقييم/دولة/لغة/بحث أعلاه
+    const urlSortState = readSortFromSearchParams(searchParams, SORT_OPTIONS)
+    setSortBy(urlSortState.sortBy)
+    setSortOrder(urlSortState.sortOrder)
+    
     // Reset to page 1 when URL changes — المحتوى يبقى حتى وصول النتائج الجديدة
     setPage(1)
   }, [searchParams, forcedLanguage]) // Re-run whenever URL search params change
+
+  /* (E-12) مزامنة الحالة → الرابط: push لكل تغيير فلتر (زر «رجوع» يرجّع الفلتر السابق)
+     وreplace لنص البحث وحده. التصنيف يُكتب سلاجاً — وسلاج غير مُعرَّف في القائمة الاحتياطية يبقى كما هو. */
+  const urlGenreSlug = searchParams.get('genre')
+  useListingUrlSync({
+    genreSlug: selectedGenre === 'all'
+      ? urlGenreSlug
+      : (genresList.find(g => g.name === selectedGenre)?.slug ?? urlGenreSlug),
+    language: forcedLanguage ? null : selectedLanguage,
+    year: selectedYear,
+    rating: selectedRating,
+    country: selectedCountry,
+    search: debouncedSearch,
+    sort: sortBy,
+    order: sortOrder,
+  })
 
   // Debounce search
   useEffect(() => {
@@ -431,7 +446,7 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
 
   /* ===== الهيدر الموحّد (وضع اللغة + الوضع العام) — نفس نظام كل صفحات القوائم ===== */
   const isLangMode = Boolean(langLabel && langCode)
-  const headerTitle = title ?? 'المسلسلات المترجمة'
+  const headerTitle = title ?? 'المسلسلات'
   const headerDescription = isLangMode
     ? `استكشف جميع مسلسلات ${langLabel} المترجمة`
     : 'استكشف جميع المسلسلات المترجمة بجودة عالية'
