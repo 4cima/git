@@ -147,6 +147,11 @@ export default {
       if (pageTtl) {
         // نسخة الحافة بتتحدد بـTTL موحد؛ max-age=0 عشان المتصفح ما يكاشش HTML أصلًا
         headers.set("cache-control", `public, s-maxage=${ttl}, max-age=0`);
+      } else {
+        // الـAPI: نفس سياسة الأصل لكن max-age=0 صريح — من غيره Cloudflare بيرفع الـbrowser
+        // TTL للـedge TTL بتاع قواعد الـzone (اترصد فعليًا: max-age=14400 على home-sections)
+        const cc = (res.headers.get("cache-control") ?? "").replace(/max-age=\d+/gi, "max-age=0");
+        headers.set("cache-control", /max-age=/i.test(cc) ? cc : `${cc}, max-age=0`);
       }
       headers.set("x-edge-cache", "MISS");
       const edgeCopy = new Response(res.clone().body, {
