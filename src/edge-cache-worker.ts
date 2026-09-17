@@ -69,15 +69,16 @@ const PAGE_RULES: Array<{ exact?: string[]; prefix?: string[]; ttl: number }> = 
   { prefix: ["/sitemap"], ttl: SITEMAP_TTL },
 ];
 
-/** APIs معلنة كاشها بنفسها (s-maxage في ردها) — بنحترم إعلانها كما هو */
-const API_PREFIXES = [
-  "/api/home-sections",
-  "/api/movies",
-  "/api/series",
-  "/api/listing/arabic",
-  "/api/genres",
-  "/api/tv/",
-];
+/**
+ * APIs معلنة كاشها بنفسها (s-maxage في ردها) — معطّلة حاليًا لأسباب مكتشفة على الإنتاج:
+ * قواعد كاش الـzone النائمة في الداشبورد بتتصحى بمجرد ما الرد يدخل الكاش وبتفرض browser TTL
+ * 4 ساعات على الـAPIs (اترصد فعليًا: max-age=14400 على home-sections حتى مع max-age=0 صريح
+ * في النسخة المخزنة — التجاوز بيحصل فوق كود الـWorker). النتيجة: زائر راجع يشوف أقسام
+ * الهوم قديمة من متصفحه.
+ * لتفعيلها لاحقًا: تنظيف/تعديل قواعد كاش الـzone من الداشبورد (Browser TTL: respect origin
+ * أو إلغاء الـoverride) ثم إعادة الأسماء هنا — الميكانيزم تحت جاهز وبيحترم s-maxage بتاع الرد.
+ */
+const API_PREFIXES: string[] = [];
 
 function getPageTtl(pathname: string): number | undefined {
   for (const rule of PAGE_RULES) {
