@@ -4,7 +4,9 @@ import { executeFirst } from '@/lib/db'
 import { getSimilarMovies } from '@/lib/similar-server'
 import { MovieDetailsClient } from '@/components/pages/MovieDetailsClient'
 
-export const revalidate = 60
+// ساعة بدل دقيقة: كاش الحافة (edge-cache-worker) بيغطي الزيارات، وده بيقلل إعادة التوليد من D1
+// 60 مرة. التحديثات بعد المزامنة بتوصل فورًا عبر purge_everything في سلسلة ما بعد المزامنة.
+export const revalidate = 3600
 
 interface PageProps {
   params: Promise<{ slug: string }>
