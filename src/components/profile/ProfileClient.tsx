@@ -47,7 +47,9 @@ export default function ProfileClient() {
   )
 
   return (
-    <div className="mx-auto w-full max-w-6xl overflow-x-hidden px-4 pb-16 pt-6 md:pt-10">
+    /* الحاوية الموحّدة مع صفحات القوائم (/movies · /series): max-w-[1920px] + px-2/sm:px-4/md:px-6/lg:px-8
+       (كانت max-w-6xl px-4 ⇒ هوامش جانبية ضخمة على الشاشات المتوسطة/الكبيرة) */
+    <div className="mx-auto w-full max-w-[1920px] overflow-x-hidden px-2 pb-16 pt-6 sm:px-4 md:px-6 md:pt-10 lg:px-8">
       <ProfileHeader />
 
       {/* موبايل: tabs أفقية sticky */}

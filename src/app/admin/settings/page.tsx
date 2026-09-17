@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Save, Database, Globe, Shield, Loader, AlertCircle } from 'lucide-react'
+import { Settings as SettingsIcon, Save, Database, Globe, Shield, Loader, AlertCircle, Trash2 } from 'lucide-react'
 
 interface Settings {
   site_name: string
@@ -19,6 +19,7 @@ export default function SettingsPage() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [purging, setPurging] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
 
   const flash = (type: 'ok' | 'err', msg: string) => {
@@ -59,6 +60,22 @@ export default function SettingsPage() {
       flash('err', e instanceof Error ? e.message : 'خطأ في الحفظ')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const purgeCache = async () => {
+    if (!window.confirm('مسح كاش Cloudflare بالكامل؟\n\nسيُجبر الـ edge على إعادة توليد كل الصفحات من الأصل، ويزيد الحمل على الـ Worker مؤقتاً.')) return
+
+    setPurging(true)
+    try {
+      const res = await fetch('/api/admin/purge-cache', { method: 'POST' })
+      const data = await res.json()
+      if (!data.ok) throw new Error(data.error || 'فشل مسح الكاش')
+      flash('ok', `✅ تم مسح كاش Cloudflare بنجاح — ${data.timestamp}`)
+    } catch (e) {
+      flash('err', e instanceof Error ? e.message : 'خطأ في مسح الكاش')
+    } finally {
+      setPurging(false)
     }
   }
 
@@ -207,6 +224,26 @@ export default function SettingsPage() {
                   <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
                 </label>
               </div>
+            </div>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-amber-400" />
+              كاش Cloudflare
+            </h2>
+            <div className="space-y-4">
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                يمسح كل مفاتيح الكاش من شبكة Cloudflare (purge_everything) — استخدمه بعد تحديث المحتوى
+                لتظهر التغييرات فوراً لكل الزوار.
+              </p>
+              <button
+                onClick={purgeCache}
+                disabled={purging}
+                className="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-600/40 text-amber-300 px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {purging ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                {purging ? 'جاري مسح الكاش...' : 'مسح كاش Cloudflare'}
+              </button>
             </div>
           </div>
         </div>

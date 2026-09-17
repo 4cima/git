@@ -57,6 +57,12 @@ export interface ActivityItem {
   vote_average: number | null
   slug: string | null
   date: string
+  /**
+   * الصف الخام كما يعيده الـAPI (data: r في /api/profile/activity).
+   * الحقول المتاحة فعلياً: watch_history → completed / watch_duration / season_number / episode_number،
+   * user_reviews → rating / review_text. تُقرأ بحذر (undefined-safe) ولا يوجد أي حقل مخترع.
+   */
+  data?: Record<string, unknown> | null
 }
 
 /** إحصائيات كما تعيدها /api/profile/stats */

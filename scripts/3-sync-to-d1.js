@@ -417,6 +417,57 @@ async function rebuildShortTitles() {
   }
   console.log(`   ✅ ${values.length} صف (قوائم الحرف والحرفين محدثة)`);
 }
+// ── Cloudflare cache purge (post-sync) ────────────────────────────────────────
+
+/**
+ * مسح كاش Cloudflare لكل الـ zone بعد نجاح المزامنة (اختياري).
+ * يقرأ CF_CACHE_PURGE_TOKEN + CF_ZONE_ID من .env.local (محمّل في أعلى هذا الملف).
+ * منطق مُكرَّر عن قصد من src/lib/cloudflare-cache.ts: هذا سكربت CommonJS يعمل خارج
+ * الـ bundler فلا يمكنه استيراد ملف TypeScript — حافظ على تطابق الاثنين.
+ * أي فشل هنا يُسجَّل فقط ولا يوقف المزامنة (المحتوى على D1 يكون قد حُفظ بالفعل).
+ */
+async function purgeCloudflareCache() {
+  const token  = process.env.CF_CACHE_PURGE_TOKEN;
+  const zoneId = process.env.CF_ZONE_ID;
+
+  if (!token || !zoneId) {
+    console.warn('⚠  تخطّي مسح كاش Cloudflare: CF_CACHE_PURGE_TOKEN / CF_ZONE_ID غير موجودين في .env.local');
+    return;
+  }
+
+  try {
+    const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ purge_everything: true }),
+    });
+
+    const bodyText = await res.text();
+
+    if (!res.ok) {
+      console.error(`⚠  فشل مسح كاش Cloudflare: ${res.status} ${bodyText.slice(0, 200)}`);
+      return;
+    }
+
+    // Cloudflare قد يرد 200 مع { success: false, errors: [...] }
+    try {
+      const payload = JSON.parse(bodyText);
+      if (payload && payload.success === false) {
+        console.error(`⚠  فشل مسح كاش Cloudflare: ${JSON.stringify(payload.errors || []).slice(0, 200)}`);
+        return;
+      }
+    } catch {
+      // جسم غير JSON مع 200 → المسح نجح فعلاً
+    }
+
+    console.log('✅ Cloudflare cache purged');
+  } catch (err) {
+    console.error('⚠  فشل مسح كاش Cloudflare:', err instanceof Error ? err.message : err);
+  }
+}
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -592,6 +643,9 @@ async function main() {
 
   // Rebuild short-title search lists so 1-2 char searches stay in sync with the catalog
   await rebuildShortTitles();
+
+  // Purge the Cloudflare edge cache so the newly synced content is served immediately
+  await purgeCloudflareCache();
 
   localDb.close();
 }
