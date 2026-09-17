@@ -47,10 +47,8 @@ async function getInitialMovies() {
               movies.poster_path, movies.backdrop_path, movies.vote_average, movies.release_year,
               movies.genres_json, movies.overview_ar, movies.original_language
        FROM movies
-       WHERE (genres_json IS NULL OR NOT EXISTS (
-         SELECT 1 FROM json_each(movies.genres_json)
-         WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
-       ))
+       LEFT JOIN excluded_genre_movie_ids eg ON eg.tmdb_id = movies.tmdb_id
+       WHERE (movies.genres_json IS NULL OR eg.tmdb_id IS NULL)
          AND (IFNULL(movies.filter_status, 'clean') IN ('clean', 'reviewed_approved'))
          AND (movies.release_year IS NOT NULL AND movies.release_year >= 2000)
        ORDER BY popularity DESC, movies.id DESC

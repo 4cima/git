@@ -45,10 +45,8 @@ async function getInitialSeries() {
               tv_series.poster_path, tv_series.vote_average, tv_series.first_air_year,
               tv_series.genres_json, tv_series.overview_ar, tv_series.country_of_origin
        FROM tv_series
-       WHERE (genres_json IS NULL OR NOT EXISTS (
-         SELECT 1 FROM json_each(tv_series.genres_json)
-         WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
-       ))
+       LEFT JOIN excluded_genre_series_ids es ON es.tmdb_id = tv_series.tmdb_id
+       WHERE (tv_series.genres_json IS NULL OR es.tmdb_id IS NULL)
          AND (IFNULL(tv_series.filter_status, 'clean') IN ('clean', 'reviewed_approved'))
          AND (tv_series.first_air_year IS NOT NULL AND tv_series.first_air_year >= 2000)
        ORDER BY popularity DESC, tv_series.id DESC

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeAll, executeFirst } from '@/lib/db'
 import { sanitizeSearchInput } from '@/lib/search-utils'
-import { resolveGenreSlug, buildTvGenreClause } from '@/lib/genre-siblings'
+import { resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 export const dynamic = 'force-dynamic'
@@ -25,14 +25,19 @@ export async function GET(request: NextRequest) {
     
     const conditions: string[] = []
     const args: (string | number)[] = []
-    
+
+    /* الفهرس المجمّع للتصنيف (series_by_genre) — يُفعَّل مع ?genre= فقط */
+    let genreJoin = ''
+    let sortRef = 'tv_series'
+
     if (genre) {
-      /* مطابقة موحّدة مع SSR (src/app/series/genres/[slug]/page.tsx:52-67) — نفس المنطق حرفياً:
-         1) alias السلاج (resolveGenreSlug: sci-fi/scifi → science-fiction)
-         2) slug → tmdb_id من جدول genres
-         3) buildTvGenreClause — قاعدة تفريق TV الحدّية (أكشن = 10759 AND NOT 53/10765/14/878،
-            مغامرة = 10765 AND 10759 AND NOT 16 …) بدل المطابقة المباشرة القديمة التي كانت
-            تنتج 28 (تصنيف أفلام لا يوسم به TMDB المسلسلات) = صفر صفوف على TV. */
+      /* مطابقة موحّدة مع SSR — alias السلاج ثم slug → tmdb_id من جدول genres.
+         العضوية محسوبة مسبقًا في series_by_genre (scripts/build-genre-index.js —
+         نسخة مادية من قواعد buildTvGenreClause التفريقية: أكشن = 10759 بدون
+         53/10765/14/878، مغامرة/رعب/فانتازيا/ساي-فاي بقواعدها…) ⇒ بحث نطاقي
+         على PK (genre_id, sort, id) بقراءة ~25-50 صفًا بدل json_each الحي.
+         أعمدة العرض من tv_series الحي (JOIN بالـPK) — العضوية والترتيب مادّيان.
+         ⚠️ أي تعديل على buildTvGenreClause يستلزم إعادة تشغيل سكربت البناء. */
       const genreRow = await executeFirst('SELECT tmdb_id FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(genre)]).catch(() => null)
       if (!genreRow || genreRow.tmdb_id == null) {
         // تصنيف غير معروف — مكافئ notFound() في SSR: قائمة فارغة بلا شرط WHERE خاطئ
@@ -42,9 +47,10 @@ export async function GET(request: NextRequest) {
         })
         return unknownGenre
       }
-      const tvClause = buildTvGenreClause(Number(genreRow.tmdb_id))
-      conditions.push(tvClause.sql)
-      args.push(...tvClause.params)
+      genreJoin = 'JOIN series_by_genre g ON g.tmdb_id = tv_series.tmdb_id'
+      conditions.push('g.genre_id = ?')
+      args.push(Number(genreRow.tmdb_id))
+      sortRef = 'g'
     }
     
     let ftsJoin = ''
@@ -59,34 +65,34 @@ export async function GET(request: NextRequest) {
     
     if (year) {
       if (year === 'before-1990') {
-        conditions.push('first_air_year < 1990')
+        conditions.push('tv_series.first_air_year < 1990')
       } else if (year.includes('-')) {
         const [from, to] = year.split('-').map(Number)
         if (Number.isFinite(from) && Number.isFinite(to)) {
-          conditions.push('first_air_year BETWEEN ? AND ?')
+          conditions.push('tv_series.first_air_year BETWEEN ? AND ?')
           args.push(from, to)
         }
       } else {
         const y = parseInt(year)
         if (Number.isFinite(y)) {
-          conditions.push('first_air_year = ?')
+          conditions.push('tv_series.first_air_year = ?')
           args.push(y)
         }
       }
     }
-    
+
     if (language) {
       const languages = language.split(',').map(l => l.trim().toLowerCase()).filter(Boolean)
       if (languages.length === 1) {
-        conditions.push('original_language = ?')
+        conditions.push('tv_series.original_language = ?')
         args.push(languages[0])
       } else if (languages.length > 1) {
         const placeholders = languages.map(() => '?').join(',')
-        conditions.push(`original_language IN (${placeholders})`)
+        conditions.push(`tv_series.original_language IN (${placeholders})`)
         args.push(...languages)
       }
     }
-    
+
     if (country) {
       /* E-6: توحيد شكل شرط الدولة مع /api/movies (country_of_origin OR countries_json LIKE).
          قياس حي على D1 (2026-09-16): عمود tv_series.countries_json فارغ تماماً
@@ -94,27 +100,25 @@ export async function GET(request: NextRequest) {
          تماماً للسابق (TR: 586، US: 6086، KR: 2376). استرجاع الصفوف ذات
          country_of_origin = NULL (5,226) يحتاج backfill لعمود countries_json —
          خارج نطاق هذه الجولة، والشرط جاهز له بلا تغيير في الواجهة. */
-      conditions.push('(country_of_origin = ? OR countries_json LIKE ?)')
+      conditions.push('(tv_series.country_of_origin = ? OR tv_series.countries_json LIKE ?)')
       args.push(country, `%${country}%`)
     }
-    
+
     if (ratingMin) {
       if (ratingMin.includes('-')) {
         const [min, max] = ratingMin.split('-').map(parseFloat)
-        conditions.push('vote_average BETWEEN ? AND ?')
+        conditions.push('tv_series.vote_average BETWEEN ? AND ?')
         args.push(min, max)
       } else {
-        conditions.push('vote_average >= ?')
+        conditions.push('tv_series.vote_average >= ?')
         args.push(parseFloat(ratingMin))
       }
     }
     
-    // Exclude unwanted genres (Talk Show, War & Politics, Documentary, History) at SQL level
-    // — keeps pagination accurate (no short pages from post-JS filtering)
-    conditions.push(`(genres_json IS NULL OR NOT EXISTS (
-      SELECT 1 FROM json_each(tv_series.genres_json)
-      WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
-    ))`)
+    // Exclude unwanted genres (Talk Show, War & Politics, Documentary, History) —
+    // anti-join على جدول الممنوعات المُجمّع بدل json_each الحي. نفس الدلالات:
+    // genres_json IS NULL ⇒ يُقبل.
+    conditions.push(`(tv_series.genres_json IS NULL OR es.tmdb_id IS NULL)`)
 
     // بوابة الإخفاء — لا يظهر المحجوب (blocked) ولا المحتاج للمراجعة في أي قائمة أو بحث
     // جولة السياسة: + فلتر السنة (first_air_year >= 2000) وempty_date مستبعد
@@ -164,9 +168,11 @@ export async function GET(request: NextRequest) {
           tv_series.vote_average, tv_series.first_air_year,
           tv_series.genres_json, tv_series.overview_ar, tv_series.country_of_origin
        FROM tv_series
+       LEFT JOIN excluded_genre_series_ids es ON es.tmdb_id = tv_series.tmdb_id
        ${ftsJoin}
+       ${genreJoin}
        ${whereClause}
-       ORDER BY ${search ? 'rank,' : ''} ${sortColumn} ${sortOrder}, tv_series.id ${sortOrder}
+       ORDER BY ${search ? 'rank,' : ''} ${sortRef}.${sortColumn} ${sortOrder}, tv_series.id ${sortOrder}
        LIMIT ? OFFSET ?`,
       [...args, limit + 1, offset]
     )

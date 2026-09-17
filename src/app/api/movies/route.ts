@@ -25,8 +25,11 @@ export async function GET(request: NextRequest) {
     
     const conditions: string[] = []
     const args: (string | number)[] = []
-    
+
     let ftsJoin = ''
+    /* الفهرس المجمّع للتصنيف (movies_by_genre) — يُفعَّل مع ?genre= فقط */
+    let genreJoin = ''
+    let sortRef = 'movies'
     if (search) {
       const sanitized = sanitizeSearchInput(search)
       if (sanitized) {
@@ -49,64 +52,70 @@ export async function GET(request: NextRequest) {
           pagination: { page, limit, hasMore: false, totalPages: 1 }
         })
       }
-      conditions.push(`EXISTS (SELECT 1 FROM json_each(movies.genres_json) WHERE json_extract(value, '$.tmdb_id') = ?)`)
+      /* العضوية محسوبة مسبقًا في movies_by_genre (scripts/build-genre-index.js —
+         نفس البوابات والاستبعادات وقواعد العضوية) ⇒ بحث نطاقي على PK
+         (genre_id, sort, id) بقراءة ~25-50 صفًا بدل مسح json_each للكتالوج
+         كله (~410K/نداء). أعمدة العرض تبقى من movies الحي (JOIN بالـPK)
+         فلا انحراف بيانات — العضوية والترتيب فقط مادّيان.
+         ⚠️ أي تغيير بوابات/عضوية يستلزم إعادة تشغيل سكربت البناء. */
+      genreJoin = 'JOIN movies_by_genre g ON g.tmdb_id = movies.tmdb_id'
+      conditions.push('g.genre_id = ?')
       args.push(Number(genreRow.tmdb_id))
+      sortRef = 'g'
     }
     
     if (year) {
       if (year === 'before-1990') {
-        conditions.push('release_year < 1990')
+        conditions.push('movies.release_year < 1990')
       } else if (year.includes('-')) {
         const [from, to] = year.split('-').map(Number)
         if (Number.isFinite(from) && Number.isFinite(to)) {
-          conditions.push('release_year BETWEEN ? AND ?')
+          conditions.push('movies.release_year BETWEEN ? AND ?')
           args.push(from, to)
         }
       } else {
         const y = parseInt(year)
         if (Number.isFinite(y)) {
-          conditions.push('release_year = ?')
+          conditions.push('movies.release_year = ?')
           args.push(y)
         }
       }
     }
-    
+
     if (country) {
-      conditions.push(`countries_json LIKE ?`)
+      conditions.push(`movies.countries_json LIKE ?`)
       args.push(`%${country}%`)
     }
-    
+
     if (language) {
       const languages = language.split(',').map(l => l.trim()).filter(l => l)
       if (languages.length === 1) {
-        conditions.push('original_language = ?')
+        conditions.push('movies.original_language = ?')
         args.push(languages[0])
       } else if (languages.length > 1) {
         const placeholders = languages.map(() => '?').join(',')
-        conditions.push(`original_language IN (${placeholders})`)
+        conditions.push(`movies.original_language IN (${placeholders})`)
         args.push(...languages)
       }
     }
-    
+
     if (ratingMin) {
       if (ratingMin.includes('-')) {
         const [min, max] = ratingMin.split('-').map(parseFloat)
-        conditions.push('vote_average BETWEEN ? AND ?')
+        conditions.push('movies.vote_average BETWEEN ? AND ?')
         args.push(min, max)
       } else {
-        conditions.push('vote_average >= ?')
+        conditions.push('movies.vote_average >= ?')
         args.push(parseFloat(ratingMin))
       }
     }
     
     /* (E-13) الفلاتر المزالة من هذا المسار: rating_max + runtime_min/max — لا ترسلها أي واجهة */
 
-    // Exclude unwanted genres (Talk Show, War & Politics, Documentary, History) at SQL level
-    // — keeps pagination accurate (no short pages from post-JS filtering)
-    conditions.push(`(genres_json IS NULL OR NOT EXISTS (
-      SELECT 1 FROM json_each(movies.genres_json)
-      WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
-    ))`)
+    // Exclude unwanted genres (Talk Show, War & Politics, Documentary, History) —
+    // anti-join على جدول الممنوعات المُجمّع (probe واحد لكل صف مرشَّح) بدل json_each
+    // الذي كان يمسح الكتالوج كاملًا. نفس الدلالات: genres_json IS NULL ⇒ يُقبل.
+    conditions.push(`(movies.genres_json IS NULL OR eg.tmdb_id IS NULL)`)
 
     // بوابة الإخفاء — لا يظهر المحجوب (blocked) ولا المحتاج للمراجعة في أي قائمة أو بحث
     // جولة السياسة: + فلتر السنة (release_year >= 2000) وempty_date مستبعد
@@ -155,9 +164,11 @@ export async function GET(request: NextRequest) {
               movies.vote_average, movies.release_year,
               movies.genres_json, movies.overview_ar, movies.original_language
        FROM movies
+       LEFT JOIN excluded_genre_movie_ids eg ON eg.tmdb_id = movies.tmdb_id
        ${ftsJoin}
+       ${genreJoin}
        ${whereClause}
-       ORDER BY ${search ? 'rank,' : ''} ${sortColumn} ${sortOrder}, movies.id ${sortOrder}
+       ORDER BY ${search ? 'rank,' : ''} ${sortRef}.${sortColumn} ${sortOrder}, movies.id ${sortOrder}
        LIMIT ? OFFSET ?`,
       [...args, limit + 1, offset]
     )
