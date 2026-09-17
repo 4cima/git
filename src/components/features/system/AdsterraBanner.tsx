@@ -23,8 +23,10 @@ import type { AdRecord } from '@/data/ads/4cima.com'
  *    fully visible (never cropped by overflow:hidden).
  *
  * Failure policy (زون ميتة / دومين توصيل لا يُحلّ):
- *  - لا نُظهر أي بديل مرئي — عند الفشل يختفي البانر بالكامل (null) ويُبلَّغ
- *    الأب عبر onFailure ليعطل أي إطار زخرفي حوله. لا مربع أبيض ولا مكان محجوز.
+ *  - لا نُظهر أي بديل مرئي — عند الفشل يبقى الصندوق محجوزًا بمقاسه النهائي
+ *    لكن visibility:hidden (مكان غامق غير مرئي) — إخفاؤه كليًا (null) كان يزق
+ *    المحتوى بعد ثوانٍ من التحميل ويسبب CLS حقيقيًا عند الزوار (0.38–0.7 في
+ *    CrUX) بينما مختبر Lighthouse لا يراه لأن الفشل يقع بعد نافذة القياس.
  *  - كشف الفشل ذكي: لا يكتفي بوجود الـiframe (invoke.js يحقنها دائمًا)، بل يفحص
  *    محتواها (نفس الأصل — about:blank يرث أصل الصفحة): صورة إعلانية مكسورة أو
  *    جسم فارغ = فشل. ولو ظهر إعلان حقيقي يبقى ظاهرًا طبيعيًا.
@@ -145,7 +147,8 @@ export const AdsterraBanner = ({
     return () => ro.disconnect()
   }, [ad.width, ad.height])
 
-  if (failed || !FLAGS.ADS_ENABLED) return null
+  /* عند الفشل: الصندوق يبقى بمقاسه (visibility:hidden) — لا اختفاء يزق المحتوى (CLS) */
+  if (!FLAGS.ADS_ENABLED) return null
 
   return (
     <div
@@ -163,6 +166,7 @@ export const AdsterraBanner = ({
         justifyContent: 'center',
         flexShrink: 1,
         position: 'relative',
+        visibility: failed ? 'hidden' : 'visible',
       }}
     >
       <div ref={stageRef} style={{ width: ad.width, height: ad.height, flex: '0 0 auto' }} />
@@ -171,8 +175,8 @@ export const AdsterraBanner = ({
 }
 
 /* ------------------------------------------------------------------ */
-/* إطار زخرفي موحّد حول البانر — يختفي بالكامل عند فشل الإعلان          */
-/* (بدل ترك إطار متدرج فاضيًا يعطي إيحاءً بمشكلة)                        */
+/* إطار زخرفي موحّد حول البانر — عند فشل الإعلان يبقى بمقاسه مخفيًا     */
+/* (visibility:hidden) بدل الاختفاء الذي يزق المحتوى — صفر CLS         */
 /* ------------------------------------------------------------------ */
 
 const FRAME_X = 'rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70'
@@ -181,10 +185,10 @@ const FRAME_Y = 'rounded-2xl bg-gradient-to-b from-blue-500/60 via-slate-700/70 
 export function AdFrame({ ad, variant }: { ad: AdRecord; variant: 'x' | 'y' }) {
   const [failed, setFailed] = useState(false)
   const onFailure = useCallback(() => setFailed(true), [])
-  if (failed || !FLAGS.ADS_ENABLED) return null
+  if (!FLAGS.ADS_ENABLED) return null
   if (variant === 'y') {
     return (
-      <div className={`${FRAME_Y} w-full`}>
+      <div className={`${FRAME_Y} w-full`} style={failed ? { visibility: 'hidden' } : undefined}>
         <div className="rounded-[14.5px] bg-slate-950 p-1 flex justify-center">
           <AdsterraBanner ad={ad} onFailure={onFailure} />
         </div>
@@ -192,7 +196,7 @@ export function AdFrame({ ad, variant }: { ad: AdRecord; variant: 'x' | 'y' }) {
     )
   }
   return (
-    <div className={`w-fit ${FRAME_X}`}>
+    <div className={`w-fit ${FRAME_X}`} style={failed ? { visibility: 'hidden' } : undefined}>
       <div className="rounded-[14.5px] bg-slate-950 p-1">
         <AdsterraBanner ad={ad} onFailure={onFailure} />
       </div>
