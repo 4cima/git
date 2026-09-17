@@ -28,6 +28,7 @@
  *   1) rebuildShortTitles()     — قوائم البحث القصيرة
  *   2) purgeCloudflareCache()   — مسح كاش الحافة
  *   3) rebuildGenreIndex()      — فهرس التصنيفات المُجمّع (build-genre-index.js)
+ *   4) rebuildSitemapUrls()     — جدول السايت ماب (build-sitemap-urls.js --remote --apply)
  *     الأوضاع: --limit/--tmdb-id/--ids-file تمر بالسلسلة كاملة؛
  *     --rebuild-short-titles مستقل بلا مزامنة محتوى؛ لا يوجد جديد ⇒ لا سلسلة.
  */
@@ -507,6 +508,35 @@ async function rebuildGenreIndex() {
   console.log('✅ فهرس التصنيفات محدّث');
 }
 
+// ── Sitemap URLs rebuild (post-sync) ──────────────────────────────────────────
+
+/**
+ * إعادة بناء جدول sitemap_urls بعد نجاح المزامنة — مسارا السايت ماب
+ * (/sitemap-index.xml + شظايا movies-N/series-N + priority) يقرآن من هذا
+ * الجدول المادي، وبدون إعادة البناء المحتوى المُزامَن الجديد لا يظهر في
+ * الخريطة ولا تكتشفه Google عبرها.
+ *
+ * --remote --apply = بناء وكتابة على D1 الإنتاج مباشرة (سلوك السكربت: لا كتابة
+ * بدون --apply). فشله يُسجَّل فقط ولا يوقف المزامنة — الخريطة القديمة تظل صالحة
+ * لكل ما سبقه حتى إعادة التشغيل اليدوي:
+ *   node scripts/build-sitemap-urls.js --remote --apply
+ */
+async function rebuildSitemapUrls() {
+  const { spawnSync } = require('child_process');
+  const script = path.join(__dirname, 'build-sitemap-urls.js');
+  console.log('\n🗺  إعادة بناء sitemap_urls (build-sitemap-urls --remote --apply) ...');
+  const res = spawnSync(process.execPath, [script, '--remote', '--apply'], { stdio: 'inherit' });
+  if (res.error) {
+    console.error('⚠  فشل تشغيل build-sitemap-urls:', res.error.message);
+    return;
+  }
+  if (res.status !== 0) {
+    console.error(`⚠  build-sitemap-urls انتهى بخطأ (exit ${res.status}) — الخريطة بقت على اللقطة السابقة. أعد تشغيله يدويًا لاحقًا.`);
+    return;
+  }
+  console.log('✅ sitemap_urls محدّث');
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -689,6 +719,10 @@ async function main() {
   // /api/movies?genre= and /api/series?genre= (failure here is logged, never fatal —
   // الوصل للدالة يعني المزامنة نجحت بالكامل)
   await rebuildGenreIndex();
+
+  // Rebuild sitemap_urls so newly synced content appears in /sitemap-index.xml
+  // and the shards (failure logged, never fatal — same policy)
+  await rebuildSitemapUrls();
 
   localDb.close();
 }
