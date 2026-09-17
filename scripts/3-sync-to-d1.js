@@ -22,7 +22,14 @@
  *
  * Usage:
  *   node scripts/3-sync-to-d1.js
- *   node scripts/3-sync-to-d1.js --all   # re-sync all, ignore synced_to_d1 flag
+ *   node scripts/3-sync-to-d1.js --all   # re-sync all, ignore synced_to_d1 flag (DISABLED)
+ *
+ * Post-sync chain (بعد نجاح المزامنة فقط — بترتيبها):
+ *   1) rebuildShortTitles()     — قوائم البحث القصيرة
+ *   2) purgeCloudflareCache()   — مسح كاش الحافة
+ *   3) rebuildGenreIndex()      — فهرس التصنيفات المُجمّع (build-genre-index.js)
+ *     الأوضاع: --limit/--tmdb-id/--ids-file تمر بالسلسلة كاملة؛
+ *     --rebuild-short-titles مستقل بلا مزامنة محتوى؛ لا يوجد جديد ⇒ لا سلسلة.
  */
 
 'use strict';
@@ -469,6 +476,37 @@ async function purgeCloudflareCache() {
   }
 }
 
+// ── Genre index rebuild (post-sync) ───────────────────────────────────────────
+
+/**
+ * إعادة بناء فهرس التصنيفات المُجمّع (movies_by_genre / series_by_genre /
+ * excluded_genre_*) بعد نجاح المزامنة.
+ *
+ * لماذا: فلتر ?genre= في /api/movies و /api/series يقرأ عضويته من هذه الجداول
+ * المادية — بدون إعادة البناء، المحتوى المُزامَن الجديد لا يظهر في قوائم
+ * التصنيفات (الجداول لقطة، وbuildTvGenreClause للمسلسلات مادية داخلها).
+ *
+ * سكربت مستقل في عملية منفصلة (process.execPath + spawnSync) لأنه يحمّل بيئته
+ * ويُنهي نفسه بنفسه — نفس أسلوب purgeCloudflareCache: أي فشل يُسجَّل فقط ولا
+ * يوقف المزامنة (المحتوى على D1 محفوظ بالفعل، والفهرس الحالي يظل صالحًا
+ * لكل ما سبقه؛ أعد تشغيله يدويًا لاحقًا: node scripts/build-genre-index.js).
+ */
+async function rebuildGenreIndex() {
+  const { spawnSync } = require('child_process');
+  const script = path.join(__dirname, 'build-genre-index.js');
+  console.log('\n🧮 إعادة بناء فهرس التصنيفات (build-genre-index) ...');
+  const res = spawnSync(process.execPath, [script], { stdio: 'inherit' });
+  if (res.error) {
+    console.error('⚠  فشل تشغيل build-genre-index:', res.error.message);
+    return;
+  }
+  if (res.status !== 0) {
+    console.error(`⚠  build-genre-index انتهى بخطأ (exit ${res.status}) — الفهرس بقي على اللقطة السابقة. أعد تشغيله يدويًا لاحقًا.`);
+    return;
+  }
+  console.log('✅ فهرس التصنيفات محدّث');
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -646,6 +684,11 @@ async function main() {
 
   // Purge the Cloudflare edge cache so the newly synced content is served immediately
   await purgeCloudflareCache();
+
+  // Rebuild the materialized genre index so newly synced content appears in
+  // /api/movies?genre= and /api/series?genre= (failure here is logged, never fatal —
+  // الوصل للدالة يعني المزامنة نجحت بالكامل)
+  await rebuildGenreIndex();
 
   localDb.close();
 }
