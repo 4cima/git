@@ -36,14 +36,21 @@ export function homeSectionGenreQuery(
   const half = Math.floor(limit / 2)
   const moviePlaceholders = movieGenreIds.map(() => '?').join(',')
   const seriesPlaceholders = seriesGenreIds.map(() => '?').join(',')
+  /* anti-join بدل NOT IN (SELECT ... FROM movies): الـNOT IN كان يُجسّد الجدول الحي
+     كاملًا في كل نداء — الـLEFT JOIN يقرأ صفوف الكاش + probes بالفهرس فقط.
+     نفس الدلالات: غياب الصف ⇒ يُقبل، وجوده ⇒ يُرفض فقط لو blocked أو بلا سنة
+     أو سنة < 2000. */
   const sql = `
     SELECT * FROM (
       SELECT ${MOVIE_GENRE_FIELDS}
       FROM list_movies_genre l
+      LEFT JOIN movies m ON m.tmdb_id = l.tmdb_id
       WHERE l.genre_tmdb_id IN (${moviePlaceholders})
         AND l.release_year >= ?
-        AND l.tmdb_id NOT IN (SELECT tmdb_id FROM movies WHERE filter_status = 'blocked'
-          OR release_year IS NULL OR release_year < 2000)
+        AND (m.tmdb_id IS NULL OR (
+          (m.filter_status IS NULL OR m.filter_status <> 'blocked')
+          AND m.release_year >= 2000
+        ))
       ORDER BY l.popularity DESC
       LIMIT ?
     )
@@ -51,10 +58,13 @@ export function homeSectionGenreQuery(
     SELECT * FROM (
       SELECT ${SERIES_GENRE_FIELDS}
       FROM list_series_genre s
+      LEFT JOIN tv_series ts ON ts.tmdb_id = s.tmdb_id
       WHERE s.genre_tmdb_id IN (${seriesPlaceholders})
         AND s.first_air_year >= ?
-        AND s.tmdb_id NOT IN (SELECT tmdb_id FROM tv_series WHERE filter_status = 'blocked'
-          OR first_air_year IS NULL OR first_air_year < 2000)
+        AND (ts.tmdb_id IS NULL OR (
+          (ts.filter_status IS NULL OR ts.filter_status <> 'blocked')
+          AND ts.first_air_year >= 2000
+        ))
       ORDER BY s.popularity DESC
       LIMIT ?
     )`

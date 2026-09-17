@@ -6,6 +6,7 @@ import clsx from 'clsx'
 import Link from 'next/link'
 import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
+import { genreSlugById } from '@/lib/genre-slugs'
 import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
 import { MovieCard } from '@/components/features/media/MovieCard'
@@ -21,16 +22,19 @@ const AD_SIDE = getAdByNum(3)!
 
 interface MovieDetailsClientProps {
   movie: any
+  /** «قد يعجبك أيضاً» من السيرفر (similar-cache عبر /lib/similar-server) —
+   *  لا جلب كلاينتي إطلاقًا: النداء القديم كان يقرأ ~145K صفًا من D1 لكل زيارة */
+  initialSimilar?: any[]
 }
 
-export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
+export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClientProps) => {
   const { user } = useAuth() // Check if user is logged in
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [volume, setVolume] = useState(100)
   const [showVolumeSlider, setShowVolumeSlider] = useState(false)
-  const [similarMovies, setSimilarMovies] = useState<any[]>([])
-  const [similarLoading, setSimilarLoading] = useState(true)
+  /* «قد يعجبك أيضاً» بيانات جاهزة من الـSSR — تُرندر ضمن HTML أولي (روابط حقيقية لمحركات البحث) */
+  const similarMovies = initialSimilar ?? []
   const [similarStates, setSimilarStates] = useState<Record<string, 'neutral' | 'favorite' | 'completed'>>({})
   const [watchLogged, setWatchLogged] = useState(false)
   const [cardState, setCardState] = useState<'neutral' | 'favorite' | 'completed'>('neutral')
@@ -175,28 +179,6 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
       document.removeEventListener('wheel', handleScroll)
     }
   }, [isModalOpen])
-
-  // Fetch similar movies
-  useEffect(() => {
-    if (!movie?.slug) return
-    
-    const fetchSimilar = async () => {
-      try {
-        setSimilarLoading(true)
-        const response = await fetch(`/api/movies/${movie.slug}/similar?limit=12`)
-        if (response.ok) {
-          const data = await response.json()
-          setSimilarMovies(data.data || [])
-        }
-      } catch (error) {
-        console.error('Failed to fetch similar movies:', error)
-      } finally {
-        setSimilarLoading(false)
-      }
-    }
-    
-    fetchSimilar()
-  }, [movie?.slug])
 
   // حالات المفضلة لبطاقات "قد يعجبك" — طلب واحد مجمّع بدل طلب لكل بطاقة (كان يسبب 12+ POST بطيئة)
   useEffect(() => {
@@ -506,13 +488,23 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 text-sm font-medium mb-6">
-                  {/* Genres on the right */}
+                  {/* Genres on the right — شارات التصنيفات روابط حقيقية لصفحات التصنيفات (SEO: روابط داخلية) */}
                   {genres.length > 0 && genres.map((g: any, idx: number) => {
                     const genreColorScheme = getGenreColor(g.name_ar || g.name_en || g.name)
-                    return (
+                    const chipCls = `text-[10px] font-bold uppercase tracking-wider ${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-2 py-1 rounded-lg ${genreColorScheme.glow} shadow-lg transition-all hover:scale-105`
+                    const gSlug = genreSlugById(g.tmdb_id ?? g.id)
+                    return gSlug ? (
+                      <Link
+                        key={g.tmdb_id || g.id || `genre-${idx}`}
+                        href={`/movies/genres/${gSlug}`}
+                        className={chipCls}
+                      >
+                        {g.name_ar || g.name_en || g.name}
+                      </Link>
+                    ) : (
                       <span
                         key={g.tmdb_id || g.id || `genre-${idx}`}
-                        className={`text-[10px] font-bold uppercase tracking-wider ${genreColorScheme.bg} ${genreColorScheme.text} border ${genreColorScheme.border} px-2 py-1 rounded-lg ${genreColorScheme.glow} shadow-lg transition-all hover:scale-105`}
+                        className={chipCls}
                       >
                         {g.name_ar || g.name_en || g.name}
                       </span>
@@ -650,22 +642,15 @@ export const MovieDetailsClient = ({ movie }: MovieDetailsClientProps) => {
         </div>
       </div>
 
-      {/* Similar Movies Section — القسم محجوز دائماً (Skeleton أثناء الجلب) لمنع قفز الفوتر */}
-      {(similarLoading || similarMovies.length > 0) && (
+      {/* Similar Movies Section — بيانات من الـSSR (روابط حقيقية في HTML أولي، بلا Skeleton) */}
+      {similarMovies.length > 0 && (
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pb-12">
           <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
             <Film className="w-6 h-6 text-red-500" />
             قد يعجبك أيضاً
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {similarLoading
-              ? Array.from({ length: 12 }).map((_, i) => (
-                  <div key={`similar-skeleton-${i}`} aria-hidden="true">
-                    <div className="aspect-[2/3] w-full animate-pulse rounded-2xl bg-white/5" />
-                    <div className="h-[52px] w-full animate-pulse rounded-b-2xl bg-white/5" />
-                  </div>
-                ))
-              : similarMovies.map((item: any, i: number) => (
+            {similarMovies.map((item: any, i: number) => (
                   <MovieCard
                     key={item.id}
                     movie={{

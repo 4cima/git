@@ -15,6 +15,7 @@ import { Footer } from '@/components/layout/Footer'
 import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
+import { ListingPagination, type StaticPagination } from './ListingPagination'
 
 /* ===== إعلانات صفحة التصنيف — أرقام موحّدة من src/data/ads/4cima.com (نظام موحّد لكل صفحات القوائم) =====
    1: 728×90 هيدر | 2: 300×250 عمود جانبي | 3: 160×600 سكرايبر ديسكتوب
@@ -31,9 +32,11 @@ interface SeriesGenrePageClientProps {
   initialHasMore: boolean
   /** رابط صفحة نظير الأفلام (افتراضي: /movies/genres/{slug}) */
   moviesHref?: string
+  /** ترقيم ساكن من السيرفر (روابط <a> للزحف) — غيابه = سكرول لانهائي فقط */
+  staticPagination?: StaticPagination | null
 }
 
-export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMore, moviesHref }: SeriesGenrePageClientProps) {
+export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMore, moviesHref, staticPagination }: SeriesGenrePageClientProps) {
   const searchParams = useSearchParams()
   const [content, setContent] = useState<any[]>(initialSeries)
   const [loading, setLoading] = useState(false)
@@ -541,6 +544,13 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
         <div className="flex justify-center px-4 py-2 mt-8">
           <AdFrame ad={AD_FOOTER_MID} variant="x" />
         </div>
+
+        {/* ترقيم ساكن من السيرفر — روابط <a> حقيقية (مسارات /page/N الثابتة ISR) */}
+        {staticPagination && staticPagination.totalPages > 1 && (
+          <div className="px-4">
+            <ListingPagination {...staticPagination} />
+          </div>
+        )}
       </div>
 
       <div className="pb-12"><Footer /></div>

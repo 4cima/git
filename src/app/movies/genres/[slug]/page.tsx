@@ -63,18 +63,26 @@ export default async function MovieGenrePage({ params }: PageProps) {
     // استبعاد التصنيفات الأربعة (Talk Show + War & Politics + Documentary + History) داخل
     // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT LISTING_PAGE_SIZE + 1: hasMore يُحسب
     // من نتيجة SQL ويُضمن المعروض ≤ LISTING_PAGE_SIZE بلا نقص بعد الاستبعاد.
-    const initialMovies = await executeAll(
-      `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
-              vote_average, release_year, overview_ar, genres_json
-       FROM movies
-       WHERE ${whereClause}
-         AND ${EXCLUDED_GENRE_SQL_CLAUSE}
-         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-         AND release_year IS NOT NULL AND release_year >= 2000
-       ORDER BY popularity DESC, id DESC
-       LIMIT ${LISTING_PAGE_SIZE + 1}`,
-      genreParams
-    )
+    const [initialMoviesRows, listCountRow] = await Promise.all([
+      executeAll(
+        `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
+                vote_average, release_year, overview_ar, genres_json
+         FROM movies
+         WHERE ${whereClause}
+           AND ${EXCLUDED_GENRE_SQL_CLAUSE}
+           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+           AND release_year IS NOT NULL AND release_year >= 2000
+         ORDER BY popularity DESC, id DESC
+         LIMIT ${LISTING_PAGE_SIZE + 1}`,
+        genreParams
+      ),
+      /* عدد أعماق الترقيم الساكن من جدول الكاش المُجمّع (قراءة مغطاة ~300 صف — ISR ساعة) */
+      executeFirst<{ n: number }>(
+        `SELECT COUNT(*) AS n FROM list_movies_genre WHERE genre_tmdb_id = ?`,
+        [Number(genre.tmdb_id)]
+      ),
+    ])
+    const initialMovies = initialMoviesRows
 
     // hasMore من نتيجة SQL (على سقف +1) ثم pop — المعروض بعدها ≤ LISTING_PAGE_SIZE
     const hasMore = initialMovies.length > LISTING_PAGE_SIZE
@@ -85,6 +93,9 @@ export default async function MovieGenrePage({ params }: PageProps) {
 
     const genreName = String(plainGenre.name_ar || plainGenre.name_en || 'تصنيف')
     const genrePageUrl = `https://4cima.com/movies/genres/${slug}`
+
+    /* ترقيم ساكن قابل للزحف (مسارات /page/N الثابتة من list_movies_genre) */
+    const staticTotalPages = Math.min(12, Math.max(1, Math.ceil(Number(listCountRow?.n || 0) / LISTING_PAGE_SIZE)))
 
     /* JSON-LD — Breadcrumb + CollectionPage بأول الأعمال الظاهرة (مطابق لنموذج genres/[slug]) */
     const jsonLd = {
@@ -124,7 +135,13 @@ export default async function MovieGenrePage({ params }: PageProps) {
             <div key={movie.id} data-movie-title={movie.title_ar || movie.title_en} />
           ))}
         </div>
-        <MovieGenrePageClient genre={plainGenre} slug={slug} initialMovies={filteredMovies} initialHasMore={hasMore} />
+        <MovieGenrePageClient
+          genre={plainGenre}
+          slug={slug}
+          initialMovies={filteredMovies}
+          initialHasMore={hasMore}
+          staticPagination={{ current: 1, totalPages: staticTotalPages, basePath: `/movies/genres/${slug}` }}
+        />
       </>
     )
   } catch { notFound() }

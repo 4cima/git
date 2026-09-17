@@ -82,7 +82,12 @@ async function getHomeData(): Promise<HomeDataResult> {
   }
   try {
     const [movies, series] = await Promise.all([
-      /* 1+2) الرائج — آخر 10 سنوات فقط، 60 لكل نوع */
+      /* 1+2) الرائج — آخر 10 سنوات فقط، 60 لكل نوع.
+         anti-join بدل NOT IN (SELECT ... FROM movies): الـNOT IN كان يُجسّد الجدول
+         الحي كاملًا (~332K/100K صف) في كل نداء — الـLEFT JOIN يقرأ صفوف القائمة
+         بالترتيب (~60-80 صفًا) + probes بالفهرس. نفس الدلالات حرفيًا:
+         غياب صف في movies ⇒ يُقبل (كما كان)، وجوده ⇒ يُقبل فقط لو clean/approved
+         وسنة ≥ 2000. */
       executeAll(
         `SELECT l.id, l.tmdb_id,
                 COALESCE(m.slug, l.slug) AS slug,
@@ -91,8 +96,10 @@ async function getHomeData(): Promise<HomeDataResult> {
          FROM list_movies_popular l
          LEFT JOIN movies m ON m.tmdb_id = l.tmdb_id
          WHERE l.release_year >= ?
-            AND l.tmdb_id NOT IN (SELECT tmdb_id FROM movies WHERE filter_status NOT IN ('clean', 'reviewed_approved')
-              OR release_year IS NULL OR release_year < 2000)
+            AND (m.tmdb_id IS NULL OR (
+              (m.filter_status IS NULL OR m.filter_status IN ('clean', 'reviewed_approved'))
+              AND m.release_year >= 2000
+            ))
          ORDER BY l.rank
          LIMIT 60`,
         [MIN_YEAR]
@@ -105,8 +112,10 @@ async function getHomeData(): Promise<HomeDataResult> {
          FROM list_series_popular l
          LEFT JOIN tv_series t ON t.tmdb_id = l.tmdb_id
          WHERE l.first_air_year >= ?
-            AND l.tmdb_id NOT IN (SELECT tmdb_id FROM tv_series WHERE filter_status NOT IN ('clean', 'reviewed_approved')
-              OR first_air_year IS NULL OR first_air_year < 2000)
+            AND (t.tmdb_id IS NULL OR (
+              (t.filter_status IS NULL OR t.filter_status IN ('clean', 'reviewed_approved'))
+              AND t.first_air_year >= 2000
+            ))
          ORDER BY l.rank
          LIMIT 60`,
         [MIN_YEAR]

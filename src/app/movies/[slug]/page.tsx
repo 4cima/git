@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst } from '@/lib/db'
+import { getSimilarMovies } from '@/lib/similar-server'
 import { MovieDetailsClient } from '@/components/pages/MovieDetailsClient'
 
 export const revalidate = 60
@@ -138,6 +139,12 @@ export default async function MovieDetails({ params }: PageProps) {
   )
   if (!movieData) notFound()
   const movie       = JSON.parse(JSON.stringify(movieData))
+
+  /* «قد يعجبك أيضاً» — SSR من جداول similar-cache (~15 صفًا بالـPK بدل ~145K في
+     نداء الـAPI القديم) — الروابط تظهر في HTML أولي يجعل 86K صفحة التفاصيل
+     شبكة مترابطة بدل صفحات يتيمة (علاج Discovered - currently not indexed). */
+  const initialSimilar = await getSimilarMovies(Number(movieData.tmdb_id))
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Movie',
@@ -187,7 +194,7 @@ export default async function MovieDetails({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-      <MovieDetailsClient movie={movie} />
+      <MovieDetailsClient movie={movie} initialSimilar={initialSimilar} />
     </>
   )
 }

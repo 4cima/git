@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { SeriesGenrePageClient } from '@/components/pages/SeriesGenrePageClient'
-import { buildTvGenreClause, resolveGenreSlug } from '@/lib/genre-siblings'
+import { buildTvGenreClause, getTvGenreIds, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres, EXCLUDED_GENRE_SQL_CLAUSE } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 
@@ -65,22 +65,32 @@ export default async function SeriesGenrePage({ params }: PageProps) {
     const tvClause = buildTvGenreClause(gid)
     const whereClause = tvClause.sql
     const genreParams = tvClause.params
+    /* معرّفات الكاش المُجمّع (جولة التفريق: 28/12→10759، 53→9648+80، 10752→10768) */
+    const genreIds = getTvGenreIds(gid)
 
     // استبعاد التصنيفات الأربعة (Talk Show + War & Politics + Documentary + History) داخل
     // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT LISTING_PAGE_SIZE + 1: hasMore يُحسب
     // من نتيجة SQL ويُضمن المعروض ≤ LISTING_PAGE_SIZE بلا نقص بعد الاستبعاد.
-    const initialSeries = await executeAll(
-      `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, backdrop_path,
-              vote_average, first_air_year, overview_ar, genres_json
-       FROM tv_series
-       WHERE ${whereClause}
-         AND ${EXCLUDED_GENRE_SQL_CLAUSE}
-         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-         AND first_air_year IS NOT NULL AND first_air_year >= 2000
-       ORDER BY popularity DESC, id DESC
-       LIMIT ${LISTING_PAGE_SIZE + 1}`,
-      genreParams
-    )
+    const [initialSeriesRows, listCountRow] = await Promise.all([
+      executeAll(
+        `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, backdrop_path,
+                vote_average, first_air_year, overview_ar, genres_json
+         FROM tv_series
+         WHERE ${whereClause}
+           AND ${EXCLUDED_GENRE_SQL_CLAUSE}
+           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+           AND first_air_year IS NOT NULL AND first_air_year >= 2000
+         ORDER BY popularity DESC, id DESC
+         LIMIT ${LISTING_PAGE_SIZE + 1}`,
+        genreParams
+      ),
+      /* عدد أعماق الترقيم الساكن من جدول الكاش المُجمّع (قراءة مغطاة — ISR ساعة) */
+      executeFirst<{ n: number }>(
+        `SELECT COUNT(*) AS n FROM list_series_genre WHERE genre_tmdb_id IN (${genreIds.map(() => '?').join(',')})`,
+        genreIds
+      ),
+    ])
+    const initialSeries = initialSeriesRows
 
     // hasMore من نتيجة SQL (على سقف +1) ثم pop — المعروض بعدها ≤ LISTING_PAGE_SIZE
     const hasMore = initialSeries.length > LISTING_PAGE_SIZE
@@ -98,6 +108,9 @@ export default async function SeriesGenrePage({ params }: PageProps) {
 
     const genreName = String(displayGenre.name_ar || displayGenre.name_en || 'تصنيف')
     const genrePageUrl = `https://4cima.com/series/genres/${slug}`
+
+    /* ترقيم ساكن قابل للزحف (مسارات /page/N الثابتة من list_series_genre) */
+    const staticTotalPages = Math.min(12, Math.max(1, Math.ceil(Number(listCountRow?.n || 0) / LISTING_PAGE_SIZE)))
 
     /* JSON-LD — Breadcrumb + CollectionPage بأول الأعمال الظاهرة (مطابق لنموذج genres/[slug]) */
     const jsonLd = {
@@ -137,7 +150,13 @@ export default async function SeriesGenrePage({ params }: PageProps) {
             <div key={show.id} data-series-title={show.name_ar || show.name_en} />
           ))}
         </div>
-        <SeriesGenrePageClient genre={displayGenre} slug={slug} initialSeries={enhancedSeries} initialHasMore={hasMore} />
+        <SeriesGenrePageClient
+          genre={displayGenre}
+          slug={slug}
+          initialSeries={enhancedSeries}
+          initialHasMore={hasMore}
+          staticPagination={{ current: 1, totalPages: staticTotalPages, basePath: `/series/genres/${slug}` }}
+        />
       </>
     )
   } catch { notFound() }

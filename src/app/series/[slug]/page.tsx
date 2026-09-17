@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst } from '@/lib/db'
+import { getSimilarSeries } from '@/lib/similar-server'
 import { SeriesDetailsClient } from '@/components/pages/SeriesDetailsClient'
 
 export const revalidate = 60
@@ -151,6 +152,10 @@ export default async function SeriesDetails({ params }: PageProps) {
   }
 
   const series = JSON.parse(JSON.stringify(seriesData))
+
+  /* «قد يعجبك أيضاً» — SSR من series_similar_cache (~15 صفًا بالـPK بدل نداء
+     الـAPI القديم ثقيل القراءة) — روابط داخلية حقيقية في HTML أولي. */
+  const initialSimilar = await getSimilarSeries(Number(seriesData.tmdb_id))
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'TVSeries',
@@ -203,7 +208,7 @@ export default async function SeriesDetails({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-      <SeriesDetailsClient series={series} seasons={seasons} />
+      <SeriesDetailsClient series={series} seasons={seasons} initialSimilar={initialSimilar} />
     </>
   )
 }
