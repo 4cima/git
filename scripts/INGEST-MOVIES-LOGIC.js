@@ -37,54 +37,43 @@ const stats = {
 const actorCache = new Map()
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// SLUG GENERATOR
+// SLUG GENERATOR — المرحلة 4: المولّد الموحّد (نسخة CJS من src/lib/slugGenerator.ts)
+// toSlug يعرب + ينظّف الشرطات + يرجع null للفاضي. لا Date.now() أبدًا.
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function toSlug(text) {
-  if (!text) return 'unknown'
-  return text.toString().toLowerCase()
-    .replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e')
-    .replace(/[ìíîï]/g, 'i').replace(/[òóôõö]/g, 'o')
-    .replace(/[ùúûü]/g, 'u').replace(/[ñ]/g, 'n')
-    .replace(/[ç]/g, 'c').replace(/[&]/g, 'and')
-    .replace(/['"''""]/g, '')
-    .replace(/[^a-z0-9\s-]/g, ' ')
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .trim()
-}
+const { toSlug } = require('./services/slug-generator')
 
-function generateUniqueSlug(titleEn, year, primaryGenre, table) {
+function generateUniqueSlug(titleEn, year, primaryGenre, table, tmdbId) {
   const base = toSlug(titleEn)
-  
-  if (!base || base === 'unknown') {
-    return `unknown-${Date.now()}`
+
+  if (!base) {
+    // fallback حتمي (لا Date.now): tmdb_id فريد ⇒ slug فريد
+    return `${table}-${tmdbId ?? 'unknown'}`
   }
-  
+
   // السياسة المعتمدة: base → base-year → base-year-genre
   const checks = [
     base,
     year ? `${base}-${year}` : null,
-    year && primaryGenre ? `${base}-${year}-${toSlug(primaryGenre)}` : null,
+    year && primaryGenre ? `${base}-${year}-${toSlug(primaryGenre) || 'genre'}` : null,
   ].filter(Boolean)
 
   for (const slug of checks) {
     if (!db.prepare(`SELECT tmdb_id FROM ${table} WHERE slug = ?`).get(slug)) return slug
   }
-  
+
   // رقم تسلسلي (نادر)
   const lastAttempt = checks[checks.length - 1] || base
   for (let i = 2; i <= 999; i++) {
     const s = `${lastAttempt}-${i}`
     if (!db.prepare(`SELECT tmdb_id FROM ${table} WHERE slug = ?`).get(s)) return s
   }
-  
-  return `${base}-${Date.now()}`
+
+  return `${table}-${tmdbId ?? base}`
 }
 
-function generatePersonSlug(nameEn) {
+function generatePersonSlug(nameEn, personId) {
   // People table doesn't have slug column - just use name
-  return toSlug(nameEn) || `person-${Date.now()}`
+  return toSlug(nameEn) || `person-${personId ?? 'unknown'}`
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -476,7 +465,7 @@ async function processMovie(tmdbId) {
 
     const release_year  = movie.release_date ? parseInt(movie.release_date.split('-')[0]) : null
     const primary_genre = movie.genres?.[0]?.name?.toLowerCase() || null
-    const slug = generateUniqueSlug(title_en, release_year, primary_genre, 'movies')
+    const slug = generateUniqueSlug(title_en, release_year, primary_genre, 'movies', movie.id)
 
     // ── الوصف ──
     const overview_en = movie.overview || null

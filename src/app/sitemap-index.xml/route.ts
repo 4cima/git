@@ -33,9 +33,10 @@ function shardCount(value: unknown): number {
  *
  * Lists ONLY shards that contain links:
  *   /sitemap/static.xml            (static + genre landing pages)
- *   /sitemap/priority.xml          (top 2000 fresh items — indexing fuel)
+ *   /sitemap/priority.xml          (top 3000 movies + 2000 series by popularity)
  *   /sitemap/movies-0.xml …N       (10000 per shard, sequential from 0)
  *   /sitemap/series-0.xml …N       (10000 per shard, sequential from 0)
+ * (priority.xml أُزيل ثم عاد في المرحلة 3 — استعلام مباشر popularity + روابط فريدة)
  *
  * العدّ من جدول sitemap_urls (نفس مصدر الروابط — لا انحراف ممكن): عدد الشظايا
  * = MAX(shard)+1، فلا ملفات فارغة ولا shards زائدة (404 نظيف للقديم).
@@ -65,11 +66,10 @@ export async function GET(request: Request) {
     const movieParts = shardCount(rows[0]?.movie_shards)
     const seriesParts = shardCount(rows[0]?.series_shards)
 
-    const locs: string[] = [`${SITEMAP_BASE_URL}/sitemap/static.xml`]
-
-    if (movieParts > 0 || seriesParts > 0) {
-      locs.push(`${SITEMAP_BASE_URL}/sitemap/priority.xml`)
-    }
+    const locs: string[] = [
+      `${SITEMAP_BASE_URL}/sitemap/static.xml`,
+      `${SITEMAP_BASE_URL}/sitemap/priority.xml`,
+    ]
 
     for (let i = 0; i < movieParts; i++) {
       locs.push(`${SITEMAP_BASE_URL}/sitemap/movies-${i}.xml`)

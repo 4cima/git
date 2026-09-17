@@ -28,6 +28,15 @@ export const SITEMAP_BASE_URL = 'https://4cima.com';
 export const SHARD_SIZE = 10000;
 export const PRIORITY_PER_TYPE = 1000;
 
+/**
+ * المرحلة 3 — priority.xml يستعلم movies/tv_series مباشرة (بدون sitemap_urls):
+ * أفضل 3,000 فيلم + 2,000 مسلسل حسب popularity، بشرط filter_status='clean'
+ * + سنة ≥ 2000 + slug نظيف (نفس قواعد scripts/rebuild-sitemap-quality.js).
+ */
+export const PRIORITY_MOVIE_COUNT = 3000;
+export const PRIORITY_SERIES_COUNT = 2000;
+export const PRIORITY_MIN_YEAR = 2000;
+
 /** Index cache: rebuilt often, tiny. Shards cache: big, stable. */
 /* كاش الحافة: قائمة الشظايا (العدّ) لا تتغير كل 10 دقائق — يوم كامل.
    الأثر الفعلي على D1 يأتي من كاش ذاكرة الـWorker في مساري الفهرس والشظايا. */

@@ -67,6 +67,14 @@ function detailFilterSql(table, yearColumn) {
   );
 }
 
+/* ── فلتر الجودة على مستوى slug (المرحلة 2.4) — أي محتوى جديد بـslug فاشل ────
+   لا يُدرج في sitemap_urls. النفي المزدوج لنفس قواعد scripts/rebuild-sitemap-quality.js:
+   slug موجود، غير فارغ، > 1 حرف، لا يبدأ/ينتهي بـ'-'، لا يحتوي '--'، ليس رقمًا فقط. */
+const SLUG_QUALITY_WHERE =
+  `slug IS NOT NULL AND slug != '' AND LENGTH(slug) > 1 ` +
+  `AND slug NOT LIKE '-%' AND slug NOT LIKE '%-' AND slug NOT LIKE '%--%' ` +
+  `AND slug GLOB '*[^0-9]*'`;
+
 /* ── DDL (نفس SQL المعتمد: ordinal + PK + فهرسان غير مغطّيين) ─────────────── */
 const DDL_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS sitemap_urls (
@@ -93,7 +101,7 @@ function insertSql({ mediaType, table, yearColumn }) {
     `SELECT '${mediaType}', rn, (rn - 1) / ${SHARD_SIZE}, ((rn - 1) % ${SHARD_SIZE}) + 1, slug, updated_at FROM (\n` +
     `  SELECT ROW_NUMBER() OVER (ORDER BY tmdb_id ASC, id ASC) AS rn, slug, updated_at\n` +
     `  FROM ${table}\n` +
-    `  WHERE ${CLEAN_ITEM_SQL} AND ${detailFilterSql(table, yearColumn)}\n` +
+    `  WHERE ${CLEAN_ITEM_SQL} AND ${detailFilterSql(table, yearColumn)} AND ${SLUG_QUALITY_WHERE}\n` +
     `)`
   );
 }

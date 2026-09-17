@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import {
   SITEMAP_BASE_URL,
   SHARD_SIZE,
-  PRIORITY_PER_TYPE,
+  PRIORITY_MOVIE_COUNT,
+  PRIORITY_SERIES_COUNT,
+  PRIORITY_MIN_YEAR,
   SHARD_CACHE_CONTROL,
   sitemapQuery,
   urlset,
@@ -114,23 +116,36 @@ async function buildStatic(): Promise<string[]> {
 }
 
 /**
- * Top 1000 per type by real updated_at (DESC) — 1000 newest movies + 1000 newest series.
- *
- * من idx_sitemap_updated (media_type, updated_at DESC, slug): فهرس مغطٍّ ⇒
- * rows_read = 1,000 لكل نوع بدل مسح movies/tv_series كاملًا (332,090 / 100,236).
- * نفس مجموعة روابط التفاصيل (B) لأن الجدول بُني بنفس فلتر المجموعة.
+ * المرحلة 3 — أفضل 3,000 فيلم + 2,000 مسلسل حسب popularity، مستعلمة مباشرة
+ * من movies/tv_series (بدون sitemap_urls) ⇒ روابط فريدة من قمة الفهرس الشعبي.
+ * قد تتداخل مع شظايا movies-N/series-N عن قصد — الهدف منحها أولوية زحف.
+ * الفلتر: filter_status='clean' + سنة ≥ 2000 + slug نظيف (قواعد
+ * scripts/rebuild-sitemap-quality.js — بلا slugs تبدأ/تنتهي بـ'-' أو رقمية فقط).
+ * LIMIT يقلع من idx_movies_popularity / idx_tv_popularity (popularity DESC)
+ * ⇒ قراءة محدودة، والكاش (ذاكرة 24h + Cache API) يجعل الدفع مرة كل 24 ساعة.
  */
 async function buildPriority(): Promise<string[]> {
   const out: string[] = []
-  for (const mediaType of ['movie', 'series'] as const) {
-    const prefix = mediaType === 'movie' ? '/movies/' : '/series/'
+  const slugQuality =
+    `slug IS NOT NULL AND slug != '' AND LENGTH(slug) > 1 ` +
+    `AND slug NOT LIKE '-%' AND slug NOT LIKE '%-' AND slug NOT LIKE '%--%' ` +
+    `AND slug GLOB '*[^0-9]*'`
+  const sources = [
+    { table: 'movies', yearCol: 'release_year', limit: PRIORITY_MOVIE_COUNT, prefix: '/movies/' },
+    { table: 'tv_series', yearCol: 'first_air_year', limit: PRIORITY_SERIES_COUNT, prefix: '/series/' },
+  ] as const
+  for (const s of sources) {
     const rows = await sitemapQuery<SlugRow>(
-      `SELECT slug, updated_at FROM sitemap_urls
-        WHERE media_type = ?
-       ORDER BY updated_at DESC LIMIT ${PRIORITY_PER_TYPE}`,
-      [mediaType]
+      `SELECT slug, updated_at FROM ${s.table}
+        WHERE filter_status = 'clean' AND tmdb_id IS NOT NULL
+          AND ${s.yearCol} >= ${PRIORITY_MIN_YEAR}
+          AND ${slugQuality}
+       ORDER BY popularity DESC
+        LIMIT ${s.limit}`
     )
-    out.push(...rows.map((r) => urlEntry(`${SITEMAP_BASE_URL}${prefix}${r.slug}`, r.updated_at, ITEM_PRIORITY)))
+    out.push(
+      ...rows.map((r) => urlEntry(`${SITEMAP_BASE_URL}${s.prefix}${r.slug}`, r.updated_at, ITEM_PRIORITY))
+    )
   }
   return out
 }
