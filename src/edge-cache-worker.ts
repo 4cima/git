@@ -129,7 +129,16 @@ function withHeader(res: Response, value: "HIT" | "MISS"): Response {
 
 export default {
   async fetch(request: Request, env: Env, ctx: WorkerCtx): Promise<Response> {
-    if (!edgeCache || request.method !== "GET") {
+    // ⚠️ درس 18/9: Cache API بتكلاود فلير بتتجاهل Vary تمامًا (مطابقة بالـURL بس) —
+    // طلبات راوتر Next (RSC/prefetch) لو اتخزنت تحت نفس الـURL بتبوّظ الصفحة للزوار
+    // (سودة + JSON خام). فطلبات الراوتر بتعدي خالص، ونتأكد إن المخزّن HTML فقط.
+    const isRouterDataRequest =
+      request.headers.has("rsc") ||
+      request.headers.has("next-router-prefetch") ||
+      request.headers.has("next-router-state-tree") ||
+      request.headers.has("next-router-segment-prefetch");
+
+    if (!edgeCache || request.method !== "GET" || isRouterDataRequest) {
       return handler.fetch(request, env, ctx);
     }
 
@@ -158,7 +167,15 @@ export default {
 
     if (shouldCache) {
       const ttl = pageTtl ? (res.status === 200 ? pageTtl : NOT_FOUND_TTL) : 0;
+      const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
+      const looksLikeHtml = contentType.includes("text/html");
+      const looksLikeJson = contentType.includes("application/json");
+      // الصفحات: HTML فقط — أي رد تاني (RSC/x-component/redirect) ميتخزنش أبدًا
+      if ((pageTtl && !looksLikeHtml) || (!pageTtl && !looksLikeJson)) {
+        return withHeader(res, "MISS");
+      }
       const headers = new Headers(res.headers);
+      headers.delete("vary"); // الـCache API بيتجاهل Vary أصلًا — نشيله من النسخة المخزنة احتياطًا
       if (pageTtl) {
         // الحافة سنة/أسبوع حسب النوع؛ المتصفح 5 دقايق للـ200 والـ404 صفر
         const browserTtl = res.status === 200 ? BROWSER_TTL : 0;
