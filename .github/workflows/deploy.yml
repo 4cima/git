@@ -2,7 +2,7 @@ name: Build and Deploy to Cloudflare Workers
 
 on:
   push:
-    branches: [ cloudflare-migration ]
+    branches: [ cloudflare-migration, main ]
   workflow_dispatch:
 
 concurrency:
