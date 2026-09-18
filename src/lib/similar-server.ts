@@ -40,13 +40,19 @@ async function getSimilar(type: 'movie' | 'tv', tmdbId: number): Promise<any[]> 
     if (queryIds.length === 0) return []
 
     const placeholders = queryIds.map(() => '?').join(',')
+
+    /* صيغة IFNULL بدل (X IS NULL OR X IN ...): صيغة الـOR بتخلّي مخطط SQLite
+       يشغّل MULTI-INDEX OR على فهرس filter_status (مسح الكتالوج النظيف مرتين،
+       ~145 ألف صفًا مقاسة) ويتجاهل فهرس tmdb_id الفريد — D1 من غير sqlite_stat1
+       فتقديراته بايظة. الصياغة هنا (نفس منطق الفهارس الجزئية idx_*_listing)
+       بتخلّي الخطة SEARCH بالـtmdb_id = ~12-24 صفًا. المعنى منطقيًا مطابق حرفيًا. */
     const rows =
       type === 'movie'
         ? await executeAll<any>(
             `SELECT ${MOVIE_FIELDS}
              FROM movies
              WHERE tmdb_id IN (${placeholders})
-               AND (filter_status IS NULL OR filter_status IN ('clean', 'reviewed_approved'))
+               AND IFNULL(filter_status, 'clean') IN ('clean', 'reviewed_approved')
                AND (release_year IS NOT NULL AND release_year >= 2000)`,
             queryIds
           )
@@ -54,7 +60,7 @@ async function getSimilar(type: 'movie' | 'tv', tmdbId: number): Promise<any[]> 
             `SELECT ${SERIES_FIELDS}
              FROM tv_series
              WHERE tmdb_id IN (${placeholders})
-               AND (filter_status IS NULL OR filter_status IN ('clean', 'reviewed_approved'))
+               AND IFNULL(filter_status, 'clean') IN ('clean', 'reviewed_approved')
                AND (first_air_year IS NOT NULL AND first_air_year >= 2000)`,
             queryIds
           )
