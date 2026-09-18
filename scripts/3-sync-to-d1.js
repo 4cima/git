@@ -28,7 +28,8 @@
  *   1) rebuildShortTitles()     — قوائم البحث القصيرة
  *   2) purgeCloudflareCache()   — مسح كاش الحافة
  *   3) rebuildGenreIndex()      — فهرس التصنيفات المُجمّع (build-genre-index.js)
- *   4) rebuildSitemapUrls()     — جدول السايت ماب (build-sitemap-urls.js --remote --apply)
+ *   4) rebuildGenreLists()      — قوائم الأنواع (6-precompute-genre-lists.js)
+ *   5) rebuildSitemapUrls()     — جدول السايت ماب (build-sitemap-urls.js --remote --apply)
  *     الأوضاع: --limit/--tmdb-id/--ids-file تمر بالسلسلة كاملة؛
  *     --rebuild-short-titles مستقل بلا مزامنة محتوى؛ لا يوجد جديد ⇒ لا سلسلة.
  */
@@ -508,6 +509,35 @@ async function rebuildGenreIndex() {
   console.log('✅ فهرس التصنيفات محدّث');
 }
 
+// ── Genre lists precompute (post-sync) ────────────────────────────────────────
+
+/**
+ * إعادة بناء قوائم الأنواع المُجمّعة (list_movies_genre / list_series_genre +
+ * list_*_top_rated) بعد نجاح المزامنة — صفحات /movies|series/genres/{slug}/page/N
+ * وفلتر ?genre= في الـAPIs يقرأون منها، وبدون إعادة البناء تظل على اللقطة السابقة
+ * (الجدول المُحذَّف: `filter_status = 'clean'` — أضيق من شرط الزائر — فأي أعمال
+ * غير نظيفة تُستبعد أصلًا والفارق فقط أعمال الزائر المُعتمَدة المُتأخرة).
+ *
+ * سكربت مستقل في عملية منفصلة (process.execPath + spawnSync) — نفس أسلوب
+ * rebuildGenreIndex: أي فشل يُسجَّل فقط ولا يوقف المزامنة (القوائم الحالية تظل
+ * صالحة لما قبلها؛ أعد تشغيله يدويًا لاحقًا: node scripts/6-precompute-genre-lists.js).
+ */
+async function rebuildGenreLists() {
+  const { spawnSync } = require('child_process');
+  const script = path.join(__dirname, '6-precompute-genre-lists.js');
+  console.log('\n📚 إعادة بناء قوائم الأنواع (6-precompute-genre-lists) ...');
+  const res = spawnSync(process.execPath, [script], { stdio: 'inherit' });
+  if (res.error) {
+    console.error('⚠  فشل تشغيل 6-precompute-genre-lists:', res.error.message);
+    return;
+  }
+  if (res.status !== 0) {
+    console.error(`⚠  6-precompute-genre-lists انتهى بخطأ (exit ${res.status}) — القوائم بقت على اللقطة السابقة. أعد تشغيله يدويًا لاحقًا.`);
+    return;
+  }
+  console.log('✅ قوائم الأنواع محدّثة');
+}
+
 // ── Sitemap URLs rebuild (post-sync) ──────────────────────────────────────────
 
 /**
@@ -719,6 +749,11 @@ async function main() {
   // /api/movies?genre= and /api/series?genre= (failure here is logged, never fatal —
   // الوصل للدالة يعني المزامنة نجحت بالكامل)
   await rebuildGenreIndex();
+
+  // Rebuild the precomputed genre lists (list_*_genre + list_*_top_rated) so
+  // /movies|series/genres/{slug}/page/N and the ?genre= filters serve fresh content
+  // (failure logged, never fatal — same policy)
+  await rebuildGenreLists();
 
   // Rebuild sitemap_urls so newly synced content appears in /sitemap-index.xml
   // and the shards (failure logged, never fatal — same policy)
