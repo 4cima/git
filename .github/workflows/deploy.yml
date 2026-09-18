@@ -41,3 +41,18 @@ jobs:
         CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
 
+    # إلزامي بعد كل نشر: النشر بيبدّل ملفات _next/static بأسماء (hashes) جديدة،
+    # وصفحات HTML المكتاشة على الحافة (شهر) بتطلب الأسماء القديمة → 404 وصفحات مكسورة.
+    # درس 18/9: الموقع انكسر فعليًا بعد نشر عادي مالوش مسح كاش. المسح الشامل هو
+    # نفس سلوك سلسلة المزامنة (3-sync-to-d1.js) — أول طلب بعد المسح MISS والنسخة بتتحط لحظة بعده.
+    - name: Purge edge cache (new build = new asset hashes)
+      if: success()
+      run: |
+        curl -sS -f -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+          -H "Authorization: Bearer ${CF_CACHE_PURGE_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d '{"purge_everything": true}'
+      env:
+        CF_CACHE_PURGE_TOKEN: ${{ secrets.CF_CACHE_PURGE_TOKEN }}
+        CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+
