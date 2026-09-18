@@ -70,15 +70,25 @@ const PAGE_RULES: Array<{ exact?: string[]; prefix?: string[]; ttl: number }> = 
 ];
 
 /**
- * APIs معلنة كاشها بنفسها (s-maxage في ردها) — معطّلة حاليًا لأسباب مكتشفة على الإنتاج:
- * قواعد كاش الـzone النائمة في الداشبورد بتتصحى بمجرد ما الرد يدخل الكاش وبتفرض browser TTL
- * 4 ساعات على الـAPIs (اترصد فعليًا: max-age=14400 على home-sections حتى مع max-age=0 صريح
- * في النسخة المخزنة — التجاوز بيحصل فوق كود الـWorker). النتيجة: زائر راجع يشوف أقسام
- * الهوم قديمة من متصفحه.
- * لتفعيلها لاحقًا: تنظيف/تعديل قواعد كاش الـzone من الداشبورد (Browser TTL: respect origin
- * أو إلغاء الـoverride) ثم إعادة الأسماء هنا — الميكانيزم تحت جاهز وبيحترم s-maxage بتاع الرد.
+ * APIs معلنة كاشها بنفسها (s-maxage في ردها) — الكاش بيحترم إعلانها:
+ * home-sections (30 دقيقة) • movies/series/listing-arabic/genres (5 دقايق) • tv (ساعة)
+ * نسخها المخزنة بتاخد max-age=0 صريح — المتصفح بيرجع يتحقق كل مرة والحافة بتخدم من الكاش.
+ * (اتوقفت يوم 2026-09-18 لأن Browser Cache TTL العام كان "4 hours" بيفرض نفسه على المتصفح —
+ *  اتحل بتغييره إلى Respect Existing Headers + حذف قواعد الكاش المتداخلة.)
  */
-const API_PREFIXES: string[] = [];
+const API_PREFIXES = [
+  "/api/home-sections",
+  "/api/movies",
+  "/api/series",
+  "/api/listing/arabic",
+  "/api/genres",
+  "/api/tv/",
+];
+
+/** كاش المتصفح للصفحات — نفس سلوك الـ5 دقايق اللي كانت Rule 1 بتفرضه، بس تحت إدارتنا */
+const BROWSER_TTL = 5 * 60;
+/** كاش المتصفح للـAPIs المعلنة — 5 دقايق (الحد الأدنى من نطاق المواصفة 5-30 د) */
+const API_BROWSER_TTL = 5 * 60;
 
 function getPageTtl(pathname: string): number | undefined {
   for (const rule of PAGE_RULES) {
@@ -146,13 +156,15 @@ export default {
       const ttl = pageTtl ? (res.status === 200 ? pageTtl : NOT_FOUND_TTL) : 0;
       const headers = new Headers(res.headers);
       if (pageTtl) {
-        // نسخة الحافة بتتحدد بـTTL موحد؛ max-age=0 عشان المتصفح ما يكاشش HTML أصلًا
-        headers.set("cache-control", `public, s-maxage=${ttl}, max-age=0`);
+        // نسخة الحافة بتتحدد بـTTL موحد؛ المتصفح 5 دقايق للـ200 (بديل Browser TTL بتاع
+        // القاعدة المحذوفة) والـ404 من غير كاش متصفح
+        const browserTtl = res.status === 200 ? BROWSER_TTL : 0;
+        headers.set("cache-control", `public, s-maxage=${ttl}, max-age=${browserTtl}`);
       } else {
-        // الـAPI: نفس سياسة الأصل لكن max-age=0 صريح — من غيره Cloudflare بيرفع الـbrowser
-        // TTL للـedge TTL بتاع قواعد الـzone (اترصد فعليًا: max-age=14400 على home-sections)
-        const cc = (res.headers.get("cache-control") ?? "").replace(/max-age=\d+/gi, "max-age=0");
-        headers.set("cache-control", /max-age=/i.test(cc) ? cc : `${cc}, max-age=0`);
+        // الـAPI: سياسة الأصل (s-maxage + stale-while-revalidate) مع max-age=5 دقايق
+        // للمتصفح — Zone Setting بقى Respect Existing Headers فالهيدر بيوصل كما هو
+        const cc = (res.headers.get("cache-control") ?? "").replace(/max-age=\d+/gi, `max-age=${API_BROWSER_TTL}`);
+        headers.set("cache-control", /max-age=/i.test(cc) ? cc : `${cc}, max-age=${API_BROWSER_TTL}`);
       }
       headers.set("x-edge-cache", "MISS");
       const edgeCopy = new Response(res.clone().body, {
