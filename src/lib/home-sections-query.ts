@@ -72,27 +72,28 @@ export function homeSectionGenreQuery(
   return { sql, params }
 }
 
-/** استعلام الأفلام العربية (أحدث 50) */
+/** استعلام الأفلام العربية (أحدث 50) — صيغة IFNULL بدل (IS NULL OR IN ...) لنفس
+ *  سبب إصلاح similar-server: منع MULTI-INDEX OR وإبقاء idx_*_original_lang قائدًا */
 export const ARABIC_MOVIES_SQL = `
   SELECT 'movie' AS media_type, m.id, m.tmdb_id, m.slug,
           m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
           m.vote_average, m.release_year AS year, m.overview_ar, m.genres_json
    FROM movies m
    WHERE m.original_language = 'ar'
-     AND (m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL)
+     AND IFNULL(m.filter_status, 'clean') IN ('clean', 'reviewed_approved')
      AND m.slug IS NOT NULL AND m.tmdb_id IS NOT NULL
      AND m.release_year >= ?
    ORDER BY m.popularity DESC
    LIMIT ?`
 
-/** استعلام المسلسلات العربية (أحدث 50) */
+/** استعلام المسلسلات العربية (أحدث 50) — نفس صيغة IFNULL */
 export const ARABIC_SERIES_SQL = `
   SELECT 'tv' AS media_type, s.id, s.tmdb_id, s.slug,
           s.name_ar AS title_ar, s.name_en AS title_en, s.poster_path, s.backdrop_path,
           s.vote_average, s.first_air_year AS year, s.overview_ar, s.genres_json
    FROM tv_series s
    WHERE s.original_language = 'ar'
-     AND (s.filter_status IN ('clean', 'reviewed_approved') OR s.filter_status IS NULL)
+     AND IFNULL(s.filter_status, 'clean') IN ('clean', 'reviewed_approved')
      AND s.slug IS NOT NULL AND s.tmdb_id IS NOT NULL
      AND s.first_air_year >= ?
    ORDER BY s.popularity DESC

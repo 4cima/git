@@ -32,12 +32,15 @@ export const dynamic = 'force-dynamic' // D1 not available at build time on CI
  *  بوابتان: أفلام عربي (/movies/lang/ar) ومسلسلات عربي (/series/lang/ar). */
 export default async function ArabicOverviewPage() {
   try {
+    /* صيغة IFNULL بدل (filter_status IS NULL OR filter_status IN ...) — نفس إصلاح
+       similar-server: صيغة الـOR بتفتح باب MULTI-INDEX OR على فهرس filter_status،
+       والفهرس القائد المطلوب هنا idx_*_original_lang بيفضل ثابت مهما تغيّرت الإحصائيات. */
     const [topMovies, topSeries] = await Promise.all([
       executeAll(
         `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, vote_average, release_year, overview_ar, genres_json
          FROM movies
          WHERE original_language = 'ar'
-           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+           AND IFNULL(filter_status, 'clean') IN ('clean', 'reviewed_approved')
            AND slug IS NOT NULL AND tmdb_id IS NOT NULL
            AND poster_path IS NOT NULL
          ORDER BY popularity DESC LIMIT 12`,
@@ -47,7 +50,7 @@ export default async function ArabicOverviewPage() {
         `SELECT id, tmdb_id, slug, name_ar as title_ar, name_en as title_en, poster_path, vote_average, first_air_year as release_year, overview_ar, genres_json
          FROM tv_series
          WHERE original_language = 'ar'
-           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+           AND IFNULL(filter_status, 'clean') IN ('clean', 'reviewed_approved')
            AND slug IS NOT NULL AND tmdb_id IS NOT NULL
            AND poster_path IS NOT NULL
          ORDER BY popularity DESC LIMIT 12`,

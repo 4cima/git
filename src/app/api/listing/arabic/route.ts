@@ -35,6 +35,10 @@ export async function GET(request: NextRequest) {
     const sortColumn = validSorts.includes(sort) ? sort : 'popularity'
 
     if (type === 'movie') {
+      /* صيغة IFNULL بدل (filter_status IS NULL OR filter_status IN ...): صيغة الـOR
+         بتخلّي مخطط SQLite يرجّح MULTI-INDEX OR على فهرس filter_status (مسح الكتالوج
+         مرتين) بمجرد ما الترتيب/الإحصائيات تخلّيه يسيب فهرس اللغة — نفس إصلاح
+         similar-server. الفهرس القائد هنا idx_movies_original_lang ويفضل ثابت. */
       const rows = await executeAll(
         `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
                 vote_average, release_year, overview_ar, genres_json, popularity,
@@ -42,7 +46,7 @@ export async function GET(request: NextRequest) {
                 'movie' as media_type
          FROM movies
           WHERE original_language = 'ar'
-            AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+            AND IFNULL(filter_status, 'clean') IN ('clean', 'reviewed_approved')
             AND release_year IS NOT NULL AND release_year >= 2000
             AND slug IS NOT NULL AND tmdb_id IS NOT NULL
           ORDER BY ${sortColumn} ${order}
@@ -70,7 +74,7 @@ export async function GET(request: NextRequest) {
               'tv' as media_type
        FROM tv_series
        WHERE original_language = 'ar'
-         AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
+         AND IFNULL(filter_status, 'clean') IN ('clean', 'reviewed_approved')
          AND first_air_year IS NOT NULL AND first_air_year >= 2000
          AND slug IS NOT NULL AND tmdb_id IS NOT NULL
        ORDER BY ${sortColumn} ${order}
