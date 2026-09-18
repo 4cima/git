@@ -665,35 +665,6 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
               </div>
             </div>
 
-            {/* Trailer Modal */}
-            {isModalOpen && trailerUrl && (
-              <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center trailer-modal" onClick={handleCloseTrailer}>
-                <div className="relative w-full h-full flex items-center justify-center p-1 sm:p-0" onClick={(e) => e.stopPropagation()}>
-                  <div className="w-full h-full max-w-full overflow-hidden relative" style={{aspectRatio: '16/9', maxHeight: '100vh'}}>
-                    <iframe ref={iframeRef} src={trailerUrl} className="absolute inset-0 w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{border: 'none'}} />
-                    <div className="absolute top-0 left-0 right-0 h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black via-black to-transparent z-[10]" />
-                    <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-14 md:h-16 bg-black z-[3]" />
-                  </div>
-                  <button onClick={handleCloseTrailer} className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-all flex items-center gap-1.5 z-50 shadow-lg text-xs sm:text-sm font-bold">
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    <span>إغلاق</span>
-                  </button>
-                  <div className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-[100px] sm:right-[120px] md:right-[140px] z-50 flex items-center gap-2" onMouseEnter={() => setShowVolumeSlider(true)} onMouseLeave={() => setShowVolumeSlider(false)} dir="ltr">
-                    <button onClick={toggleMute} aria-label={isMuted || volume === 0 ? 'إلغاء كتم الصوت' : 'كتم الصوت'} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center shadow-lg">
-                      {isMuted || volume === 0 ? (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>)
-                      : volume < 50 ? (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 9v6h4l5 5V4l-5 5H7z"/></svg>)
-                      : (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>)}
-                    </button>
-                    <div className={`transition-all duration-200 overflow-hidden ${showVolumeSlider ? 'w-24 opacity-100' : 'w-0 opacity-0'}`}>
-                      <input type="range" min="0" max="100" value={isMuted ? 0 : volume} onChange={handleVolumeChange} className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, #fff ${isMuted ? 0 : volume}%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume}%)`}} />
-                    </div>
-                  </div>
-                  <button onClick={toggleFullscreen} aria-label="ملء الشاشة" className="absolute bottom-2 sm:bottom-3 md:bottom-4 left-2 sm:left-3 md:left-4 w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center z-50 shadow-lg">
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* عمود 3: طاقم العمل — بنفس ارتفاع البوستر، صورة يسار + اسم من اليسار لليمين */}
@@ -760,6 +731,37 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
                     initialCardState={(item.tmdb_id || item.id) ? similarStates[`tv-${item.tmdb_id || item.id}`] : undefined}
                   />
                 ))}
+          </div>
+        </div>
+      )}
+
+      {/* Trailer Modal — في مستوى الجذر عمدًا: حاوية المحتوى (relative z-10) كانت بتعمل stacking context
+          بيحبس z-[100] جواها، فقسم «قد يعجبك» الشقيق (نفس z-10 وجاي بعده في الـDOM) كان يظهر فوق النافذة */}
+      {isModalOpen && trailerUrl && (
+        <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center trailer-modal" onClick={handleCloseTrailer}>
+          <div className="relative w-full h-full flex items-center justify-center p-1 sm:p-0" onClick={(e) => e.stopPropagation()}>
+            <div className="w-full h-full max-w-full overflow-hidden relative" style={{aspectRatio: '16/9', maxHeight: '100vh'}}>
+              <iframe ref={iframeRef} src={trailerUrl} className="absolute inset-0 w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{border: 'none'}} />
+              <div className="absolute top-0 left-0 right-0 h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black via-black to-transparent z-[10]" />
+              <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-14 md:h-16 bg-black z-[3]" />
+            </div>
+            <button onClick={handleCloseTrailer} className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-2 sm:right-3 md:right-4 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-all flex items-center gap-1.5 z-50 shadow-lg text-xs sm:text-sm font-bold">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              <span>إغلاق</span>
+            </button>
+            <div className="absolute bottom-2 sm:bottom-3 md:bottom-4 right-[100px] sm:right-[120px] md:right-[140px] z-50 flex items-center gap-2" onMouseEnter={() => setShowVolumeSlider(true)} onMouseLeave={() => setShowVolumeSlider(false)} dir="ltr">
+              <button onClick={toggleMute} aria-label={isMuted || volume === 0 ? 'إلغاء كتم الصوت' : 'كتم الصوت'} className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center shadow-lg">
+                {isMuted || volume === 0 ? (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>)
+                : volume < 50 ? (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 9v6h4l5 5V4l-5 5H7z"/></svg>)
+                : (<svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>)}
+              </button>
+              <div className={`transition-all duration-200 overflow-hidden ${showVolumeSlider ? 'w-24 opacity-100' : 'w-0 opacity-0'}`}>
+                <input type="range" min="0" max="100" value={isMuted ? 0 : volume} onChange={handleVolumeChange} className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, #fff ${isMuted ? 0 : volume}%, rgba(255,255,255,0.2) ${isMuted ? 0 : volume}%)`}} />
+              </div>
+            </div>
+            <button onClick={toggleFullscreen} aria-label="ملء الشاشة" className="absolute bottom-2 sm:bottom-3 md:bottom-4 left-2 sm:left-3 md:left-4 w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center z-50 shadow-lg">
+              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
           </div>
         </div>
       )}
