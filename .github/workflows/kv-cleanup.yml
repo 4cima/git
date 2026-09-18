@@ -9,6 +9,11 @@ on:
   schedule:
     - cron: '0 3 * * *'   # 3 صباحًا UTC — بعد باكاب D1 (2 صباحًا) بساعتين
   workflow_dispatch:        # تشغيل يدوي من تبويب Actions
+    inputs:
+      limit:
+        description: 'عدد المفاتيح اللي تتحذف في التشغيلة (0 = تحليل فقط)'
+        required: false
+        default: '1000'
 
 concurrency:
   group: kv-cleanup
@@ -28,8 +33,10 @@ jobs:
 
     - name: Run KV graveyard cleanup (dry first)
       run: node scripts/cleanup-kv-graveyard.js --dry
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
     - name: Run KV graveyard cleanup (real)
-      run: node scripts/cleanup-kv-graveyard.js
+      run: node scripts/cleanup-kv-graveyard.js --limit=${{ inputs.limit || '1000' }}
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
