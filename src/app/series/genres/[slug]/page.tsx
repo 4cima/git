@@ -2,8 +2,8 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { SeriesGenrePageClient } from '@/components/pages/SeriesGenrePageClient'
-import { buildTvGenreClause, getTvGenreIds, resolveGenreSlug } from '@/lib/genre-siblings'
-import { filterExcludedGenres, EXCLUDED_GENRE_SQL_CLAUSE } from '@/utils/excludedGenres'
+import { buildTvGenreClause, getTvGenreIds, TV_DISAMBIGUATED_GENRES, resolveGenreSlug } from '@/lib/genre-siblings'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 
 interface PageProps {
@@ -58,39 +58,54 @@ export default async function SeriesGenrePage({ params }: PageProps) {
     }
 
     /* جولة التفريق: صفحة التصنيف تبقى على سلاجها واسمها الأصليين — أكشن / مغامرة.
-       الاستعلام يُبنى بقاعدة تفريق ID حدّي عبر json_each (buildTvGenreClause). */
+       مصدر الصف: series_by_genre (partition النوع بمعرّفات getTvGenreIds — يعاد بناؤه
+       بعد كل مزامنة، مفلتر مسبقًا: clean/approved + سنة ≥ 2000 + استبعاد التصنيفات
+       الأربعة) ⇒ قراءات محدودة بدل استعلام json_each الحي (~101K صف — MULTI-INDEX OR).
+       للأنواع ذات قواعد تفريق (28/12/27/14/878) يُطبَّق buildTvGenreClause على الصفوف
+       المنضَمة من الحي — الـpartition وحده لا يكفيها. لغيرها مطابقة الـID مضمونة بالبناء. */
     const displayGenre = plainGenre
 
     const gid = Number(genre.tmdb_id)
-    const tvClause = buildTvGenreClause(gid)
-    const whereClause = tvClause.sql
-    const genreParams = tvClause.params
     /* معرّفات الكاش المُجمّع (جولة التفريق: 28/12→10759، 53→9648+80، 10752→10768) */
     const genreIds = getTvGenreIds(gid)
+    const isSpecial = TV_DISAMBIGUATED_GENRES.has(gid)
+    /* الأنواع الخاصة تحتاج مخزون أوسع قبل الفلترة على الحي؛ لغيرها الـpartition حاسم */
+    const buffer = isSpecial ? 1000 : LISTING_PAGE_SIZE + 1
 
-    // استبعاد التصنيفات الأربعة (Talk Show + War & Politics + Documentary + History) داخل
-    // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT LISTING_PAGE_SIZE + 1: hasMore يُحسب
-    // من نتيجة SQL ويُضمن المعروض ≤ LISTING_PAGE_SIZE بلا نقص بعد الاستبعاد.
-    const [initialSeriesRows, listCountRow] = await Promise.all([
-      executeAll(
-        `SELECT id, tmdb_id, slug, name_ar, name_en, poster_path, backdrop_path,
-                vote_average, first_air_year, overview_ar, genres_json
-         FROM tv_series
-         WHERE ${whereClause}
-           AND ${EXCLUDED_GENRE_SQL_CLAUSE}
-           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-           AND first_air_year IS NOT NULL AND first_air_year >= 2000
+    /* الدمج لمعرّفات متعددة (53→9648+80) بإزالة تكرار العمل الواحد عبر GROUP BY،
+       والأحادي يمشي بترتيب الـPK (genre_id, popularity, id) ويقف عند LIMIT */
+    const idPlaceholders = genreIds.map(() => '?').join(',')
+    const inner = genreIds.length > 1
+      ? `SELECT tmdb_id, MAX(popularity) AS pop FROM series_by_genre
+         WHERE genre_id IN (${idPlaceholders})
+         GROUP BY tmdb_id
+         ORDER BY pop DESC
+         LIMIT ${buffer}`
+      : `SELECT tmdb_id, popularity AS pop FROM series_by_genre
+         WHERE genre_id = ?
          ORDER BY popularity DESC, id DESC
-         LIMIT ${LISTING_PAGE_SIZE + 1}`,
-        genreParams
-      ),
-      /* عدد أعماق الترقيم الساكن من جدول الكاش المُجمّع (قراءة مغطاة — ISR ساعة) */
-      executeFirst<{ n: number }>(
-        `SELECT COUNT(*) AS n FROM list_series_genre WHERE genre_tmdb_id IN (${genreIds.map(() => '?').join(',')})`,
-        genreIds
-      ),
-    ])
+         LIMIT ${buffer}`
+
+    const tvClause = isSpecial ? buildTvGenreClause(gid) : null
+    const initialSeriesRows = await executeAll(
+      `SELECT ts.id, ts.tmdb_id, ts.slug, ts.name_ar, ts.name_en, ts.poster_path, ts.backdrop_path,
+              ts.vote_average, ts.first_air_year, ts.overview_ar, ts.genres_json, g.pop
+       FROM (${inner}) g
+       JOIN tv_series ts ON ts.tmdb_id = g.tmdb_id
+       WHERE (ts.filter_status IN ('clean', 'reviewed_approved') OR ts.filter_status IS NULL)
+         AND ts.first_air_year IS NOT NULL AND ts.first_air_year >= 2000
+         ${tvClause ? `AND ${tvClause.sql}` : ''}
+       ORDER BY g.pop DESC, ts.id DESC
+       LIMIT ${LISTING_PAGE_SIZE + 1}`,
+      [...genreIds, ...(tvClause ? tvClause.params : [])]
+    )
     const initialSeries = initialSeriesRows
+
+    /* عدد أعماق الترقيم الساكن — عضوية النوع في الـpartition (قراءة مغطاة — ISR ساعة) */
+    const listCountRow = await executeFirst<{ n: number }>(
+      `SELECT COUNT(*) AS n FROM series_by_genre WHERE genre_id IN (${idPlaceholders})`,
+      genreIds
+    )
 
     // hasMore من نتيجة SQL (على سقف +1) ثم pop — المعروض بعدها ≤ LISTING_PAGE_SIZE
     const hasMore = initialSeries.length > LISTING_PAGE_SIZE

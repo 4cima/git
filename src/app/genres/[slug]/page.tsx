@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { GenreOverviewPageClient } from '@/components/pages/GenreOverviewPageClient'
-import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams, buildTvGenreClause, resolveGenreSlug } from '@/lib/genre-siblings'
+import { buildTvGenreClause, getTvGenreIds, TV_DISAMBIGUATED_GENRES, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 
 interface PageProps {
@@ -48,33 +48,56 @@ export default async function GenreOverviewPage({ params }: PageProps) {
     const genre = await executeFirst('SELECT * FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(slug)])
     if (!genre) notFound()
 
-    const genreIds = getGenreWithSiblings(Number(genre.tmdb_id))
-    const movieWhere = buildGenreWhereClause(genreIds)
-    const movieParams = buildGenreParams(genreIds)
-    /* جولة التفريق: استعلام المسلسلات في الصفحة العامة يتبع قاعدة تفريق TV */
-    const tvClause = buildTvGenreClause(Number(genre.tmdb_id))
+    /* مصدر الصف: partitions الأنواع المُجمّعة (movies_by_genre / series_by_genre) —
+       تعاد بناؤها بعد كل مزامنة ومفلترة مسبقًا بنفس شروط الحي ⇒ قراءات محدودة
+       (~عشرات الصفوف) بدل استعلامات json_each الحية (~410K + ~101K صف/نداء بارد).
+       فلتر poster_path يُطبَّق على الصف المنضَم بمخزون أكبر من الـ12 المطلوبة. */
+    const gid = Number(genre.tmdb_id)
+    const tvIds = getTvGenreIds(gid)
+    const isSpecial = TV_DISAMBIGUATED_GENRES.has(gid)
+    const tvBuffer = isSpecial ? 1000 : 60
+    const tvClause = isSpecial ? buildTvGenreClause(gid) : null
+    const tvPlaceholders = tvIds.map(() => '?').join(',')
+    const tvInner = tvIds.length > 1
+      ? `SELECT tmdb_id, MAX(popularity) AS pop FROM series_by_genre
+         WHERE genre_id IN (${tvPlaceholders})
+         GROUP BY tmdb_id
+         ORDER BY pop DESC
+         LIMIT ${tvBuffer}`
+      : `SELECT tmdb_id, popularity AS pop FROM series_by_genre
+         WHERE genre_id = ?
+         ORDER BY popularity DESC, id DESC
+         LIMIT ${tvBuffer}`
 
     const [topMovies, topSeries] = await Promise.all([
       executeAll(
-        `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, vote_average, release_year, overview_ar, genres_json
-         FROM movies
-         WHERE ${movieWhere}
-           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-           AND release_year IS NOT NULL AND release_year >= 2000
-           AND poster_path IS NOT NULL
-         ORDER BY popularity DESC LIMIT 12`,
-        movieParams
+        `SELECT m.id, m.tmdb_id, m.slug, m.title_ar, m.title_en, m.poster_path, m.vote_average, m.release_year, m.overview_ar, m.genres_json
+         FROM (
+           SELECT tmdb_id FROM movies_by_genre
+           WHERE genre_id = ?
+           ORDER BY popularity DESC, id DESC
+           LIMIT 60
+         ) g
+         JOIN movies m ON m.tmdb_id = g.tmdb_id
+         WHERE (m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL)
+           AND m.release_year IS NOT NULL AND m.release_year >= 2000
+           AND m.poster_path IS NOT NULL
+         ORDER BY m.popularity DESC, m.id DESC
+         LIMIT 12`,
+        [gid]
       ),
       executeAll(
-        `SELECT id, tmdb_id, slug, name_ar as title_ar, name_en as title_en, poster_path, vote_average, first_air_year as release_year, overview_ar, genres_json
-         FROM tv_series
-         WHERE ${tvClause.sql}
-           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-           AND first_air_year IS NOT NULL AND first_air_year >= 2000
-           AND poster_path IS NOT NULL
-         ORDER BY popularity DESC LIMIT 12`,
-        tvClause.params
-      )
+        `SELECT ts.id, ts.tmdb_id, ts.slug, ts.name_ar as title_ar, ts.name_en as title_en, ts.poster_path, ts.vote_average, ts.first_air_year as release_year, ts.overview_ar, ts.genres_json
+         FROM (${tvInner}) g
+         JOIN tv_series ts ON ts.tmdb_id = g.tmdb_id
+         WHERE (ts.filter_status IN ('clean', 'reviewed_approved') OR ts.filter_status IS NULL)
+           AND ts.first_air_year IS NOT NULL AND ts.first_air_year >= 2000
+           AND ts.poster_path IS NOT NULL
+           ${tvClause ? `AND ${tvClause.sql}` : ''}
+         ORDER BY g.pop DESC, ts.id DESC
+         LIMIT 12`,
+        [...tvIds, ...(tvClause ? tvClause.params : [])]
+      ),
     ])
 
     // فلتر: Talk Show + War & Politics + Documentary + History

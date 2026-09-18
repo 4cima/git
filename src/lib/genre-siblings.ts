@@ -74,6 +74,10 @@ export function getTvGenreIds(genreId: number): number[] {
   return [genreId]
 }
 
+/** الأنواع التي يضيف لها buildTvGenreClause قواعد تفريق تتجاوز مطابقة الـID —
+ *  استعلاماتها تستلزم فلترة على الصف الحي (لا تكفي partition جداول by_genre) */
+export const TV_DISAMBIGUATED_GENRES: ReadonlySet<number> = new Set([28, 12, 27, 14, 878])
+
 /** قاعدة التفريق الكاملة لمسلسل genreId — تُرجع SQL جاهز بمعاملات مربوطة (?) */
 export function buildTvGenreClause(genreId: number, tableAlias: string = ''): { sql: string; params: number[] } {
   const p = tableAlias ? (tableAlias.endsWith('.') ? tableAlias : `${tableAlias}.`) : ''

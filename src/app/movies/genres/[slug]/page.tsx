@@ -2,10 +2,9 @@ import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { executeFirst, executeAll } from '@/lib/db'
 import { MovieGenrePageClient } from '@/components/pages/MovieGenrePageClient'
-import { getGenreWithSiblings, buildGenreWhereClause, buildGenreParams, resolveGenreSlug } from '@/lib/genre-siblings'
-import { filterExcludedGenres, EXCLUDED_GENRE_SQL_CLAUSE } from '@/utils/excludedGenres'
+import { resolveGenreSlug } from '@/lib/genre-siblings'
+import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
-
 interface PageProps {
   params: Promise<{ slug: string }>
 }
@@ -56,30 +55,33 @@ export default async function MovieGenrePage({ params }: PageProps) {
       name_en: genre.name_en, name_ar: genre.name_ar, slug: genre.slug
     }
 
-    const genreIds = getGenreWithSiblings(Number(genre.tmdb_id))
-    const whereClause = buildGenreWhereClause(genreIds)
-    const genreParams = buildGenreParams(genreIds)
-
-    // استبعاد التصنيفات الأربعة (Talk Show + War & Politics + Documentary + History) داخل
-    // SQL مباشرة — نفس شرط الـ API تماماً — مع LIMIT LISTING_PAGE_SIZE + 1: hasMore يُحسب
-    // من نتيجة SQL ويُضمن المعروض ≤ LISTING_PAGE_SIZE بلا نقص بعد الاستبعاد.
+    /* مصدر الصف: movies_by_genre (partition النوع — جدول مُجمّع يعاد بناؤه بعد كل
+       مزامنة، مفلتر مسبقًا: clean/approved + سنة ≥ 2000 + استبعاد التصنيفات الأربعة).
+       الـPK (genre_id, popularity, id) ⇒ الاستعلام الداخلي يمشي بترتيب الفهرس العكسي
+       ويقف عند LIMIT ⇒ ~26 قراءة بدل استعلام json_each الحي (~410K صف — MULTI-INDEX OR).
+       النتيجة مطابقة للاستعلام القديم حرفيًا (نفس فلتر البناء = نفس شروط الحي)،
+       وفلتر الحالة/السنة على الصف المنضَم يصحّح أي تجاوز قِدم في اللقطة. */
+    const gid = Number(genre.tmdb_id)
     const [initialMoviesRows, listCountRow] = await Promise.all([
       executeAll(
-        `SELECT id, tmdb_id, slug, title_ar, title_en, poster_path, backdrop_path,
-                vote_average, release_year, overview_ar, genres_json
-         FROM movies
-         WHERE ${whereClause}
-           AND ${EXCLUDED_GENRE_SQL_CLAUSE}
-           AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
-           AND release_year IS NOT NULL AND release_year >= 2000
-         ORDER BY popularity DESC, id DESC
-         LIMIT ${LISTING_PAGE_SIZE + 1}`,
-        genreParams
+        `SELECT m.id, m.tmdb_id, m.slug, m.title_ar, m.title_en, m.poster_path, m.backdrop_path,
+                m.vote_average, m.release_year, m.overview_ar, m.genres_json
+         FROM (
+           SELECT tmdb_id FROM movies_by_genre
+           WHERE genre_id = ?
+           ORDER BY popularity DESC, id DESC
+           LIMIT ${LISTING_PAGE_SIZE + 1}
+         ) g
+         JOIN movies m ON m.tmdb_id = g.tmdb_id
+         WHERE (m.filter_status IN ('clean', 'reviewed_approved') OR m.filter_status IS NULL)
+           AND m.release_year IS NOT NULL AND m.release_year >= 2000
+         ORDER BY m.popularity DESC, m.id DESC`,
+        [gid]
       ),
-      /* عدد أعماق الترقيم الساكن من جدول الكاش المُجمّع (قراءة مغطاة ~300 صف — ISR ساعة) */
+      /* عدد أعماق الترقيم الساكن — عضوية النوع كاملة في الـpartition (ISR ساعة) */
       executeFirst<{ n: number }>(
-        `SELECT COUNT(*) AS n FROM list_movies_genre WHERE genre_tmdb_id = ?`,
-        [Number(genre.tmdb_id)]
+        `SELECT COUNT(*) AS n FROM movies_by_genre WHERE genre_id = ?`,
+        [gid]
       ),
     ])
     const initialMovies = initialMoviesRows
