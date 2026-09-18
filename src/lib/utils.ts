@@ -139,11 +139,6 @@ export function generateWatchUrl(
   const slug = item.slug && item.slug.trim() !== '' ? item.slug : String(item.id || '')
   const contentType = (item.media_type || item.type || 'movie')
 
-  // Software goes to /software/:slug
-  if (contentType === 'software') {
-    return `/software/${slug}`
-  }
-
   if (contentType === 'movie') {
     return `/watch/movie/${slug}`
   }
@@ -156,37 +151,6 @@ export function generateWatchUrl(
   }
 
   return `/watch/tv/${slug}`
-}
-
-/**
- * Generate content URL (detail page)
- */
-export function generateContentUrl(
-  item: { id?: number | string; slug?: string | null; media_type?: string; type?: string } | string
-): string {
-  // Handle string input
-  if (typeof item === 'string') {
-    return `/movie/${item}`
-  }
-
-  // CRITICAL: Always use slug, fallback to id only if slug is missing
-  const slug = item.slug && item.slug.trim() !== '' ? item.slug : String(item.id || '')
-  const contentType = (item.media_type || item.type || 'movie')
-
-  // Map content types to correct URLs
-  if (contentType === 'software') {
-    return `/software/${slug}`
-  }
-
-  if (contentType === 'actor' || contentType === 'person') {
-    return `/actor/${slug}`
-  }
-
-  if (contentType === 'tv' || contentType === 'series') {
-    return `/tv/${slug}`
-  }
-
-  return `/movie/${slug}`
 }
 
 /**

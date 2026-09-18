@@ -335,34 +335,6 @@ export const mediaTypeColors: Record<string, MediaTypeColorScheme> = {
     border: 'border-blue-700',
     icon: '📺',
     label: 'مسلسل'
-  },
-  'anime': {
-    bg: 'bg-pink-800',
-    text: 'text-white',
-    border: 'border-pink-700',
-    icon: '🎌',
-    label: 'أنمي'
-  },
-  'game': {
-    bg: 'bg-green-800',
-    text: 'text-white',
-    border: 'border-green-700',
-    icon: '🎮',
-    label: 'لعبة'
-  },
-  'software': {
-    bg: 'bg-indigo-800',
-    text: 'text-white',
-    border: 'border-indigo-700',
-    icon: '💾',
-    label: 'برنامج'
-  },
-  'quran': {
-    bg: 'bg-teal-800',
-    text: 'text-white',
-    border: 'border-teal-700',
-    icon: '📖',
-    label: 'قرآن'
   }
 }
 

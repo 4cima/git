@@ -87,13 +87,6 @@ declare type Profile = import('../lib/supabase').Profile;
 declare type Role = 'user' | 'admin' | 'supervisor';
 declare type LeaderboardEntry = import('../lib/supabase').LeaderboardEntry;
 declare type UserAchievement = import('../lib/supabase').UserAchievement;
-declare type QuranReciter = {
-  id: string;
-  name: string;
-  arabic_name: string;
-  style: string;
-  image_url?: string;
-};
 declare const ImageIcon: import('lucide-react').LucideIcon;
 declare const ActivityIcon: import('lucide-react').LucideIcon;
 declare const LinkIcon: import('lucide-react').LucideIcon;
@@ -111,35 +104,6 @@ declare type Logger = {
   debug: (...args: LogArgs) => void;
 };
 declare const logger: Logger;
-
-// Batch Content Item for API calls (matches contentAPI.ts but allows external_id)
-declare interface BatchContentItem {
-  id?: string;
-  external_id?: string;
-  content_type: 'movie' | 'tv' | 'game' | 'software';
-  external_source?: string;
-}
-
-// Review type for review system
-declare interface Review {
-  id: string;
-  user_id: string;
-  external_id: string;
-  external_source: string;
-  content_type: 'movie' | 'tv' | 'game' | 'software';
-  title?: string;
-  review_text: string;
-  rating?: number;
-  language: 'ar' | 'en';
-  contains_spoilers: boolean;
-  is_verified: boolean;
-  edit_count: number;
-  created_at: string;
-  updated_at: string;
-  user?: Profile;
-  helpful_count?: number;
-  is_liked?: boolean;
-}
 
 // Actor Details type
 declare interface ActorDetails {

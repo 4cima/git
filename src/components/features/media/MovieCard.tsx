@@ -32,7 +32,7 @@ export type Movie = {
   overview?: string
   overview_ar?: string
   overview_en?: string
-  media_type?: 'movie' | 'tv' | 'game' | 'software' | 'quran' | string
+  media_type?: 'movie' | 'tv' | string
   genre_ids?: number[]
   genres_json?: string
   original_language?: string
@@ -123,14 +123,8 @@ export const MovieCard = memo(({
   }
 
   const isTv = forceTv || movie.media_type === 'tv' || movie.media_type === 'series' || (movie as any).isSeries === true || (movie as any).type === 'tv' || (movie as any).type === 'series'
-  const isGame = movie.media_type === 'game'
-  const isSoftware = movie.media_type === 'software'
-  const isQuran = movie.media_type === 'quran'
 
   const getMediaType = () => {
-    if (isGame) return 'game'
-    if (isSoftware) return 'software'
-    if (isQuran) return 'quran'
     if (isTv) return 'series'
     return 'movies'
   }
