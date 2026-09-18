@@ -12,11 +12,11 @@
  *
  * بيكاش إيه؟
  *   - صفحات عامة نفسها واحد لكل الزوار (الحماية والتخصيص كله client-side عبر APIs):
- *     التفاصيل + الأنواع + الترقيم + اللغات (سنة) • الرئيسية والقوائم + sitemap (أسبوع) —
+ *     التفاصيل + الأنواع + الترقيم + اللغات (شهر) • الرئيسية والقوائم + sitemap (شهر) —
  *     التحديث بيوصل بـpurge بعد المزامنة (وزر المسح اليدوي)، مش بانتظار انتهاء المدة
- *   - 404 لسلاجات ميتة (أسبوع) — سد باب زحف البوتات على الصفحات غير الموجودة
+ *   - 404 لسلاجات ميتة (شهر) — سد باب زحف البوتات على الصفحات غير الموجودة
  *   - APIs عامة معلنة الكاش بنفسها (شرط s-maxage كمافحة أمان): home-sections, movies,
- *     series, listing/arabic, genres, tv — سنة على الحافة
+ *     series, listing/arabic, genres, tv — شهر على الحافة
  *
  * ممنوع الكاش (بيرجّع للـhandler زي ما هو):
  *   /admin و /api/admin (محميين) • /api/ads (زر الإيقاف الفوري) • /api/continue-watching
@@ -57,12 +57,13 @@ type OpenNextHandler = {
 const handler = openNextWorker as unknown as OpenNextHandler;
 
 /** بالثواني — المحتوى ثابت والتحديث الوحيد هو المزامنة، فالـinvalidation بالـpurge مش بالزمن */
-const DETAILS_TTL = 60 * 60 * 24 * 365; // تفاصيل + أنواع + ترقيم — سنة
-const LISTING_TTL = 60 * 60 * 24 * 7; // الرئيسية والقوائم — أسبوع
-const LANG_TTL = 60 * 60 * 24 * 365; // أرشيف اللغات — سنة
-const SITEMAP_TTL = 60 * 60 * 24 * 7; // أسبوع
-const NOT_FOUND_TTL = 60 * 60 * 24 * 7; // 404 لسلاجات ميتة — أسبوع
-const API_EDGE_TTL = 60 * 60 * 24 * 365; // الـAPIs — سنة
+const MONTH = 60 * 60 * 24 * 30; // شهر — أقصى مدة كاش (الاشتراك شهري)
+const DETAILS_TTL = MONTH; // تفاصيل + أنواع + ترقيم — شهر
+const LISTING_TTL = MONTH; // الرئيسية والقوائم — شهر (اترفع من أسبوع)
+const LANG_TTL = MONTH; // أرشيف اللغات — شهر
+const SITEMAP_TTL = MONTH; // شهر
+const NOT_FOUND_TTL = MONTH; // 404 لسلاجات ميتة — شهر
+const API_EDGE_TTL = MONTH; // الـAPIs — شهر
 /** ساعة SWR على الأقل + يوم stale-if-error لو الأصل وقع (D1/الـWorker غير متاح) */
 const SWR = 60 * 60;
 const STALE_IF_ERROR = 24 * 60 * 60;
@@ -78,7 +79,7 @@ const PAGE_RULES: Array<{ exact?: string[]; prefix?: string[]; ttl: number }> = 
 
 /**
  * APIs معلنة الكاش بنفسها (شرط s-maxage في ردها كمافحة أمان) — النسخة المخزنة بتاخد
- * سنة على الحافة (الـinvalidation بـpurge المزامنة) و5 دقايق للمتصفح.
+ * شهر على الحافة (الـinvalidation بـpurge المزامنة) و5 دقايق للمتصفح.
  * (اتعطّلت مؤقتًا 2026-09-18 لما كان Browser Cache TTL العام "4 hours" بيفرض نفسه —
  *  اتحل: الإعداد العام بقى Respect Existing Headers + حذف القواعد المتداخلة.)
  */
@@ -179,14 +180,14 @@ export default {
       const headers = new Headers(res.headers);
       headers.delete("vary"); // الـCache API بيتجاهل Vary أصلًا — نشيله من النسخة المخزنة احتياطًا
       if (pageTtl) {
-        // الحافة سنة/أسبوع حسب النوع؛ المتصفح 5 دقايق للـ200 والـ404 صفر
+        // الحافة شهر لكل الأنواع؛ المتصفح 5 دقايق للـ200 والـ404 صفر
         const browserTtl = res.status === 200 ? BROWSER_TTL : 0;
         headers.set(
           "cache-control",
           `public, s-maxage=${ttl}, max-age=${browserTtl}, stale-while-revalidate=${SWR}, stale-if-error=${STALE_IF_ERROR}`,
         );
       } else {
-        // الـAPI: سنة على الحافة — المحتوى بيتغير بالمزامنة بس وبيوصلها purge_everything
+        // الـAPI: شهر على الحافة — المحتوى بيتغير بالمزامنة بس وبيوصلها purge_everything
         headers.set(
           "cache-control",
           `public, s-maxage=${API_EDGE_TTL}, max-age=${API_BROWSER_TTL}, stale-while-revalidate=${SWR}, stale-if-error=${STALE_IF_ERROR}`,

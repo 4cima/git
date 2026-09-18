@@ -100,9 +100,13 @@ const nextConfig: NextConfig = {
   // Public CDN caching for movie/series detail pages (details only, not user APIs)
   async headers() {
     return [
-      // Security headers on every HTML/response path (no CSP by design —
-      // ad networks would break). '/:path*' also covers '/' and is safe for
-      // _next static assets and API routes with these particular headers.
+      // Security headers on every HTML/response path. '/:path*' also covers
+      // '/' and is safe for _next static assets and API routes with these
+      // particular headers.
+      // CSP status: a full Content-Security-Policy-Report-Only (monitoring
+      // only — nothing is blocked while violations are observed in the
+      // console) + the limited enforcing CSP subset below, kept as-is
+      // (a broader enforcing CSP would break ad networks).
       {
         source: '/:path*',
         headers: [
@@ -134,6 +138,12 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value: "base-uri 'self'; frame-ancestors 'self'; form-action 'self'",
+          },
+          // Report-only CSP (monitoring only — nothing blocked): full policy
+          // including ad script/frame hosts; no report-uri by design.
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://professionalsusceptible.com https://al5sm.com https://www.highrevenueformat.com https://highrevenueformat.com; script-src-elem 'self' 'unsafe-inline' https://professionalsusceptible.com https://al5sm.com https://www.highrevenueformat.com https://highrevenueformat.com; img-src 'self' data: blob: https://image.tmdb.org https://play-lh.googleusercontent.com https://upload.wikimedia.org https://assets-global.website-files.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; frame-src 'self' https://professionalsusceptible.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
           },
         ],
       },
