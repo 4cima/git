@@ -1,0 +1,35 @@
+name: KV Graveyard Cleanup
+
+# تنظيف مقبرة كاش ISR في NEXT_INC_CACHE_KV (مفاتيح بيلدات قديمة)
+# السكربت بيحمي تلقائيًا أي بيلد فيه كتابة أحدث من 7 أيام + سقف 1,000 حذف/يوم
+# ⚠️ ملاحظة نشر: GitHub يشغّل الـschedule فقط للـworkflows الموجودة على الفرع الافتراضي (main)
+#    — الملف ده مش هيشتغل تلقائيًا غير بعد ما يوصل main (نفس وضع backup-d1.yml)
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 3 صباحًا UTC — بعد باكاب D1 (2 صباحًا) بساعتين
+  workflow_dispatch:        # تشغيل يدوي من تبويب Actions
+
+concurrency:
+  group: kv-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: '22'
+
+    - name: Run KV graveyard cleanup (dry first)
+      run: node scripts/cleanup-kv-graveyard.js --dry
+
+    - name: Run KV graveyard cleanup (real)
+      run: node scripts/cleanup-kv-graveyard.js
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
