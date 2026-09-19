@@ -37,10 +37,15 @@ async function computeGap() {
   console.log(`  D1_VISITABLE count=${d1VisCount}`);
   const d1Vis = new Set();
   const PAGE = 2000;
-  for (let off = 0; ; off += PAGE) {
-    const r = await d1(`SELECT tmdb_id FROM movies WHERE is_complete=1 AND release_year>=2000 AND (filter_status IN ('clean','reviewed_approved') OR filter_status IS NULL) ORDER BY rowid LIMIT ? OFFSET ?`, [PAGE, off]);
+  /* keyset بـNOT INDEXED (id = rowid alias): صيغة الـOR هنا تمنع فهارس filter_status
+     الجزئية ويختار المخطط TEMP B-TREE (290K صف/نداء) — المسح المتسلسل على PK هو
+     المثالي (~2K صف/نداء). التكافؤ اتأكد مقابل OFFSET (نفس تسلسل tmdb_id). */
+  let lastId = 0;
+  for (;;) {
+    const r = await d1(`SELECT id, tmdb_id FROM movies NOT INDEXED WHERE is_complete=1 AND release_year>=2000 AND (filter_status IN ('clean','reviewed_approved') OR filter_status IS NULL) AND id > ? ORDER BY id LIMIT ?`, [lastId, PAGE]);
     for (const row of r.rows) d1Vis.add(Number(row.tmdb_id));
     if (r.rows.length < PAGE) break;
+    lastId = r.rows[r.rows.length - 1].id;
   }
   const localVis = new Set(db.prepare(`SELECT tmdb_id FROM movies WHERE is_complete=1 AND is_filtered=0 AND release_year>=2000`).all().map(r => Number(r.tmdb_id)));
   const gapArr = [...d1Vis].filter(id => !localVis.has(id)).sort((a, b) => a - b);

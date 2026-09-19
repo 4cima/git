@@ -72,16 +72,20 @@ const CHUNK = 900;
   console.log('تحليل فجوة no_runtime_low_votes — قراءة فقط');
   console.log('═'.repeat(72));
 
-  /* 1) D1_VISITABLE — ترحيل بـ rowid مثل backup-d1.js */
+  /* 1) D1_VISITABLE — keyset بـNOT INDEXED (id = rowid alias): صيغة الـOR تمنع
+     فهارس filter_status الجزئية فيختار المخطط TEMP B-TREE (290K صف/نداء) —
+     المسح المتسلسل على PK هو المثالي (~2K/نداء). التكافؤ اتأكد مقابل OFFSET. */
   console.log('\n[1] جلب D1_VISITABLE (SELECT فقط)...');
   const d1VisCount = await d1Count(`SELECT COUNT(*) c FROM movies WHERE is_complete=1 AND release_year>=2000 AND (filter_status IN ('clean','reviewed_approved') OR filter_status IS NULL)`);
-  const d1VisSql = `SELECT tmdb_id FROM movies WHERE is_complete=1 AND release_year>=2000 AND (filter_status IN ('clean','reviewed_approved') OR filter_status IS NULL) ORDER BY rowid LIMIT ? OFFSET ?`;
+  const d1VisSql = `SELECT id, tmdb_id FROM movies NOT INDEXED WHERE is_complete=1 AND release_year>=2000 AND (filter_status IN ('clean','reviewed_approved') OR filter_status IS NULL) AND id > ? ORDER BY id LIMIT ?`;
   const d1Vis = new Set();
   const BATCH = 2000;
-  for (let offset = 0; ; offset += BATCH) {
-    const rows = await d1(d1VisSql, [BATCH, offset]);
+  let lastId = 0;
+  for (;;) {
+    const rows = await d1(d1VisSql, [lastId, BATCH]);
     for (const r of rows) if (r.tmdb_id != null) d1Vis.add(Number(r.tmdb_id));
     if (rows.length < BATCH) break;
+    lastId = rows[rows.length - 1].id;
   }
   console.log(`D1_VISITABLE = ${d1Vis.size.toLocaleString('en-US')} (COUNT(*) مرجعي = ${d1VisCount.toLocaleString('en-US')})`);
 
