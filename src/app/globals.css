@@ -1523,6 +1523,9 @@ select option {
   height: 0.24em;
   margin-left: -0.16em;
   margin-top: -0.12em;
+  /* إزاحة موضعية: تحت 4px فقط — خاصية translate المنفصلة (مش transform)
+     لأن cam-aim بيتحكم في transform بالكامل، والـtranslate المنفصلة تتألف معه بلا تعارض */
+  translate: 0 4px;
   animation: cam-aim 7s ease-in-out infinite;
 }
 
@@ -1693,7 +1696,7 @@ select option {
   84% { transform: translate(-0.04em, -0.02em); }
 }
 
-/* ضبط بؤرة الكاميرا: إيقاع مختلف (7s) عن الحومة (9.5s) عن اللوجو (3s) */
+/* ضبط بؤرة الكاميرا: إيقاع مختلف (7s) عن الحومة (9.5s) عن اللوجو (5s) */
 @keyframes cam-aim {
   0%, 100% { transform: rotateZ(3.5deg); }
   25% { transform: rotateZ(-4.5deg); }
@@ -1742,6 +1745,9 @@ select option {
   margin-left: -0.13em;
   transform-style: preserve-3d;
   pointer-events: none;
+  /* إزاحة موضعية للحبل + العملة (النقطة) معًا: شمال 4px وتحت 2px ثم يمين 1px (صافي -3px)
+     — على الحاوية لأنها بلا أنيميشن، فلا تتعارض مع site-rope-drop / site-favicon-turn */
+  transform: translate(-3px, 2px);
 }
 
 .site-logo-tittle::before {
@@ -1836,6 +1842,8 @@ select option {
   bottom: 0.04em;
   width: 0.13em;
   margin-left: -0.065em;
+  /* إزاحة موضعية: شمال 4px وتحت 2px ثم يمين 1px (صافي -3px) — لا أنيميشن على هذا العنصر فلا تعارض */
+  transform: translate(-3px, 2px);
   border-radius: 0.065em;
   background: currentColor;
   box-shadow:
@@ -2006,7 +2014,9 @@ select option {
 }
 
 .site-logo[data-state='idle'] {
-  animation: site-logo-sway 3s ease-in-out infinite;
+  /* حركة التنفس (idle sway): 5 ثوانٍ = إيقاع تنفّس بشري طبيعي، وeasing ناعم
+     cubic-bezier(0.4, 0, 0.6, 1) لتفادي أي jerk — نفس الحركة بالعين بس أبطأ وأنعم */
+  animation: site-logo-sway 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* الحبل يهتز لحظتين بعد أن يستقر اللوجو */
