@@ -131,8 +131,12 @@ export async function GET(
              FROM list_movies_genre
              WHERE genre_tmdb_id = ?
                AND ${excludedGenreSqlClause('')}
-               AND tmdb_id NOT IN (SELECT tmdb_id FROM movies WHERE filter_status = 'blocked'
-                 OR release_year IS NULL OR release_year < 2000)
+               /* anti-join بدل NOT IN: كلفة الـNOT IN تتضخم بحجم مجموعة blocked
+                  (LIST SUBQUERY + MULTI-INDEX OR) بينما الـNOT EXISTS بروب واحد
+                  على فهرس tmdb_id الفريد لكل صف مرشَّح — الكلفة مربوطة بحجم الصفحة */
+               AND NOT EXISTS (SELECT 1 FROM movies mb
+                 WHERE mb.tmdb_id = list_movies_genre.tmdb_id
+                   AND (mb.filter_status = 'blocked' OR mb.release_year IS NULL OR mb.release_year < 2000))
              ORDER BY rank ASC
              LIMIT ? OFFSET ?`,
             [genreIds[0], limit + 1, offset]
@@ -164,8 +168,10 @@ export async function GET(
              FROM list_series_genre
              WHERE genre_tmdb_id = ?
                AND ${excludedGenreSqlClause('')}
-               AND tmdb_id NOT IN (SELECT tmdb_id FROM tv_series WHERE filter_status = 'blocked'
-                 OR first_air_year IS NULL OR first_air_year < 2000)
+               /* anti-join بدل NOT IN — نفس منطق الأفلام أعلاه: كلفة ثابتة بحجم الصفحة */
+               AND NOT EXISTS (SELECT 1 FROM tv_series tb
+                 WHERE tb.tmdb_id = list_series_genre.tmdb_id
+                   AND (tb.filter_status = 'blocked' OR tb.first_air_year IS NULL OR tb.first_air_year < 2000))
              ORDER BY rank ASC
              LIMIT ? OFFSET ?`,
             [gid, limit + 1, offset]
