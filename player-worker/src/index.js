@@ -11,7 +11,6 @@
  *   GET /{slug}                               → bare slug, type resolved via TMDB multi-search
  *   GET /watch?type=&id=&season=&episode=     → legacy query fallback (tmdb id)
  *   GET /                                     → info page
- *   GET /api/embed-proxy?url=…                → ISP-blocked server proxy
  *   GET /healthz                              → liveness probe
  *
  * Resolves {slug} → TMDB id via the public TMDB search API.
@@ -53,7 +52,6 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     try {
-      if (path === '/api/embed-proxy') return await handleEmbedProxy(url);
       if (path === '/healthz') return new Response('ok', { status: 200 });
       // Favicon: the worker has no icon of its own — answer 204 immediately so
       // crawlers/browsers stop hammering /favicon.ico with 404s every day.
@@ -114,10 +112,6 @@ const BASE_OVERRIDES = {
   videasy:      'https://player.videasy.net',
 };
 
-// Servers routed through /api/embed-proxy (often ISP-blocked in Egypt).
-// All six servers are direct — the embed-proxy handler is kept but unused.
-const PROXIED_IDS = new Set([]);
-
 const appendParam = (url, key, value) =>
   new RegExp(`([?&])${key}=`, 'i').test(url)
     ? url
@@ -174,19 +168,12 @@ function buildServerSources(mediaType, tmdbId, season, episode) {
   for (const srv of SERVERS) {
     const raw = buildServerUrl(srv, mediaType, tmdbId, season, episode);
     if (!raw) continue;
-    let src = raw;
-    if (PROXIED_IDS.has(srv.id)) {
-      const proxy = new URL('https://4cima.stream/api/embed-proxy');
-      proxy.searchParams.set('url', raw);
-      src = proxy.toString();
-    }
     out.push({
       id: srv.id,
       name: srv.name,
       short: srv.short,
-      src,
+      src: raw,
       base: BASE_OVERRIDES[srv.id] || srv.base,
-      px: PROXIED_IDS.has(srv.id) ? 1 : 0,
       serverIndex: out.length + 1,
     });
   }
@@ -907,8 +894,7 @@ ${titlesBar}
     return '/series/' + D.slug + '/season/' + s + '/episode/' + e;
   }
 
-  // Mirrors buildServerUrl() on the server, incl. Arabic params and
-  // the /api/embed-proxy wrap for ISP-blocked servers (s.px).
+  // Mirrors buildServerUrl() on the server, incl. Arabic params.
   function srcFor(s) {
     if (!s) return '';
     var b = s.base || '';
@@ -934,7 +920,6 @@ ${titlesBar}
     } else if (id === '111movies') {
       u += (u.indexOf('?') >= 0 ? '&' : '?') + 'lang=ar';
     }
-    if (s.px) u = '/api/embed-proxy?url=' + encodeURIComponent(u);
     return u;
   }
 
@@ -1210,186 +1195,3 @@ code{font-size:12px;color:#6b7280}
   });
 }
 
-// ------------------------------------------------------------------
-// Embed proxy
-// ------------------------------------------------------------------
-// MIME type mapping for proper Content-Type headers
-const MIME_TYPES = {
-  '.js': 'application/javascript',
-  '.mjs': 'application/javascript',
-  '.css': 'text/css',
-  '.html': 'text/html',
-  '.htm': 'text/html',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.webp': 'image/webp',
-  '.ico': 'image/x-icon',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-  '.ttf': 'font/ttf',
-  '.eot': 'application/vnd.ms-fontobject',
-  '.mp4': 'video/mp4',
-  '.webm': 'video/webm',
-  '.mp3': 'audio/mpeg',
-  '.wav': 'audio/wav',
-};
-
-function getMimeType(pathname) {
-  const ext = pathname.substring(pathname.lastIndexOf('.')).toLowerCase();
-  return MIME_TYPES[ext] || 'application/octet-stream';
-}
-
-function rewriteHtmlUrls(html, baseUrl, proxyPrefix) {
-  const base = new URL(baseUrl);
-  const origin = base.origin;
-
-  const toProxied = (rawUrl) => {
-    // Skip absolute URLs (http://, https://, //), data:, blob:, javascript:, mailto:
-    if (/^(https?:)?\/\//i.test(rawUrl) || /^(data|blob|javascript|mailto):/i.test(rawUrl)) return null;
-    // Skip already proxied URLs (prevent loops)
-    if (rawUrl.startsWith('/api/embed-proxy')) return null;
-    // Only rewrite root-relative ("/...") and document-relative paths
-    let absoluteUrl;
-    try {
-      absoluteUrl = new URL(rawUrl, origin).toString();
-    } catch {
-      return null;
-    }
-    return `${proxyPrefix}?url=${encodeURIComponent(absoluteUrl)}`;
-  };
-
-  // Rewrite simple attributes: src, href, action, poster, data-src, data-href
-  let out = html.replace(
-    /(src|href|action|poster|data-src|data-href)\s*=\s*(["'])([^"']+)\2/gi,
-    (match, attr, quote, rawUrl) => {
-      const proxied = toProxied(rawUrl);
-      return proxied ? `${attr}=${quote}${proxied}${quote}` : match;
-    }
-  );
-
-  // Rewrite srcset (each candidate: "url descriptor")
-  out = out.replace(
-    /(srcset)\s*=\s*(["'])([^"']+)\2/gi,
-    (match, attr, quote, value) => {
-      const rewritten = value.split(',').map((candidate) => {
-        const parts = candidate.trim().split(/\s+/);
-        const proxied = toProxied(parts[0]);
-        if (proxied) parts[0] = proxied;
-        return parts.join(' ');
-      }).join(', ');
-      return `${attr}=${quote}${rewritten}${quote}`;
-    }
-  );
-
-  return out;
-}
-
-// Insert <base href="ORIGIN/"> so any runtime-created relative URLs
-// (dynamically injected scripts, fetches, sbx.js …) resolve against the
-// original server instead of 4cima.stream.
-function insertBaseTag(html, baseUrl) {
-  const origin = new URL(baseUrl).origin;
-  const baseTag = `<base href="${origin}/">`;
-  if (/<base\s/i.test(html)) return html; // already has a base tag
-  const headOpen = html.match(/<head[^>]*>/i);
-  if (headOpen && headOpen.index !== undefined) {
-    const idx = headOpen.index + headOpen[0].length;
-    return html.slice(0, idx) + baseTag + html.slice(idx);
-  }
-  const htmlOpen = html.match(/<html[^>]*>/i);
-  if (htmlOpen && htmlOpen.index !== undefined) {
-    const idx = htmlOpen.index + htmlOpen[0].length;
-    return html.slice(0, idx) + baseTag + html.slice(idx);
-  }
-  return baseTag + html;
-}
-
-async function handleEmbedProxy(url) {
-  const target = url.searchParams.get('url');
-  if (!target) return new Response('Bad Request — missing url', { status: 400, headers: COMMON_HEADERS });
-  
-  try {
-    const u = new URL(target);
-    const proxyPrefix = '/api/embed-proxy';
-    
-    // Known ad scripts (notably AutoEmbed's aclib.js): serve an empty JS
-    // body instead of the ad. Everything else passes through untouched.
-    const adNeedles = ['aclib.js', 'ads.js', 'adsbygoogle', 'popunder', 'googlesyndication', 'doubleclick', 'pop.js'];
-    const adHaystack = (u.hostname + u.pathname).toLowerCase();
-    if (adNeedles.some((n) => adHaystack.includes(n))) {
-      return new Response('', {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/javascript; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600',
-          ...COMMON_HEADERS,
-        },
-      });
-    }
-
-    const upstream = await fetch(u.toString(), {
-      method: 'GET', redirect: 'follow',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-        // Some video servers reject requests without a same-origin Referer.
-        'Referer': u.origin + '/',
-      },
-    });
-    
-    const contentType = upstream.headers.get('content-type') || '';
-    const isHtml = contentType.includes('text/html');
-    const status = upstream.status;
-    
-    // Get body as array buffer to handle binary content properly
-    const body = await upstream.arrayBuffer();
-    
-    // Determine correct MIME type: never let a wrong upstream type
-    // (missing, octet-stream, or text/plain) break JS/CSS/images.
-    const guessed = getMimeType(u.pathname);
-    const looksWrong =
-      !contentType ||
-      contentType === 'application/octet-stream' ||
-      contentType.startsWith('text/plain');
-    const finalContentType = looksWrong && guessed !== 'application/octet-stream'
-      ? guessed
-      : contentType;
-    
-    const responseHeaders = {
-      'Content-Type': finalContentType,
-      'X-Content-Type-Options': 'nosniff',
-      // Minimum headers only — no CSP / X-Frame-Options on proxied responses.
-      'Cache-Control': isHtml ? 'no-store' : 'public, max-age=3600',
-    };
-    
-    // For HTML: force proper charset, inject <base href="ORIGIN/"> so
-    // runtime-created relative URLs resolve against the original server,
-    // and rewrite root-relative asset URLs to go through the proxy.
-    let finalBody = body;
-    if (isHtml) {
-      responseHeaders['Content-Type'] = 'text/html; charset=utf-8';
-      let htmlText = new TextDecoder('utf-8').decode(body);
-      htmlText = insertBaseTag(htmlText, u.origin + '/');
-      const rewrittenHtml = rewriteHtmlUrls(htmlText, u.toString(), proxyPrefix);
-      // Inject a one-time window.open no-op into proxied pages only (AutoEmbed,
-      // server 8). This blocks ad popups without touching the main htmlPage and
-      // without breaking fullscreen.
-      let finalHtml = rewrittenHtml;
-      const popupBlock = '<script>window.open=function(){return null;};</script>';
-      const headClose = finalHtml.match(/<\/head>/i);
-      if (headClose && headClose.index !== undefined) {
-        finalHtml = finalHtml.slice(0, headClose.index) + popupBlock + finalHtml.slice(headClose.index);
-      } else {
-        finalHtml = popupBlock + finalHtml;
-      }
-      finalBody = new TextEncoder().encode(finalHtml);
-    }
-    
-    return new Response(finalBody, { status, headers: responseHeaders });
-  } catch (e) {
-    return new Response('Upstream error', { status: 502, headers: COMMON_HEADERS });
-  }
-}
