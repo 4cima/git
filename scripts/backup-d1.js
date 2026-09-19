@@ -47,14 +47,15 @@ if (!CF_TOKEN) {
 // الذي يعيد قراءة كل الصفوف قبله ويرميها (كان 72,714 صفًا/نداء في المتوسط — 21.4% من وقت D1).
 // id في movies/tv_series هو INTEGER PRIMARY KEY = alias للـrowid (تحقق: صفر صف id!=rowid)
 // فالترتيب والمحتوى مطابقان تمامًا لـORDER BY rowid.
-// الجدولان list_* الـPK عندهما مركّب (genre_tmdb_id, rank) والـrowid مخفي عن SELECT*
-// وصغيران (~10K صف) — يبقيان على OFFSET القديم: تغيير شكل ملف الباكب أعلى خطر من وفره.
+// الجدولان list_* الـPK عندهما مركّب (genre_tmdb_id, rank) — الـkeyset عليهما عبر الـrowid
+// نفسه (WHERE rowid > ? ORDER BY rowid) مع إخفاء العمود المساعد __rid قبل الكتابة:
+// ترتيب الصفوف (rowid) وشكل الملف يبقيان مطابقين حرفيًا للـSELECT* القديم.
 const DEFAULT_BATCH = 500;
 const TABLES_CFG = {
   movies:            { batch: 500,  key: 'id' },
   tv_series:         { batch: 100,  key: 'id' },
-  list_movies_genre: { batch: 5000, key: null },
-  list_series_genre: { batch: 5000, key: null },
+  list_movies_genre: { batch: 5000, key: '__rid' },
+  list_series_genre: { batch: 5000, key: '__rid' },
 };
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
@@ -161,9 +162,11 @@ async function exportTable(table) {
   while (true) {
     let rows;
     try {
-      rows = keyCol
-        ? await d1Query(`SELECT * FROM ${table} WHERE ${keyCol} > ? ORDER BY ${keyCol} LIMIT ?`, [cursor, batch])
-        : await d1Query(`SELECT * FROM ${table} ORDER BY rowid LIMIT ? OFFSET ?`, [batch, offset]);
+      rows = !keyCol
+        ? await d1Query(`SELECT * FROM ${table} ORDER BY rowid LIMIT ? OFFSET ?`, [batch, offset])
+        : keyCol === '__rid'
+          ? await d1Query(`SELECT *, rowid AS __rid FROM ${table} WHERE rowid > ? ORDER BY rowid LIMIT ?`, [cursor, batch])
+          : await d1Query(`SELECT * FROM ${table} WHERE ${keyCol} > ? ORDER BY ${keyCol} LIMIT ?`, [cursor, batch]);
     } catch (err) {
       if (err.tooLarge && batch > 50) {
         batch = Math.floor(batch / 2);
@@ -174,12 +177,18 @@ async function exportTable(table) {
     }
     if (rows.length === 0) break;
 
+    if (keyCol === '__rid') {
+      // الـcursor من الـrowid المساعد ثم يُخفى من المخرجات — الملف مطابق للـSELECT* حرفيًا
+      cursor = rows[rows.length - 1].__rid;
+      rows = rows.map(({ __rid, ...rest }) => rest);
+    }
+
     const chunk = rows.map((r, i) => ((first && i === 0) ? '' : ',') + JSON.stringify(r)).join('');
     await w.write(chunk);
     first  = false;
     count  += rows.length;
-    if (keyCol) cursor = rows[rows.length - 1][keyCol];
-    else offset += rows.length;
+    if (keyCol && keyCol !== '__rid') cursor = rows[rows.length - 1][keyCol];
+    else if (!keyCol) offset += rows.length;
     if (count % (batch * 5) === 0) process.stdout.write(`      ${table}: ${count}/${total}\r`);
     if (rows.length < batch) break;
   }
