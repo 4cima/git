@@ -1745,9 +1745,9 @@ select option {
   margin-left: -0.13em;
   transform-style: preserve-3d;
   pointer-events: none;
-  /* إزاحة موضعية للحبل + العملة (النقطة) معًا: شمال 4px وتحت 2px ثم يمين 1px وفوق 1px (صافي -3px, 1px)
+  /* إزاحة موضعية للحبل + العملة (النقطة) معًا: صافي (-3px, 1px) + ميلان يمين 0.5°
      — على الحاوية لأنها بلا أنيميشن، فلا تتعارض مع site-rope-drop / site-favicon-turn */
-  transform: translate(-3px, 1px);
+  transform: translate(-3px, 1px) rotate(0.5deg);
 }
 
 .site-logo-tittle::before {
@@ -1842,8 +1842,8 @@ select option {
   bottom: 0.04em;
   width: 0.13em;
   margin-left: -0.065em;
-  /* إزاحة موضعية: شمال 4px وتحت 2px ثم يمين 1px وفوق 1px (صافي -3px, 1px) — لا أنيميشن على هذا العنصر فلا تعارض */
-  transform: translate(-3px, 1px);
+  /* إزاحة موضعية: صافي (-3px, 1px) + ميلان يمين 0.5° — لا أنيميشن على هذا العنصر فلا تعارض */
+  transform: translate(-3px, 1px) rotate(0.5deg);
   border-radius: 0.065em;
   background: currentColor;
   box-shadow:
