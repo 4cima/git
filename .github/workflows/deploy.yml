@@ -7,6 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# أقل صلاحية: النشر كله بـAPI token خارجي (secrets) — الـGITHUB_TOKEN قراءة فقط
+permissions:
+  contents: read
+
 concurrency:
   group: deploy-production
   cancel-in-progress: false
@@ -14,6 +18,9 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # سقف زمني: البايلد الكامل (npm ci + tsc + opennext + wrangler) جوايه دقائق
+    # — التعليق أطول من كده = فشل يستاهل إيقاف الـrunner بدل ما يفضل شغال
+    timeout-minutes: 15
 
     steps:
     - uses: actions/checkout@v5

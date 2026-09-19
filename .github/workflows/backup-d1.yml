@@ -8,6 +8,11 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
+# أقل صلاحية: قراءة الكود + قراءة حالة الـruns للارتيفاكت — مفيش أي كتابة
+permissions:
+  contents: read
+  actions: read
+
 concurrency:
   group: d1-backup
   cancel-in-progress: false

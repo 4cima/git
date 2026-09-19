@@ -15,6 +15,10 @@ on:
         required: false
         default: '1000'
 
+# أقل صلاحية: الكل بيتنفذ بـAPI token خارجي (secrets) — الـGITHUB_TOKEN قراءة فقط
+permissions:
+  contents: read
+
 concurrency:
   group: kv-cleanup
   cancel-in-progress: false
