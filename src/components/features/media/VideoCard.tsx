@@ -2,7 +2,6 @@
 'use client'
 
 import { useEffect, useState, memo, lazy, Suspense, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Plus, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -118,11 +117,9 @@ export const VideoCard = memo(
     if (!hasVisual || !hasValidTitle) return null
 
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
-        className='relative group cursor-pointer'
+      <div
+        style={{ animationDelay: `${index * 0.05}s` }}
+        className='relative group cursor-pointer animate-[card-enter-up_0.3s_ease-out_both]'
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={() => {
@@ -158,41 +155,34 @@ export const VideoCard = memo(
             </div>
           )}
 
-          {/* Lazy Video Player */}
-          <AnimatePresence>
-            {isHovered && trailerKey && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className='absolute inset-0 z-10 bg-black'
-              >
-                <Suspense fallback={null}>
-                  <LazyReactPlayer
-                    url={`https://www.youtube.com/watch?v=${trailerKey}`}
-                    width='100%'
-                    height='100%'
-                    playing
-                    muted
-                    loop
-                    config={{
-                      youtube: {
-                        playerVars: {
-                          autoplay: 1,
-                          controls: 0,
-                          showinfo: 0,
-                          modestbranding: 1,
-                          rel: 0,
-                          iv_load_policy: 3
-                        }
+          {/* Lazy Video Player — ظهور بـCSS بدل framer (fade 0.3s زي الافتراضي القديم) */}
+          {isHovered && trailerKey && (
+            <div className='absolute inset-0 z-10 bg-black animate-[card-fade-in_0.3s_ease-out]'>
+              <Suspense fallback={null}>
+                <LazyReactPlayer
+                  url={`https://www.youtube.com/watch?v=${trailerKey}`}
+                  width='100%'
+                  height='100%'
+                  playing
+                  muted
+                  loop
+                  config={{
+                    youtube: {
+                      playerVars: {
+                        autoplay: 1,
+                        controls: 0,
+                        showinfo: 0,
+                        modestbranding: 1,
+                        rel: 0,
+                        iv_load_policy: 3
                       }
-                    } as any}
-                    className='pointer-events-none scale-150'
-                  />
-                </Suspense>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                    }
+                  } as any}
+                  className='pointer-events-none scale-150'
+                />
+              </Suspense>
+            </div>
+          )}
 
           {/* Overlay */}
           <div className='absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors' />
@@ -227,22 +217,16 @@ export const VideoCard = memo(
             </h3>
           </div>
 
-          {/* Description on hover - replaces title */}
-          <AnimatePresence>
-            {isHovered && (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                transition={{ duration: 0.2 }}
-                className='min-h-[40px]'
-              >
-                <p className='text-xs text-zinc-300 line-clamp-2 leading-relaxed'>
-                  {video.category ? `${video.category} • ` : ''}مشاهدة ممتعة
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Description on hover - replaces title — CSS خالص (fade + y 0.2s زي قبل) */}
+          <div
+            className={`min-h-[40px] transition-[opacity,translate] duration-200 ${
+              isHovered ? 'opacity-100 translate-y-0' : 'absolute opacity-0 -translate-y-[5px]'
+            }`}
+          >
+            <p className='text-xs text-zinc-300 line-clamp-2 leading-relaxed'>
+              {video.category ? `${video.category} • ` : ''}مشاهدة ممتعة
+            </p>
+          </div>
 
           {/* Bottom info - Always visible */}
           <div className='flex items-center justify-between text-xs text-zinc-500'>
@@ -257,7 +241,7 @@ export const VideoCard = memo(
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     )
   },
   (prev, next) => {

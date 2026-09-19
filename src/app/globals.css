@@ -2489,3 +2489,13 @@ h1 {
 .btn-polished:active {
   transform: translateY(0);
 }
+
+/* بديل framer-motion في كروت الأفلام/الفيديو — keyframes خفيفة بلا JS */
+@keyframes card-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes card-enter-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

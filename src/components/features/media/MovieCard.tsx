@@ -3,13 +3,13 @@
 // Updated: Card layout redesign with overview on hover
 import { memo, useState, useEffect, useRef, lazy, Suspense } from 'react'
 import type { DragEvent } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Star, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { TmdbImage } from '../../common/TmdbImage'
 import { translateGenre } from '../../../utils/genreTranslator'
 import { getGenreColor, getMediaTypeColor } from '../../../utils/genreColors'
 import { useAuth } from '@/hooks/useAuth'
+import { useInViewOnce } from '@/hooks/useInViewOnce'
 
 const LazyReactPlayer = lazy(() => import('react-player'))
 
@@ -327,15 +327,20 @@ export const MovieCard = memo(({
     }
   }
 
+  // ظهور الكارت عند دخوله الشاشة (بديل whileInView في framer-motion — مرة واحدة، هامش -40px)
+  const { ref: revealRef, inView: revealInView } = useInViewOnce<HTMLDivElement>(!eager)
+
   if (!hasPosterPath || !hasValidTitle) return null
 
   return (
-    <motion.div
-      initial={eager ? false : { opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.35, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
-      className="relative z-0 group/card"
+    <div
+      ref={revealRef}
+      style={eager ? undefined : { transitionDelay: `${index * 0.04}s` }}
+      className={`relative z-0 group/card ${
+        eager || revealInView
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-4 will-change-[opacity,translate]'
+      } ${eager ? '' : 'transition-[opacity,translate] duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)]'}`}
     >
       <Link
         href={watchUrl}
@@ -374,35 +379,28 @@ export const MovieCard = memo(({
               />
             )}
 
-            {/* Lazy Video Layer */}
-            <AnimatePresence>
-              {isHovered && trailerKey && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-10 bg-black"
-                >
-                  <Suspense fallback={null}>
-                    <LazyReactPlayer
-                      src={`https://www.youtube.com/watch?v=${trailerKey}`}
-                      width="100%"
-                      height="100%"
-                      playing
-                      muted
-                      loop
-                      config={{
-                        youtube: {
-                          rel: 0,
-                          iv_load_policy: 3
-                        }
-                      }}
-                      className="pointer-events-none scale-150"
-                    />
-                  </Suspense>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Lazy Video Layer — ظهور بـCSS بدل framer (fade 0.3s زي الافتراضي القديم) */}
+            {isHovered && trailerKey && (
+              <div className="absolute inset-0 z-10 bg-black animate-[card-fade-in_0.3s_ease-out]">
+                <Suspense fallback={null}>
+                  <LazyReactPlayer
+                    src={`https://www.youtube.com/watch?v=${trailerKey}`}
+                    width="100%"
+                    height="100%"
+                    playing
+                    muted
+                    loop
+                    config={{
+                      youtube: {
+                        rel: 0,
+                        iv_load_policy: 3
+                      }
+                    }}
+                    className="pointer-events-none scale-150"
+                  />
+                </Suspense>
+              </div>
+            )}
 
             {/* LUMEN grain overlay */}
             <div className="lumen-grain rounded-2xl" aria-hidden />
@@ -468,22 +466,12 @@ export const MovieCard = memo(({
               )}
             </div>
 
-            {/* Play Button Overlay on Hover */}
-            <AnimatePresence>
-              {isHovered && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none"
-                >
-                  <div className="w-14 h-14 rounded-full bg-lumen-gold/95 flex items-center justify-center shadow-2xl shadow-lumen-gold/60">
-                    <Play size={24} fill="currentColor" className="text-black translate-x-0.5" />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Play Button Overlay on Hover — CSS خالص (fade + scale 0.2s زي قبل) */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none opacity-0 scale-[0.8] group-hover/card:opacity-100 group-hover/card:scale-100 transition-[opacity,scale] duration-200">
+              <div className="w-14 h-14 rounded-full bg-lumen-gold/95 flex items-center justify-center shadow-2xl shadow-lumen-gold/60">
+                <Play size={24} fill="currentColor" className="text-black translate-x-0.5" />
+              </div>
+            </div>
           </div>
 
           {/* Title Section - Reduced Height */}
@@ -500,26 +488,20 @@ export const MovieCard = memo(({
               )}
             </div>
 
-            {/* Overview on Hover - Replaces titles */}
-            <AnimatePresence>
-              {isHovered && (
-                <motion.div
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -5 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute inset-0 p-2.5 flex items-center"
-                >
-                  <p className="text-[12px] leading-relaxed text-zinc-300 line-clamp-3">
-                    {movie.overview_ar || movie.overview || 'لا يوجد وصف متاح'}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Overview on Hover - Replaces titles — CSS خالص (fade + y 0.2s زي قبل) */}
+            <div
+              className={`absolute inset-0 p-2.5 flex items-center transition-[opacity,translate] duration-200 ${
+                isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-[5px]'
+              }`}
+            >
+              <p className="text-[12px] leading-relaxed text-zinc-300 line-clamp-3">
+                {movie.overview_ar || movie.overview || 'لا يوجد وصف متاح'}
+              </p>
+            </div>
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   )
 }, (prev, next) => {
   return prev.movie.id === next.movie.id && prev.index === next.index
