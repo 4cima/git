@@ -2536,3 +2536,7 @@ h1 {
 @keyframes nav-fade-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes nav-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes nav-card-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+/* هيدر صفحات القوائم — بديل ListingPageHeader motion.h1 (framer → CSS):
+   fade + y10 خلال 0.45s ease-out = نفس قيم framer السابقة، يعمل مرة عند التحميل */
+.listing-title-in { animation: nav-fade-up 0.45s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .listing-title-in { animation: none; } }

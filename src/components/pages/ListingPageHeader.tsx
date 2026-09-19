@@ -3,7 +3,6 @@
 import { Fragment } from 'react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { motion } from 'framer-motion'
 import { ChevronLeft } from 'lucide-react'
 import {
   LISTING_ACCENT,
@@ -64,14 +63,9 @@ export function ListingPageHeader({ variant, title, description, breadcrumb, act
           className={`h-9 w-1.5 shrink-0 self-center rounded-full bg-gradient-to-b md:h-12 ${title3d.underline}`}
         />
         <div className="min-w-0">
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: 'easeOut' }}
-            className={`${LISTING_TITLE_TYPE} ${title3d.title} ${title3d.shadow}`}
-          >
+          <h1 className={`listing-title-in ${LISTING_TITLE_TYPE} ${title3d.title} ${title3d.shadow}`}>
             {title}
-          </motion.h1>
+          </h1>
           {/* خط سفلي زخرفي قصير تحت النص — عرض ثابت صغير لا يتمدد فوق المحتوى */}
           <span
             aria-hidden="true"
