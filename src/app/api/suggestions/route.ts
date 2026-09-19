@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
+import { guard } from '@/lib/rateLimit'
 
 /* ============================================================
    POST /api/suggestions — يستقبل اقتراحات/شكاوى الزوار من /contact
@@ -39,6 +40,9 @@ async function ensureTable(): Promise<void> {
 }
 
 export async function POST(request: NextRequest) {
+  // كتابة عامة بلا جلسة — أضيق حد في الموقع (5/دقيقة لكل IP)
+  const limited = guard(request, 'suggestions', 5)
+  if (limited) return limited
   try {
     let payload: { subject?: unknown; message?: unknown }
     try {

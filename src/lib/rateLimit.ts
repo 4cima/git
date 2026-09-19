@@ -3,6 +3,8 @@
  * Lightweight in-memory fixed-window rate limiter (per instance).
  * Good enough for light abuse protection on public ad endpoints.
  */
+import { NextResponse } from 'next/server';
+
 type Bucket = { count: number; resetAt: number };
 
 const buckets = new Map<string, Bucket>();
@@ -52,4 +54,23 @@ export function clientKey(request: Request, bucket: string): string {
     hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;
   }
   return `${bucket}:${hash.toString(36)}`;
+}
+
+/**
+ * جاهز للاستخدام في المسارات — أول سطر في الهاندل قبل أي استعلام D1:
+ * يرجّع رد 429 جاهز لو عدّى الحد، أو null لو مسموح.
+ * نفس شكل رد ads/serve حرفيًا (error: 'rate_limited' + no-store).
+ */
+export function guard(
+  request: Request,
+  bucket: string,
+  limit: number,
+  windowMs = 60_000,
+): Response | null {
+  const rl = rateLimit(clientKey(request, bucket), limit, windowMs);
+  if (rl.allowed) return null;
+  return NextResponse.json(
+    { error: 'rate_limited', remaining: 0 },
+    { status: 429, headers: { 'Cache-Control': 'private, no-store' } },
+  );
 }

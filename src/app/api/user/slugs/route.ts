@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeFirst } from '@/lib/db';
+import { guard } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs'
 
 // Get slugs for tmdb_ids - minimal endpoint
 export async function POST(request: NextRequest) {
+  const limited = guard(request, 'user', 30);
+  if (limited) return limited;
   const body = await request.json().catch(() => null);
   if (!body?.items || !Array.isArray(body.items)) {
     return NextResponse.json({ error: 'Bad request' }, { status: 400 });
+  }
+  // كل عنصر = استعلام D1 — السقف بيمنع تحويل المصفوفة لأداة حرق الحصة
+  if (body.items.length > 100) {
+    return NextResponse.json({ error: 'Too many items (max 100)' }, { status: 400 });
   }
 
   const slugs: Record<string, string | null> = {};

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeAll, executeFirst } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth-server';
+import { guard } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs'
 
 // Toggle card state: neutral → favorite → completed → neutral
 export async function POST(request: NextRequest) {
+  // قبل فحص الجلسة — أرخص نقطة إيقاف (كل طلب بيمرّ كان هيبعت استعلام D1)
+  const limited = guard(request, 'user', 30);
+  if (limited) return limited;
   const user = await getCurrentUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

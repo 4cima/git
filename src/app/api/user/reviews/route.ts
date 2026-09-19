@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeAll } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth-server';
+import { guard } from '@/lib/rateLimit';
 
 const isTextSlug = (s: unknown): s is string =>
   typeof s === 'string' && s.trim() !== '' && !/^\d+$/.test(s.trim());
@@ -43,6 +44,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = guard(request, 'user', 30);
+  if (limited) return limited;
   const user = await getCurrentUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const b = await request.json().catch(() => null);
@@ -63,6 +66,8 @@ export async function POST(request: NextRequest) {
  * DELETE /api/user/reviews?tmdb_id=&content_type= — حذف تقييم
  */
 export async function DELETE(request: NextRequest) {
+  const limited = guard(request, 'user', 30);
+  if (limited) return limited;
   const user = await getCurrentUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const u = new URL(request.url);

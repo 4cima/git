@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeAll, executeFirst } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth-server';
+import { guard } from '@/lib/rateLimit';
 
 // Create rate_events table on first use
 let tableCreated = false;
@@ -57,6 +58,9 @@ async function logRateEvent(userId: string, kind: string, tmdbId?: number) {
 }
 
 export async function POST(request: NextRequest) {
+  // فلتر IP رخيص قبل الجلسة — الحد الداخلي بالـrate_events بيفضل شغال بعده
+  const limited = guard(request, 'user', 30);
+  if (limited) return limited;
   const user = await getCurrentUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const b = await request.json().catch(() => null);
@@ -87,6 +91,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const limited = guard(request, 'user', 30);
+  if (limited) return limited;
   const user = await getCurrentUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const u = new URL(request.url);

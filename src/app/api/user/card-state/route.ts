@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeAll, executeFirst } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth-server';
+import { guard } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs'
 
 // Get card states for multiple items
 export async function POST(request: NextRequest) {
+  const limited = guard(request, 'user', 30);
+  if (limited) return limited;
   const user = await getCurrentUser(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
