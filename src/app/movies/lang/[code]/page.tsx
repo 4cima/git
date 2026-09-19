@@ -49,27 +49,39 @@ export default async function MovieLangPage({ params }: PageProps) {
   if (!lang) notFound()
 
   try {
-    // نفس بناء شرط اللغة في /api/movies: filter قد يكون متعددًا ('zh,cn') → IN ('zh','cn')
+    // نفس بناء شرط اللغة في /api/movies: filter قد يكون متعددًا ('zh,cn')
     const languages = lang.filter.split(',').map(l => l.trim()).filter(l => l)
-    const languageSql =
-      languages.length > 1
-        ? `original_language IN (${languages.map(() => '?').join(',')})`
-        : 'original_language = ?'
 
-    const rows = await executeAll(
-      `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en,
+    /* anti-join على جدول الممنوعات المُجمّع (excluded_genre_movie_ids — يبنيه
+       build-genre-index.js في سلسلة المزامنة بنفس البوابات) بدل json_each:
+       مع الفهرس المركّب الجزئي idx_movies_lang_listing (original_language,
+       popularity DESC, id DESC) يتوقف البحث عند LIMIT (~50 صفًا/نداء) بدل
+       مسح كل صفوف اللغة + فرز مؤقت (كان 217 ألف صف مقروء للإنجليزية).
+       ORDER BY popularity DESC, id DESC = نفس ترتيب الـAPI (tiebreak حتمي)
+       فيظل تحميل المزيد متسقًا مع أول صفحة.
+       withSortCols يضمّن عمودَي الترتيب في الإخراج لفرع الـUNION فقط (الغلاف
+       الخارجي يرتب عليهما) — الحالة المفردة تحافظ على أعمدة الإخراج القديمة. */
+    const branch = (withSortCols: boolean) => `SELECT movies.id, movies.tmdb_id, movies.slug, movies.title_ar, movies.title_en,
               movies.poster_path, movies.backdrop_path, movies.vote_average, movies.release_year,
-              movies.genres_json, movies.overview_ar, movies.original_language
+              movies.genres_json, movies.overview_ar, movies.original_language${withSortCols ? ', movies.popularity, movies.id AS sort_id' : ''}
        FROM movies
-       WHERE ${languageSql}
-         AND (genres_json IS NULL OR NOT EXISTS (
-           SELECT 1 FROM json_each(movies.genres_json)
-           WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
-         ))
+       LEFT JOIN excluded_genre_movie_ids eg ON eg.tmdb_id = movies.tmdb_id
+       WHERE movies.original_language = ?
+         AND (movies.genres_json IS NULL OR eg.tmdb_id IS NULL)
          AND (IFNULL(movies.filter_status, 'clean') IN ('clean', 'reviewed_approved'))
          AND (movies.release_year IS NOT NULL AND movies.release_year >= 2000)
-       ORDER BY popularity DESC
-       LIMIT ${LISTING_PAGE_SIZE + 1}`,
+       ORDER BY movies.popularity DESC, movies.id DESC
+       LIMIT ${LISTING_PAGE_SIZE + 1}`
+
+    /* لغة متعددة ('zh,cn'): UNION ALL لكل لغة كي يبقى كل فرع على الفهرس —
+       IN (…) يُسقط الترتيب من الفهرس ويعيد مسح صفوف اللغتين + فرزها (16.7 ألف صف) */
+    const rows = await executeAll(
+      languages.length > 1
+        ? `SELECT * FROM (
+             ${languages.map(() => `SELECT * FROM (${branch(true)})`).join('\n             UNION ALL\n')}
+           ) ORDER BY popularity DESC, sort_id DESC
+           LIMIT ${LISTING_PAGE_SIZE + 1}`
+        : branch(false),
       languages
     )
 

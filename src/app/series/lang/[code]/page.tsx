@@ -49,28 +49,40 @@ export default async function SeriesLangPage({ params }: PageProps) {
   if (!lang) notFound()
 
   try {
-    // نفس بناء شرط اللغة في /api/series: filter قد يكون متعددًا ('zh,cn') → IN ('zh','cn')
+    // نفس بناء شرط اللغة في /api/series: filter قد يكون متعددًا ('zh,cn')
     const languages = lang.filter.split(',').map(l => l.trim()).filter(l => l)
-    const languageSql =
-      languages.length > 1
-        ? `original_language IN (${languages.map(() => '?').join(',')})`
-        : 'original_language = ?'
 
-    const rows = await executeAll(
-      `SELECT tv_series.id, tv_series.tmdb_id, tv_series.slug,
+    /* anti-join على جدول الممنوعات المُجمّع (excluded_genre_series_ids — يبنيه
+       build-genre-index.js في سلسلة المزامنة بنفس البوابات) بدل json_each:
+       مع الفهرس المركّب الجزئي idx_tv_lang_listing (original_language,
+       popularity DESC, id DESC) يتوقف البحث عند LIMIT (~50 صفًا/نداء) بدل
+       مسح كل صفوف اللغة + فرز مؤقت (كان 43 ألف صف مقروء للإنجليزية).
+       ORDER BY popularity DESC, id DESC = نفس ترتيب الـAPI (tiebreak حتمي)
+       فيظل تحميل المزيد متسقًا مع أول صفحة.
+       withSortCols يضمّن عمودَي الترتيب في الإخراج لفرع الـUNION فقط (الغلاف
+       الخارجي يرتب عليهما) — الحالة المفردة تحافظ على أعمدة الإخراج القديمة. */
+    const branch = (withSortCols: boolean) => `SELECT tv_series.id, tv_series.tmdb_id, tv_series.slug,
               tv_series.name_ar AS title_ar, tv_series.name_en AS title_en,
               tv_series.poster_path, tv_series.backdrop_path, tv_series.vote_average, tv_series.first_air_year,
-              tv_series.genres_json, tv_series.overview_ar
+              tv_series.genres_json, tv_series.overview_ar${withSortCols ? ', tv_series.popularity, tv_series.id AS sort_id' : ''}
        FROM tv_series
-       WHERE ${languageSql}
-         AND (genres_json IS NULL OR NOT EXISTS (
-           SELECT 1 FROM json_each(tv_series.genres_json)
-           WHERE json_extract(value, '$.tmdb_id') IN (10767, 10768, 99, 36)
-         ))
+       LEFT JOIN excluded_genre_series_ids eg ON eg.tmdb_id = tv_series.tmdb_id
+       WHERE tv_series.original_language = ?
+         AND (tv_series.genres_json IS NULL OR eg.tmdb_id IS NULL)
          AND (IFNULL(tv_series.filter_status, 'clean') IN ('clean', 'reviewed_approved'))
          AND (tv_series.first_air_year IS NOT NULL AND tv_series.first_air_year >= 2000)
-       ORDER BY popularity DESC
-       LIMIT ${LISTING_PAGE_SIZE + 1}`,
+       ORDER BY tv_series.popularity DESC, tv_series.id DESC
+       LIMIT ${LISTING_PAGE_SIZE + 1}`
+
+    /* لغة متعددة ('zh,cn'): UNION ALL لكل لغة كي يبقى كل فرع على الفهرس —
+       IN (…) يُسقط الترتيب من الفهرس ويعيد مسح صفوف اللغتين + فرزها (13.4 ألف صف) */
+    const rows = await executeAll(
+      languages.length > 1
+        ? `SELECT * FROM (
+             ${languages.map(() => `SELECT * FROM (${branch(true)})`).join('\n             UNION ALL\n')}
+           ) ORDER BY popularity DESC, sort_id DESC
+           LIMIT ${LISTING_PAGE_SIZE + 1}`
+        : branch(false),
       languages
     )
 
