@@ -43,8 +43,19 @@ if (!CF_TOKEN) {
 }
 
 // حجم الدفعة لكل جدول — episodes_json في tv_series كبير (متوسط 8.4KB، أقصى 97KB)
+// key = عمود الـcursor للتقسيم keyset (WHERE key > ? ORDER BY key LIMIT ?) بدل OFFSET
+// الذي يعيد قراءة كل الصفوف قبله ويرميها (كان 72,714 صفًا/نداء في المتوسط — 21.4% من وقت D1).
+// id في movies/tv_series هو INTEGER PRIMARY KEY = alias للـrowid (تحقق: صفر صف id!=rowid)
+// فالترتيب والمحتوى مطابقان تمامًا لـORDER BY rowid.
+// الجدولان list_* الـPK عندهما مركّب (genre_tmdb_id, rank) والـrowid مخفي عن SELECT*
+// وصغيران (~10K صف) — يبقيان على OFFSET القديم: تغيير شكل ملف الباكب أعلى خطر من وفره.
 const DEFAULT_BATCH = 500;
-const TABLE_BATCH   = { movies: 500, tv_series: 100, list_movies_genre: 5000, list_series_genre: 5000 };
+const TABLES_CFG = {
+  movies:            { batch: 500,  key: 'id' },
+  tv_series:         { batch: 100,  key: 'id' },
+  list_movies_genre: { batch: 5000, key: null },
+  list_series_genre: { batch: 5000, key: null },
+};
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -139,20 +150,25 @@ async function exportTable(table) {
   await w.write(`{"database_id":"${DATABASE_ID}","table":"${table}",` +
     `"exported_at_utc":"${new Date().toISOString()}","count":${total},"rows":[\n`);
 
-  let batch  = TABLE_BATCH[table] || DEFAULT_BATCH;
-  let offset = 0;
+  const cfg = TABLES_CFG[table] || { batch: DEFAULT_BATCH, key: null };
+  let batch  = cfg.batch;
+  const keyCol = cfg.key;
+  let cursor = 0; // keyset: آخر id مقروء — يتحرك للأمام فقط ولا يعيد أي صف
+  let offset = 0; // مسار OFFSET القديم (للجداول بلا مفتاح keyset)
   let count  = 0;
   let first  = true;
 
   while (true) {
     let rows;
     try {
-      rows = await d1Query(`SELECT * FROM ${table} ORDER BY rowid LIMIT ? OFFSET ?`, [batch, offset]);
+      rows = keyCol
+        ? await d1Query(`SELECT * FROM ${table} WHERE ${keyCol} > ? ORDER BY ${keyCol} LIMIT ?`, [cursor, batch])
+        : await d1Query(`SELECT * FROM ${table} ORDER BY rowid LIMIT ? OFFSET ?`, [batch, offset]);
     } catch (err) {
       if (err.tooLarge && batch > 50) {
         batch = Math.floor(batch / 2);
         console.log(`      ↩  تقليص دفعة ${table} إلى ${batch}`);
-        continue; // نفس الـ offset
+        continue; // نفس الـcursor/offset
       }
       throw err;
     }
@@ -162,7 +178,8 @@ async function exportTable(table) {
     await w.write(chunk);
     first  = false;
     count  += rows.length;
-    offset += rows.length;
+    if (keyCol) cursor = rows[rows.length - 1][keyCol];
+    else offset += rows.length;
     if (count % (batch * 5) === 0) process.stdout.write(`      ${table}: ${count}/${total}\r`);
     if (rows.length < batch) break;
   }

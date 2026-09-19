@@ -41,6 +41,7 @@ Thumbs.db
 BACKUP-movies-slugs-*.json
 BACKUP-*.json
 BACKUP-*.csv
+data/backups/
 
 # TMDB export dumps (regenerable, 120MB+)
 tmdb-exports/
