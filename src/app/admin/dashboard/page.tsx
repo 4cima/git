@@ -8,18 +8,34 @@ export const metadata: Metadata = {
 
 export const revalidate = 0
 
+/* عدادات اللوحة تتغير مرة واحدة يوميًا (سلسلة المزامنة) — كاش 6 ساعات على مستوى
+   الـisolate يقلّص قراءة الـCOUNT الكاملة (~183 ألف صف لكل تحميل) من كل زيارة
+   إلى ≤4 نداءات في اليوم. قيم إعلامية للإدارة وتحتمل هذا التقادم. */
+type DashboardStats = { movies: number; series: number; seasons: number; at: number }
+let statsCache: DashboardStats | null = null
+const STATS_TTL_MS = 6 * 60 * 60 * 1000
+
 export default async function DashboardPage() {
-  const [moviesRow, seriesRow, seasonsRow] = await Promise.all([
-    executeFirst('SELECT COUNT(*) as count FROM movies'),
-    executeFirst('SELECT COUNT(*) as count FROM tv_series'),
-    executeFirst('SELECT SUM(number_of_seasons) as count FROM tv_series WHERE number_of_seasons > 0'),
-  ])
+  if (!statsCache || Date.now() - statsCache.at > STATS_TTL_MS) {
+    const [moviesRow, seriesRow, seasonsRow] = await Promise.all([
+      executeFirst('SELECT COUNT(*) as count FROM movies'),
+      executeFirst('SELECT COUNT(*) as count FROM tv_series'),
+      executeFirst('SELECT SUM(number_of_seasons) as count FROM tv_series WHERE number_of_seasons > 0'),
+    ])
+    statsCache = {
+      movies: Number(moviesRow?.count ?? 0),
+      series: Number(seriesRow?.count ?? 0),
+      seasons: Number(seasonsRow?.count ?? 0),
+      at: Date.now(),
+    }
+  }
+  const { movies: moviesCount, series: seriesCount, seasons: seasonsCount } = statsCache
 
   const stats = [
-    { name: 'Total Movies',   value: String(moviesRow?.count  ?? 0), icon: Film,     color: 'text-blue-400',   bg: 'bg-blue-400/10'   },
-    { name: 'Total Series',   value: String(seriesRow?.count  ?? 0), icon: Tv,       color: 'text-purple-400', bg: 'bg-purple-400/10' },
-    { name: 'Total Seasons',  value: String(seasonsRow?.count ?? 0), icon: Activity, color: 'text-green-400',  bg: 'bg-green-400/10'  },
-    { name: 'Registered Users', value: '---',                        icon: Users,    color: 'text-orange-400', bg: 'bg-orange-400/10' },
+    { name: 'Total Movies',   value: String(moviesCount),  icon: Film,     color: 'text-blue-400',   bg: 'bg-blue-400/10'   },
+    { name: 'Total Series',   value: String(seriesCount),  icon: Tv,       color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    { name: 'Total Seasons',  value: String(seasonsCount), icon: Activity, color: 'text-green-400',  bg: 'bg-green-400/10'  },
+    { name: 'Registered Users', value: '---',              icon: Users,    color: 'text-orange-400', bg: 'bg-orange-400/10' },
   ]
 
   return (

@@ -59,9 +59,19 @@ const TYPES = [
   { mediaType: 'series', table: 'tv_series', yearColumn: 'first_air_year' },
 ];
 
+/* الاستبعاد anti-join على جدول الممنوعات المُجمّع (build-genre-index.js) مع حارس
+   سنة >= 2000 — نفس بنية sitemapDetailFilterSql في src/lib/sitemap.ts حرفيًا:
+   الجدول المجمّع بُني ببوابة (clean/reviewed + سنة >= 2000 + tmdb) وهي أضيق من
+   شرط السايت ماب، فالصفوف داخلها تُفحص بـprobe على PK والأقدم من 2000 تُفحص
+   بـjson_each (الفرع الثالث) — الدلالات مطابقة حرفيًا لـjson_each الخالص
+   (إثبات تكافؤ كامل الكتالوج 19/9: movies 62,509 / tv_series 24,664).
+   ⚠️ أي تعديل على بوابات build-genre-index.js يستلزم مراجعة الحارس هنا. */
 function detailFilterSql(table, yearColumn) {
+  const excludedTable = table === 'movies' ? 'excluded_genre_movie_ids' : 'excluded_genre_series_ids';
   return (
-    `(genres_json IS NULL OR NOT EXISTS (SELECT 1 FROM json_each(${table}.genres_json) ` +
+    `(genres_json IS NULL ` +
+    `OR (${yearColumn} >= 2000 AND NOT EXISTS (SELECT 1 FROM ${excludedTable} eg WHERE eg.tmdb_id = ${table}.tmdb_id)) ` +
+    `OR NOT EXISTS (SELECT 1 FROM json_each(${table}.genres_json) ` +
     `WHERE json_extract(value, '$.tmdb_id') IN (${EXCLUDED_GENRE_IDS.join(', ')}))) ` +
     `AND (${yearColumn} >= 2015 OR vote_count >= 1000)`
   );
@@ -189,7 +199,8 @@ function checkParity() {
     [CLEAN_ITEM_SQL, 'CLEAN_ITEM_SQL', libSrc],
     ['export const SITEMAP_MIN_YEAR = 2015', 'SITEMAP_MIN_YEAR = 2015', libSrc],
     ['export const SITEMAP_MIN_VOTE_COUNT = 1000', 'SITEMAP_MIN_VOTE_COUNT = 1000', libSrc],
-    ['genres_json IS NULL OR NOT EXISTS (SELECT 1 FROM json_each(', 'sitemapDetailFilterSql()', libSrc],
+    ['OR NOT EXISTS (SELECT 1 FROM json_each(', 'sitemapDetailFilterSql()', libSrc],
+    ['>= 2000 AND NOT EXISTS (SELECT 1 FROM', 'sitemapDetailFilterSql() — anti-join بحارس السنة', libSrc],
   ];
   const bad = [];
   for (const [needle, label, hay] of checks) {

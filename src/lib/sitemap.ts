@@ -89,8 +89,14 @@ export const CLEAN_ITEM_SQL =
 // (حديث: سنة >= 2015) أو (أقدم من 2015 بتقييمات كافية)، مع استبعاد أنواع
 // المحتوى الممنوعة الموجودة أصلًا (Talk Show/War & Politics/Documentary/History).
 //
-// - الاستبعاد بنمط استعلامات القوائم الحية (json_each + NULL مسموح —
-//   8210 مسلسل نظيف بلا genres_json كانوا سيُستبعدون خطأً بنمط NOT LIKE).
+// - الاستبعاد anti-join على جدول الممنوعات المُجمّع (build-genre-index.js) مع حارس
+//   سنة >= 2000: الجدول المجمّع بُني ببوابة (clean/reviewed + سنة >= 2000 + tmdb) وهي
+//   أضيق شرطين من شرط السايت ماب (clean فقط + سنة>=2015 أو تصويتات) — فالصفوف داخل
+//   البوابة تُفحص بـprobe على PK (رخيص) والأقدم من 2000 تُفحص بـjson_each (الفرع
+//   الثالث) لتبقى الدلالات مطابقة حرفيًا لـjson_each الخالص. إثبات تكافؤ كامل
+//   الكتالوج (19/9): movies 62,509 وtv_series 24,664 idًا متطابقين بالترتيب.
+//   ⚠️ أي تعديل مستقبلي على بوابات build-genre-index.js يستلزم مراجعة الحارس هنا.
+// - NULL مسموح (8210 مسلسل نظيف بلا genres_json كانوا سيُستبعدون خطأً بنمط NOT LIKE).
 // - عتبة المصوّتين للأقدم من 2015: vote_count >= 1000 — لا توجد عتبة جودة
 //   موحّدة في السحب/الفلتر (أقربها 50/100 لأغراض مشابهة أخرى) فثُبّتت 1000 صراحةً.
 
@@ -101,8 +107,11 @@ export const SITEMAP_MIN_VOTE_COUNT = 1000;
 export function sitemapDetailFilterSql(table: 'movies' | 'tv_series'): string {
   const yearColumn = table === 'movies' ? 'release_year' : 'first_air_year';
   const excludedIds = EXCLUDED_GENRE_IDS_LIST.join(', ');
+  const excludedTable = table === 'movies' ? 'excluded_genre_movie_ids' : 'excluded_genre_series_ids';
   return (
-    `(genres_json IS NULL OR NOT EXISTS (SELECT 1 FROM json_each(${table}.genres_json) ` +
+    `(genres_json IS NULL ` +
+    `OR (${yearColumn} >= 2000 AND NOT EXISTS (SELECT 1 FROM ${excludedTable} eg WHERE eg.tmdb_id = ${table}.tmdb_id)) ` +
+    `OR NOT EXISTS (SELECT 1 FROM json_each(${table}.genres_json) ` +
     `WHERE json_extract(value, '$.tmdb_id') IN (${excludedIds}))) ` +
     `AND (${yearColumn} >= ${SITEMAP_MIN_YEAR} OR vote_count >= ${SITEMAP_MIN_VOTE_COUNT})`
   );
