@@ -38,13 +38,11 @@
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@tanstack/react-query": "^5.101.4",
-    "autoprefixer": "^10.5.4",
     "better-sqlite3": "^12.9.0",
     "cli-progress": "^3.12.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "framer-motion": "^11.15.0",
-    "hls.js": "^1.6.16",
     "jose": "^6.2.9",
     "lucide-react": "^0.469.0",
     "next": "^15.1.6",
@@ -54,7 +52,6 @@
     "react-player": "^3.4.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-rtl": "^0.9.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -63,8 +60,6 @@
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.6",
     "@types/react-dom": "^19.0.2",
-    "@types/react-grid-layout": "^1.3.6",
-    "@types/react-resizable": "^3.0.8",
     "eslint": "^9.18.0",
     "eslint-config-next": "^15.1.6",
     "postcss": "^8.5.1",
