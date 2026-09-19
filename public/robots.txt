@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin
-Disallow: /api
-Disallow: /profile
-Disallow: /login
-Disallow: /register
-
-Sitemap: https://4cima.com/sitemap-index.xml
