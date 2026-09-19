@@ -1448,6 +1448,11 @@ select option {
 .site-logo-4 {
   display: inline-block;
   flex-shrink: 0;
+  /* إبعاد الرقم 4 عن حرف الـc المتلاصق به: إزاحة بصرية شمال 2px
+     (position:relative لا يزيح العناصر المجاورة ولا يتعارض مع wiggle —
+     الأنيميشن بتحرّك transform فقط، مش الـposition) */
+  position: relative;
+  left: -2px;
   color: #dc2626;
   font-size: 3rem;
   transform-origin: center bottom;
@@ -1745,9 +1750,9 @@ select option {
   margin-left: -0.13em;
   transform-style: preserve-3d;
   pointer-events: none;
-  /* إزاحة موضعية للحبل + العملة (النقطة) معًا: صافي (-3px, 1px) + ميلان يمين 0.5°
+  /* إزاحة موضعية للحبل + العملة (النقطة) معًا: صافي (-2px, 1px) + ميلان يمين 0.5°
      — على الحاوية لأنها بلا أنيميشن، فلا تتعارض مع site-rope-drop / site-favicon-turn */
-  transform: translate(-3px, 1px) rotate(0.5deg);
+  transform: translate(-2px, 1px) rotate(0.5deg);
 }
 
 .site-logo-tittle::before {
@@ -1842,8 +1847,8 @@ select option {
   bottom: 0.04em;
   width: 0.13em;
   margin-left: -0.065em;
-  /* إزاحة موضعية: صافي (-3px, 1px) + ميلان يمين 0.5° — لا أنيميشن على هذا العنصر فلا تعارض */
-  transform: translate(-3px, 1px) rotate(0.5deg);
+  /* إزاحة موضعية: صافي (-2px, 1px) + ميلان يمين 0.5° — لا أنيميشن على هذا العنصر فلا تعارض */
+  transform: translate(-2px, 1px) rotate(0.5deg);
   border-radius: 0.065em;
   background: currentColor;
   box-shadow:
@@ -1996,10 +2001,12 @@ select option {
     transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
   }
   35% {
-    transform: rotateX(16deg) rotateY(14deg) rotateZ(-2.4deg);
+    /* أقصى تأرجح أول — السرعة صفر عند القمة (سلوك بندول طبيعي) */
+    transform: rotateX(15deg) rotateY(13deg) rotateZ(-2deg);
   }
   70% {
-    transform: rotateX(9deg) rotateY(-12deg) rotateZ(2deg);
+    /* تأرجح راجع أخف بنسبة ~60% موحّدة على كل المحاور (تخميد طبيعي للطاقة) */
+    transform: rotateX(9deg) rotateY(-8deg) rotateZ(1.2deg);
   }
 }
 
@@ -2017,6 +2024,7 @@ select option {
   /* حركة التنفس (idle sway): 5 ثوانٍ = إيقاع تنفّس بشري طبيعي، وeasing ناعم
      cubic-bezier(0.4, 0, 0.6, 1) لتفادي أي jerk — نفس الحركة بالعين بس أبطأ وأنعم */
   animation: site-logo-sway 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  will-change: transform; /* تحريك على الـGPU لحركة سلسة بلا تهنيج */
 }
 
 /* الحبل يهتز لحظتين بعد أن يستقر اللوجو */
