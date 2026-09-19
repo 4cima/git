@@ -2,7 +2,6 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useMemo, memo, useEffect } from 'react'
 import { Home, Film, Tv, Menu, X, LogIn, User, LogOut, ChevronDown, Settings } from 'lucide-react'
 import { UserMenu } from './UserMenu'
@@ -82,27 +81,18 @@ export const QuantumNavbar = memo(() => {
         </div>
             </nav>
 
-      {/* Sidebar */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <>
-            {/* Backdrop - NO backdrop blur */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSidebarOpen(false)}
-              className="fixed inset-0 z-[1100] bg-black/60"
-            />
+      {/* Sidebar — عناصر مثبتة في الـDOM والتحكم بـCSS (بديل framer): نفس الحركة بالعين */}
+      {/* Backdrop - NO backdrop blur */}
+      <div
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden={!sidebarOpen}
+        className={`nav-sidebar-backdrop fixed inset-0 z-[1100] bg-black/60 ${sidebarOpen ? 'nav-sidebar-backdrop-open' : ''}`}
+      />
 
-            {/* Sidebar Panel */}
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-16 right-0 max-h-[calc(100%-4rem)] w-80 max-w-[92vw] z-[1200] rounded-l-[1.75rem] overflow-hidden bg-gradient-to-b from-[#141824]/97 via-[#0f121c]/97 to-[#0a0c14]/97 backdrop-blur-xl border-l border-t border-b border-white/10 shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.9)] flex flex-col"
-            >
+      {/* Sidebar Panel */}
+      <div
+        className={`nav-sidebar-panel ${sidebarOpen ? 'nav-sidebar-panel-open' : ''} fixed top-16 right-0 max-h-[calc(100%-4rem)] w-80 max-w-[92vw] z-[1200] rounded-l-[1.75rem] overflow-hidden bg-gradient-to-b from-[#141824]/97 via-[#0f121c]/97 to-[#0a0c14]/97 backdrop-blur-xl border-l border-t border-b border-white/10 shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.9)] flex flex-col`}
+      >
               {/* شريط توهج علوي هادئ بنفس ألوان الزر الثلاثي */}
               <div
                 aria-hidden="true"
@@ -135,16 +125,11 @@ export const QuantumNavbar = memo(() => {
                         </span>
                       </button>
 
-                      {/* المنسدلة — بإطار متدرج هادئ (وردي ← عنبري ← سماوي) وشريط توهج علوي */}
-                      <AnimatePresence>
-                        {userMenuOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                            transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-                            className="absolute right-0 top-full z-[1300] mt-2 w-56 max-w-[calc(100vw-1.5rem)]"
-                          >
+                      {/* المنسدلة — بإطار متدرج هادئ (وردي ← عنبري ← سماوي) وشريط توهج علوي — CSS بدل framer */}
+                      <div
+                        aria-hidden={!userMenuOpen}
+                        className={`nav-dropdown ${userMenuOpen ? 'nav-dropdown-open' : ''} absolute right-0 top-full z-[1300] mt-2 w-56 max-w-[calc(100vw-1.5rem)]`}
+                      >
                             <div className="relative rounded-2xl bg-gradient-to-b from-rose-400/35 via-amber-300/35 to-sky-400/35 p-[1.5px] shadow-[0_20px_45px_-12px_rgba(0,0,0,0.95)]">
                               {/* توهج خلفي هادئ */}
                               <div
@@ -242,10 +227,8 @@ export const QuantumNavbar = memo(() => {
                                 </div>
                               </div>
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                          </div>
+                      </div>
                   ) : (
                     <Link
                       href={loginHref}
@@ -417,10 +400,7 @@ export const QuantumNavbar = memo(() => {
 
 
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      </div>
     </>
   )
 })

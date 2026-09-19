@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { Search, X, Film, Tv, Loader2, Star, Calendar, TrendingUp, Filter, SlidersHorizontal, ChevronDown, Clock, Award } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
 
 interface SearchResult {
   id: number
@@ -483,13 +482,8 @@ export function SearchBox() {
     <div ref={searchRef} className="relative flex items-center gap-3">
       {/* Android App Button - Coming Soon (يختفي فقط أثناء فتح البحث — يظهر دائماً في كل المقاسات) */}
       {!isOpen && (
-        <motion.button
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="relative h-9 px-2.5 bg-gradient-to-br from-slate-800/95 to-slate-700/95 hover:from-slate-700/95 hover:to-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 group overflow-hidden"
+        <button
+          className="relative h-9 px-2.5 bg-gradient-to-br from-slate-800/95 to-slate-700/95 hover:from-slate-700/95 hover:to-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 group overflow-hidden animate-[nav-enter-left_0.3s_ease-out] hover:scale-[1.02] active:scale-[0.98]"
           aria-label="التطبيق قريباً"
         >
           <div className="flex items-center gap-1.5 relative z-10">
@@ -498,66 +492,51 @@ export function SearchBox() {
             </svg>
             <span className="hidden sm:inline text-sm font-semibold text-slate-200 group-hover:text-white transition-colors whitespace-nowrap">قريباً</span>
           </div>
-        </motion.button>
+        </button>
       )}
-      
+
       {/* Search Button - Modern Glass Design */}
       {!isOpen && (
-        <motion.button
+        <button
           ref={buttonRef}
-          animate={{
-            width: isCollapsed ? '36px' : 'auto',
-            paddingLeft: isCollapsed ? '6px' : '10px',
-            paddingRight: isCollapsed ? '6px' : '10px',
-          }}
-          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           onClick={() => {
             setIsOpen(true)
             setIsCollapsed(false)
           }}
-          className="relative h-9 py-1.5 bg-gradient-to-br from-slate-800/95 to-slate-700/95 hover:from-slate-700/95 hover:to-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-blue-400/50 rounded-md shadow-lg hover:shadow-blue-500/20 transition-all duration-300 group overflow-hidden"
+          className={`relative h-9 py-1.5 bg-gradient-to-br from-slate-800/95 to-slate-700/95 hover:from-slate-700/95 hover:to-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-blue-400/50 rounded-md shadow-lg hover:shadow-blue-500/20 transition-all duration-300 group overflow-hidden hover:scale-[1.02] active:scale-[0.98] ${
+            isCollapsed ? 'w-9 px-1.5' : 'w-auto px-2.5'
+          }`}
           aria-label="بحث"
         >
           <div className="flex items-center gap-1.5 relative z-10">
-            <motion.span
-              animate={{
-                opacity: isCollapsed ? 0 : 1,
-                width: isCollapsed ? 0 : 'auto',
-              }}
-              transition={{ duration: 0.2 }}
-              className="hidden sm:block text-sm font-semibold text-slate-200 group-hover:text-white whitespace-nowrap overflow-hidden"
+            <span
+              className={`hidden sm:block text-sm font-semibold text-slate-200 group-hover:text-white whitespace-nowrap overflow-hidden transition-all duration-200 ${
+                isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'
+              }`}
             >
               بحث متقدم
-            </motion.span>
+            </span>
             <svg className="w-5 h-5 text-cyan-400 group-hover:text-cyan-300 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
               <circle cx="10" cy="10" r="7"/>
               <path d="M21 21l-6-6"/>
             </svg>
           </div>
-          
+
           {/* Subtle accent line */}
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </motion.button>
+        </button>
       )}
 
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Search Modal */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              style={{
-                position: 'fixed',
-                top: '0',
-                left: '20px',
-              }}
-              className="w-[280px] sm:w-[320px] max-h-screen z-[999] flex flex-col"
-            >
+      {/* Search Modal — مثبت في الـDOM والتحكم بـCSS (بديل framer) — نفس الحركة بالعين */}
+      <div
+        aria-hidden={!isOpen}
+        className={`nav-search-modal ${isOpen ? 'nav-search-modal-open' : ''} w-[280px] sm:w-[320px] max-h-screen z-[999] flex flex-col`}
+        style={{
+          position: 'fixed',
+          top: '0',
+          left: '20px',
+        }}
+      >
               {/* Main Search Container */}
               <div className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl overflow-hidden">
                 
@@ -588,13 +567,11 @@ export function SearchBox() {
                     
                     {/* Voice Search Button */}
                     {!loading && (
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                      <button
                         onClick={toggleVoiceSearch}
-                        className={`flex-shrink-0 transition-colors ${
-                          isListening 
-                            ? 'text-red-500 animate-pulse' 
+                        className={`flex-shrink-0 transition-all hover:scale-110 active:scale-90 ${
+                          isListening
+                            ? 'text-red-500 animate-pulse'
                             : 'text-slate-400 hover:text-cyan-400'
                         }`}
                         aria-label="بحث صوتي"
@@ -604,18 +581,16 @@ export function SearchBox() {
                           <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                           <line x1="12" y1="19" x2="12" y2="22"/>
                         </svg>
-                      </motion.button>
+                      </button>
                     )}
-                    
+
                     {/* Virtual Keyboard Toggle Button */}
                     {!loading && (
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                      <button
                         onClick={() => setShowKeyboard(!showKeyboard)}
-                        className={`flex-shrink-0 transition-colors ${
-                          showKeyboard 
-                            ? 'text-cyan-400' 
+                        className={`flex-shrink-0 transition-all hover:scale-110 active:scale-90 ${
+                          showKeyboard
+                            ? 'text-cyan-400'
                             : 'text-slate-400 hover:text-cyan-400'
                         }`}
                         aria-label="لوحة مفاتيح"
@@ -631,46 +606,41 @@ export function SearchBox() {
                           <path d="M16 12h.01"/>
                           <path d="M7 16h10"/>
                         </svg>
-                      </motion.button>
+                      </button>
                     )}
-                    
+
                     {query && !loading && (
-                      <motion.button
-                        whileHover={{ scale: 1.1, rotate: 90 }}
-                        whileTap={{ scale: 0.9 }}
+                      <button
                         onClick={handleClear}
-                        className="text-slate-400 hover:text-red-400 transition-colors flex-shrink-0"
+                        className="text-slate-400 hover:text-red-400 transition-all hover:scale-110 hover:rotate-90 active:scale-90 flex-shrink-0"
                         aria-label="مسح"
                       >
                         <X size={20} />
-                      </motion.button>
+                      </button>
                     )}
                   </div>
 
-                  {/* Virtual Keyboard - YouTube Style */}
-                  <AnimatePresence>
-                    {showKeyboard && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden bg-slate-950/95 border-t border-slate-700/30 px-3 py-3"
-                      >
-                        <YouTubeKeyboard 
+                  {/* Virtual Keyboard - YouTube Style — انهيار ارتفاع بـCSS grid (بديل framer height auto) */}
+                  <div
+                    aria-hidden={!showKeyboard}
+                    className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-200 ${
+                      showKeyboard ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    } bg-slate-950/95 border-t border-slate-700/30`}
+                  >
+                    <div className="min-h-0 overflow-hidden px-3 py-3">
+                      {showKeyboard && (
+                        <YouTubeKeyboard
                           onKeyPress={handleKeyPress}
                           onClose={() => setShowKeyboard(false)}
                         />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      )}
+                    </div>
+                  </div>
 
                   {/* Stats Bar with External Type Filter */}
                   {results.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="px-3 py-2 bg-slate-950/50 border-t border-slate-700/30 space-y-1.5"
+                    <div
+                      className="px-3 py-2 bg-slate-950/50 border-t border-slate-700/30 space-y-1.5 animate-[nav-fade-down_0.25s_ease-out]"
                     >
                       {/* Type Filter - Row 1 */}
                       <div className="flex items-center gap-1.5">
@@ -736,7 +706,7 @@ export function SearchBox() {
                           </button>
                         ))}
                       </div>
-                    </motion.div>
+                    </div>
                   )}
 
                 </div>
@@ -757,11 +727,10 @@ export function SearchBox() {
                             const mainGenre = genres[0] || ''
 
                             return (
-                              <motion.div
+                              <div
                                 key={`${result.media_type}-${result.id}`}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: index * 0.02 }}
+                                style={{ animationDelay: `${index * 0.02}s` }}
+                                className="animate-[nav-card-in_0.25s_ease-out_both]"
                               >
                                 <Link
                                   href={`/${result.media_type === 'movie' ? 'movies' : 'series'}/${result.slug}`}
@@ -827,38 +796,32 @@ export function SearchBox() {
                                     </p>
                                   </div>
                                 </Link>
-                              </motion.div>
+                              </div>
                             )
                           })}
                           </div>
                           {/* Load More Button */}
                           {displayLimit < filteredAndSortedResults.length && (
-                            <motion.button
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
+                            <button
                               onClick={handleLoadMore}
-                              className="col-span-2 mt-3 px-4 py-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl transition-all duration-300"
+                              className="col-span-2 mt-3 px-4 py-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 hover:from-cyan-500/20 hover:to-blue-500/20 border border-cyan-500/30 hover:border-cyan-500/50 rounded-xl transition-all duration-300 animate-[nav-fade-up_0.25s_ease-out_both] hover:scale-[1.02] active:scale-[0.98]"
                             >
                               <div className="flex items-center justify-center gap-2 text-cyan-400 font-semibold text-sm">
                                 <ChevronDown size={18} />
                                 <span>تحميل المزيد ({Math.min(50, filteredAndSortedResults.length - displayLimit)})</span>
                                 <ChevronDown size={18} />
                               </div>
-                            </motion.button>
+                            </button>
                           )}
                         </div>
                       ) : (
                         !loading && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="py-8 text-center px-3"
+                          <div
+                            className="py-8 text-center px-3 animate-[nav-card-in_0.25s_ease-out]"
                           >
                             <p className="text-slate-300 text-sm font-semibold mb-1">لا توجد نتائج</p>
                             <p className="text-slate-400 text-xs">جرب كلمات بحث مختلفة</p>
-                          </motion.div>
+                          </div>
                         )
                       )}
                     </>
@@ -866,22 +829,17 @@ export function SearchBox() {
 
                   {/* Initial State - Clean and Simple */}
                   {query.length === 0 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="py-6 px-3 text-center"
+                    <div
+                      className="py-6 px-3 text-center animate-[card-fade-in_0.3s_ease-out]"
                     >
                       <p className="text-slate-400 text-xs">ابدأ البحث للعثور على أفلام ومسلسلات</p>
-                    </motion.div>
+                    </div>
                   )}
 
                   {/* No more "write 2 chars" message - now supports 1 char search! */}
                 </div>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      </div>
 
       {/* Custom Scrollbar Styles */}
       <style jsx global>{`

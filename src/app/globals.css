@@ -2517,3 +2517,22 @@ h1 {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* بديل framer-motion في النافبار/البحث — نفس الحركات بالقيم المقاربة للـsprings */
+/* خلفية السايدبار: fade */
+.nav-sidebar-backdrop { opacity: 0; pointer-events: none; transition: opacity 0.25s ease-out; }
+.nav-sidebar-backdrop-open { opacity: 1; pointer-events: auto; }
+/* بانل السايدبار: سحب من اليمين (spring d25/k200 ≈ 0.3s) — RTL-safe: translateX موجب */
+.nav-sidebar-panel { transform: translateX(100%); visibility: hidden; transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.05), visibility 0.3s; }
+.nav-sidebar-panel-open { transform: translateX(0); visibility: visible; }
+/* منسدلة المستخدم: fade + y-8 + scale 0.96 (spring d24/k300 ≈ 0.2s) */
+.nav-dropdown { opacity: 0; transform: translateY(-8px) scale(0.96); pointer-events: none; transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.05); }
+.nav-dropdown-open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+/* مودال البحث: fade + scale 0.95 + y-10 (spring d25/k300 ≈ 0.25s) */
+.nav-search-modal { opacity: 0; transform: translateY(-10px) scale(0.95); pointer-events: none; transition: opacity 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.05), transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.05); }
+.nav-search-modal-open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+/* keyframes للدخول */
+@keyframes nav-enter-left { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes nav-fade-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nav-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nav-card-in { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
