@@ -2,7 +2,9 @@ name: Build and Deploy to Cloudflare Workers
 
 on:
   push:
-    branches: [ cloudflare-migration, main ]
+    # النشر من main فقط — الفرع القديم cloudflare-migration فاضل كأرشيف لكنه
+    # مش مشغّل نشر: push عليه بالغلط مالوش أي أثر على الإنتاج.
+    branches: [ main ]
   workflow_dispatch:
 
 concurrency:
