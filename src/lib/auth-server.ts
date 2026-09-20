@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { executeAll, executeFirst } from '@/lib/db';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getSiteSettings } from '@/lib/settings';
 
 const GOOGLE_AUTH  = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN = 'https://oauth2.googleapis.com/token';
@@ -109,6 +110,14 @@ export async function handleAuthCallback(req: NextRequest) {
   const avatar = (payload.picture as string) || '';
   const role   = ADMIN_EMAILS.includes(email) ? 'admin' : 'user';
   const now    = new Date().toISOString();
+
+  // بوابة registration_open: تمنع إنشاء حسابات جديدة فقط — المستخدمون الحاليون
+  // يدخلون طبيعي (UPDATE تحت). المدرجون في ADMIN_EMAILS فوق البوابة دائمًا.
+  const siteSettings = await getSiteSettings();
+  if (!siteSettings.registration_open && role !== 'admin') {
+    const existing = await executeFirst<{ id: string }>('SELECT id FROM users WHERE id = ?', [userId]);
+    if (!existing) return null; // زائر جديد والتسجيل مقفل → لا حساب ولا جلسة
+  }
 
   await executeAll(
     `INSERT INTO users (id, email, name, avatar_url, role, created_at, last_login_at)

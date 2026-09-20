@@ -1,14 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Save, Database, Globe, Shield, Loader, AlertCircle, Trash2 } from 'lucide-react'
+import { Save, Loader, ShieldAlert, Wrench, Info } from 'lucide-react'
 
 interface Settings {
   site_name: string
-  site_description: string | null
+  site_description: string
   maintenance_mode: boolean
   registration_open: boolean
 }
+
+const inputCls = 'w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500'
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>({
@@ -20,32 +22,30 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [purging, setPurging] = useState(false)
-  const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
+  const [confirmMaintenance, setConfirmMaintenance] = useState(false)
+  const [flash, setFlash] = useState<{ ok: boolean; msg: string } | null>(null)
 
-  const flash = (type: 'ok' | 'err', msg: string) => {
-    setFeedback({ type, msg })
-    setTimeout(() => setFeedback(null), 4000)
+  const note = (ok: boolean, msg: string) => {
+    setFlash({ ok, msg })
+    setTimeout(() => setFlash(null), 4000)
   }
 
   useEffect(() => {
-    fetchSettings()
+    ;(async () => {
+      try {
+        const res = await fetch('/api/admin/settings', { cache: 'no-store' })
+        const data = await res.json()
+        if (!res.ok || !data.ok) throw new Error(data.error || 'فشل جلب الإعدادات')
+        setSettings(data.settings)
+      } catch (e) {
+        note(false, e instanceof Error ? e.message : 'خطأ في جلب الإعدادات')
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [])
 
-  const fetchSettings = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/admin/settings')
-      const data = await res.json()
-      if (!data.ok) throw new Error(data.error || 'فشل جلب الإعدادات')
-      setSettings(data.settings)
-    } catch (e) {
-      flash('err', e instanceof Error ? e.message : 'خطأ في جلب الإعدادات')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const saveSettings = async () => {
+  const save = async () => {
     setSaving(true)
     try {
       const res = await fetch('/api/admin/settings', {
@@ -54,199 +54,155 @@ export default function SettingsPage() {
         body: JSON.stringify(settings),
       })
       const data = await res.json()
-      if (!data.ok) throw new Error(data.error || 'فشل الحفظ')
-      flash('ok', 'تم حفظ الإعدادات بنجاح')
+      if (!res.ok || !data.ok) throw new Error(data.error || 'فشل الحفظ')
+      note(true, data.message || 'تم الحفظ')
     } catch (e) {
-      flash('err', e instanceof Error ? e.message : 'خطأ في الحفظ')
+      note(false, e instanceof Error ? e.message : 'خطأ في الحفظ')
     } finally {
       setSaving(false)
+      setConfirmMaintenance(false)
     }
   }
 
-  const purgeCache = async () => {
-    if (!window.confirm('مسح كاش Cloudflare بالكامل؟\n\nسيُجبر الـ edge على إعادة توليد كل الصفحات من الأصل، ويزيد الحمل على الـ Worker مؤقتاً.')) return
-
+  const purge = async () => {
     setPurging(true)
     try {
       const res = await fetch('/api/admin/purge-cache', { method: 'POST' })
-      const data = await res.json()
-      if (!data.ok) throw new Error(data.error || 'فشل مسح الكاش')
-      flash('ok', `✅ تم مسح كاش Cloudflare بنجاح — ${data.timestamp}`)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'فشل مسح الكاش')
+      note(true, 'تم مسح كاش الحافة — أول طلب بعده MISS عادي')
     } catch (e) {
-      flash('err', e instanceof Error ? e.message : 'خطأ في مسح الكاش')
+      note(false, e instanceof Error ? e.message : 'خطأ في مسح الكاش')
     } finally {
       setPurging(false)
     }
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader size={32} className="animate-spin text-cyan-400" />
-      </div>
-    )
+    return <div className="flex justify-center py-16"><Loader className="h-6 w-6 animate-spin text-zinc-400" /></div>
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-100 flex items-center gap-2">
-            <SettingsIcon className="text-zinc-400" /> إعدادات النظام
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1">إدارة إعدادات الموقع العامة</p>
-        </div>
-        <button
-          onClick={saveSettings}
-          disabled={saving}
-          className="bg-cyan-500 hover:bg-cyan-400 text-black px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors disabled:opacity-50"
-        >
-          {saving ? <Loader size={16} className="animate-spin" /> : <Save size={16} />}
-          {saving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
-        </button>
+    <div className="max-w-2xl space-y-5">
+      <div>
+        <h2 className="text-xl font-black text-zinc-100">الإعدادات</h2>
+        <p className="text-xs text-zinc-500">تسري خلال ≤60 ثانية على كل الخوادم بعد الحفظ</p>
       </div>
 
-      {feedback && (
-        <div className={`px-4 py-3 rounded-lg text-sm font-medium ${feedback.type === 'ok' ? 'bg-emerald-950/40 border border-emerald-700/40 text-emerald-300' : 'bg-rose-950/40 border border-rose-700/40 text-rose-300'}`}>
-          {feedback.msg}
+      {flash && (
+        <p className={`rounded-lg px-3 py-2 text-sm font-bold ${flash.ok ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+          {flash.msg}
+        </p>
+      )}
+
+      {/* وضع الصيانة */}
+      <div className={`rounded-xl border p-5 ${settings.maintenance_mode ? 'border-orange-500/40 bg-orange-500/5' : 'border-zinc-800 bg-zinc-900'}`}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="flex items-center gap-2 font-bold text-zinc-100">
+              <ShieldAlert className={`h-5 w-5 ${settings.maintenance_mode ? 'text-orange-400' : 'text-zinc-500'}`} />
+              وضع الصيانة
+            </h3>
+            <p className="mt-1 text-xs text-zinc-500">
+              يقفل الموقع بالكامل عن الزوار ويظهر صفحة «تحت الصيانة» — الإدارة تقدر تتصفح طبيعي، وصفحة الدخول والـauth شغالين.
+            </p>
+            {settings.maintenance_mode && (
+              <p className="mt-2 rounded bg-orange-500/10 px-2 py-1 text-xs font-bold text-orange-400">
+                ⚠️ الصيانة مفعلة الآن — الموقع مقفول عن الزوار
+              </p>
+            )}
+          </div>
+          <label className="relative inline-flex shrink-0 cursor-pointer items-center">
+            <input
+              type="checkbox"
+              checked={settings.maintenance_mode}
+              onChange={(e) => {
+                if (e.target.checked) setConfirmMaintenance(true)
+                else setSettings({ ...settings, maintenance_mode: false })
+              }}
+              className="peer sr-only"
+            />
+            <div className="peer h-6 w-11 rounded-full bg-zinc-700 after:absolute after:top-0.5 after:right-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-orange-500 peer-checked:after:-translate-x-5" />
+          </label>
+        </div>
+      </div>
+
+      {/* التسجيل المفتوح */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-zinc-100">التسجيل المفتوح</h3>
+            <p className="mt-1 text-xs text-zinc-500">
+              عند الإغلاق: الحسابات الجديدة (Google) مرفوضة — المستخدمون الحاليون يدخلون طبيعي.
+            </p>
+          </div>
+          <label className="relative inline-flex shrink-0 cursor-pointer items-center">
+            <input
+              type="checkbox"
+              checked={settings.registration_open}
+              onChange={(e) => setSettings({ ...settings, registration_open: e.target.checked })}
+              className="peer sr-only"
+            />
+            <div className="peer h-6 w-11 rounded-full bg-zinc-700 after:absolute after:top-0.5 after:right-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:bg-cyan-500 peer-checked:after:-translate-x-5" />
+          </label>
+        </div>
+      </div>
+
+      {/* الهوية */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+        <h3 className="mb-1 font-bold text-zinc-100">هوية الموقع</h3>
+        <p className="mb-4 flex items-center gap-1.5 text-xs text-zinc-600">
+          <Info className="h-3.5 w-3.5" />
+          محفوظة في الإعدادات (الربط بـSEO العام خطوة منفصلة)
+        </p>
+        <label className="mb-1 block text-xs font-bold text-zinc-400">اسم الموقع</label>
+        <input value={settings.site_name} onChange={(e) => setSettings({ ...settings, site_name: e.target.value })} className={`mb-3 ${inputCls}`} />
+        <label className="mb-1 block text-xs font-bold text-zinc-400">الوصف</label>
+        <textarea value={settings.site_description} onChange={(e) => setSettings({ ...settings, site_description: e.target.value })} rows={2} className={inputCls} />
+      </div>
+
+      <button
+        onClick={save}
+        disabled={saving || confirmMaintenance}
+        className="flex items-center gap-2 rounded-lg bg-cyan-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-cyan-500 disabled:opacity-50"
+      >
+        {saving ? <Loader className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} حفظ الإعدادات
+      </button>
+
+      {confirmMaintenance && (
+        <div className="rounded-xl border border-orange-500/40 bg-orange-500/5 p-5">
+          <h3 className="mb-1 font-bold text-orange-400">تأكيد تفعيل وضع الصيانة</h3>
+          <p className="mb-4 text-sm text-zinc-300">الموقع هيقف عن كل الزوار فورًا (خلال دقيقة). متأكد؟</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setSettings({ ...settings, maintenance_mode: true }); setConfirmMaintenance(false) }}
+              className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white hover:bg-orange-500"
+            >
+              نعم، فعّل الصيانة
+            </button>
+            <button onClick={() => setConfirmMaintenance(false)} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
+              إلغاء
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* General Settings */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
-              <Globe className="w-5 h-5 text-cyan-400" />
-              إعدادات عامة
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1.5">اسم الموقع</label>
-                <input
-                  type="text"
-                  value={settings.site_name}
-                  onChange={(e) => setSettings({ ...settings, site_name: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-2 px-3 text-sm text-zinc-100 focus:border-cyan-500 outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1.5">وصف الموقع (SEO)</label>
-                <textarea
-                  rows={3}
-                  value={settings.site_description || ''}
-                  onChange={(e) => setSettings({ ...settings, site_description: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-2 px-3 text-sm text-zinc-100 focus:border-cyan-500 outline-none transition-colors resize-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
-              <Database className="w-5 h-5 text-purple-400" />
-              معلومات قاعدة البيانات
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1.5">TMDB API Key</label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value="************************"
-                    disabled
-                    className="w-full bg-zinc-950/50 border border-zinc-800/50 rounded-lg py-2 px-3 text-sm text-zinc-500 cursor-not-allowed"
-                  />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-600">
-                    يُدار من .env
-                  </span>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-zinc-400 mb-1.5">Cloudflare D1 Database</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value="b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6"
-                    disabled
-                    className="w-full bg-zinc-950/50 border border-zinc-800/50 rounded-lg py-2 px-3 text-sm text-zinc-500 cursor-not-allowed"
-                  />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-600">
-                    يُدار من wrangler.jsonc
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-start gap-2 p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg">
-                <AlertCircle size={16} className="text-blue-400 mt-0.5 shrink-0" />
-                <p className="text-xs text-blue-300">
-                  مفاتيح API والاتصالات الحساسة تُدار فقط عبر متغيرات البيئة (.env.local) لأسباب أمنية
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar Settings */}
-        <div className="space-y-6">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-green-400" />
-              حالة النظام
-            </h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm text-zinc-300 font-medium">وضع الصيانة</span>
-                  <p className="text-xs text-zinc-500 mt-0.5">يوقف الوصول للموقع مؤقتاً</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.maintenance_mode}
-                    onChange={(e) => setSettings({ ...settings, maintenance_mode: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                </label>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm text-zinc-300 font-medium">التسجيل المفتوح</span>
-                  <p className="text-xs text-zinc-500 mt-0.5">السماح بإنشاء حسابات جديدة</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.registration_open}
-                    onChange={(e) => setSettings({ ...settings, registration_open: e.target.checked })}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-zinc-100 mb-4 flex items-center gap-2">
-              <Trash2 className="w-5 h-5 text-amber-400" />
-              كاش Cloudflare
-            </h2>
-            <div className="space-y-4">
-              <p className="text-xs text-zinc-500 leading-relaxed">
-                يمسح كل مفاتيح الكاش من شبكة Cloudflare (purge_everything) — استخدمه بعد تحديث المحتوى
-                لتظهر التغييرات فوراً لكل الزوار.
-              </p>
-              <button
-                onClick={purgeCache}
-                disabled={purging}
-                className="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-600/40 text-amber-300 px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {purging ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                {purging ? 'جاري مسح الكاش...' : 'مسح كاش Cloudflare'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* مسح الكاش */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+        <h3 className="flex items-center gap-2 font-bold text-zinc-100">
+          <Wrench className="h-5 w-5 text-cyan-400" />
+          كاش الحافة (Cloudflare)
+        </h3>
+        <p className="mb-4 mt-1 text-xs text-zinc-500">
+          مسح شامل لكل الصفحات المكتاشة على الحافة — استخدمه بعد تغييرات المحتوى اليدوية. أول طلب بعد المسح أبطأ (طبيعي).
+        </p>
+        <button
+          onClick={purge}
+          disabled={purging}
+          className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-bold text-cyan-400 hover:bg-zinc-700 disabled:opacity-50"
+        >
+          {purging ? 'جاري المسح…' : 'مسح كاش الحافة الآن'}
+        </button>
       </div>
     </div>
   )

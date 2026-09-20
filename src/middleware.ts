@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import { safeEqual } from '@/lib/timingSafeEqual';
+import { getSiteSettings } from '@/lib/settings';
 
 const BUILD_SHA = process.env.NEXT_PUBLIC_BUILD_SHA || 'unknown';
+
+// صفحة الصيانة — تُخدم لغير الإدارة عند تفعيل maintenance_mode من اللوحة.
+function maintenanceResponse() {
+  return new NextResponse(
+    `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الموقع تحت الصيانة | 4CIMA</title>
+<meta name="robots" content="noindex">
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#09090b;color:#e4e4e5;font-family:Cairo,sans-serif}
+.box{text-align:center;padding:2rem}
+h1{font-size:1.5rem;margin:0 0 .5rem}p{color:#a1a1aa;font-size:.9rem;margin:0}
+</style></head>
+<body><div class="box"><h1>🛠 الموقع تحت الصيانة</h1><p>رجعنا قريب جدًا — فريق 4CIMA</p></div></body></html>`,
+    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Retry-After': '300', 'Cache-Control': 'no-store' } },
+  );
+}
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({
@@ -17,7 +36,29 @@ export async function middleware(request: NextRequest) {
 
   const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') ||
                        request.nextUrl.pathname.startsWith('/api/admin');
-  if (!isAdminRoute) return response;
+  if (!isAdminRoute) {
+    // وضع الصيانة (كاش 60s على مستوى الـisolate): يمنع كل المسارات عدا الإدارة
+    // والدخول والـauth والاستاتيك — فشل القراءة = مفتوح (لن يُقفل الموقع بخطأ إعدادات).
+    const path = request.nextUrl.pathname;
+    const bypass = isAdminRoute ||
+      path.startsWith('/api/auth') ||
+      path.startsWith('/login') ||
+      path === '/maintenance';
+    if (!bypass) {
+      try {
+        const settings = await getSiteSettings();
+        if (settings.maintenance_mode) {
+          const user = await getCurrentUser(request);
+          if (!(user && (user.role === 'admin' || user.role === 'supervisor'))) {
+            return maintenanceResponse();
+          }
+        }
+      } catch {
+        // أي خطأ في فحص الإعدادات = اسمح بالمرور
+      }
+    }
+    return response;
+  }
 
   const username = process.env.ADMIN_USERNAME;
   const password = process.env.ADMIN_PASSWORD;

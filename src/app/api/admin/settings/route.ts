@@ -1,33 +1,62 @@
+/**
+ * /api/admin/settings — قراءة/كتابة إعدادات الموقع (جدول settings).
+ * كل الـmethods خلف requireAdmin. بعد الكتابة: إبطال الكاش فورًا
+ * (الصيانة/التسجيل يسري خلال ≤60 ثانية على كل الـisolates).
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { executeFirst, executeAll } from '@/lib/db'
+import { requireAdmin } from '@/lib/requireAdmin'
+import { invalidateSettingsCache } from '@/lib/settings'
 
-export async function GET() {
+export const dynamic = 'force-dynamic'
+const NO_STORE = { 'Cache-Control': 'no-store' }
+
+export async function GET(request: NextRequest) {
+  const denied = await requireAdmin(request)
+  if (denied) return denied
+
   try {
-    const row = await executeFirst('SELECT * FROM settings WHERE id = 1')
-    if (!row) {
-      return NextResponse.json({
+    const row = await executeFirst<Record<string, unknown>>('SELECT * FROM settings WHERE id = 1')
+    return NextResponse.json(
+      {
         ok: true,
-        settings: { site_name: '4CIMA', site_description: 'موقع 4CIMA لمشاهدة أحدث الأفلام والمسلسلات المترجمة والمدبلجة بجودة عالية.', maintenance_mode: false, registration_open: true }
-      })
-    }
-    return NextResponse.json({
-      ok: true,
-      settings: { site_name: row.site_name, site_description: row.site_description, maintenance_mode: Boolean(row.maintenance_mode), registration_open: Boolean(row.registration_open) }
-    })
-  } catch (error: unknown) {
-    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
+        settings: row
+          ? {
+              site_name: String(row.site_name || '4CIMA'),
+              site_description: String(row.site_description ?? ''),
+              maintenance_mode: Boolean(row.maintenance_mode),
+              registration_open: row.registration_open == null ? true : Boolean(row.registration_open),
+            }
+          : { site_name: '4CIMA', site_description: '', maintenance_mode: false, registration_open: true },
+      },
+      { headers: NO_STORE },
+    )
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Unknown' }, { status: 500, headers: NO_STORE })
   }
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireAdmin(request)
+  if (denied) return denied
+
   try {
     const { site_name, site_description, maintenance_mode, registration_open } = await request.json()
-    await executeAll(
-      `UPDATE settings SET site_name=?, site_description=?, maintenance_mode=?, registration_open=?, updated_at=CURRENT_TIMESTAMP WHERE id=1`,
-      [site_name || '4CIMA', site_description || '', maintenance_mode ? 1 : 0, registration_open ? 1 : 0]
-    )
-    return NextResponse.json({ ok: true })
-  } catch (error: unknown) {
-    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 })
+    const existing = await executeFirst('SELECT id FROM settings WHERE id = 1')
+    if (existing) {
+      await executeAll(
+        `UPDATE settings SET site_name=?, site_description=?, maintenance_mode=?, registration_open=?, updated_at=CURRENT_TIMESTAMP WHERE id=1`,
+        [site_name || '4CIMA', site_description || '', maintenance_mode ? 1 : 0, registration_open === false ? 0 : 1],
+      )
+    } else {
+      await executeAll(
+        `INSERT INTO settings (id, site_name, site_description, maintenance_mode, registration_open) VALUES (1, ?, ?, ?, ?)`,
+        [site_name || '4CIMA', site_description || '', maintenance_mode ? 1 : 0, registration_open === false ? 0 : 1],
+      )
+    }
+    invalidateSettingsCache()
+    return NextResponse.json({ ok: true, message: 'تم الحفظ — يسري خلال دقيقة' })
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Unknown' }, { status: 500, headers: NO_STORE })
   }
 }
