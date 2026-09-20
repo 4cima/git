@@ -46,6 +46,16 @@ async function hmac(secret: string, data: string): Promise<string> {
   return Buffer.from(sig).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+// مقارنة توقيع بزمن ثابت — === العادية بتقف عند أول حرف مختلف فيتسرّب طول
+// البادئة المتطابقة عبر التوقيت. هنا بنجمع XOR كل وحدات الكود مهما كانت
+// النتيجة، فزمن التنفيذ ثابت على نفس الطول. النتيجة مطابقة تمامًا ل===.
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 export async function signPlayerToken(user: {
   id: string; name: string; avatar_url: string; role: string;
 }): Promise<string> {
@@ -69,7 +79,7 @@ export async function verifyPlayerToken(token: string): Promise<PlayerTokenPaylo
   const [body, sig] = token.split('.');
   if (!body || !sig) return null;
   const expected = await hmac(secret, body);
-  if (expected.length !== sig.length || expected !== sig) return null;
+  if (!timingSafeEqual(expected, sig)) return null;
   try {
     const json = JSON.parse(Buffer.from(body.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf-8'));
     if (!json?.uid || typeof json.exp !== 'number') return null;
