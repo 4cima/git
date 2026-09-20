@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import { safeEqual } from '@/lib/timingSafeEqual';
-import { getSiteSettings } from '@/lib/settings';
+import { getSiteSettingsFresh } from '@/lib/settings';
 
 const BUILD_SHA = process.env.NEXT_PUBLIC_BUILD_SHA || 'unknown';
 
@@ -46,7 +46,9 @@ export async function middleware(request: NextRequest) {
       path === '/maintenance';
     if (!bypass) {
       try {
-        const settings = await getSiteSettings();
+        // قراءة حية (بلا كاش الـisolate): بعد purge الكاش في تفعيل الصيانة، isolate
+        // عليه قيمة قديمة ممكن يرجّع 200 ويُخزَّن شهر — القراءة المباشرة تقفل الثغرة
+        const settings = await getSiteSettingsFresh();
         if (settings.maintenance_mode) {
           const user = await getCurrentUser(request);
           if (!(user && (user.role === 'admin' || user.role === 'supervisor'))) {

@@ -1,12 +1,15 @@
 /**
  * /api/admin/settings — قراءة/كتابة إعدادات الموقع (جدول settings).
- * كل الـmethods خلف requireAdmin. بعد الكتابة: إبطال الكاش فورًا
- * (الصيانة/التسجيل يسري خلال ≤60 ثانية على كل الـisolates).
+ * كل الـmethods خلف requireAdmin. بعد الكتابة: إبطال كاش الـisolate فورًا، وعند
+ * تغيّر وضع الصيانة: مسح كاش الحافة (purge_everything) — لأن كاش الحافة (شهر)
+ * بيخدم الصفحات المشهورة قبل ما الـmiddleware يتنفذ أصلًا، ومن غير المسح
+ * تفعيل الصيانة مايوصلش للزوار على الصفحات المكتاشة.
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { executeFirst, executeAll } from '@/lib/db'
 import { requireAdmin } from '@/lib/requireAdmin'
 import { invalidateSettingsCache } from '@/lib/settings'
+import { purgeCloudflareCache } from '@/lib/cloudflare-cache'
 
 export const dynamic = 'force-dynamic'
 const NO_STORE = { 'Cache-Control': 'no-store' }
@@ -42,7 +45,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const { site_name, site_description, maintenance_mode, registration_open } = await request.json()
-    const existing = await executeFirst('SELECT id FROM settings WHERE id = 1')
+    const existing = await executeFirst<{ maintenance_mode: number | null }>(
+      'SELECT maintenance_mode FROM settings WHERE id = 1',
+    )
+    const maintenanceChanged = Boolean(existing?.maintenance_mode) !== Boolean(maintenance_mode)
+
     if (existing) {
       await executeAll(
         `UPDATE settings SET site_name=?, site_description=?, maintenance_mode=?, registration_open=?, updated_at=CURRENT_TIMESTAMP WHERE id=1`,
@@ -55,7 +62,25 @@ export async function POST(request: NextRequest) {
       )
     }
     invalidateSettingsCache()
-    return NextResponse.json({ ok: true, message: 'تم الحفظ — يسري خلال دقيقة' })
+
+    // تغيّر الصيانة ⇒ مسح كاش الحافة: النسخ المخزنة (شهر) بتخدم قبل الـmiddleware
+    // فبتتحاوز عليها الصيانة — المسح يجعل كل طلب MISS يمر على فحص الصيانة،
+    // و503 نفسها مش بتتخزن (الكاش بيقبل 200/404 فقط).
+    let purged = false
+    if (maintenanceChanged) {
+      const purge = await purgeCloudflareCache().catch(() => ({ ok: false }))
+      purged = purge.ok
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: maintenanceChanged
+        ? purged
+          ? 'تم الحفظ + مسح كاش الحافة — الصيانة سارية فورًا على كل الصفحات'
+          : 'تم الحفظ، لكن مسح الكاش فشل — الصفحات المكتاشة هتفضل ظاهرة لحد المسح اليدوي'
+        : 'تم الحفظ',
+      cache_purged: purged,
+    })
   } catch (error) {
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Unknown' }, { status: 500, headers: NO_STORE })
   }

@@ -86,7 +86,7 @@ export default function SettingsPage() {
     <div className="max-w-2xl space-y-5">
       <div>
         <h2 className="text-xl font-black text-zinc-100">الإعدادات</h2>
-        <p className="text-xs text-zinc-500">تسري خلال ≤60 ثانية على كل الخوادم بعد الحفظ</p>
+        <p className="text-xs text-zinc-500">تغيير وضع الصيانة بيمسح كاش الحافة تلقائيًا — ساري فورًا على كل الصفحات</p>
       </div>
 
       {flash && (
