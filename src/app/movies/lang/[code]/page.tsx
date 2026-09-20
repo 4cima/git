@@ -5,6 +5,7 @@ import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 import { MoviesPageClient } from '@/components/pages/MoviesPageClient'
 import { findNavLanguage } from '@/lib/language-nav'
+import { safeJsonLd } from '@/lib/jsonld';
 
 interface PageProps {
   params: Promise<{ code: string }>
@@ -126,7 +127,7 @@ export default async function MovieLangPage({ params }: PageProps) {
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <MoviesPageClient
         initialMovies={filteredMovies}
         initialHasMore={hasMore}

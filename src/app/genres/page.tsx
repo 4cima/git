@@ -7,6 +7,7 @@ import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { Footer } from '@/components/layout/Footer'
 import { getAdByNum } from '@/data/ads/4cima.com'
+import { safeJsonLd } from '@/lib/jsonld';
 
 const AD_HEADER = getAdByNum(1)! // 728×90
 const AD_FOOTER_MID = getAdByNum(4)! // 468×60 — فاصل قبل الفوتر (موحّد مع باقي صفحات التصنيفات)
@@ -83,7 +84,7 @@ export default async function GenresPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
 
       {/* بنر الهيدر — 728×90 (بدون طلبات وسيطة) */}

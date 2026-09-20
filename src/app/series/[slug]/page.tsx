@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { executeFirst } from '@/lib/db'
 import { getSimilarSeries } from '@/lib/similar-server'
 import { SeriesDetailsClient } from '@/components/pages/SeriesDetailsClient'
+import { safeJsonLd } from '@/lib/jsonld';
 
 // ساعة بدل دقيقة: كاش الحافة (edge-cache-worker) بيغطي الزيارات، وده بيقلل إعادة التوليد من D1
 // 60 مرة. التحديثات بعد المزامنة بتوصل فورًا عبر purge_everything في سلسلة ما بعد المزامنة.
@@ -207,9 +208,9 @@ export default async function SeriesDetails({ params }: PageProps) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(videoJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }} />
       <SeriesDetailsClient series={series} seasons={seasons} initialSimilar={initialSimilar} />
     </>
   )

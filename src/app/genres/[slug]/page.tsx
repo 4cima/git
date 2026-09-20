@@ -4,6 +4,7 @@ import { executeFirst, executeAll } from '@/lib/db'
 import { GenreOverviewPageClient } from '@/components/pages/GenreOverviewPageClient'
 import { buildTvGenreClause, getTvGenreIds, TV_DISAMBIGUATED_GENRES, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
+import { safeJsonLd } from '@/lib/jsonld';
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -144,7 +145,7 @@ export default async function GenreOverviewPage({ params }: PageProps) {
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
         <GenreOverviewPageClient genre={genre} slug={slug} topMovies={filteredMovies} topSeries={filteredSeries} />
       </>
     )

@@ -6,6 +6,7 @@ import { resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 import { paginationHref } from '@/components/pages/ListingPagination'
+import { safeJsonLd } from '@/lib/jsonld';
 
 /**
  * صفحات ترقيم ساكنة قابلة للزحف لصفحات تصنيفات الأفلام — /movies/genres/{slug}/page/{N}
@@ -105,7 +106,7 @@ export default async function MovieGenrePaginatedPage({ params }: PageProps) {
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
         <div className="hidden" aria-hidden="true" data-ssr-content="movies">
           {filtered.map((movie: any) => (
             <div key={movie.id} data-movie-title={movie.title_ar || movie.title_en} />

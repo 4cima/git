@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { executeAll } from '@/lib/db'
 import { GenreOverviewPageClient } from '@/components/pages/GenreOverviewPageClient'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
+import { safeJsonLd } from '@/lib/jsonld';
 
 export const metadata: Metadata = {
   // بدون «| فور سيما» — template في layout يضيفها تلقائياً
@@ -100,7 +101,7 @@ export default async function ArabicOverviewPage() {
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
         <GenreOverviewPageClient
           genre={{ id: 0, tmdb_id: 0, name_en: 'Arabic', name_ar: 'عربي', slug: 'arabic' }}
           slug="arabic"

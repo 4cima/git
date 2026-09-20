@@ -5,6 +5,7 @@ import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 import { SeriesPageClient } from '@/components/pages/SeriesPageClient'
 import { findNavLanguage } from '@/lib/language-nav'
+import { safeJsonLd } from '@/lib/jsonld';
 
 interface PageProps {
   params: Promise<{ code: string }>
@@ -127,7 +128,7 @@ export default async function SeriesLangPage({ params }: PageProps) {
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <SeriesPageClient
         initialSeries={filteredSeries}
         initialHasMore={hasMore}

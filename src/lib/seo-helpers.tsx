@@ -9,6 +9,7 @@
 
 import { Metadata } from 'next';
 import { generateCompleteSEO, ContentData } from './seo-generator';
+import { safeJsonLd } from '@/lib/jsonld';
 
 export interface SEOContent extends ContentData {
   overview_ar?: string;
@@ -152,7 +153,7 @@ export function MovieSchema({ content }: { content: SEOContent }) {
   return (
     <script
       type={'application/ld+json'}
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />
   );
 }
@@ -166,7 +167,7 @@ export function TVSeriesSchema({ content }: { content: SEOContent }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
     />
   );
 }

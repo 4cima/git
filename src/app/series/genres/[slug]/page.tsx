@@ -5,6 +5,7 @@ import { SeriesGenrePageClient } from '@/components/pages/SeriesGenrePageClient'
 import { buildTvGenreClause, getTvGenreIds, TV_DISAMBIGUATED_GENRES, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
+import { safeJsonLd } from '@/lib/jsonld';
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -159,7 +160,7 @@ export default async function SeriesGenrePage({ params }: PageProps) {
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
         <div className="hidden" aria-hidden="true" data-ssr-content="series">
           {filteredSeries.map((show: any) => (
             <div key={show.id} data-series-title={show.name_ar || show.name_en} />

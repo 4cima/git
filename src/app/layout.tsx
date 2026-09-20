@@ -6,6 +6,7 @@ import { QuantumNavbar } from '@/components/layout/QuantumNavbar'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ClientInit } from './ClientInit'
+import { safeJsonLd } from '@/lib/jsonld';
 
 const websiteJsonLd = {
   '@context': 'https://schema.org',
@@ -142,11 +143,11 @@ export default function RootLayout({
       <body className={`${cairo.className} bg-black text-white min-h-screen`}>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd) }}
         />
         <AuthProvider>
           <ClientInit />

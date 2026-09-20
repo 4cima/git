@@ -3,6 +3,7 @@ import { executeAll } from '@/lib/db'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 import { MoviesPageClient } from '@/components/pages/MoviesPageClient'
+import { safeJsonLd } from '@/lib/jsonld';
 
 export const metadata: Metadata = {
   title: 'الأفلام المترجمة',
@@ -87,7 +88,7 @@ export default async function MoviesPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <MoviesPageClient initialMovies={initialMovies} initialHasMore={initialHasMore} />
     </>

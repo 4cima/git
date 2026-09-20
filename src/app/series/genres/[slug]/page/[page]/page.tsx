@@ -6,6 +6,7 @@ import { getTvGenreIds, resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 import { paginationHref } from '@/components/pages/ListingPagination'
+import { safeJsonLd } from '@/lib/jsonld';
 
 /**
  * صفحات ترقيم ساكنة قابلة للزحف لصفحات تصنيفات المسلسلات — /series/genres/{slug}/page/{N}
@@ -110,7 +111,7 @@ export default async function SeriesGenrePaginatedPage({ params }: PageProps) {
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
         <div className="hidden" aria-hidden="true" data-ssr-content="series">
           {enhanced.map((show: any) => (
             <div key={show.id} data-series-title={show.name_ar || show.name_en} />

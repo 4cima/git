@@ -3,6 +3,7 @@ import { executeAll } from '@/lib/db'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
 import { SeriesPageClient } from '@/components/pages/SeriesPageClient'
+import { safeJsonLd } from '@/lib/jsonld';
 
 export const metadata: Metadata = {
   title: 'المسلسلات المترجمة',
@@ -85,7 +86,7 @@ export default async function SeriesPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <SeriesPageClient initialSeries={initialSeries} initialHasMore={initialHasMore} />
     </>

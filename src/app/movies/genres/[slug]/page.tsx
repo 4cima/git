@@ -5,6 +5,7 @@ import { MovieGenrePageClient } from '@/components/pages/MovieGenrePageClient'
 import { resolveGenreSlug } from '@/lib/genre-siblings'
 import { filterExcludedGenres } from '@/utils/excludedGenres'
 import { LISTING_PAGE_SIZE } from '@/lib/listing-config'
+import { safeJsonLd } from '@/lib/jsonld';
 interface PageProps {
   params: Promise<{ slug: string }>
 }
@@ -131,7 +132,7 @@ export default async function MovieGenrePage({ params }: PageProps) {
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
         <div className="hidden" aria-hidden="true" data-ssr-content="movies">
           {filteredMovies.map((movie: any) => (
             <div key={movie.id} data-movie-title={movie.title_ar || movie.title_en} />
