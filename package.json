@@ -18,7 +18,7 @@
     "check:d1": "node scripts/check-d1.js",
     "setup-secrets": "node scripts/setup-secrets.js",
     "predeploy:production": "node scripts/check-secrets.js && node scripts/verify-build-secrets.js",
-    "deploy:production": "node -e \"const {execSync}=require('child_process');execSync('npx wrangler deploy',{cwd:process.cwd(),stdio:'inherit',env:{...process.env,OPEN_NEXT_DEPLOY:'true'}})\"",
+    "deploy:production": "npm run build:cloudflare && node -e \"const {execSync}=require('child_process');execSync('npx wrangler deploy',{cwd:process.cwd(),stdio:'inherit',env:{...process.env,OPEN_NEXT_DEPLOY:'true'}})\"",
     "build:cloudflare": "node -e \"fs.rmSync('.next',{recursive:true,force:true})\" && opennextjs-cloudflare build && node scripts/verify-build-secrets.js",
     "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --name 4cima-staging",
     "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
