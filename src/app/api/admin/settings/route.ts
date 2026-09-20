@@ -72,10 +72,13 @@ export async function POST(request: NextRequest) {
     }
     invalidateSettingsCache()
 
-    // عداد الصيانة: المدة بالدقايق (0/غياب = بلا عداد). لما الصيانة مقفولة يُمسح دايمًا.
+    // عداد الصيانة: المدة بالدقايق. لو الطلب جاي بدون مدة (حفظ الهوية العادي) والوضع
+    // ON — العداد الحالي مايلمسش. الوضع OFF يمسح العداد دايمًا.
     const minutes = Number(maintenance_duration_minutes) || 0
     if (maintenance_mode) {
-      await setMaintenanceUntil(minutes > 0 ? Date.now() + minutes * 60_000 : 0)
+      if (maintenance_duration_minutes !== undefined) {
+        await setMaintenanceUntil(minutes > 0 ? Date.now() + minutes * 60_000 : 0)
+      }
     } else {
       await setMaintenanceUntil(0)
     }
@@ -93,7 +96,9 @@ export async function POST(request: NextRequest) {
       ok: true,
       message: maintenanceChanged
         ? purged
-          ? 'تم الحفظ + مسح كاش الحافة — الصيانة سارية فورًا على كل الصفحات'
+          ? maintenance_mode
+            ? 'تم الحفظ + مسح كاش الحافة — الصيانة سارية فورًا على كل الصفحات'
+            : 'تم الحفظ + مسح كاش الحافة — الموقع مفتوح الآن لكل الزوار'
           : 'تم الحفظ، لكن مسح الكاش فشل — الصفحات المكتاشة هتفضل ظاهرة لحد المسح اليدوي'
         : 'تم الحفظ',
       cache_purged: purged,
