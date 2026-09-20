@@ -1,7 +1,6 @@
 /**
- * /api/admin/ads/kill — Instant kill switch for all zones or one network.
- * Pauses providers (or one provider) so /api/ads/serve immediately returns
- * no network ads (serve requires p.status = 'active', no cache).
+ * /api/admin/ads/kill — قاطع الطوارئ: إيقاف كل الشبكات أو شبكة واحدة فورًا.
+ * الإيقاف = status→paused على ad_providers؛ serve يشترط p.status='active' فتتوقف فورًا.
  */
 import { NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
@@ -11,53 +10,39 @@ export const dynamic = 'force-dynamic'
 
 const NO_STORE = { 'Cache-Control': 'no-store' }
 
-type ProviderRow = { id: number }
-
-// POST /api/admin/ads/kill  body: { provider_id?: number } (empty = all)
 export async function POST(request: Request) {
   const denied = await requireAdmin(request)
   if (denied) return denied
 
   try {
-    const body = await request.json().catch(() => null) as { provider_id?: unknown } | null
+    const body = ((await request.json().catch(() => null)) as { provider_id?: unknown } | null)
     const providerId = body && typeof body.provider_id === 'number' ? body.provider_id : null
 
     let affected = 0
     try {
       if (providerId && Number.isInteger(providerId) && providerId > 0) {
-        const provider = await executeAll<ProviderRow>(
-          'SELECT id FROM ad_providers WHERE id = ?',
-          [providerId],
-        )
-        if (provider.length === 0) {
-          return NextResponse.json({ error: 'Provider not found' }, { status: 404, headers: NO_STORE })
-        }
-        const r = await executeAll<any>(
-          `UPDATE ad_providers SET status = 'paused', updated_at = datetime('now') WHERE id = ?`,
-          [providerId],
-        ) as any
-        affected = r?.meta?.changes ?? 1
+        const provider = await executeAll<{ id: number }>('SELECT id FROM ad_providers WHERE id = ?', [providerId])
+        if (provider.length === 0)
+          return NextResponse.json({ ok: false, error: 'الشبكة غير موجودة' }, { status: 404, headers: NO_STORE })
+        await executeAll(`UPDATE ad_providers SET status = 'paused', updated_at = datetime('now') WHERE id = ?`, [providerId])
+        affected = 1
       } else {
-        // all networks off
-        const r = await executeAll<any>(
+        const r = (await executeAll<Record<string, unknown>>(
           `UPDATE ad_providers SET status = 'paused', updated_at = datetime('now')`,
-        ) as any
-        affected = r?.meta?.changes ?? 1
+        )) as { meta?: { changes?: number } }
+        affected = r?.meta?.changes ?? 0
       }
     } catch (err) {
-      const msg = (err as Error).message
-      if (msg.includes('no such table')) {
-        return NextResponse.json({ error: 'mediation tables not migrated yet' }, { status: 409, headers: NO_STORE })
-      }
+      if ((err as Error).message.includes('no such table'))
+        return NextResponse.json({ ok: false, error: 'جداول الوساطة غير منشأة بعد' }, { status: 409, headers: NO_STORE })
       throw err
     }
 
     return NextResponse.json(
-      { success: true, paused: affected, message: 'Kill switch applied — networks stopped instantly' },
+      { ok: true, paused: affected, message: 'تم التطبيق — الشبكات توقفت فورًا' },
       { headers: NO_STORE },
     )
-  } catch (error) {
-    console.error('kill error:', error)
-    return NextResponse.json({ error: 'Failed to apply kill switch' }, { status: 500, headers: NO_STORE })
+  } catch {
+    return NextResponse.json({ ok: false, error: 'فشل تطبيق قاطع الطوارئ' }, { status: 500, headers: NO_STORE })
   }
 }

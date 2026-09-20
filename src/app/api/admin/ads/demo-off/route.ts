@@ -1,8 +1,6 @@
 /**
- * /api/admin/ads/demo-off — one-click deactivation of all demo/example.com ads.
- * Runs ONLY from the admin panel (never from a script):
- *   UPDATE ads SET active = 0 WHERE title LIKE '%تجريبي%' OR content LIKE '%example.com%'
- * Returns how many rows were turned off. no-store.
+ * /api/admin/ads/demo-off — تعطيل كل الإعلانات التجريبية/example.com بضغطة واحدة.
+ * تشتغل من اللوحة فقط: UPDATE ads SET active = 0 WHERE title LIKE '%تجريبي%' OR content LIKE '%example.com%'.
  */
 import { NextResponse } from 'next/server'
 import { executeAll } from '@/lib/db'
@@ -17,16 +15,14 @@ export async function POST(request: Request) {
   if (denied) return denied
 
   try {
-    const r = await executeAll<any>(
-      `UPDATE ads SET active = 0
-       WHERE title LIKE '%تجريبي%' OR content LIKE '%example.com%'`,
-    ) as any
+    const r = (await executeAll<Record<string, unknown>>(
+      `UPDATE ads SET active = 0 WHERE title LIKE '%تجريبي%' OR content LIKE '%example.com%'`,
+    )) as { meta?: { changes?: number } }
     return NextResponse.json(
-      { success: true, disabled: r?.meta?.changes ?? 0, message: 'All demo/example.com ads disabled' },
+      { ok: true, disabled: r?.meta?.changes ?? 0, message: 'كل الإعلانات التجريبية معطلة' },
       { headers: NO_STORE },
     )
-  } catch (error) {
-    console.error('demo-off error:', error)
-    return NextResponse.json({ error: 'Failed to disable demo ads' }, { status: 500, headers: NO_STORE })
+  } catch {
+    return NextResponse.json({ ok: false, error: 'فشل تعطيل الإعلانات التجريبية' }, { status: 500, headers: NO_STORE })
   }
 }
