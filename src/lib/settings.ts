@@ -8,7 +8,7 @@
  *    — القراءة الحية تقفل الثغرة دي (استعلام صف واحد بمفتاح PK، تكلفته تافهة).
  * فشل القراءة = قيم افتراضية مفتوحة (لا يُقفل الموقع بسبب عطل قراءة إعدادات).
  */
-import { executeFirst } from '@/lib/db'
+import { executeFirst, executeAll } from '@/lib/db'
 
 export type SiteSettings = {
   site_name: string
@@ -61,4 +61,34 @@ export async function getSiteSettingsFresh(): Promise<SiteSettings> {
 
 export function invalidateSettingsCache() {
   cache = null
+}
+
+/**
+ * موعد نهاية الصيانة (epoch ms) — مخزن في site_config (نفس نمط ترتيب السيرفرات).
+ * 0 = مفيش عداد (صيانة بلا مدة محددة).
+ */
+export const MAINTENANCE_UNTIL_KEY = 'maintenance_until'
+
+export async function getMaintenanceUntil(): Promise<number> {
+  try {
+    const row = await executeFirst<{ value: string }>(
+      'SELECT value FROM site_config WHERE key = ?',
+      [MAINTENANCE_UNTIL_KEY],
+    )
+    const v = Number(row?.value)
+    return Number.isFinite(v) && v > 0 ? v : 0
+  } catch {
+    return 0
+  }
+}
+
+export async function setMaintenanceUntil(untilMs: number): Promise<void> {
+  if (untilMs > 0) {
+    await executeAll(
+      `INSERT OR REPLACE INTO site_config (key, value, updated_at) VALUES (?, ?, datetime('now'))`,
+      [MAINTENANCE_UNTIL_KEY, String(Math.floor(untilMs))],
+    )
+  } else {
+    await executeAll('DELETE FROM site_config WHERE key = ?', [MAINTENANCE_UNTIL_KEY])
+  }
 }

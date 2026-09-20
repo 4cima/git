@@ -24,6 +24,14 @@ export default function SettingsPage() {
   const [purging, setPurging] = useState(false)
   const [confirmMaintenance, setConfirmMaintenance] = useState(false)
   const [flash, setFlash] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [untilMs, setUntilMs] = useState<number | null>(null)
+  const [nowTick, setNowTick] = useState(() => Date.now())
+  const [duration, setDuration] = useState(60)
+
+  useEffect(() => {
+    const t = setInterval(() => setNowTick(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
 
   const note = (ok: boolean, msg: string) => {
     setFlash({ ok, msg })
@@ -37,6 +45,7 @@ export default function SettingsPage() {
         const data = await res.json()
         if (!res.ok || !data.ok) throw new Error(data.error || 'فشل جلب الإعدادات')
         setSettings(data.settings)
+        setUntilMs(data.maintenance_until || null)
       } catch (e) {
         note(false, e instanceof Error ? e.message : 'خطأ في جلب الإعدادات')
       } finally {
@@ -51,11 +60,15 @@ export default function SettingsPage() {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({ ...settings, maintenance_duration_minutes: settings.maintenance_mode ? duration : 0 }),
       })
       const data = await res.json()
       if (!res.ok || !data.ok) throw new Error(data.error || 'فشل الحفظ')
       note(true, data.message || 'تم الحفظ')
+      // حدّث العداد المعروض فورًا بعد الحفظ
+      const g = await fetch('/api/admin/settings', { cache: 'no-store' })
+      const gd = await g.json()
+      if (g.ok && gd.ok) setUntilMs(gd.maintenance_until || null)
     } catch (e) {
       note(false, e instanceof Error ? e.message : 'خطأ في الحفظ')
     } finally {
@@ -107,9 +120,39 @@ export default function SettingsPage() {
               يقفل الموقع بالكامل عن الزوار ويظهر صفحة «تحت الصيانة» — الإدارة تقدر تتصفح طبيعي، وصفحة الدخول والـauth شغالين.
             </p>
             {settings.maintenance_mode && (
-              <p className="mt-2 rounded bg-orange-500/10 px-2 py-1 text-xs font-bold text-orange-400">
-                ⚠️ الصيانة مفعلة الآن — الموقع مقفول عن الزوار
-              </p>
+              <div className="mt-3 space-y-2.5">
+                {untilMs && untilMs > nowTick ? (
+                  <p className="rounded-lg bg-orange-500/10 px-3 py-2 text-sm font-bold text-orange-400" dir="ltr">
+                    ⏳ مفعّلة الآن — تنتهي تلقائيًا بعد {new Date(untilMs - nowTick).toISOString().slice(11, 19)}
+                  </p>
+                ) : untilMs && untilMs <= nowTick ? (
+                  <p className="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm font-bold text-emerald-400">
+                    ✅ انتهت مدة العداد — الموقع مفتوح تلقائيًا (لو لسه بتصلّح: فعّل الصيانة تاني بمدة جديدة)
+                  </p>
+                ) : (
+                  <p className="rounded-lg bg-orange-500/10 px-3 py-2 text-sm font-bold text-orange-400">
+                    ⚠️ مفعّلة بلا عداد — تقفل يدويًا من هنا
+                  </p>
+                )}
+                <div className="flex items-center gap-2">
+                  <label className="shrink-0 text-xs font-bold text-zinc-400">مدة العداد</label>
+                  <select
+                    value={duration}
+                    onChange={(e) => setDuration(Number(e.target.value))}
+                    className="flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-500"
+                  >
+                    <option value={0}>بدون عداد</option>
+                    <option value={15}>15 دقيقة</option>
+                    <option value={30}>30 دقيقة</option>
+                    <option value={60}>ساعة</option>
+                    <option value={120}>ساعتان</option>
+                    <option value={240}>4 ساعات</option>
+                    <option value={480}>8 ساعات</option>
+                    <option value={720}>12 ساعة</option>
+                    <option value={1440}>24 ساعة</option>
+                  </select>
+                </div>
+              </div>
             )}
           </div>
           <label className="relative inline-flex shrink-0 cursor-pointer items-center">

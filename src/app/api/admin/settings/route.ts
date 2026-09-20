@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeFirst, executeAll } from '@/lib/db'
 import { requireAdmin } from '@/lib/requireAdmin'
-import { invalidateSettingsCache } from '@/lib/settings'
+import { invalidateSettingsCache, getMaintenanceUntil, setMaintenanceUntil } from '@/lib/settings'
 import { purgeCloudflareCache } from '@/lib/cloudflare-cache'
 
 export const dynamic = 'force-dynamic'
@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const row = await executeFirst<Record<string, unknown>>('SELECT * FROM settings WHERE id = 1')
+    const maintenanceUntil = await getMaintenanceUntil()
     return NextResponse.json(
       {
         ok: true,
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
               registration_open: row.registration_open == null ? true : Boolean(row.registration_open),
             }
           : { site_name: '4CIMA', site_description: '', maintenance_mode: false, registration_open: true },
+        maintenance_until: maintenanceUntil || null,
       },
       { headers: NO_STORE },
     )
@@ -44,7 +46,14 @@ export async function POST(request: NextRequest) {
   if (denied) return denied
 
   try {
-    const { site_name, site_description, maintenance_mode, registration_open } = await request.json()
+    const { site_name, site_description, maintenance_mode, registration_open, maintenance_duration_minutes } =
+      (await request.json()) as {
+        site_name?: string
+        site_description?: string
+        maintenance_mode?: boolean
+        registration_open?: boolean
+        maintenance_duration_minutes?: number
+      }
     const existing = await executeFirst<{ maintenance_mode: number | null }>(
       'SELECT maintenance_mode FROM settings WHERE id = 1',
     )
@@ -62,6 +71,14 @@ export async function POST(request: NextRequest) {
       )
     }
     invalidateSettingsCache()
+
+    // عداد الصيانة: المدة بالدقايق (0/غياب = بلا عداد). لما الصيانة مقفولة يُمسح دايمًا.
+    const minutes = Number(maintenance_duration_minutes) || 0
+    if (maintenance_mode) {
+      await setMaintenanceUntil(minutes > 0 ? Date.now() + minutes * 60_000 : 0)
+    } else {
+      await setMaintenanceUntil(0)
+    }
 
     // تغيّر الصيانة ⇒ مسح كاش الحافة: النسخ المخزنة (شهر) بتخدم قبل الـmiddleware
     // فبتتحاوز عليها الصيانة — المسح يجعل كل طلب MISS يمر على فحص الصيانة،
