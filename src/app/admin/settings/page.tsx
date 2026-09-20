@@ -192,7 +192,7 @@ export default function SettingsPage() {
               </p>
             ) : (
               <p className="rounded-lg bg-orange-500/10 px-3 py-2 text-sm font-bold text-orange-400">
-                ⚠️ الصيانة شغالة بلا عداد — تقفل يدويًا بزرار التوجgle
+                ⚠️ الصيانة شغالة بلا عداد — الإيقاف يدويًا من مفتاح الصيانة هنا
               </p>
             )}
             <div className="flex items-center gap-2">
@@ -270,7 +270,7 @@ export default function SettingsPage() {
               <li>• كل صفحة هتتحول لصفحة «نرجع قريب جدًا» مع العداد</li>
               <li>• المدة المختارة: <b className="text-cyan-400">{durationLabel}</b></li>
               {duration > 0 && <li className="text-xs text-zinc-500">• لما العداد يخلص الموقع هيفتح لوحده</li>}
-              {duration === 0 && <li className="text-xs text-zinc-500">• بدون عداد: القفل يدويًا من نفس التوجgle</li>}
+              {duration === 0 && <li className="text-xs text-zinc-500">• بدون عداد: الإيقاف يدويًا من نفس المفتاح</li>}
             </ul>
             <div className="mb-4 flex items-center gap-2">
               <label className="shrink-0 text-xs font-bold text-zinc-400">المدة</label>

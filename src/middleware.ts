@@ -19,7 +19,7 @@ function maintenanceResponse(untilMs: number, nowMs: number): Response {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>4CIMA — نرجع قريب جدًا</title>
+<title>4CIMA — نرجع قريبًا جدًا</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
@@ -63,7 +63,6 @@ body{background:#05060a;color:#e8eaf2;font-family:'Cairo',system-ui,-apple-syste
 .logo{font-weight:900;font-size:clamp(28px,6vw,40px);letter-spacing:-1px;margin-bottom:6px;
   background:linear-gradient(90deg,#f87171,#38bdf8,#a78bfa,#f87171);background-size:300% 100%;
   -webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
-.logo small{font-size:.42em;color:#64748b;-webkit-text-fill-color:#64748b;letter-spacing:4px;vertical-align:middle;margin-inline-start:8px}
 @keyframes shine{to{background-position:300% 0}}
 .badge{display:inline-flex;align-items:center;gap:8px;margin:10px 0 18px;padding:7px 16px;border-radius:999px;
   background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);color:#7dd3fc;font-size:13px;font-weight:700}
@@ -109,19 +108,19 @@ button:active{transform:translateY(0)}
 <div class="scene">
   <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
   <div class="card">
-    <div class="logo">4CIMA<small>ADMIN</small></div>
-    <div class="badge"><i></i> صيانة مجدولة جارية الآن</div>
-    <h1>نرجع قريب جدًا</h1>
-    <p class="sub">بنجهّز ترقية على المنصة عشان تجربتك تبقى أسرع وأفضل.<br>العداد تحت بيوريك الامتى هنكون جاهزين.</p>
+    <div class="logo">4CIMA</div>
+    <div class="badge"><i></i> صيانة مجدولة</div>
+    <h1>نرجع قريبًا جدًا</h1>
+    <p class="sub">نعمل حاليًا على تحديث سريع للمنصة لتقديم تجربة مشاهدة أفضل وأسرع.<br>العداد بالأسفل يوضّح الوقت المتبقي لعودة الموقع.</p>
     <div class="cd" id="cd">
       <div class="u"><b id="dh">00</b><i>ساعة</i></div><div class="sep">:</div>
       <div class="u"><b id="dm">00</b><i>دقيقة</i></div><div class="sep">:</div>
       <div class="u"><b id="ds">00</b><i>ثانية</i></div>
     </div>
-    <div class="done" id="done">✅ خلصنا — جارٍ فتح الموقع تلقائيًا…</div>
+    <div class="done" id="done">✅ اكتملت الصيانة — جارٍ فتح الموقع تلقائيًا…</div>
     <div class="bar"><i></i></div>
     <button onclick="location.reload()">إعادة المحاولة الآن</button>
-    <p class="foot">فريق <b>4cima.com</b> شغّال دلوقتي عشان يرجّعك أسرع — لما العداد يخلص الصفحة هتفتح لوحدها</p>
+    <p class="foot">فريق <b>4CIMA</b> يعمل الآن لعودة الموقع بأسرع وقت — عند انتهاء العداد تُفتح الصفحة تلقائيًا.</p>
   </div>
 </div>
 <script>
