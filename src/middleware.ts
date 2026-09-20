@@ -19,7 +19,7 @@ function maintenanceResponse(untilMs: number, nowMs: number): Response {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<title>4CIMA — نرجع قريبًا جدًا</title>
+<title>4CIMA — سوف نعود قريبًا جدًا</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
@@ -109,9 +109,9 @@ button:active{transform:translateY(0)}
   <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
   <div class="card">
     <div class="logo">4CIMA</div>
-    <div class="badge"><i></i> صيانة مجدولة</div>
-    <h1>نرجع قريبًا جدًا</h1>
-    <p class="sub">نعمل حاليًا على تحديث سريع للمنصة لتقديم تجربة مشاهدة أفضل وأسرع.<br>العداد بالأسفل يوضّح الوقت المتبقي لعودة الموقع.</p>
+    <div class="badge"><i></i> نعتذر لكم عن هذا التوقف المؤقت</div>
+    <h1>سوف نعود قريبًا جدًا</h1>
+    <p class="sub">هذه صيانة مجدولة — نعمل حاليًا على تحديث سريع للمنصة لتقديم تجربة مشاهدة أفضل وأسرع.<br>العداد بالأسفل يوضّح الوقت المتبقي لعودة الموقع.</p>
     <div class="cd" id="cd">
       <div class="u"><b id="dh">00</b><i>ساعة</i></div><div class="sep">:</div>
       <div class="u"><b id="dm">00</b><i>دقيقة</i></div><div class="sep">:</div>
@@ -120,7 +120,7 @@ button:active{transform:translateY(0)}
     <div class="done" id="done">✅ اكتملت الصيانة — جارٍ فتح الموقع تلقائيًا…</div>
     <div class="bar"><i></i></div>
     <button onclick="location.reload()">إعادة المحاولة الآن</button>
-    <p class="foot">فريق <b>4CIMA</b> يعمل الآن لعودة الموقع بأسرع وقت — عند انتهاء العداد تُفتح الصفحة تلقائيًا.</p>
+    <p class="foot">فريق <b>فور سيما 4CIMA</b> يعمل الآن لعودة الموقع بأسرع وقت ممكن — عند انتهاء العداد سوف تُفتح الصفحة تلقائيًا. شكرًا لتفهّمكم، ونتمنى لكم قضاء وقتًا ممتعًا.</p>
   </div>
 </div>
 <script>
