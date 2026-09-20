@@ -11,6 +11,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
 
     const page  = Math.max(1, parseInt(searchParams.get('page')  || '1')  || 1)
+    /* سقف الترقيم: page ≤ 100 — الأعمق = 400 قبل أي استعلام D1 (نفس سقف /api/genres) */
+    if (page > 100) {
+      return NextResponse.json({ error: 'Page limit exceeded (max 100)' }, { status: 400 })
+    }
     const limit = Math.min(60, Math.max(1, parseInt(searchParams.get('limit') || '24') || 24))
     const offset = (page - 1) * limit
     
