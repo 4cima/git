@@ -3,6 +3,12 @@ import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { MovieCard, type Movie } from '@/components/features/media/MovieCard'
 import { searchContent, type SearchContentItem } from '@/lib/search-content'
+import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
+import { getAdByNum } from '@/data/ads/4cima.com'
+
+// إعلان أسفل نتائج البحث (300×250 — يتصغر تلقائيًا على الشاشات الضيقة) + شريط موبايل ثابت
+const AD_SEARCH_BOTTOM = getAdByNum(2)!
 
 export const dynamic = 'force-dynamic'
 
@@ -119,7 +125,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             ))}
           </div>
         )}
+
+        {/* إعلان أسفل منطقة النتائج — باحث نشط = نية عالية، والموضع بعد النتائج يحفظ نظافة البحث */}
+        <div className="mt-10 flex justify-center">
+          <AdFrame ad={AD_SEARCH_BOTTOM} variant="x" />
+        </div>
       </div>
+
+      {/* شريط إعلان الموبايل الثابت (320×50) — مطابق لباقي صفحات الموقع */}
+      <MobileStickyAd />
     </div>
   )
 }
