@@ -19,6 +19,7 @@ import { getAdByNum } from '@/data/ads/4cima.com'
    2 = 300×250 تحت البوستر | 3 = 160×600 سايدبار */
 const AD_AFTER_PLAYER = getAdByNum(2)!
 const AD_SIDE = getAdByNum(3)!
+const AD_FOOTER_MID = getAdByNum(4)! // 468×60 — فاصل بعد المشغّل قبل «قد يعجبك أيضاً»
 
 interface MovieDetailsClientProps {
   movie: any
@@ -614,6 +615,12 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
           </div>
 
         </div>
+      </div>
+
+      {/* فاصل إعلاني 468×60 (إعلان رقم 4) — بعد المشغّل وقبل «قد يعجبك أيضاً»:
+          نقطة توقف طبيعية في الصفحة — يتصغر تلقائيًا على الشاشات الضيقة (AdFrame max-w-full) */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 pb-10 flex justify-center">
+        <AdFrame ad={AD_FOOTER_MID} variant="x" />
       </div>
 
       {/* Similar Movies Section — بيانات من الـSSR (روابط حقيقية في HTML أولي، بلا Skeleton) */}
