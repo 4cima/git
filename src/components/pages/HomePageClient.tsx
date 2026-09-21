@@ -14,6 +14,7 @@ import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 /* الإعلان المرجعي المتبقي للصفحة الرئيسية — رقم 2 (300×250) بين زر الأفلام وزر المسلسلات.
@@ -719,10 +720,10 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
               </span>
             </Link>
 
-            {/* الخلية 2 — إعلان رقم 2 (300×250) بمقاسه الأصلي بالظبط داخل إطار موحّد — بلا أي قص.
-                على التابلت (sm→lg) عرض الخلية < 300px فيفيض الإعلان فوق نصّي الزرين → مخفي تحت lg.
-                على lg+ (3 أعمدة) الخلية أوسع من الإعلان فيظهر بمقاسه الأصلي كما هو. */}
-            <div className="relative hidden items-center justify-center overflow-visible py-2 lg:flex">
+            {/* الخلية 2 — إعلان رقم 2 (300×250) داخل إطار موحّد — بلا أي قص، على كل المقاسات:
+                AdFrame أصبح max-w-full → الإعلان يتصغر سليمًا حيثما ضاقت الخلية
+                (موبايل: عمود كامل ≥300px يظهر بمقاسه — تابلت sm→lg: عمودان فيتقلص طفيفًا — lg+: مقاسه الأصلي) */}
+            <div className="relative flex items-center justify-center overflow-visible py-2">
               <AdFrame ad={AD_CTA} variant="x" />
             </div>
 
@@ -755,6 +756,9 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
 
       {/* Footer Component */}
       <Footer />
+
+      {/* إعلان رقم 6 (320×50) — شريط ثابت أسفل الشاشة للموبايل (مطابق لصفحات الكتالوج) */}
+      <MobileStickyAd />
     </div>
   )
 }
