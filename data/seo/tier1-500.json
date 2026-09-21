@@ -1,0 +1,4008 @@
+{
+  "generated_at": "2026-09-21T20:22:47.753Z",
+  "criteria": "filter_status=clean + tmdb_id + سنة>=2020 + slug نظيف (قواعد rebuild-sitemap-quality.js) — أعلى popularity: 300 فيلم + 200 مسلسل",
+  "movies": [
+    {
+      "slug": "the-odyssey-2026",
+      "tmdb_id": 1368337,
+      "title_ar": "الأوديسة",
+      "title_en": "The Odyssey",
+      "year": 2026,
+      "popularity": 1012.4511
+    },
+    {
+      "slug": "disclosure-day",
+      "tmdb_id": 1275779,
+      "title_ar": "يوم الإفصاح",
+      "title_en": "Disclosure Day",
+      "year": 2026,
+      "popularity": 544.2213
+    },
+    {
+      "slug": "masters-of-the-universe-2026",
+      "tmdb_id": 454639,
+      "title_ar": "أسياد الكون",
+      "title_en": "Masters of the Universe",
+      "year": 2026,
+      "popularity": 539.6908
+    },
+    {
+      "slug": "supergirl-2026",
+      "tmdb_id": 1081003,
+      "title_ar": "سوبرجيرل",
+      "title_en": "Supergirl",
+      "year": 2026,
+      "popularity": 511.2893
+    },
+    {
+      "slug": "moana-2026",
+      "tmdb_id": 1108427,
+      "title_ar": "موانا",
+      "title_en": "Moana",
+      "year": 2026,
+      "popularity": 463.6699
+    },
+    {
+      "slug": "obsession-2026",
+      "tmdb_id": 1339713,
+      "title_ar": "هوس",
+      "title_en": "Obsession",
+      "year": 2026,
+      "popularity": 370.8152
+    },
+    {
+      "slug": "backrooms",
+      "tmdb_id": 1083381,
+      "title_ar": "الغرفة الخلفية",
+      "title_en": "Backrooms",
+      "year": 2026,
+      "popularity": 337.7548
+    },
+    {
+      "slug": "toy-story-5",
+      "tmdb_id": 1084244,
+      "title_ar": "حكاية لعبة ٥",
+      "title_en": "Toy Story 5",
+      "year": 2026,
+      "popularity": 324.9807
+    },
+    {
+      "slug": "minions-monsters-2026",
+      "tmdb_id": 1315772,
+      "title_ar": "المينيون والوحوش",
+      "title_en": "Minions & Monsters",
+      "year": 2026,
+      "popularity": 279.5807
+    },
+    {
+      "slug": "death-of-robin-hood",
+      "tmdb_id": 1284465,
+      "title_ar": "موت روبن هود",
+      "title_en": "The Death of Robin Hood",
+      "year": 2026,
+      "popularity": 275.474
+    },
+    {
+      "slug": "spider-man-brand-new-day-2026",
+      "tmdb_id": 969681,
+      "title_ar": "الرجل العنكبوت: يوم جديد",
+      "title_en": "Spider-Man: Brand New Day",
+      "year": 2026,
+      "popularity": 271.502
+    },
+    {
+      "slug": "avatar-aang-the-last-airbender",
+      "tmdb_id": 980431,
+      "title_ar": "أفاتار: آخر مسخّر هواء – الأصداء والتداعيات",
+      "title_en": "Avatar Aang: The Last Airbender",
+      "year": 2026,
+      "popularity": 263.3778
+    },
+    {
+      "slug": "borderline-2026",
+      "tmdb_id": 1727780,
+      "title_ar": "خط الحدود",
+      "title_en": "Borderline",
+      "year": 2026,
+      "popularity": 244.267
+    },
+    {
+      "slug": "scary-movie-2026",
+      "tmdb_id": 1273221,
+      "title_ar": "فلم مخيف 6",
+      "title_en": "Scary Movie",
+      "year": 2026,
+      "popularity": 241.1375
+    },
+    {
+      "slug": "desire-2026",
+      "tmdb_id": 1668364,
+      "title_ar": "الرغبة",
+      "title_en": "Desire",
+      "year": 2026,
+      "popularity": 216.1056
+    },
+    {
+      "slug": "the-debt-collector-2026",
+      "tmdb_id": 1630409,
+      "title_ar": "محصّل الديون",
+      "title_en": "The Debt Collector",
+      "year": 2026,
+      "popularity": 213.1236
+    },
+    {
+      "slug": "project-hail-mary",
+      "tmdb_id": 687163,
+      "title_ar": "مشروع هيل ماري",
+      "title_en": "Project Hail Mary",
+      "year": 2026,
+      "popularity": 201.2387
+    },
+    {
+      "slug": "the-mandalorian-and-grogu",
+      "tmdb_id": 1228710,
+      "title_ar": "الماندالوري وغروغو",
+      "title_en": "The Mandalorian and Grogu",
+      "year": 2026,
+      "popularity": 200.6498
+    },
+    {
+      "slug": "grand-theft-auto-vi-an-extended-look",
+      "tmdb_id": 1744462,
+      "title_ar": "سرقة السيارات الكبرى السادسة: نظرة موسعة",
+      "title_en": "Grand Theft Auto VI: An Extended Look",
+      "year": 2026,
+      "popularity": 190.7239
+    },
+    {
+      "slug": "kraken",
+      "tmdb_id": 1110034,
+      "title_ar": "كراكن",
+      "title_en": "Kraken",
+      "year": 2026,
+      "popularity": 180.6672
+    },
+    {
+      "slug": "colony-2026",
+      "tmdb_id": 1375646,
+      "title_ar": "مستعمرة",
+      "title_en": "Colony",
+      "year": 2026,
+      "popularity": 178.7714
+    },
+    {
+      "slug": "your-heart-will-be-broken",
+      "tmdb_id": 1523145,
+      "title_ar": "الذهاب",
+      "title_en": "Your Heart Will Be Broken",
+      "year": 2026,
+      "popularity": 174.3114
+    },
+    {
+      "slug": "deep-water-2026",
+      "tmdb_id": 1127384,
+      "title_ar": "مياه عميقة",
+      "title_en": "Deep Water",
+      "year": 2026,
+      "popularity": 161.253
+    },
+    {
+      "slug": "the-devil-wears-prada-2",
+      "tmdb_id": 1314481,
+      "title_ar": "الشيطان يرتدي برادا 2",
+      "title_en": "The Devil Wears Prada 2",
+      "year": 2026,
+      "popularity": 149.7769
+    },
+    {
+      "slug": "descendants-wicked-wonderland",
+      "tmdb_id": 1318621,
+      "title_ar": "أحفاد: بلاد العجائب الشريرة",
+      "title_en": "Descendants: Wicked Wonderland",
+      "year": 2026,
+      "popularity": 135.3642
+    },
+    {
+      "slug": "michael-2026",
+      "tmdb_id": 936075,
+      "title_ar": "مايكل",
+      "title_en": "Michael",
+      "year": 2026,
+      "popularity": 123.2464
+    },
+    {
+      "slug": "mortal-kombat-ii",
+      "tmdb_id": 931285,
+      "title_ar": "مورتال كومبات ٢",
+      "title_en": "Mortal Kombat II",
+      "year": 2026,
+      "popularity": 123.0493
+    },
+    {
+      "slug": "spider-man-no-way-home-2021",
+      "tmdb_id": 634649,
+      "title_ar": "الرجل العنكبوت : لا طريق للوطن",
+      "title_en": "Spider-Man: No Way Home",
+      "year": 2021,
+      "popularity": 115.7729
+    },
+    {
+      "slug": "avatar-fire-and-ash",
+      "tmdb_id": 83533,
+      "title_ar": "أفاتار: النار و الرماد",
+      "title_en": "Avatar: Fire and Ash",
+      "year": 2025,
+      "popularity": 114.7511
+    },
+    {
+      "slug": "72-hours-2026",
+      "tmdb_id": 949838,
+      "title_ar": "72 ساعة",
+      "title_en": "72 HOURS",
+      "year": 2026,
+      "popularity": 112.6014
+    },
+    {
+      "slug": "the-furious",
+      "tmdb_id": 1280738,
+      "title_ar": "الغاضبون",
+      "title_en": "The Furious",
+      "year": 2026,
+      "popularity": 111.8195
+    },
+    {
+      "slug": "lee-cronin-s-the-mummy",
+      "tmdb_id": 1304313,
+      "title_ar": "المومياء",
+      "title_en": "Lee Cronin's The Mummy",
+      "year": 2026,
+      "popularity": 101.645
+    },
+    {
+      "slug": "master-of-the-universe-2026",
+      "tmdb_id": 1698856,
+      "title_ar": "سيد الكون",
+      "title_en": "Master of the Universe",
+      "year": 2026,
+      "popularity": 101.0356
+    },
+    {
+      "slug": "the-super-mario-galaxy-movie",
+      "tmdb_id": 1226863,
+      "title_ar": "فيلم سوبر ماريو جالاكسي",
+      "title_en": "The Super Mario Galaxy Movie",
+      "year": 2026,
+      "popularity": 100.8502
+    },
+    {
+      "slug": "passenger-2026",
+      "tmdb_id": 1368314,
+      "title_ar": "راكب",
+      "title_en": "Passenger",
+      "year": 2026,
+      "popularity": 89.8876
+    },
+    {
+      "slug": "jana-nayagan",
+      "tmdb_id": 1235877,
+      "title_ar": "جانا ناياجان",
+      "title_en": "Jana Nayagan",
+      "year": 2026,
+      "popularity": 89.7747
+    },
+    {
+      "slug": "demon-slayer-kimetsu-no-yaiba-infinity-castle",
+      "tmdb_id": 1311031,
+      "title_ar": "قاتل الشياطين: قلعة اللانهاية – الفصل الأول: عودة أكازا",
+      "title_en": "Demon Slayer: Kimetsu no Yaiba Infinity Castle",
+      "year": 2025,
+      "popularity": 86.8737
+    },
+    {
+      "slug": "the-bay-2026",
+      "tmdb_id": 1430698,
+      "title_ar": "الخليج",
+      "title_en": "The Bay",
+      "year": 2026,
+      "popularity": 85.1932
+    },
+    {
+      "slug": "citizen-vigilante",
+      "tmdb_id": 1413976,
+      "title_ar": "المواطن المنتقم",
+      "title_en": "Citizen Vigilante",
+      "year": 2026,
+      "popularity": 83.8857
+    },
+    {
+      "slug": "shape-of-my-heart",
+      "tmdb_id": 1285366,
+      "title_ar": "شكل قلبي",
+      "title_en": "Shape of My Heart",
+      "year": 2024,
+      "popularity": 80.1799
+    },
+    {
+      "slug": "forgive-us-all",
+      "tmdb_id": 1443894,
+      "title_ar": "يغفر لنا جميعا",
+      "title_en": "Forgive Us All",
+      "year": 2025,
+      "popularity": 77.4825
+    },
+    {
+      "slug": "the-dink",
+      "tmdb_id": 1361774,
+      "title_ar": "الدينك",
+      "title_en": "The Dink",
+      "year": 2026,
+      "popularity": 76.1783
+    },
+    {
+      "slug": "hungry",
+      "tmdb_id": 1382832,
+      "title_ar": "جائع",
+      "title_en": "Hungry",
+      "year": 2026,
+      "popularity": 75.6716
+    },
+    {
+      "slug": "swapped",
+      "tmdb_id": 1007757,
+      "title_ar": "في كل جسد حكاية",
+      "title_en": "Swapped",
+      "year": 2026,
+      "popularity": 71.2324
+    },
+    {
+      "slug": "elize-shadows-of-a-woman",
+      "tmdb_id": 1487861,
+      "title_ar": "إليز: ظلال امرأة",
+      "title_en": "Elize: Shadows of a Woman",
+      "year": 2026,
+      "popularity": 69.9115
+    },
+    {
+      "slug": "shelter-2026",
+      "tmdb_id": 1290821,
+      "title_ar": "مأوى",
+      "title_en": "Shelter",
+      "year": 2026,
+      "popularity": 69.4341
+    },
+    {
+      "slug": "the-shadow-s-edge",
+      "tmdb_id": 1419406,
+      "title_ar": "حافة الظل",
+      "title_en": "The Shadow's Edge",
+      "year": 2025,
+      "popularity": 65.9068
+    },
+    {
+      "slug": "the-punisher-one-last-kill",
+      "tmdb_id": 1439930,
+      "title_ar": "ذا بانشر: مهمة واحدة أخيرة",
+      "title_en": "The Punisher: One Last Kill",
+      "year": 2026,
+      "popularity": 64.7555
+    },
+    {
+      "slug": "kung-fu-soccer",
+      "tmdb_id": 1491920,
+      "title_ar": "كرة القدم الكونغ فو",
+      "title_en": "Kung Fu Soccer",
+      "year": 2026,
+      "popularity": 64.2774
+    },
+    {
+      "slug": "hoppers",
+      "tmdb_id": 1327819,
+      "title_ar": "هوبرز",
+      "title_en": "Hoppers",
+      "year": 2026,
+      "popularity": 63.8609
+    },
+    {
+      "slug": "war-of-the-worlds-2025",
+      "tmdb_id": 755898,
+      "title_ar": "حرب العوالم",
+      "title_en": "War of the Worlds",
+      "year": 2025,
+      "popularity": 63.362
+    },
+    {
+      "slug": "the-sheep-detectives",
+      "tmdb_id": 1301421,
+      "title_ar": "المحققون الخراف",
+      "title_en": "The Sheep Detectives",
+      "year": 2026,
+      "popularity": 59.5732
+    },
+    {
+      "slug": "apex-2026",
+      "tmdb_id": 1318447,
+      "title_ar": "المفترس الأقوى",
+      "title_en": "Apex",
+      "year": 2026,
+      "popularity": 58.8669
+    },
+    {
+      "slug": "aisha-can-t-fly-away",
+      "tmdb_id": 1337148,
+      "title_ar": "عائشة لا تستطيع الطيران",
+      "title_en": "Aisha Can't Fly Away",
+      "year": 2025,
+      "popularity": 58.1139
+    },
+    {
+      "slug": "immortal-combat-2026",
+      "tmdb_id": 1656061,
+      "title_ar": "القتال الخالد",
+      "title_en": "Immortal Combat",
+      "year": 2026,
+      "popularity": 55.812
+    },
+    {
+      "slug": "the-truthers",
+      "tmdb_id": 1659155,
+      "title_ar": "الصادقون",
+      "title_en": "The Truthers",
+      "year": 2026,
+      "popularity": 54.7342
+    },
+    {
+      "slug": "boulevard-2026",
+      "tmdb_id": 1595852,
+      "title_ar": "جادة",
+      "title_en": "Boulevard",
+      "year": 2026,
+      "popularity": 54.0729
+    },
+    {
+      "slug": "jurassic-world-rebirth",
+      "tmdb_id": 1234821,
+      "title_ar": "عالم الديناصورات: إحياء",
+      "title_en": "Jurassic World Rebirth",
+      "year": 2025,
+      "popularity": 53.9891
+    },
+    {
+      "slug": "black-box-2026",
+      "tmdb_id": 1321008,
+      "title_ar": "الصندوق الأسود",
+      "title_en": "Black Box",
+      "year": 2026,
+      "popularity": 53.9094
+    },
+    {
+      "slug": "the-fantastic-4-first-steps",
+      "tmdb_id": 617126,
+      "title_ar": "الخارقون الأربعة: الخطوات الأولي",
+      "title_en": "The Fantastic 4: First Steps",
+      "year": 2025,
+      "popularity": 51.2317
+    },
+    {
+      "slug": "zootopia-2",
+      "tmdb_id": 1084242,
+      "title_ar": "زوتروبوليس ٢",
+      "title_en": "Zootopia 2",
+      "year": 2025,
+      "popularity": 50.7579
+    },
+    {
+      "slug": "in-the-grey",
+      "tmdb_id": 1122573,
+      "title_ar": "في المنطقة الرمادية",
+      "title_en": "In the Grey",
+      "year": 2026,
+      "popularity": 49.4341
+    },
+    {
+      "slug": "ok-madam",
+      "tmdb_id": 599335,
+      "title_ar": "حسنًا سيدتي",
+      "title_en": "OK! Madam",
+      "year": 2020,
+      "popularity": 48.6503
+    },
+    {
+      "slug": "the-bad-guys-2",
+      "tmdb_id": 1175942,
+      "title_ar": "الأشرار ٢",
+      "title_en": "The Bad Guys 2",
+      "year": 2025,
+      "popularity": 48.2427
+    },
+    {
+      "slug": "deadpool-wolverine",
+      "tmdb_id": 533535,
+      "title_ar": "ديدبول & وولفرين",
+      "title_en": "Deadpool & Wolverine",
+      "year": 2024,
+      "popularity": 48.0445
+    },
+    {
+      "slug": "her-private-hell",
+      "tmdb_id": 1469342,
+      "title_ar": "جحيمها الخاص",
+      "title_en": "Her Private Hell",
+      "year": 2026,
+      "popularity": 47.2838
+    },
+    {
+      "slug": "zombies-of-the-third-reich",
+      "tmdb_id": 1301310,
+      "title_ar": "زومبي الرايخ الثالث",
+      "title_en": "Zombies of the Third Reich",
+      "year": 2025,
+      "popularity": 47.2214
+    },
+    {
+      "slug": "oppenheimer",
+      "tmdb_id": 872585,
+      "title_ar": "أوبنهايمر",
+      "title_en": "Oppenheimer",
+      "year": 2023,
+      "popularity": 47.0441
+    },
+    {
+      "slug": "greenland-2-migration",
+      "tmdb_id": 840464,
+      "title_ar": "غرينلاند ٢: الهجرة",
+      "title_en": "Greenland 2: Migration",
+      "year": 2026,
+      "popularity": 45.2842
+    },
+    {
+      "slug": "goat-2026",
+      "tmdb_id": 1297842,
+      "title_ar": "معزة",
+      "title_en": "GOAT",
+      "year": 2026,
+      "popularity": 43.7087
+    },
+    {
+      "slug": "i-know-who-you-are-2026",
+      "tmdb_id": 1305672,
+      "title_ar": "أنا أعرف من أنت",
+      "title_en": "I Know Who You Are",
+      "year": 2026,
+      "popularity": 43.1196
+    },
+    {
+      "slug": "tom-clancy-s-jack-ryan-ghost-war",
+      "tmdb_id": 1380291,
+      "title_ar": "جاك ريان: طيف الحرب لتوم كلانسي",
+      "title_en": "Tom Clancy's Jack Ryan: Ghost War",
+      "year": 2026,
+      "popularity": 42.7743
+    },
+    {
+      "slug": "blades-of-the-guardians",
+      "tmdb_id": 1305781,
+      "title_ar": "شفرات الحراس: رياح الصحراء",
+      "title_en": "Blades of the Guardians",
+      "year": 2026,
+      "popularity": 42.5456
+    },
+    {
+      "slug": "moana-2",
+      "tmdb_id": 1241982,
+      "title_ar": "موانا ٢",
+      "title_en": "Moana 2",
+      "year": 2024,
+      "popularity": 42.4807
+    },
+    {
+      "slug": "kpop-demon-hunters",
+      "tmdb_id": 803796,
+      "title_ar": "فرقة البوب الكورية: صائدات الشياطين",
+      "title_en": "KPop Demon Hunters",
+      "year": 2025,
+      "popularity": 41.2013
+    },
+    {
+      "slug": "the-wild-robot",
+      "tmdb_id": 1184918,
+      "title_ar": "الروبوت البري",
+      "title_en": "The Wild Robot",
+      "year": 2024,
+      "popularity": 41.1204
+    },
+    {
+      "slug": "superman-2025",
+      "tmdb_id": 1061474,
+      "title_ar": "سوبرمان",
+      "title_en": "Superman",
+      "year": 2025,
+      "popularity": 40.2472
+    },
+    {
+      "slug": "voicemails-for-isabelle",
+      "tmdb_id": 614945,
+      "title_ar": "رسائل صوتية لإيزابيل",
+      "title_en": "Voicemails for Isabelle",
+      "year": 2026,
+      "popularity": 40.241
+    },
+    {
+      "slug": "send-help",
+      "tmdb_id": 1198994,
+      "title_ar": "أرسل النجدة",
+      "title_en": "Send Help",
+      "year": 2026,
+      "popularity": 39.7169
+    },
+    {
+      "slug": "war-machine-2026",
+      "tmdb_id": 1265609,
+      "title_ar": "آلة حرب",
+      "title_en": "War Machine",
+      "year": 2026,
+      "popularity": 38.2345
+    },
+    {
+      "slug": "the-banished-2025",
+      "tmdb_id": 1321491,
+      "title_ar": "الطريدة",
+      "title_en": "The Banished",
+      "year": 2025,
+      "popularity": 37.4755
+    },
+    {
+      "slug": "captain-america-brave-new-world",
+      "tmdb_id": 822119,
+      "title_ar": "كابتن أمريكا: عالم جديد شجاع",
+      "title_en": "Captain America: Brave New World",
+      "year": 2025,
+      "popularity": 37.2312
+    },
+    {
+      "slug": "maa-inti-bangaram",
+      "tmdb_id": 1227241,
+      "title_ar": "ماء إنتي بانغارام",
+      "title_en": "Maa Inti Bangaram",
+      "year": 2026,
+      "popularity": 36.7844
+    },
+    {
+      "slug": "heartstopper-forever",
+      "tmdb_id": 1468683,
+      "title_ar": "سدادة القلب إلى الأبد",
+      "title_en": "Heartstopper Forever",
+      "year": 2026,
+      "popularity": 36.3537
+    },
+    {
+      "slug": "lenin",
+      "tmdb_id": 1408170,
+      "title_ar": "لينين",
+      "title_en": "Lenin",
+      "year": 2026,
+      "popularity": 36.0157
+    },
+    {
+      "slug": "fast-x",
+      "tmdb_id": 385687,
+      "title_ar": "السريع 10",
+      "title_en": "Fast X",
+      "year": 2023,
+      "popularity": 35.9078
+    },
+    {
+      "slug": "top-gun-maverick",
+      "tmdb_id": 361743,
+      "title_ar": "السلاح الأمثل: مافريك",
+      "title_en": "Top Gun: Maverick",
+      "year": 2022,
+      "popularity": 35.5002
+    },
+    {
+      "slug": "night-of-the-living-dead-2026",
+      "tmdb_id": 1645603,
+      "title_ar": "ليلة الموتى الأحياء",
+      "title_en": "Night of the Living Dead",
+      "year": 2026,
+      "popularity": 35.3547
+    },
+    {
+      "slug": "spider-man-across-the-spider-verse-2023",
+      "tmdb_id": 569094,
+      "title_ar": "سبايدرمان: عبر عالم العنكبوت",
+      "title_en": "Spider-Man: Across the Spider-Verse",
+      "year": 2023,
+      "popularity": 35.2127
+    },
+    {
+      "slug": "28-years-later-the-bone-temple",
+      "tmdb_id": 1272837,
+      "title_ar": "٢٨ عامًا لاحقًا: معبد العظام",
+      "title_en": "28 Years Later: The Bone Temple",
+      "year": 2026,
+      "popularity": 35.0659
+    },
+    {
+      "slug": "predator-badlands",
+      "tmdb_id": 1242898,
+      "title_ar": "المفترس: الأراضي القاحلة",
+      "title_en": "Predator: Badlands",
+      "year": 2025,
+      "popularity": 34.5357
+    },
+    {
+      "slug": "thunderbolts",
+      "tmdb_id": 986056,
+      "title_ar": "ثاندربولتس*",
+      "title_en": "Thunderbolts*",
+      "year": 2025,
+      "popularity": 34.4922
+    },
+    {
+      "slug": "dune-2021",
+      "tmdb_id": 438631,
+      "title_ar": "كثيب",
+      "title_en": "Dune",
+      "year": 2021,
+      "popularity": 34.1214
+    },
+    {
+      "slug": "f1",
+      "tmdb_id": 911430,
+      "title_ar": "فورمولا 1",
+      "title_en": "F1",
+      "year": 2025,
+      "popularity": 34.1011
+    },
+    {
+      "slug": "storm-on-sesame-street-2026",
+      "tmdb_id": 1740877,
+      "title_ar": "عاصفة في شارع سمسم",
+      "title_en": "Storm on Sesame Street",
+      "year": 2026,
+      "popularity": 33.8948
+    },
+    {
+      "slug": "the-get-out",
+      "tmdb_id": 1279493,
+      "title_ar": "الخروج",
+      "title_en": "The Get Out",
+      "year": 2026,
+      "popularity": 33.8654
+    },
+    {
+      "slug": "remarkably-bright-creatures",
+      "tmdb_id": 1330021,
+      "title_ar": "مخلوقات مشرقة بشكل مبهر",
+      "title_en": "Remarkably Bright Creatures",
+      "year": 2026,
+      "popularity": 33.5711
+    },
+    {
+      "slug": "bokshi",
+      "tmdb_id": 718833,
+      "title_ar": "بوكشي",
+      "title_en": "Bokshi",
+      "year": 2025,
+      "popularity": 33.5008
+    },
+    {
+      "slug": "seven-snipers",
+      "tmdb_id": 1288341,
+      "title_ar": "سبعة قناصة",
+      "title_en": "Seven Snipers",
+      "year": 2026,
+      "popularity": 33.438
+    },
+    {
+      "slug": "hokum",
+      "tmdb_id": 1430077,
+      "title_ar": "حكم",
+      "title_en": "Hokum",
+      "year": 2026,
+      "popularity": 32.9084
+    },
+    {
+      "slug": "how-to-train-your-dragon-2025",
+      "tmdb_id": 1087192,
+      "title_ar": "كيف تروض تنينك",
+      "title_en": "How to Train Your Dragon",
+      "year": 2025,
+      "popularity": 32.6819
+    },
+    {
+      "slug": "crime-101",
+      "tmdb_id": 1171145,
+      "title_ar": "الجريمة 101",
+      "title_en": "Crime 101",
+      "year": 2026,
+      "popularity": 32.3622
+    },
+    {
+      "slug": "23-000-lives",
+      "tmdb_id": 1656220,
+      "title_ar": "23,000 حياة",
+      "title_en": "23 000 Lives",
+      "year": 2026,
+      "popularity": 32.2847
+    },
+    {
+      "slug": "accidental-partners",
+      "tmdb_id": 1632181,
+      "title_ar": "شركاء عرضيين",
+      "title_en": "Accidental Partners",
+      "year": 2026,
+      "popularity": 31.9094
+    },
+    {
+      "slug": "a-minecraft-movie",
+      "tmdb_id": 950387,
+      "title_ar": "فيلم ماينكرافت",
+      "title_en": "A Minecraft Movie",
+      "year": 2025,
+      "popularity": 31.2102
+    },
+    {
+      "slug": "enola-holmes-3",
+      "tmdb_id": 1202033,
+      "title_ar": "إينولا هولمز 3",
+      "title_en": "Enola Holmes 3",
+      "year": 2026,
+      "popularity": 30.3038
+    },
+    {
+      "slug": "the-batman",
+      "tmdb_id": 414906,
+      "title_ar": "ذا باتمان",
+      "title_en": "The Batman",
+      "year": 2022,
+      "popularity": 30.2986
+    },
+    {
+      "slug": "doctor-strange-in-the-multiverse-of-madness",
+      "tmdb_id": 453395,
+      "title_ar": "دكتور سترينج في جنون الأكوان المتعددة",
+      "title_en": "Doctor Strange in the Multiverse of Madness",
+      "year": 2022,
+      "popularity": 30.2465
+    },
+    {
+      "slug": "sniper-no-nation",
+      "tmdb_id": 1641319,
+      "title_ar": "قناص: لا أمة",
+      "title_en": "Sniper: No Nation",
+      "year": 2026,
+      "popularity": 30.1368
+    },
+    {
+      "slug": "one-battle-after-another",
+      "tmdb_id": 1054867,
+      "title_ar": "معركة تلو الأخرى",
+      "title_en": "One Battle After Another",
+      "year": 2025,
+      "popularity": 29.885
+    },
+    {
+      "slug": "love-in-slow-motion",
+      "tmdb_id": 1620682,
+      "title_ar": "أحبك من زمان",
+      "title_en": "Love in Slow Motion",
+      "year": 2026,
+      "popularity": 29.7466
+    },
+    {
+      "slug": "vengeance-2026",
+      "tmdb_id": 1613798,
+      "title_ar": "الانتقام",
+      "title_en": "Vengeance",
+      "year": 2026,
+      "popularity": 29.3358
+    },
+    {
+      "slug": "the-gorge",
+      "tmdb_id": 950396,
+      "title_ar": "الوادي",
+      "title_en": "The Gorge",
+      "year": 2025,
+      "popularity": 29.3275
+    },
+    {
+      "slug": "inside-out-2",
+      "tmdb_id": 1022789,
+      "title_ar": "قلباً وقالباً 2",
+      "title_en": "Inside Out 2",
+      "year": 2024,
+      "popularity": 29.1338
+    },
+    {
+      "slug": "dune-part-two",
+      "tmdb_id": 693134,
+      "title_ar": "كثيب: القسم الثاني",
+      "title_en": "Dune: Part Two",
+      "year": 2024,
+      "popularity": 28.8574
+    },
+    {
+      "slug": "idhayam-murali",
+      "tmdb_id": 1432631,
+      "title_ar": "إديام مورالي",
+      "title_en": "Idhayam Murali",
+      "year": 2026,
+      "popularity": 28.7409
+    },
+    {
+      "slug": "our-fault",
+      "tmdb_id": 1156594,
+      "title_ar": "خطؤنا",
+      "title_en": "Our Fault",
+      "year": 2025,
+      "popularity": 28.6013
+    },
+    {
+      "slug": "the-rip",
+      "tmdb_id": 1306368,
+      "title_ar": "ليلة القبض على المال والثقة",
+      "title_en": "The Rip",
+      "year": 2026,
+      "popularity": 28.2235
+    },
+    {
+      "slug": "mission-impossible-the-final-reckoning",
+      "tmdb_id": 575265,
+      "title_ar": "المهمة المستحيلة - الحساب النهائي",
+      "title_en": "Mission: Impossible - The Final Reckoning",
+      "year": 2025,
+      "popularity": 27.8711
+    },
+    {
+      "slug": "the-wrecking-crew-2026",
+      "tmdb_id": 1168190,
+      "title_ar": "طاقم التدمير",
+      "title_en": "The Wrecking Crew",
+      "year": 2026,
+      "popularity": 27.8612
+    },
+    {
+      "slug": "little-brother-2026",
+      "tmdb_id": 1397385,
+      "title_ar": "الأخ الأصغر",
+      "title_en": "Little Brother",
+      "year": 2026,
+      "popularity": 27.6494
+    },
+    {
+      "slug": "dolly",
+      "tmdb_id": 1309083,
+      "title_ar": "دوللي",
+      "title_en": "Dolly",
+      "year": 2026,
+      "popularity": 27.5845
+    },
+    {
+      "slug": "pinocchio-unstrung",
+      "tmdb_id": 1232569,
+      "title_ar": "بينوكيو : UNSTRUNG",
+      "title_en": "Pinocchio: Unstrung",
+      "year": 2026,
+      "popularity": 27.3247
+    },
+    {
+      "slug": "the-super-mario-bros-movie",
+      "tmdb_id": 502356,
+      "title_ar": "فيلم الأخوان ماريو الخارقان",
+      "title_en": "The Super Mario Bros. Movie",
+      "year": 2023,
+      "popularity": 27.1542
+    },
+    {
+      "slug": "saccharine",
+      "tmdb_id": 1363387,
+      "title_ar": "سكري",
+      "title_en": "Saccharine",
+      "year": 2026,
+      "popularity": 27.0039
+    },
+    {
+      "slug": "peddi",
+      "tmdb_id": 1057265,
+      "title_ar": "بيدي",
+      "title_en": "Peddi",
+      "year": 2026,
+      "popularity": 26.9815
+    },
+    {
+      "slug": "karuppu",
+      "tmdb_id": 1367220,
+      "title_ar": "كاروبو",
+      "title_en": "Karuppu",
+      "year": 2026,
+      "popularity": 26.9011
+    },
+    {
+      "slug": "aquaman-and-the-lost-kingdom",
+      "tmdb_id": 572802,
+      "title_ar": "أكوامان و المملكة المفقودة",
+      "title_en": "Aquaman and the Lost Kingdom",
+      "year": 2023,
+      "popularity": 26.7719
+    },
+    {
+      "slug": "extreme-makeover-homer-edition",
+      "tmdb_id": 1716513,
+      "title_ar": "ترتيبات المدقع: طبعة هوميروس",
+      "title_en": "Extreme Makeover: Homer Edition",
+      "year": 2026,
+      "popularity": 26.6255
+    },
+    {
+      "slug": "simpsley",
+      "tmdb_id": 1725116,
+      "title_ar": "سيمبسلي",
+      "title_en": "Simpsley",
+      "year": 2026,
+      "popularity": 26.584
+    },
+    {
+      "slug": "the-running-man-2025",
+      "tmdb_id": 798645,
+      "title_ar": "الرجل الجري",
+      "title_en": "The Running Man",
+      "year": 2025,
+      "popularity": 26.2407
+    },
+    {
+      "slug": "pressure-2026",
+      "tmdb_id": 1318413,
+      "title_ar": "الضغط",
+      "title_en": "Pressure",
+      "year": 2026,
+      "popularity": 26.1303
+    },
+    {
+      "slug": "suzzanna-witchcraft",
+      "tmdb_id": 1489931,
+      "title_ar": "سوزانا: السحر",
+      "title_en": "Suzzanna: Witchcraft",
+      "year": 2026,
+      "popularity": 26.107
+    },
+    {
+      "slug": "ready-or-not-here-i-come",
+      "tmdb_id": 1266127,
+      "title_ar": "جاهز أم لا : ها أنا قادم",
+      "title_en": "Ready or Not: Here I Come",
+      "year": 2026,
+      "popularity": 25.7804
+    },
+    {
+      "slug": "raakaasa",
+      "tmdb_id": 1451078,
+      "title_ar": "راكاسا",
+      "title_en": "Raakaasa",
+      "year": 2026,
+      "popularity": 25.7169
+    },
+    {
+      "slug": "final-destination-bloodlines",
+      "tmdb_id": 574475,
+      "title_ar": "الوجهة النهائية: خطوط الدم",
+      "title_en": "Final Destination Bloodlines",
+      "year": 2025,
+      "popularity": 25.7118
+    },
+    {
+      "slug": "scream-7",
+      "tmdb_id": 1159559,
+      "title_ar": "صرخة ٧",
+      "title_en": "Scream 7",
+      "year": 2026,
+      "popularity": 25.7079
+    },
+    {
+      "slug": "summerween",
+      "tmdb_id": 1711175,
+      "title_ar": "سمروين",
+      "title_en": "Summerween",
+      "year": 2026,
+      "popularity": 25.6403
+    },
+    {
+      "slug": "your-fault-london",
+      "tmdb_id": 1477317,
+      "title_ar": "ذنبك: لندن",
+      "title_en": "Your Fault: London",
+      "year": 2026,
+      "popularity": 25.6299
+    },
+    {
+      "slug": "now-you-see-me-now-you-don-t",
+      "tmdb_id": 425274,
+      "title_ar": "الآن أنت تراني: الآن أنت لا",
+      "title_en": "Now You See Me: Now You Don't",
+      "year": 2025,
+      "popularity": 25.535
+    },
+    {
+      "slug": "everything-everywhere-all-at-once",
+      "tmdb_id": 545611,
+      "title_ar": "كل شيء في كل مكان في وقت واحد",
+      "title_en": "Everything Everywhere All at Once",
+      "year": 2022,
+      "popularity": 25.3258
+    },
+    {
+      "slug": "alien-romulus",
+      "tmdb_id": 945961,
+      "title_ar": "فضائي: رومولوس",
+      "title_en": "Alien: Romulus",
+      "year": 2024,
+      "popularity": 25.1916
+    },
+    {
+      "slug": "the-conjuring-last-rites",
+      "tmdb_id": 1038392,
+      "title_ar": "الشعوذة: الطقوس الأخيرة",
+      "title_en": "The Conjuring: Last Rites",
+      "year": 2025,
+      "popularity": 25.0742
+    },
+    {
+      "slug": "28-years-later",
+      "tmdb_id": 1100988,
+      "title_ar": "28 عاما لاحقا",
+      "title_en": "28 Years Later",
+      "year": 2025,
+      "popularity": 25.0516
+    },
+    {
+      "slug": "lilo-stitch-2025",
+      "tmdb_id": 552524,
+      "title_ar": "ليلو وستيتش",
+      "title_en": "Lilo & Stitch",
+      "year": 2025,
+      "popularity": 24.9591
+    },
+    {
+      "slug": "sonic-the-hedgehog-3",
+      "tmdb_id": 939243,
+      "title_ar": "سونيك القنفذ 3",
+      "title_en": "Sonic the Hedgehog 3",
+      "year": 2024,
+      "popularity": 24.9231
+    },
+    {
+      "slug": "pallichattambi",
+      "tmdb_id": 959894,
+      "title_ar": "باليشاتامبي",
+      "title_en": "Pallichattambi",
+      "year": 2026,
+      "popularity": 24.858
+    },
+    {
+      "slug": "motor-city",
+      "tmdb_id": 87513,
+      "title_ar": "موتور سيتي",
+      "title_en": "Motor City",
+      "year": 2026,
+      "popularity": 24.669
+    },
+    {
+      "slug": "hope-2026",
+      "tmdb_id": 1058424,
+      "title_ar": "أمل",
+      "title_en": "Hope",
+      "year": 2026,
+      "popularity": 24.6436
+    },
+    {
+      "slug": "the-breadwinner-2026",
+      "tmdb_id": 1440050,
+      "title_ar": "المعيل",
+      "title_en": "The Breadwinner",
+      "year": 2026,
+      "popularity": 24.6162
+    },
+    {
+      "slug": "girls-like-girls",
+      "tmdb_id": 1397485,
+      "title_ar": "الفتيات مثل الفتيات",
+      "title_en": "Girls Like Girls",
+      "year": 2026,
+      "popularity": 24.3957
+    },
+    {
+      "slug": "ne-zha-2",
+      "tmdb_id": 980477,
+      "title_ar": "ناچا ٢",
+      "title_en": "Ne Zha 2",
+      "year": 2025,
+      "popularity": 23.6612
+    },
+    {
+      "slug": "mercy-2026",
+      "tmdb_id": 1236153,
+      "title_ar": "ميرسي",
+      "title_en": "Mercy",
+      "year": 2026,
+      "popularity": 23.5616
+    },
+    {
+      "slug": "undertone",
+      "tmdb_id": 1480387,
+      "title_ar": "نبرة خفية",
+      "title_en": "undertone",
+      "year": 2026,
+      "popularity": 23.5335
+    },
+    {
+      "slug": "guardians-of-the-galaxy-vol-3",
+      "tmdb_id": 447365,
+      "title_ar": "حرّاس المجرّة المجلد 3",
+      "title_en": "Guardians of the Galaxy Vol. 3",
+      "year": 2023,
+      "popularity": 23.4771
+    },
+    {
+      "slug": "puss-in-boots-the-last-wish",
+      "tmdb_id": 315162,
+      "title_ar": "القط ذو الحذاء: الأمنية الأخيرة",
+      "title_en": "Puss in Boots: The Last Wish",
+      "year": 2022,
+      "popularity": 23.3987
+    },
+    {
+      "slug": "beast-2026",
+      "tmdb_id": 1292415,
+      "title_ar": "وحش",
+      "title_en": "Beast",
+      "year": 2026,
+      "popularity": 23.282
+    },
+    {
+      "slug": "thor-love-and-thunder",
+      "tmdb_id": 616037,
+      "title_ar": "ثور: الحب والرعد",
+      "title_en": "Thor: Love and Thunder",
+      "year": 2022,
+      "popularity": 23.1575
+    },
+    {
+      "slug": "despicable-me-4",
+      "tmdb_id": 519182,
+      "title_ar": "الحقير أنا 4",
+      "title_en": "Despicable Me 4",
+      "year": 2024,
+      "popularity": 22.9699
+    },
+    {
+      "slug": "all-wishes-come-true",
+      "tmdb_id": 1633056,
+      "title_ar": "كل التمنيات تتحقق!",
+      "title_en": "All Wishes Come True!",
+      "year": 2026,
+      "popularity": 22.9317
+    },
+    {
+      "slug": "black-panther-wakanda-forever",
+      "tmdb_id": 505642,
+      "title_ar": "بلاك بانثر: واكاندا إلى الأبد",
+      "title_en": "Black Panther: Wakanda Forever",
+      "year": 2022,
+      "popularity": 22.8607
+    },
+    {
+      "slug": "barbie-2023",
+      "tmdb_id": 346698,
+      "title_ar": "باربي",
+      "title_en": "Barbie",
+      "year": 2023,
+      "popularity": 22.7568
+    },
+    {
+      "slug": "venom-the-last-dance",
+      "tmdb_id": 912649,
+      "title_ar": "فينوم: الرقصة الأخيرة",
+      "title_en": "Venom: The Last Dance",
+      "year": 2024,
+      "popularity": 22.6965
+    },
+    {
+      "slug": "gladiator-ii",
+      "tmdb_id": 558449,
+      "title_ar": "المجالد 2",
+      "title_en": "Gladiator II",
+      "year": 2024,
+      "popularity": 22.3097
+    },
+    {
+      "slug": "mufasa-the-lion-king",
+      "tmdb_id": 762509,
+      "title_ar": "الأسد الملك∶ موفاسا",
+      "title_en": "Mufasa: The Lion King",
+      "year": 2024,
+      "popularity": 21.92
+    },
+    {
+      "slug": "tom-jerry-2021",
+      "tmdb_id": 587807,
+      "title_ar": "القط جيري و الفأر توم",
+      "title_en": "Tom & Jerry",
+      "year": 2021,
+      "popularity": 21.6902
+    },
+    {
+      "slug": "a-working-man",
+      "tmdb_id": 1197306,
+      "title_ar": "رجل عامل",
+      "title_en": "A Working Man",
+      "year": 2025,
+      "popularity": 21.6212
+    },
+    {
+      "slug": "i-would-rather-kill-you",
+      "tmdb_id": 1456928,
+      "title_ar": "أفضل أن أقتلك",
+      "title_en": "I Would Rather Kill You",
+      "year": 2025,
+      "popularity": 21.4518
+    },
+    {
+      "slug": "kraven-the-hunter",
+      "tmdb_id": 539972,
+      "title_ar": "كرايفن ذي هانتر",
+      "title_en": "Kraven the Hunter",
+      "year": 2024,
+      "popularity": 21.4047
+    },
+    {
+      "slug": "flow-2024",
+      "tmdb_id": 823219,
+      "title_ar": "الانسياب",
+      "title_en": "Flow",
+      "year": 2024,
+      "popularity": 21.3344
+    },
+    {
+      "slug": "protector",
+      "tmdb_id": 1383731,
+      "title_ar": "الحامية",
+      "title_en": "Protector",
+      "year": 2026,
+      "popularity": 21.3284
+    },
+    {
+      "slug": "wicked-2024",
+      "tmdb_id": 402431,
+      "title_ar": "شرير",
+      "title_en": "Wicked",
+      "year": 2024,
+      "popularity": 21.3179
+    },
+    {
+      "slug": "tuner",
+      "tmdb_id": 1340206,
+      "title_ar": "موالف",
+      "title_en": "Tuner",
+      "year": 2026,
+      "popularity": 21.3176
+    },
+    {
+      "slug": "after-we-fell",
+      "tmdb_id": 744275,
+      "title_ar": "بعد أن سقطنا",
+      "title_en": "After We Fell",
+      "year": 2021,
+      "popularity": 21.2479
+    },
+    {
+      "slug": "the-long-walk-2025",
+      "tmdb_id": 604079,
+      "title_ar": "المشي الطويل",
+      "title_en": "The Long Walk",
+      "year": 2025,
+      "popularity": 21.191
+    },
+    {
+      "slug": "normal-2026",
+      "tmdb_id": 1242332,
+      "title_ar": "طبيعي",
+      "title_en": "Normal",
+      "year": 2026,
+      "popularity": 21.1523
+    },
+    {
+      "slug": "nothing-between-us",
+      "tmdb_id": 1632812,
+      "title_ar": "لا شيء بيننا",
+      "title_en": "Nothing Between Us",
+      "year": 2026,
+      "popularity": 21.0809
+    },
+    {
+      "slug": "tenet",
+      "tmdb_id": 577922,
+      "title_ar": "عقيدة",
+      "title_en": "Tenet",
+      "year": 2020,
+      "popularity": 20.9745
+    },
+    {
+      "slug": "meg-2-the-trench",
+      "tmdb_id": 615656,
+      "title_ar": "القرش 2 : الخندق",
+      "title_en": "Meg 2: The Trench",
+      "year": 2023,
+      "popularity": 20.559
+    },
+    {
+      "slug": "good-boy-2026",
+      "tmdb_id": 1381027,
+      "title_ar": "فتى جيد",
+      "title_en": "Good Boy",
+      "year": 2026,
+      "popularity": 20.4883
+    },
+    {
+      "slug": "the-spongebob-movie-search-for-squarepants",
+      "tmdb_id": 991494,
+      "title_ar": "فيلم سبونج بوب: البحث عن سكوير بانتس",
+      "title_en": "The SpongeBob Movie: Search for SquarePants",
+      "year": 2025,
+      "popularity": 20.3876
+    },
+    {
+      "slug": "fuze",
+      "tmdb_id": 1242265,
+      "title_ar": "صمام",
+      "title_en": "Fuze",
+      "year": 2026,
+      "popularity": 20.2897
+    },
+    {
+      "slug": "wicked-for-good",
+      "tmdb_id": 967941,
+      "title_ar": "شراً للخير",
+      "title_en": "Wicked: For Good",
+      "year": 2025,
+      "popularity": 20.2654
+    },
+    {
+      "slug": "they-will-kill-you",
+      "tmdb_id": 1292695,
+      "title_ar": "سيقتلونك",
+      "title_en": "They Will Kill You",
+      "year": 2026,
+      "popularity": 20.2336
+    },
+    {
+      "slug": "turning-red",
+      "tmdb_id": 508947,
+      "title_ar": "الباندا الأحمر الكبير",
+      "title_en": "Turning Red",
+      "year": 2022,
+      "popularity": 20.1208
+    },
+    {
+      "slug": "shang-chi-and-the-legend-of-the-ten-rings",
+      "tmdb_id": 566525,
+      "title_ar": "شانغ - چي و أسطورة الحلقات العشر",
+      "title_en": "Shang-Chi and the Legend of the Ten Rings",
+      "year": 2021,
+      "popularity": 19.8994
+    },
+    {
+      "slug": "three-kingdoms-the-beginning",
+      "tmdb_id": 1671541,
+      "title_ar": "الممالك الثلاث: البداية",
+      "title_en": "Three Kingdoms: The Beginning",
+      "year": 2026,
+      "popularity": 19.8852
+    },
+    {
+      "slug": "detective-conan-fallen-angel-of-the-highway",
+      "tmdb_id": 1545621,
+      "title_ar": "المحقق كونان: الملاك الساقط في الطريق السريع",
+      "title_en": "Detective Conan: Fallen Angel of the Highway",
+      "year": 2026,
+      "popularity": 19.8035
+    },
+    {
+      "slug": "oscar-shaw",
+      "tmdb_id": 1601243,
+      "title_ar": "أوسكار شو",
+      "title_en": "Oscar Shaw",
+      "year": 2026,
+      "popularity": 19.8
+    },
+    {
+      "slug": "assassination-classroom-the-movie-our-time",
+      "tmdb_id": 1542877,
+      "title_ar": "فيلم فصل الاغتيال: عصرنا",
+      "title_en": "Assassination Classroom the Movie: Our Time",
+      "year": 2026,
+      "popularity": 19.7959
+    },
+    {
+      "slug": "primate-2026",
+      "tmdb_id": 1315303,
+      "title_ar": "الرئيسيات",
+      "title_en": "Primate",
+      "year": 2026,
+      "popularity": 19.775
+    },
+    {
+      "slug": "subservience",
+      "tmdb_id": 1064028,
+      "title_ar": "التبعية",
+      "title_en": "Subservience",
+      "year": 2024,
+      "popularity": 19.7109
+    },
+    {
+      "slug": "elemental",
+      "tmdb_id": 976573,
+      "title_ar": "مدينة العناصر",
+      "title_en": "Elemental",
+      "year": 2023,
+      "popularity": 19.6916
+    },
+    {
+      "slug": "snow-white-2025",
+      "tmdb_id": 447273,
+      "title_ar": "سنووايت",
+      "title_en": "Snow White",
+      "year": 2025,
+      "popularity": 19.435
+    },
+    {
+      "slug": "john-wick-chapter-4",
+      "tmdb_id": 603692,
+      "title_ar": "جون ويك: الفصل ٤",
+      "title_en": "John Wick: Chapter 4",
+      "year": 2023,
+      "popularity": 19.3175
+    },
+    {
+      "slug": "bugonia",
+      "tmdb_id": 701387,
+      "title_ar": "بوغونيا",
+      "title_en": "Bugonia",
+      "year": 2025,
+      "popularity": 19.2657
+    },
+    {
+      "slug": "black-widow-2021",
+      "tmdb_id": 497698,
+      "title_ar": "الأرملة السوداء",
+      "title_en": "Black Widow",
+      "year": 2021,
+      "popularity": 19.2602
+    },
+    {
+      "slug": "kung-fu-panda-4",
+      "tmdb_id": 1011985,
+      "title_ar": "الكونغ فو باندا ٤",
+      "title_en": "Kung Fu Panda 4",
+      "year": 2024,
+      "popularity": 19.1128
+    },
+    {
+      "slug": "the-mortuary-assistant",
+      "tmdb_id": 1470130,
+      "title_ar": "مساعد المشرحة",
+      "title_en": "The Mortuary Assistant",
+      "year": 2026,
+      "popularity": 18.8475
+    },
+    {
+      "slug": "a-toxic-love-story",
+      "tmdb_id": 1723460,
+      "title_ar": "قصة حب سامة",
+      "title_en": "A Toxic Love Story",
+      "year": 2026,
+      "popularity": 18.7678
+    },
+    {
+      "slug": "anaconda-2025",
+      "tmdb_id": 1234731,
+      "title_ar": "أناكوندا",
+      "title_en": "Anaconda",
+      "year": 2025,
+      "popularity": 18.7209
+    },
+    {
+      "slug": "over-your-dead-body-2026",
+      "tmdb_id": 1390300,
+      "title_ar": "على جثتك",
+      "title_en": "Over Your Dead Body",
+      "year": 2026,
+      "popularity": 18.708
+    },
+    {
+      "slug": "soul-2020",
+      "tmdb_id": 508442,
+      "title_ar": "مغامرة ذاتية",
+      "title_en": "Soul",
+      "year": 2020,
+      "popularity": 18.6462
+    },
+    {
+      "slug": "minions-the-rise-of-gru",
+      "tmdb_id": 438148,
+      "title_ar": "المينيونز 2  صعود جرو",
+      "title_en": "Minions: The Rise of Gru",
+      "year": 2022,
+      "popularity": 18.5802
+    },
+    {
+      "slug": "ballerina-2025",
+      "tmdb_id": 541671,
+      "title_ar": "بالرينا",
+      "title_en": "Ballerina",
+      "year": 2025,
+      "popularity": 18.5402
+    },
+    {
+      "slug": "wake-up-dead-man-a-knives-out-mystery",
+      "tmdb_id": 812583,
+      "title_ar": "عودة الرجل الميت: أخرجوا السكاكين",
+      "title_en": "Wake Up Dead Man: A Knives Out Mystery",
+      "year": 2025,
+      "popularity": 18.524
+    },
+    {
+      "slug": "jurassic-world-dominion",
+      "tmdb_id": 507086,
+      "title_ar": "العالم الجوراسي: الهيمنة",
+      "title_en": "Jurassic World Dominion",
+      "year": 2022,
+      "popularity": 18.5073
+    },
+    {
+      "slug": "wings-of-dread",
+      "tmdb_id": 1424435,
+      "title_ar": "أجنحة الرهبة",
+      "title_en": "Wings of Dread",
+      "year": 2026,
+      "popularity": 18.4381
+    },
+    {
+      "slug": "good-luck-have-fun-don-t-die",
+      "tmdb_id": 1119449,
+      "title_ar": "حظاً موفقاً، استمتع بوقتك، لا تموت",
+      "title_en": "Good Luck, Have Fun, Don't Die",
+      "year": 2026,
+      "popularity": 18.3272
+    },
+    {
+      "slug": "wrath-of-man",
+      "tmdb_id": 637649,
+      "title_ar": "غضب الرجل",
+      "title_en": "Wrath of Man",
+      "year": 2021,
+      "popularity": 18.2957
+    },
+    {
+      "slug": "nosferatu",
+      "tmdb_id": 426063,
+      "title_ar": "نوسفيراتو",
+      "title_en": "Nosferatu",
+      "year": 2024,
+      "popularity": 18.2797
+    },
+    {
+      "slug": "zack-snyder-s-justice-league",
+      "tmdb_id": 791373,
+      "title_ar": "فرقة العدالة: نسخة زاك سنايدر",
+      "title_en": "Zack Snyder's Justice League",
+      "year": 2021,
+      "popularity": 18.2301
+    },
+    {
+      "slug": "cold-storage-2026",
+      "tmdb_id": 696393,
+      "title_ar": "التخزين البارد",
+      "title_en": "Cold Storage",
+      "year": 2026,
+      "popularity": 18.0736
+    },
+    {
+      "slug": "chum",
+      "tmdb_id": 1694978,
+      "title_ar": "الرفيق",
+      "title_en": "Chum",
+      "year": 2026,
+      "popularity": 18.0686
+    },
+    {
+      "slug": "power-ballad",
+      "tmdb_id": 1284016,
+      "title_ar": "أغنية القوة",
+      "title_en": "Power Ballad",
+      "year": 2026,
+      "popularity": 17.9033
+    },
+    {
+      "slug": "my-dearest-assassin",
+      "tmdb_id": 1630423,
+      "title_ar": "عزيزي القاتل",
+      "title_en": "My Dearest Assassin",
+      "year": 2026,
+      "popularity": 17.9033
+    },
+    {
+      "slug": "furiosa-a-mad-max-saga",
+      "tmdb_id": 786892,
+      "title_ar": "فيوريوسا: ملحمة ماد ماكس",
+      "title_en": "Furiosa: A Mad Max Saga",
+      "year": 2024,
+      "popularity": 17.7564
+    },
+    {
+      "slug": "godzilla-x-kong-the-new-empire",
+      "tmdb_id": 823464,
+      "title_ar": "جودزيلا وكونج: الإمبراطورية الجديدة",
+      "title_en": "Godzilla x Kong: The New Empire",
+      "year": 2024,
+      "popularity": 17.4115
+    },
+    {
+      "slug": "death-on-the-nile-2022",
+      "tmdb_id": 505026,
+      "title_ar": "وفاة على ضفاف النيل",
+      "title_en": "Death on the Nile",
+      "year": 2022,
+      "popularity": 17.4112
+    },
+    {
+      "slug": "tron-ares",
+      "tmdb_id": 533533,
+      "title_ar": "ترون: آريس",
+      "title_en": "TRON: Ares",
+      "year": 2025,
+      "popularity": 17.4076
+    },
+    {
+      "slug": "five-nights-at-freddy-s-2",
+      "tmdb_id": 1228246,
+      "title_ar": "خمس ليالٍ في فريدي 2",
+      "title_en": "Five Nights at Freddy's 2",
+      "year": 2025,
+      "popularity": 17.3949
+    },
+    {
+      "slug": "desert-warrior-2026",
+      "tmdb_id": 898704,
+      "title_ar": "محارب الصحراء",
+      "title_en": "Desert Warrior",
+      "year": 2026,
+      "popularity": 17.3836
+    },
+    {
+      "slug": "red-one",
+      "tmdb_id": 845781,
+      "title_ar": "أحمر واحد",
+      "title_en": "Red One",
+      "year": 2024,
+      "popularity": 17.3821
+    },
+    {
+      "slug": "pretty-lethal",
+      "tmdb_id": 1084187,
+      "title_ar": "بالغ الخطورة",
+      "title_en": "Pretty Lethal",
+      "year": 2026,
+      "popularity": 17.3227
+    },
+    {
+      "slug": "mortal-kombat-2021",
+      "tmdb_id": 460465,
+      "title_ar": "الصراع المميت",
+      "title_en": "Mortal Kombat",
+      "year": 2021,
+      "popularity": 17.2546
+    },
+    {
+      "slug": "transformers-rise-of-the-beasts",
+      "tmdb_id": 667538,
+      "title_ar": "المتحولون: صعود الوحوش",
+      "title_en": "Transformers: Rise of the Beasts",
+      "year": 2023,
+      "popularity": 17.1938
+    },
+    {
+      "slug": "transformers-one",
+      "tmdb_id": 698687,
+      "title_ar": "المتحولون 1",
+      "title_en": "Transformers One",
+      "year": 2024,
+      "popularity": 17.1814
+    },
+    {
+      "slug": "black-adam",
+      "tmdb_id": 436270,
+      "title_ar": "آدم الأسود",
+      "title_en": "Black Adam",
+      "year": 2022,
+      "popularity": 17.1808
+    },
+    {
+      "slug": "cruella",
+      "tmdb_id": 337404,
+      "title_ar": "كرويلا",
+      "title_en": "Cruella",
+      "year": 2021,
+      "popularity": 17.1396
+    },
+    {
+      "slug": "jujutsu-kaisen-execution",
+      "tmdb_id": 1539104,
+      "title_ar": "جوجوتسو كايسن: الإعدام",
+      "title_en": "JUJUTSU KAISEN: Execution",
+      "year": 2025,
+      "popularity": 17.0935
+    },
+    {
+      "slug": "do-not-enter",
+      "tmdb_id": 999136,
+      "title_ar": "لا تدخل",
+      "title_en": "Do Not Enter",
+      "year": 2026,
+      "popularity": 17.0052
+    },
+    {
+      "slug": "smile-2",
+      "tmdb_id": 1100782,
+      "title_ar": "ابتسم 2",
+      "title_en": "Smile 2",
+      "year": 2024,
+      "popularity": 16.8441
+    },
+    {
+      "slug": "the-menu-2022",
+      "tmdb_id": 593643,
+      "title_ar": "قائمة الطعام",
+      "title_en": "The Menu",
+      "year": 2022,
+      "popularity": 16.7661
+    },
+    {
+      "slug": "whistle-2026",
+      "tmdb_id": 1193501,
+      "title_ar": "صافرة",
+      "title_en": "Whistle",
+      "year": 2026,
+      "popularity": 16.7222
+    },
+    {
+      "slug": "how-to-make-a-killing",
+      "tmdb_id": 467905,
+      "title_ar": "كيف تصنع الثروة قاتل",
+      "title_en": "How to Make a Killing",
+      "year": 2026,
+      "popularity": 16.7004
+    },
+    {
+      "slug": "the-beekeeper-2024",
+      "tmdb_id": 866398,
+      "title_ar": "النحّال",
+      "title_en": "The Beekeeper",
+      "year": 2024,
+      "popularity": 16.4997
+    },
+    {
+      "slug": "heretic-2024",
+      "tmdb_id": 1138194,
+      "title_ar": "مهرطق",
+      "title_en": "Heretic",
+      "year": 2024,
+      "popularity": 16.4892
+    },
+    {
+      "slug": "beetlejuice-beetlejuice",
+      "tmdb_id": 917496,
+      "title_ar": "بيتلجوس  بيتلجوس",
+      "title_en": "Beetlejuice Beetlejuice",
+      "year": 2024,
+      "popularity": 16.4722
+    },
+    {
+      "slug": "cannelloni",
+      "tmdb_id": 1743296,
+      "title_ar": "كانيلوني",
+      "title_en": "Cannelloni",
+      "year": 2026,
+      "popularity": 16.4075
+    },
+    {
+      "slug": "no-other-choice",
+      "tmdb_id": 639988,
+      "title_ar": "لا خيار آخر",
+      "title_en": "No Other Choice",
+      "year": 2025,
+      "popularity": 16.3762
+    },
+    {
+      "slug": "susana-and-elvira-no-plan-b",
+      "tmdb_id": 1580803,
+      "title_ar": "سوزانا وإلفيرا: لا توجد خطة بديلة",
+      "title_en": "Susana and Elvira: No Plan B",
+      "year": 2026,
+      "popularity": 16.3535
+    },
+    {
+      "slug": "you-drive-me-crazy-2025",
+      "tmdb_id": 1489187,
+      "title_ar": "أنت تقودني إلى الجنون",
+      "title_en": "You Drive Me Crazy",
+      "year": 2025,
+      "popularity": 16.3461
+    },
+    {
+      "slug": "100-yards-2024",
+      "tmdb_id": 1122824,
+      "title_ar": "100 ياردة",
+      "title_en": "100 Yards",
+      "year": 2024,
+      "popularity": 16.1408
+    },
+    {
+      "slug": "godzilla-minus-one",
+      "tmdb_id": 940721,
+      "title_ar": "Godzilla Minus One",
+      "title_en": "Godzilla Minus One",
+      "year": 2023,
+      "popularity": 16.0792
+    },
+    {
+      "slug": "survive-2024",
+      "tmdb_id": 1196470,
+      "title_ar": "ينجو",
+      "title_en": "Survive",
+      "year": 2024,
+      "popularity": 16.0782
+    },
+    {
+      "slug": "girl-in-the-basement",
+      "tmdb_id": 801335,
+      "title_ar": "فتاة في القبو",
+      "title_en": "Girl in the Basement",
+      "year": 2021,
+      "popularity": 16.0475
+    },
+    {
+      "slug": "peaky-blinders-the-immortal-man",
+      "tmdb_id": 875828,
+      "title_ar": "بيكي بلايندرز: الرجل الخالد",
+      "title_en": "Peaky Blinders: The Immortal Man",
+      "year": 2026,
+      "popularity": 15.9679
+    },
+    {
+      "slug": "fantastic-beasts-the-secrets-of-dumbledore",
+      "tmdb_id": 338953,
+      "title_ar": "الوحوش المذهلة: أسرار دمبلدور",
+      "title_en": "Fantastic Beasts: The Secrets of Dumbledore",
+      "year": 2022,
+      "popularity": 15.938
+    },
+    {
+      "slug": "no-time-to-die",
+      "tmdb_id": 370172,
+      "title_ar": "لا وَقتَ لِلمَوت",
+      "title_en": "No Time to Die",
+      "year": 2021,
+      "popularity": 15.8925
+    },
+    {
+      "slug": "me-before-me",
+      "tmdb_id": 1616674,
+      "title_ar": "انا قبلي",
+      "title_en": "Me Before Me",
+      "year": 2026,
+      "popularity": 15.8814
+    },
+    {
+      "slug": "encanto",
+      "tmdb_id": 568124,
+      "title_ar": "إنكانتو",
+      "title_en": "Encanto",
+      "year": 2021,
+      "popularity": 15.7602
+    },
+    {
+      "slug": "the-legend-of-hei-2",
+      "tmdb_id": 1144107,
+      "title_ar": "أسطورة هاي 2",
+      "title_en": "The Legend of Hei 2",
+      "year": 2025,
+      "popularity": 15.7278
+    },
+    {
+      "slug": "prey-2022",
+      "tmdb_id": 766507,
+      "title_ar": "فريسة",
+      "title_en": "Prey",
+      "year": 2022,
+      "popularity": 15.5918
+    },
+    {
+      "slug": "nobody-2",
+      "tmdb_id": 1007734,
+      "title_ar": "نكرة ٢",
+      "title_en": "Nobody 2",
+      "year": 2025,
+      "popularity": 15.5675
+    },
+    {
+      "slug": "the-amateur-2025",
+      "tmdb_id": 1087891,
+      "title_ar": "الهاوي",
+      "title_en": "The Amateur",
+      "year": 2025,
+      "popularity": 15.554
+    },
+    {
+      "slug": "bring-her-back",
+      "tmdb_id": 1151031,
+      "title_ar": "أعيدوها",
+      "title_en": "Bring Her Back",
+      "year": 2025,
+      "popularity": 15.4019
+    },
+    {
+      "slug": "the-black-phone",
+      "tmdb_id": 756999,
+      "title_ar": "الهاتف الأسود",
+      "title_en": "The Black Phone",
+      "year": 2022,
+      "popularity": 15.3988
+    },
+    {
+      "slug": "the-witch-part-2-the-other-one",
+      "tmdb_id": 615173,
+      "title_ar": "الساحرة: الجزء 2. الآخر",
+      "title_en": "The Witch: Part 2. The Other One",
+      "year": 2022,
+      "popularity": 15.3576
+    },
+    {
+      "slug": "we-bury-the-dead",
+      "tmdb_id": 1198984,
+      "title_ar": "نحن ندفن الموتى",
+      "title_en": "We Bury the Dead",
+      "year": 2026,
+      "popularity": 15.3255
+    },
+    {
+      "slug": "primitive-war",
+      "tmdb_id": 1257009,
+      "title_ar": "الحرب البدائية",
+      "title_en": "Primitive War",
+      "year": 2025,
+      "popularity": 15.2673
+    },
+    {
+      "slug": "maryam-the-untold-story",
+      "tmdb_id": 1433124,
+      "title_ar": "مريم: القصة غير المروية",
+      "title_en": "Maryam: The Untold Story",
+      "year": 2025,
+      "popularity": 15.2643
+    },
+    {
+      "slug": "descendants-the-rise-of-red",
+      "tmdb_id": 974262,
+      "title_ar": "أحفاد: صعود الأحمر",
+      "title_en": "Descendants: The Rise of Red",
+      "year": 2024,
+      "popularity": 15.1982
+    },
+    {
+      "slug": "love-me-love-me",
+      "tmdb_id": 1317672,
+      "title_ar": "أحبّني... أحبّني",
+      "title_en": "Love Me Love Me",
+      "year": 2026,
+      "popularity": 15.0678
+    },
+    {
+      "slug": "godzilla-vs-kong",
+      "tmdb_id": 399566,
+      "title_ar": "غودزيلا ضد. كونغ",
+      "title_en": "Godzilla vs. Kong",
+      "year": 2021,
+      "popularity": 14.9691
+    },
+    {
+      "slug": "i-swear-2025",
+      "tmdb_id": 1317149,
+      "title_ar": "أقسم",
+      "title_en": "I Swear",
+      "year": 2025,
+      "popularity": 14.9654
+    },
+    {
+      "slug": "dear-you",
+      "tmdb_id": 1671548,
+      "title_ar": "عزيزي أنت",
+      "title_en": "Dear You",
+      "year": 2026,
+      "popularity": 14.9232
+    },
+    {
+      "slug": "el-mal",
+      "tmdb_id": 1359685,
+      "title_ar": "المال",
+      "title_en": "El mal",
+      "year": 2026,
+      "popularity": 14.9133
+    },
+    {
+      "slug": "the-bad-guys-2022",
+      "tmdb_id": 629542,
+      "title_ar": "الأشرار",
+      "title_en": "The Bad Guys",
+      "year": 2022,
+      "popularity": 14.8176
+    },
+    {
+      "slug": "the-idea-of-you",
+      "tmdb_id": 843527,
+      "title_ar": "فكرة وجودك",
+      "title_en": "The Idea of You",
+      "year": 2024,
+      "popularity": 14.7407
+    },
+    {
+      "slug": "dungeons-dragons-honor-among-thieves",
+      "tmdb_id": 493529,
+      "title_ar": "الأبراج المحصنة والتنانين: الشرف بين اللصوص",
+      "title_en": "Dungeons & Dragons: Honor Among Thieves",
+      "year": 2023,
+      "popularity": 14.7148
+    },
+    {
+      "slug": "dhurandhar",
+      "tmdb_id": 1291608,
+      "title_ar": "قوي البنية",
+      "title_en": "Dhurandhar",
+      "year": 2025,
+      "popularity": 14.7026
+    },
+    {
+      "slug": "the-tomorrow-war",
+      "tmdb_id": 588228,
+      "title_ar": "حرب الغد",
+      "title_en": "The Tomorrow War",
+      "year": 2021,
+      "popularity": 14.6995
+    },
+    {
+      "slug": "warfare",
+      "tmdb_id": 1241436,
+      "title_ar": "حرب",
+      "title_en": "Warfare",
+      "year": 2025,
+      "popularity": 14.6511
+    },
+    {
+      "slug": "kill-code",
+      "tmdb_id": 949536,
+      "title_ar": "كود القتل",
+      "title_en": "Kill Code",
+      "year": 2026,
+      "popularity": 14.6163
+    },
+    {
+      "slug": "david-2025",
+      "tmdb_id": 1167307,
+      "title_ar": "ديفيد",
+      "title_en": "David",
+      "year": 2025,
+      "popularity": 14.581
+    },
+    {
+      "slug": "morbius",
+      "tmdb_id": 526896,
+      "title_ar": "موربيوس",
+      "title_en": "Morbius",
+      "year": 2022,
+      "popularity": 14.5128
+    },
+    {
+      "slug": "cold-war-1994",
+      "tmdb_id": 1499071,
+      "title_ar": "الحرب الباردة 1994",
+      "title_en": "Cold War 1994",
+      "year": 2026,
+      "popularity": 14.3782
+    },
+    {
+      "slug": "fall-2022-thriller",
+      "tmdb_id": 985939,
+      "title_ar": "سقوط",
+      "title_en": "Fall",
+      "year": 2022,
+      "popularity": 14.3611
+    },
+    {
+      "slug": "saltburn",
+      "tmdb_id": 930564,
+      "title_ar": "سالتبيرن",
+      "title_en": "Saltburn",
+      "year": 2023,
+      "popularity": 14.3365
+    },
+    {
+      "slug": "kingdom-of-the-planet-of-the-apes",
+      "tmdb_id": 653346,
+      "title_ar": "مملكة كوكب القرود",
+      "title_en": "Kingdom of the Planet of the Apes",
+      "year": 2024,
+      "popularity": 14.3102
+    },
+    {
+      "slug": "the-little-mermaid-2023",
+      "tmdb_id": 447277,
+      "title_ar": "الحورية الصغيرة",
+      "title_en": "The Little Mermaid",
+      "year": 2023,
+      "popularity": 14.257
+    },
+    {
+      "slug": "sing-2",
+      "tmdb_id": 438695,
+      "title_ar": "هواة الغناء 2",
+      "title_en": "Sing 2",
+      "year": 2021,
+      "popularity": 14.2479
+    },
+    {
+      "slug": "hunting-season-2025",
+      "tmdb_id": 1387382,
+      "title_ar": "موسم الصيد",
+      "title_en": "Hunting Season",
+      "year": 2025,
+      "popularity": 14.1922
+    },
+    {
+      "slug": "brothers-under-fire",
+      "tmdb_id": 1414413,
+      "title_ar": "الاخوة تحت النار",
+      "title_en": "Brothers Under Fire",
+      "year": 2026,
+      "popularity": 14.1877
+    },
+    {
+      "slug": "the-internship-2026",
+      "tmdb_id": 1584215,
+      "title_ar": "المتدربون",
+      "title_en": "The Internship",
+      "year": 2026,
+      "popularity": 14.1085
+    },
+    {
+      "slug": "killers-of-the-flower-moon",
+      "tmdb_id": 466420,
+      "title_ar": "كيلرز اوف ذا فلاور مون",
+      "title_en": "Killers of the Flower Moon",
+      "year": 2023,
+      "popularity": 14.06
+    },
+    {
+      "slug": "balls-up",
+      "tmdb_id": 1084577,
+      "title_ar": "فوضى في كأس العالم",
+      "title_en": "Balls Up",
+      "year": 2026,
+      "popularity": 14.0282
+    },
+    {
+      "slug": "anatomy-of-a-fall",
+      "tmdb_id": 915935,
+      "title_ar": "تشريح السقوط",
+      "title_en": "Anatomy of a Fall",
+      "year": 2023,
+      "popularity": 13.9461
+    },
+    {
+      "slug": "is-god-is",
+      "tmdb_id": 1380316,
+      "title_ar": "هل الله هو",
+      "title_en": "Is God Is",
+      "year": 2026,
+      "popularity": 13.9322
+    },
+    {
+      "slug": "mission-impossible-dead-reckoning-part-one",
+      "tmdb_id": 575264,
+      "title_ar": "مهمة مستحيلة - الحساب الميت الجزء الأول",
+      "title_en": "Mission: Impossible - Dead Reckoning Part One",
+      "year": 2023,
+      "popularity": 13.8942
+    },
+    {
+      "slug": "the-strangers-chapter-3",
+      "tmdb_id": 1010755,
+      "title_ar": "الغرباء: الفصل 3",
+      "title_en": "The Strangers: Chapter 3",
+      "year": 2026,
+      "popularity": 13.8843
+    },
+    {
+      "slug": "bad-boys-ride-or-die",
+      "tmdb_id": 573435,
+      "title_ar": "باد بويز: رايد اور داي",
+      "title_en": "Bad Boys: Ride or Die",
+      "year": 2024,
+      "popularity": 13.8548
+    },
+    {
+      "slug": "eternals",
+      "tmdb_id": 524434,
+      "title_ar": "الأَبَدِيُّون",
+      "title_en": "Eternals",
+      "year": 2021,
+      "popularity": 13.805
+    },
+    {
+      "slug": "bureau-749",
+      "tmdb_id": 1033462,
+      "title_ar": "المكتب 749",
+      "title_en": "Bureau 749",
+      "year": 2024,
+      "popularity": 13.8041
+    },
+    {
+      "slug": "exit-8",
+      "tmdb_id": 1408208,
+      "title_ar": "مخرج 8",
+      "title_en": "Exit 8",
+      "year": 2025,
+      "popularity": 13.7727
+    },
+    {
+      "slug": "straw",
+      "tmdb_id": 1426776,
+      "title_ar": "القشة الأخيرة",
+      "title_en": "STRAW",
+      "year": 2025,
+      "popularity": 13.7483
+    },
+    {
+      "slug": "the-equalizer-3",
+      "tmdb_id": 926393,
+      "title_ar": "المعادل 3",
+      "title_en": "The Equalizer 3",
+      "year": 2023,
+      "popularity": 13.7374
+    },
+    {
+      "slug": "napoleon-2023",
+      "tmdb_id": 753342,
+      "title_ar": "نابليون",
+      "title_en": "Napoleon",
+      "year": 2023,
+      "popularity": 13.6922
+    },
+    {
+      "slug": "greenland",
+      "tmdb_id": 524047,
+      "title_ar": "غرينلاند",
+      "title_en": "Greenland",
+      "year": 2020,
+      "popularity": 13.6464
+    },
+    {
+      "slug": "the-voyeurs-2021",
+      "tmdb_id": 645710,
+      "title_ar": "المتلصصان",
+      "title_en": "The Voyeurs",
+      "year": 2021,
+      "popularity": 13.5848
+    }
+  ],
+  "series": [
+    {
+      "slug": "house-of-the-dragon",
+      "tmdb_id": 94997,
+      "title_ar": "آل التنين",
+      "title_en": "House of the Dragon",
+      "year": 2022,
+      "popularity": 381.5772
+    },
+    {
+      "slug": "from",
+      "tmdb_id": 124364,
+      "title_ar": "من",
+      "title_en": "FROM",
+      "year": 2022,
+      "popularity": 224.5318
+    },
+    {
+      "slug": "silo",
+      "tmdb_id": 125988,
+      "title_ar": "صومعة",
+      "title_en": "Silo",
+      "year": 2023,
+      "popularity": 219.46
+    },
+    {
+      "slug": "mushoku-tensei-jobless-reincarnation",
+      "tmdb_id": 94664,
+      "title_ar": "موشوكو تينسي",
+      "title_en": "Mushoku Tensei: Jobless Reincarnation",
+      "year": 2021,
+      "popularity": 205.107
+    },
+    {
+      "slug": "agent-kim-reactivated",
+      "tmdb_id": 296206,
+      "title_ar": "عودة العميل كيم",
+      "title_en": "Agent Kim Reactivated",
+      "year": 2026,
+      "popularity": 153.6977
+    },
+    {
+      "slug": "ranma1-2",
+      "tmdb_id": 259140,
+      "title_ar": "Ranma1/2",
+      "title_en": "Ranma1/2",
+      "year": 2024,
+      "popularity": 138.6343
+    },
+    {
+      "slug": "quiet-please",
+      "tmdb_id": 299989,
+      "title_ar": "هادئ من فضلك!",
+      "title_en": "Quiet Please!",
+      "year": 2025,
+      "popularity": 138.3965
+    },
+    {
+      "slug": "lucky-2026",
+      "tmdb_id": 278624,
+      "title_ar": "محظوظ",
+      "title_en": "Lucky",
+      "year": 2026,
+      "popularity": 109.2111
+    },
+    {
+      "slug": "the-prosecutor-s-proposal",
+      "tmdb_id": 322055,
+      "title_ar": "اقتراح المدعي العام",
+      "title_en": "The Prosecutor's Proposal",
+      "year": 2026,
+      "popularity": 105.8701
+    },
+    {
+      "slug": "renegade-immortal",
+      "tmdb_id": 223911,
+      "title_ar": "المتمرد الخالد",
+      "title_en": "Renegade Immortal",
+      "year": 2023,
+      "popularity": 103.4452
+    },
+    {
+      "slug": "deep-in",
+      "tmdb_id": 303084,
+      "title_ar": "في عمق",
+      "title_en": "Deep In",
+      "year": 2026,
+      "popularity": 103.0084
+    },
+    {
+      "slug": "pass-the-monster-meat-milady",
+      "tmdb_id": 274814,
+      "title_ar": "مرري لحم الوحش يا سيدتي!",
+      "title_en": "Pass the Monster Meat, Milady!",
+      "year": 2025,
+      "popularity": 101.146
+    },
+    {
+      "slug": "overdo",
+      "tmdb_id": 289139,
+      "title_ar": "تطرف",
+      "title_en": "Overdo",
+      "year": 2026,
+      "popularity": 101.0415
+    },
+    {
+      "slug": "avatar-the-last-airbender-2024",
+      "tmdb_id": 82452,
+      "title_ar": "أفاتار: مسخّر الهواء",
+      "title_en": "Avatar: The Last Airbender",
+      "year": 2024,
+      "popularity": 100.5786
+    },
+    {
+      "slug": "frieren-beyond-journey-s-end",
+      "tmdb_id": 209867,
+      "title_ar": "فريرِن: ما وراء نهاية الرّحلة",
+      "title_en": "Frieren: Beyond Journey's End",
+      "year": 2023,
+      "popularity": 96.8907
+    },
+    {
+      "slug": "akane-banashi",
+      "tmdb_id": 297438,
+      "title_ar": "أكاني باناشي",
+      "title_en": "Akane-banashi",
+      "year": 2026,
+      "popularity": 94.3952
+    },
+    {
+      "slug": "a-record-of-a-mortal-s-journey-to-immortality",
+      "tmdb_id": 106449,
+      "title_ar": "سجل رحلة البشر إلى الخلود",
+      "title_en": "A Record of a Mortal's Journey to Immortality",
+      "year": 2020,
+      "popularity": 91.0942
+    },
+    {
+      "slug": "the-jennifer-hudson-show",
+      "tmdb_id": 204746,
+      "title_ar": "عرض جنيفر هدسون",
+      "title_en": "The Jennifer Hudson Show",
+      "year": 2022,
+      "popularity": 90.0924
+    },
+    {
+      "slug": "lioness",
+      "tmdb_id": 113962,
+      "title_ar": "لبؤة",
+      "title_en": "Lioness",
+      "year": 2023,
+      "popularity": 88.051
+    },
+    {
+      "slug": "adam-s-sweet-agony",
+      "tmdb_id": 241002,
+      "title_ar": "معاناة آدم الحلوة",
+      "title_en": "Adam's Sweet Agony",
+      "year": 2024,
+      "popularity": 87.2086
+    },
+    {
+      "slug": "elite-force",
+      "tmdb_id": 281281,
+      "title_ar": "قوة النخبة",
+      "title_en": "Elite Force",
+      "year": 2026,
+      "popularity": 87.1122
+    },
+    {
+      "slug": "high-potential",
+      "tmdb_id": 226637,
+      "title_ar": "قدرات استثنائية",
+      "title_en": "High Potential",
+      "year": 2024,
+      "popularity": 86.685
+    },
+    {
+      "slug": "teach-you-a-lesson",
+      "tmdb_id": 276161,
+      "title_ar": "سنلقّنكم درسًا",
+      "title_en": "Teach You a Lesson",
+      "year": 2026,
+      "popularity": 86.5334
+    },
+    {
+      "slug": "my-wife-has-no-emotion",
+      "tmdb_id": 250596,
+      "title_ar": "زوجتي ليس لديها عاطفة",
+      "title_en": "My Wife Has No Emotion",
+      "year": 2024,
+      "popularity": 86.0502
+    },
+    {
+      "slug": "the-pitt",
+      "tmdb_id": 250307,
+      "title_ar": "مستشفى بيتسبرغ",
+      "title_en": "The Pitt",
+      "year": 2025,
+      "popularity": 84.7509
+    },
+    {
+      "slug": "stand-up-comedy-2024",
+      "tmdb_id": 261471,
+      "title_ar": "الكوميديا ​​الارتجالية",
+      "title_en": "Stand-up Comedy",
+      "year": 2024,
+      "popularity": 82.6692
+    },
+    {
+      "slug": "stuart-fails-to-save-the-universe",
+      "tmdb_id": 287620,
+      "title_ar": "ستيوارت يفشل في إنقاذ الكون",
+      "title_en": "Stuart Fails to Save the Universe",
+      "year": 2026,
+      "popularity": 80.5992
+    },
+    {
+      "slug": "hello-saturday",
+      "tmdb_id": 154770,
+      "title_ar": "مرحبا السبت",
+      "title_en": "Hello Saturday",
+      "year": 2022,
+      "popularity": 78.785
+    },
+    {
+      "slug": "lost-and-found",
+      "tmdb_id": 272642,
+      "title_ar": "المفقودات والعثور عليها",
+      "title_en": "Lost and Found",
+      "year": 2024,
+      "popularity": 78.2831
+    },
+    {
+      "slug": "a-shop-for-killers",
+      "tmdb_id": 215072,
+      "title_ar": "متجر للقتلة",
+      "title_en": "A Shop for Killers",
+      "year": 2024,
+      "popularity": 78.2514
+    },
+    {
+      "slug": "tracker-2024",
+      "tmdb_id": 211288,
+      "title_ar": "المقتفي",
+      "title_en": "Tracker",
+      "year": 2024,
+      "popularity": 77.7736
+    },
+    {
+      "slug": "blossoms-of-power",
+      "tmdb_id": 286506,
+      "title_ar": "زهور القوة",
+      "title_en": "Blossoms of Power",
+      "year": 2026,
+      "popularity": 75.6765
+    },
+    {
+      "slug": "tulsa-king",
+      "tmdb_id": 153312,
+      "title_ar": "ملك تولسا",
+      "title_en": "Tulsa King",
+      "year": 2022,
+      "popularity": 75.0931
+    },
+    {
+      "slug": "dutton-ranch",
+      "tmdb_id": 299167,
+      "title_ar": "مزرعة دوتون",
+      "title_en": "Dutton Ranch",
+      "year": 2026,
+      "popularity": 73.8597
+    },
+    {
+      "slug": "amazing-night",
+      "tmdb_id": 257161,
+      "title_ar": "ليلة مذهلة",
+      "title_en": "Amazing Night",
+      "year": 2024,
+      "popularity": 73.2732
+    },
+    {
+      "slug": "the-lord-of-the-rings-the-rings-of-power",
+      "tmdb_id": 84773,
+      "title_ar": "سيد الخواتم: خواتم السلطة",
+      "title_en": "The Lord of the Rings: The Rings of Power",
+      "year": 2022,
+      "popularity": 72.4963
+    },
+    {
+      "slug": "the-walking-dead-dead-city",
+      "tmdb_id": 194583,
+      "title_ar": "الموتى السائرون: المدينة الميتة",
+      "title_en": "The Walking Dead: Dead City",
+      "year": 2023,
+      "popularity": 71.8496
+    },
+    {
+      "slug": "invincible",
+      "tmdb_id": 95557,
+      "title_ar": "المنيع",
+      "title_en": "INVINCIBLE",
+      "year": 2021,
+      "popularity": 71.1691
+    },
+    {
+      "slug": "pritam-and-pedro",
+      "tmdb_id": 243206,
+      "title_ar": "بريتام وبيدرو",
+      "title_en": "Pritam and Pedro",
+      "year": 2026,
+      "popularity": 70.6219
+    },
+    {
+      "slug": "the-east-palace",
+      "tmdb_id": 279323,
+      "title_ar": "القصر الشرقي",
+      "title_en": "The East Palace",
+      "year": 2026,
+      "popularity": 70.2319
+    },
+    {
+      "slug": "the-apothecary-diaries",
+      "tmdb_id": 220542,
+      "title_ar": "The Apothecary Diaries",
+      "title_en": "The Apothecary Diaries",
+      "year": 2023,
+      "popularity": 69.9065
+    },
+    {
+      "slug": "the-bear",
+      "tmdb_id": 136315,
+      "title_ar": "ذا بير",
+      "title_en": "The Bear",
+      "year": 2022,
+      "popularity": 67.9726
+    },
+    {
+      "slug": "ted-lasso",
+      "tmdb_id": 97546,
+      "title_ar": "تيد لاسو",
+      "title_en": "Ted Lasso",
+      "year": 2020,
+      "popularity": 65.1964
+    },
+    {
+      "slug": "the-polygamist",
+      "tmdb_id": 322430,
+      "title_ar": "متعدد الزوجات",
+      "title_en": "The Polygamist",
+      "year": 2026,
+      "popularity": 63.2358
+    },
+    {
+      "slug": "swallowed-star",
+      "tmdb_id": 101172,
+      "title_ar": "النجم المبتلع",
+      "title_en": "Swallowed Star",
+      "year": 2020,
+      "popularity": 63.0706
+    },
+    {
+      "slug": "bridgerton",
+      "tmdb_id": 91239,
+      "title_ar": "بريدجرتون",
+      "title_en": "Bridgerton",
+      "year": 2020,
+      "popularity": 61.6663
+    },
+    {
+      "slug": "i-will-find-you",
+      "tmdb_id": 278178,
+      "title_ar": "سأعثر عليك",
+      "title_en": "I Will Find You",
+      "year": 2026,
+      "popularity": 61.428
+    },
+    {
+      "slug": "crazy-love-moo-moo",
+      "tmdb_id": 314402,
+      "title_ar": "الحب المجنون، مو مو!",
+      "title_en": "Crazy Love, Moo-Moo!",
+      "year": 2026,
+      "popularity": 60.8717
+    },
+    {
+      "slug": "cape-fear",
+      "tmdb_id": 277439,
+      "title_ar": "كيب الخوف",
+      "title_en": "Cape Fear",
+      "year": 2026,
+      "popularity": 60.8164
+    },
+    {
+      "slug": "perfect-world-2021",
+      "tmdb_id": 124003,
+      "title_ar": "عالم مثالي [وانمي شيجي]",
+      "title_en": "Perfect World",
+      "year": 2021,
+      "popularity": 60.6926
+    },
+    {
+      "slug": "ici-tout-commence",
+      "tmdb_id": 112470,
+      "title_ar": "Ici tout تبدأ",
+      "title_en": "Ici tout commence",
+      "year": 2020,
+      "popularity": 60.3304
+    },
+    {
+      "slug": "rurouni-kenshin-2023",
+      "tmdb_id": 210879,
+      "title_ar": "روروني كينشين",
+      "title_en": "Rurouni Kenshin",
+      "year": 2023,
+      "popularity": 59.5666
+    },
+    {
+      "slug": "burn-the-house-down",
+      "tmdb_id": 210268,
+      "title_ar": "احرقي ذلك المنزل",
+      "title_en": "Burn the House Down",
+      "year": 2023,
+      "popularity": 59.3496
+    },
+    {
+      "slug": "loki",
+      "tmdb_id": 84958,
+      "title_ar": "لوكي",
+      "title_en": "Loki",
+      "year": 2021,
+      "popularity": 59.3012
+    },
+    {
+      "slug": "weak-hero",
+      "tmdb_id": 200709,
+      "title_ar": "البطل الضعيف - الصف ١",
+      "title_en": "Weak Hero",
+      "year": 2022,
+      "popularity": 59.1285
+    },
+    {
+      "slug": "star-trek-strange-new-worlds",
+      "tmdb_id": 103516,
+      "title_ar": "ستار تريك: عوالم جديدة غريبة",
+      "title_en": "Star Trek: Strange New Worlds",
+      "year": 2022,
+      "popularity": 58.0875
+    },
+    {
+      "slug": "the-white-lotus",
+      "tmdb_id": 111803,
+      "title_ar": "اللوتس الأبيض",
+      "title_en": "The White Lotus",
+      "year": 2021,
+      "popularity": 57.8591
+    },
+    {
+      "slug": "spy-x-family",
+      "tmdb_id": 120089,
+      "title_ar": "عائلة × جاسوس",
+      "title_en": "SPY x FAMILY",
+      "year": 2022,
+      "popularity": 57.5418
+    },
+    {
+      "slug": "chainsmoker-cat",
+      "tmdb_id": 312949,
+      "title_ar": "قطة شينسموكر",
+      "title_en": "Chainsmoker Cat",
+      "year": 2026,
+      "popularity": 57.1778
+    },
+    {
+      "slug": "furious",
+      "tmdb_id": 287238,
+      "title_ar": "الــثــائــرة",
+      "title_en": "Furious",
+      "year": 2026,
+      "popularity": 56.3531
+    },
+    {
+      "slug": "ransom-canyon",
+      "tmdb_id": 240993,
+      "title_ar": "رانسوم كانيون",
+      "title_en": "Ransom Canyon",
+      "year": 2025,
+      "popularity": 55.506
+    },
+    {
+      "slug": "ride-the-wind",
+      "tmdb_id": 104716,
+      "title_ar": "ركوب الريح",
+      "title_en": "Ride the Wind",
+      "year": 2020,
+      "popularity": 55.3352
+    },
+    {
+      "slug": "wednesday",
+      "tmdb_id": 119051,
+      "title_ar": "وينزداي آدامز",
+      "title_en": "Wednesday",
+      "year": 2022,
+      "popularity": 55.1294
+    },
+    {
+      "slug": "torn-apart-2026",
+      "tmdb_id": 317883,
+      "title_ar": "ما زلت في ١٧",
+      "title_en": "Torn Apart",
+      "year": 2026,
+      "popularity": 53.8281
+    },
+    {
+      "slug": "squid-game",
+      "tmdb_id": 93405,
+      "title_ar": "لعبة الحبّار",
+      "title_en": "Squid Game",
+      "year": 2021,
+      "popularity": 53.7029
+    },
+    {
+      "slug": "batang-quiapo",
+      "tmdb_id": 215803,
+      "title_ar": "باتانج كويابو",
+      "title_en": "Batang Quiapo",
+      "year": 2023,
+      "popularity": 53.6883
+    },
+    {
+      "slug": "see-you-at-work-tomorrow",
+      "tmdb_id": 289763,
+      "title_ar": "أراك في المكتب غداً!",
+      "title_en": "See You at Work Tomorrow!",
+      "year": 2026,
+      "popularity": 53.303
+    },
+    {
+      "slug": "dream-to-you",
+      "tmdb_id": 301412,
+      "title_ar": "أحلم بك",
+      "title_en": "Dream to You",
+      "year": 2026,
+      "popularity": 52.9122
+    },
+    {
+      "slug": "the-last-of-us",
+      "tmdb_id": 100088,
+      "title_ar": "الأخير منا",
+      "title_en": "The Last of Us",
+      "year": 2023,
+      "popularity": 52.8058
+    },
+    {
+      "slug": "olive-land",
+      "tmdb_id": 123644,
+      "title_ar": "أرض الزيتون",
+      "title_en": "Olive Land",
+      "year": 2021,
+      "popularity": 52.7567
+    },
+    {
+      "slug": "all-elite-wrestling-collision",
+      "tmdb_id": 226687,
+      "title_ar": "جميع مصارعة النخبة: الاصطدام",
+      "title_en": "All Elite Wrestling: Collision",
+      "year": 2023,
+      "popularity": 52.5924
+    },
+    {
+      "slug": "strange-tales-of-tang-dynasty",
+      "tmdb_id": 211089,
+      "title_ar": "حكايات غريبة من عهد أسرة تانغ",
+      "title_en": "Strange Tales of Tang Dynasty",
+      "year": 2022,
+      "popularity": 51.8694
+    },
+    {
+      "slug": "mobland",
+      "tmdb_id": 247718,
+      "title_ar": "أرض العصابات",
+      "title_en": "MobLand",
+      "year": 2025,
+      "popularity": 50.9567
+    },
+    {
+      "slug": "slay-the-gods",
+      "tmdb_id": 259231,
+      "title_ar": "اذبح الآلهة",
+      "title_en": "Slay the Gods",
+      "year": 2024,
+      "popularity": 50.7071
+    },
+    {
+      "slug": "fufu-kokan-modorenai-yoru",
+      "tmdb_id": 212568,
+      "title_ar": "فوفو كوكان: مودوريناي يورو",
+      "title_en": "Fufu Kokan: Modorenai Yoru",
+      "year": 2023,
+      "popularity": 50.3202
+    },
+    {
+      "slug": "redemption-2022-drama",
+      "tmdb_id": 215709,
+      "title_ar": "الخلاص",
+      "title_en": "Redemption",
+      "year": 2022,
+      "popularity": 50.1718
+    },
+    {
+      "slug": "re-main",
+      "tmdb_id": 120013,
+      "title_ar": "يبقى",
+      "title_en": "RE-MAIN",
+      "year": 2021,
+      "popularity": 50.0761
+    },
+    {
+      "slug": "spooky-in-love",
+      "tmdb_id": 298610,
+      "title_ar": "قصة حب مرعبة",
+      "title_en": "Spooky in Love",
+      "year": 2026,
+      "popularity": 49.6745
+    },
+    {
+      "slug": "slow-horses",
+      "tmdb_id": 95480,
+      "title_ar": "الخيول البطيئة",
+      "title_en": "Slow Horses",
+      "year": 2022,
+      "popularity": 49.5853
+    },
+    {
+      "slug": "ride-or-die",
+      "tmdb_id": 241882,
+      "title_ar": "مغامرة حتى الموت",
+      "title_en": "Ride or Die",
+      "year": 2026,
+      "popularity": 49.2888
+    },
+    {
+      "slug": "halo",
+      "tmdb_id": 52814,
+      "title_ar": "هالو",
+      "title_en": "Halo",
+      "year": 2022,
+      "popularity": 49.1407
+    },
+    {
+      "slug": "sugar",
+      "tmdb_id": 203744,
+      "title_ar": "سكر",
+      "title_en": "Sugar",
+      "year": 2024,
+      "popularity": 48.8727
+    },
+    {
+      "slug": "love-for-you",
+      "tmdb_id": 291392,
+      "title_ar": "الحب لك",
+      "title_en": "Love For You",
+      "year": 2026,
+      "popularity": 48.8122
+    },
+    {
+      "slug": "ghosts-2021",
+      "tmdb_id": 126027,
+      "title_ar": "الروحيات",
+      "title_en": "Ghosts",
+      "year": 2021,
+      "popularity": 48.3305
+    },
+    {
+      "slug": "wonderland-2021",
+      "tmdb_id": 126398,
+      "title_ar": "بلاد العجائب",
+      "title_en": "Wonderland",
+      "year": 2021,
+      "popularity": 48.3097
+    },
+    {
+      "slug": "la-promesa",
+      "tmdb_id": 212907,
+      "title_ar": "لا وعد",
+      "title_en": "La promesa",
+      "year": 2023,
+      "popularity": 48.224
+    },
+    {
+      "slug": "la-tour",
+      "tmdb_id": 104160,
+      "title_ar": "لا جولة",
+      "title_en": "La tour",
+      "year": 2020,
+      "popularity": 47.7985
+    },
+    {
+      "slug": "landman",
+      "tmdb_id": 157741,
+      "title_ar": "لاندمان",
+      "title_en": "Landman",
+      "year": 2024,
+      "popularity": 47.7358
+    },
+    {
+      "slug": "elsbeth",
+      "tmdb_id": 226285,
+      "title_ar": "إلزبيث",
+      "title_en": "Elsbeth",
+      "year": 2024,
+      "popularity": 46.827
+    },
+    {
+      "slug": "severance",
+      "tmdb_id": 95396,
+      "title_ar": "قطع",
+      "title_en": "Severance",
+      "year": 2022,
+      "popularity": 46.2511
+    },
+    {
+      "slug": "the-night-agent",
+      "tmdb_id": 129552,
+      "title_ar": "العميل الليلي",
+      "title_en": "The Night Agent",
+      "year": 2023,
+      "popularity": 46.1808
+    },
+    {
+      "slug": "fbi-most-wanted",
+      "tmdb_id": 94372,
+      "title_ar": "إف بي آي: أخطر المطلوبين",
+      "title_en": "FBI: Most Wanted",
+      "year": 2020,
+      "popularity": 46.1623
+    },
+    {
+      "slug": "chiikawa",
+      "tmdb_id": 194916,
+      "title_ar": "تشييكاوا",
+      "title_en": "Chiikawa",
+      "year": 2022,
+      "popularity": 46.0735
+    },
+    {
+      "slug": "one-hundred-years-of-solitude-2024",
+      "tmdb_id": 207333,
+      "title_ar": "مئة عام من العزلة",
+      "title_en": "One Hundred Years of Solitude",
+      "year": 2024,
+      "popularity": 46.0692
+    },
+    {
+      "slug": "soy-luna-let-s-roll-again",
+      "tmdb_id": 324434,
+      "title_ar": "الصويا لونا: دعونا نتدحرج مرة أخرى",
+      "title_en": "Soy Luna: Let's Roll Again",
+      "year": 2026,
+      "popularity": 45.7099
+    },
+    {
+      "slug": "the-lincoln-lawyer",
+      "tmdb_id": 116799,
+      "title_ar": "محامي اللينكولن",
+      "title_en": "The Lincoln Lawyer",
+      "year": 2022,
+      "popularity": 45.6785
+    },
+    {
+      "slug": "fallout",
+      "tmdb_id": 106379,
+      "title_ar": "فلاوت",
+      "title_en": "Fallout",
+      "year": 2024,
+      "popularity": 45.0644
+    },
+    {
+      "slug": "solo-leveling",
+      "tmdb_id": 127532,
+      "title_ar": "سولو ليفلينغ",
+      "title_en": "Solo Leveling",
+      "year": 2024,
+      "popularity": 44.7606
+    },
+    {
+      "slug": "percy-jackson-and-the-olympians",
+      "tmdb_id": 103540,
+      "title_ar": "بيرسي جاكسون والأولمبيون",
+      "title_en": "Percy Jackson and the Olympians",
+      "year": 2023,
+      "popularity": 44.6063
+    },
+    {
+      "slug": "pokmon-horizons",
+      "tmdb_id": 220150,
+      "title_ar": "آفاق البوكيمون",
+      "title_en": "Pokémon Horizons",
+      "year": 2023,
+      "popularity": 44.5505
+    },
+    {
+      "slug": "pushpa-impossible",
+      "tmdb_id": 203769,
+      "title_ar": "بوشبا مستحيل",
+      "title_en": "Pushpa Impossible",
+      "year": 2022,
+      "popularity": 44.2972
+    },
+    {
+      "slug": "please-put-them-on-takamine-san",
+      "tmdb_id": 276880,
+      "title_ar": "من فضلك ارتديها، تاكامين-سان",
+      "title_en": "Please Put Them On, Takamine-san",
+      "year": 2025,
+      "popularity": 44.2357
+    },
+    {
+      "slug": "digimon-beatbreak",
+      "tmdb_id": 286791,
+      "title_ar": "ديجمون بيتبريك",
+      "title_en": "Digimon Beatbreak",
+      "year": 2025,
+      "popularity": 44.0246
+    },
+    {
+      "slug": "yal-apkn",
+      "tmdb_id": 210865,
+      "title_ar": "طائر الرفراف",
+      "title_en": "Yalı Çapkını",
+      "year": 2022,
+      "popularity": 43.9893
+    },
+    {
+      "slug": "diepe-waters",
+      "tmdb_id": 231962,
+      "title_ar": "دييب ووترز",
+      "title_en": "Diepe Waters",
+      "year": 2022,
+      "popularity": 43.9115
+    },
+    {
+      "slug": "mf-ghost",
+      "tmdb_id": 154526,
+      "title_ar": "شبح إم إف",
+      "title_en": "MF GHOST",
+      "year": 2023,
+      "popularity": 43.7085
+    },
+    {
+      "slug": "hacks",
+      "tmdb_id": 124101,
+      "title_ar": "المأجورون",
+      "title_en": "Hacks",
+      "year": 2021,
+      "popularity": 43.3422
+    },
+    {
+      "slug": "gutfeld",
+      "tmdb_id": 122653,
+      "title_ar": "جوتفيلد!",
+      "title_en": "Gutfeld!",
+      "year": 2021,
+      "popularity": 43.339
+    },
+    {
+      "slug": "dark-winds",
+      "tmdb_id": 128904,
+      "title_ar": "رياح الظلام",
+      "title_en": "Dark Winds",
+      "year": 2022,
+      "popularity": 43.1167
+    },
+    {
+      "slug": "marshals",
+      "tmdb_id": 290856,
+      "title_ar": "المارشالات",
+      "title_en": "Marshals",
+      "year": 2026,
+      "popularity": 43.0489
+    },
+    {
+      "slug": "puniru-is-a-kawaii-slime",
+      "tmdb_id": 241811,
+      "title_ar": "Puniru هو الوحل Kawaii",
+      "title_en": "Puniru Is a Kawaii Slime",
+      "year": 2024,
+      "popularity": 43.0101
+    },
+    {
+      "slug": "president-curtis",
+      "tmdb_id": 296756,
+      "title_ar": "الرئيس كورتيس",
+      "title_en": "President Curtis",
+      "year": 2026,
+      "popularity": 42.9579
+    },
+    {
+      "slug": "foundation",
+      "tmdb_id": 93740,
+      "title_ar": "مؤسسة",
+      "title_en": "Foundation",
+      "year": 2021,
+      "popularity": 42.9027
+    },
+    {
+      "slug": "will-trent",
+      "tmdb_id": 208569,
+      "title_ar": "ويل ترينت",
+      "title_en": "Will Trent",
+      "year": 2023,
+      "popularity": 42.1093
+    },
+    {
+      "slug": "spartacus-house-of-ashur",
+      "tmdb_id": 240459,
+      "title_ar": "سبارتاكوس: بيت آشور",
+      "title_en": "Spartacus: House of Ashur",
+      "year": 2025,
+      "popularity": 41.8955
+    },
+    {
+      "slug": "bloodhounds",
+      "tmdb_id": 127529,
+      "title_ar": "صيد خارج الحلبة",
+      "title_en": "Bloodhounds",
+      "year": 2023,
+      "popularity": 41.5968
+    },
+    {
+      "slug": "peacemaker",
+      "tmdb_id": 110492,
+      "title_ar": "صانع السلام",
+      "title_en": "Peacemaker",
+      "year": 2022,
+      "popularity": 41.4144
+    },
+    {
+      "slug": "soul-land-2-the-peerless-tang-clan",
+      "tmdb_id": 228429,
+      "title_ar": "أرض الروح 2: عشيرة تانغ منقطع النظير",
+      "title_en": "Soul Land 2: The Peerless Tang Clan",
+      "year": 2023,
+      "popularity": 41.3969
+    },
+    {
+      "slug": "kamen-rider-zeztz",
+      "tmdb_id": 295434,
+      "title_ar": "الدراج المقنع 2025",
+      "title_en": "Kamen Rider ZEZTZ",
+      "year": 2025,
+      "popularity": 41.1509
+    },
+    {
+      "slug": "daredevil-born-again",
+      "tmdb_id": 202555,
+      "title_ar": "ديرديفل: يولد من جديد",
+      "title_en": "Daredevil: Born Again",
+      "year": 2025,
+      "popularity": 41.0362
+    },
+    {
+      "slug": "pursuit-of-jade",
+      "tmdb_id": 279388,
+      "title_ar": "السعي وراء اليشم",
+      "title_en": "Pursuit of Jade",
+      "year": 2026,
+      "popularity": 40.981
+    },
+    {
+      "slug": "mayor-of-kingstown",
+      "tmdb_id": 97951,
+      "title_ar": "عمدة كينغستاون",
+      "title_en": "Mayor of Kingstown",
+      "year": 2021,
+      "popularity": 40.791
+    },
+    {
+      "slug": "the-summer-i-turned-pretty",
+      "tmdb_id": 194766,
+      "title_ar": "صيف نشر ذراعيه",
+      "title_en": "The Summer I Turned Pretty",
+      "year": 2022,
+      "popularity": 40.1864
+    },
+    {
+      "slug": "widow-s-bay",
+      "tmdb_id": 270476,
+      "title_ar": "خليج الأرملة",
+      "title_en": "Widow's Bay",
+      "year": 2026,
+      "popularity": 39.9877
+    },
+    {
+      "slug": "the-agency-2024",
+      "tmdb_id": 219971,
+      "title_ar": "الوكالة",
+      "title_en": "The Agency",
+      "year": 2024,
+      "popularity": 39.9689
+    },
+    {
+      "slug": "andor",
+      "tmdb_id": 83867,
+      "title_ar": "أندور",
+      "title_en": "Andor",
+      "year": 2022,
+      "popularity": 39.9413
+    },
+    {
+      "slug": "only-murders-in-the-building",
+      "tmdb_id": 107113,
+      "title_ar": "جرائم في المبنى",
+      "title_en": "Only Murders in the Building",
+      "year": 2021,
+      "popularity": 39.9303
+    },
+    {
+      "slug": "festa-festa",
+      "tmdb_id": 124201,
+      "title_ar": "فيستا فيستا",
+      "title_en": "Festa é Festa",
+      "year": 2021,
+      "popularity": 39.8836
+    },
+    {
+      "slug": "the-demon-hunter",
+      "tmdb_id": 229192,
+      "title_ar": "صائد الشياطين",
+      "title_en": "The Demon Hunter",
+      "year": 2023,
+      "popularity": 39.7929
+    },
+    {
+      "slug": "natural-born-narco",
+      "tmdb_id": 218082,
+      "title_ar": "المخدرات الطبيعية المولد",
+      "title_en": "Natural Born Narco",
+      "year": 2022,
+      "popularity": 39.5509
+    },
+    {
+      "slug": "pompeii-out-of-time-with-tom-hiddleston",
+      "tmdb_id": 277640,
+      "title_ar": "بومبي: خارج الزمن مع توم هيدلستون",
+      "title_en": "Pompeii: Out of Time with Tom Hiddleston",
+      "year": 2026,
+      "popularity": 39.3414
+    },
+    {
+      "slug": "dreams-of-freedom",
+      "tmdb_id": 239526,
+      "title_ar": "أحلام الحرية",
+      "title_en": "Dreams of Freedom",
+      "year": 2024,
+      "popularity": 39.0069
+    },
+    {
+      "slug": "hahahahaha",
+      "tmdb_id": 112732,
+      "title_ar": "هاهاهاهاها",
+      "title_en": "HaHaHaHaHa",
+      "year": 2020,
+      "popularity": 38.8658
+    },
+    {
+      "slug": "sweet-home-2020",
+      "tmdb_id": 96648,
+      "title_ar": "Sweet Home",
+      "title_en": "Sweet Home",
+      "year": 2020,
+      "popularity": 38.8117
+    },
+    {
+      "slug": "what-if-2021",
+      "tmdb_id": 91363,
+      "title_ar": "ماذا لو...؟",
+      "title_en": "What If...?",
+      "year": 2021,
+      "popularity": 38.7212
+    },
+    {
+      "slug": "love-through-a-prism",
+      "tmdb_id": 306762,
+      "title_ar": "حبّ يمر عبر منشور زجاجي",
+      "title_en": "Love Through a Prism",
+      "year": 2026,
+      "popularity": 38.6865
+    },
+    {
+      "slug": "scandal-story-of-an-obsession",
+      "tmdb_id": 203505,
+      "title_ar": "فضيحة: قصة هوس",
+      "title_en": "Scandal: Story of an Obsession",
+      "year": 2023,
+      "popularity": 38.5889
+    },
+    {
+      "slug": "supreme-god-emperor",
+      "tmdb_id": 107116,
+      "title_ar": "الإمبراطور الإلهي الأعلى",
+      "title_en": "Supreme God Emperor",
+      "year": 2020,
+      "popularity": 38.5613
+    },
+    {
+      "slug": "the-hawk",
+      "tmdb_id": 254528,
+      "title_ar": "الصقر",
+      "title_en": "The Hawk",
+      "year": 2026,
+      "popularity": 38.4062
+    },
+    {
+      "slug": "georgie-mandy-s-first-marriage",
+      "tmdb_id": 243875,
+      "title_ar": "جورجي وماندي: الزواج الأول",
+      "title_en": "Georgie & Mandy's First Marriage",
+      "year": 2024,
+      "popularity": 38.0202
+    },
+    {
+      "slug": "pictionary",
+      "tmdb_id": 211102,
+      "title_ar": "قاموسي",
+      "title_en": "Pictionary",
+      "year": 2022,
+      "popularity": 37.7966
+    },
+    {
+      "slug": "the-tale-of-outcasts",
+      "tmdb_id": 205111,
+      "title_ar": "حكاية المنبوذين",
+      "title_en": "The Tale of Outcasts",
+      "year": 2023,
+      "popularity": 37.7561
+    },
+    {
+      "slug": "sins-and-roses",
+      "tmdb_id": 300388,
+      "title_ar": "ورود وذنوب",
+      "title_en": "Sins and Roses",
+      "year": 2025,
+      "popularity": 37.7233
+    },
+    {
+      "slug": "the-truth",
+      "tmdb_id": 203003,
+      "title_ar": "الحقيقة",
+      "title_en": "The Truth",
+      "year": 2022,
+      "popularity": 37.7192
+    },
+    {
+      "slug": "superman-lois",
+      "tmdb_id": 95057,
+      "title_ar": "سوبرمان ولويس",
+      "title_en": "Superman & Lois",
+      "year": 2021,
+      "popularity": 37.5854
+    },
+    {
+      "slug": "hell-s-paradise",
+      "tmdb_id": 117465,
+      "title_ar": "فردوس الجحيم",
+      "title_en": "Hell's Paradise",
+      "year": 2023,
+      "popularity": 37.5037
+    },
+    {
+      "slug": "throne-of-seal",
+      "tmdb_id": 198182,
+      "title_ar": "عرش الختم",
+      "title_en": "Throne of Seal",
+      "year": 2022,
+      "popularity": 37.4771
+    },
+    {
+      "slug": "monarch-legacy-of-monsters",
+      "tmdb_id": 202411,
+      "title_ar": "العاهل: تراث الوحوش",
+      "title_en": "Monarch: Legacy of Monsters",
+      "year": 2023,
+      "popularity": 37.4523
+    },
+    {
+      "slug": "alice-in-borderland-2020",
+      "tmdb_id": 110316,
+      "title_ar": "أوراق الموت",
+      "title_en": "Alice in Borderland",
+      "year": 2020,
+      "popularity": 37.4454
+    },
+    {
+      "slug": "dark-matter-2024",
+      "tmdb_id": 196322,
+      "title_ar": "المادة المظلمة",
+      "title_en": "Dark Matter",
+      "year": 2024,
+      "popularity": 37.2998
+    },
+    {
+      "slug": "interview-with-the-vampire",
+      "tmdb_id": 128098,
+      "title_ar": "مقابلة مع مصاص الدماء",
+      "title_en": "Interview with the Vampire",
+      "year": 2022,
+      "popularity": 37.2959
+    },
+    {
+      "slug": "the-legend-of-vox-machina",
+      "tmdb_id": 135934,
+      "title_ar": "أسطورة فوكس ماتشينا",
+      "title_en": "The Legend of Vox Machina",
+      "year": 2022,
+      "popularity": 37.2694
+    },
+    {
+      "slug": "anupamaa",
+      "tmdb_id": 116479,
+      "title_ar": "أنوباما",
+      "title_en": "Anupamaa",
+      "year": 2020,
+      "popularity": 36.957
+    },
+    {
+      "slug": "my-senior-brother-is-too-steady",
+      "tmdb_id": 218642,
+      "title_ar": "أخي الأكبر ثابت للغاية",
+      "title_en": "My Senior Brother is Too Steady",
+      "year": 2023,
+      "popularity": 36.862
+    },
+    {
+      "slug": "mao-xue-woof",
+      "tmdb_id": 137726,
+      "title_ar": "ماو شيويه ووف",
+      "title_en": "Mao Xue Woof",
+      "year": 2021,
+      "popularity": 36.7095
+    },
+    {
+      "slug": "a-will-eternal",
+      "tmdb_id": 107371,
+      "title_ar": "إرادة أبدية",
+      "title_en": "A Will Eternal",
+      "year": 2020,
+      "popularity": 36.5174
+    },
+    {
+      "slug": "my-dress-up-darling",
+      "tmdb_id": 123249,
+      "title_ar": "ملابسي يا عزيزي",
+      "title_en": "My Dress-Up Darling",
+      "year": 2022,
+      "popularity": 36.4518
+    },
+    {
+      "slug": "kzlck-erbeti",
+      "tmdb_id": 213194,
+      "title_ar": "شراب التوت",
+      "title_en": "Kızılcık Şerbeti",
+      "year": 2022,
+      "popularity": 36.2795
+    },
+    {
+      "slug": "arafta",
+      "tmdb_id": 306118,
+      "title_ar": "الاعراف",
+      "title_en": "Arafta",
+      "year": 2025,
+      "popularity": 36.0087
+    },
+    {
+      "slug": "can-bagi",
+      "tmdb_id": 298652,
+      "title_ar": "خيوط الحياة",
+      "title_en": "Can Bagi",
+      "year": 2025,
+      "popularity": 35.9186
+    },
+    {
+      "slug": "blue-lock",
+      "tmdb_id": 131041,
+      "title_ar": "القفل الأزرق",
+      "title_en": "BLUE LOCK",
+      "year": 2022,
+      "popularity": 35.8361
+    },
+    {
+      "slug": "the-god-of-war-dominates",
+      "tmdb_id": 110181,
+      "title_ar": "إله الحرب يهيمن",
+      "title_en": "The God of War Dominates",
+      "year": 2020,
+      "popularity": 35.7456
+    },
+    {
+      "slug": "resident-alien",
+      "tmdb_id": 96580,
+      "title_ar": "المواطن الفضائي",
+      "title_en": "Resident Alien",
+      "year": 2021,
+      "popularity": 35.7328
+    },
+    {
+      "slug": "pluribus",
+      "tmdb_id": 225171,
+      "title_ar": "متعدد",
+      "title_en": "Pluribus",
+      "year": 2025,
+      "popularity": 35.6637
+    },
+    {
+      "slug": "badly-in-love-2025",
+      "tmdb_id": 305379,
+      "title_ar": "سيئة في الحب",
+      "title_en": "Badly in Love",
+      "year": 2025,
+      "popularity": 35.6465
+    },
+    {
+      "slug": "paradise-2025",
+      "tmdb_id": 245927,
+      "title_ar": "جريمة في النعيم",
+      "title_en": "Paradise",
+      "year": 2025,
+      "popularity": 35.3983
+    },
+    {
+      "slug": "shrinking",
+      "tmdb_id": 136311,
+      "title_ar": "التضاءل",
+      "title_en": "Shrinking",
+      "year": 2023,
+      "popularity": 35.2971
+    },
+    {
+      "slug": "the-shiunji-family-children",
+      "tmdb_id": 261091,
+      "title_ar": "أبناء عائلة شيونجي",
+      "title_en": "The Shiunji Family Children",
+      "year": 2025,
+      "popularity": 35.231
+    },
+    {
+      "slug": "arcane",
+      "tmdb_id": 94605,
+      "title_ar": "آركين",
+      "title_en": "Arcane",
+      "year": 2021,
+      "popularity": 35.0581
+    },
+    {
+      "slug": "natural-high",
+      "tmdb_id": 231620,
+      "title_ar": "ارتفاع طبيعي",
+      "title_en": "Natural High",
+      "year": 2023,
+      "popularity": 35.0346
+    },
+    {
+      "slug": "the-dolls",
+      "tmdb_id": 158226,
+      "title_ar": "الدمى",
+      "title_en": "The Dolls",
+      "year": 2022,
+      "popularity": 34.9358
+    },
+    {
+      "slug": "the-equalizer-2021",
+      "tmdb_id": 95205,
+      "title_ar": "المعادل",
+      "title_en": "The Equalizer",
+      "year": 2021,
+      "popularity": 34.7381
+    },
+    {
+      "slug": "you-and-i-are-polar-opposites",
+      "tmdb_id": 278043,
+      "title_ar": "أنت وأنا قطبان متضادان",
+      "title_en": "You and I Are Polar Opposites",
+      "year": 2026,
+      "popularity": 34.4331
+    },
+    {
+      "slug": "fire-country",
+      "tmdb_id": 202297,
+      "title_ar": "بلد النار",
+      "title_en": "Fire Country",
+      "year": 2022,
+      "popularity": 34.2339
+    },
+    {
+      "slug": "spidey-and-his-amazing-friends",
+      "tmdb_id": 127635,
+      "title_ar": "سبيدي وأصدقائه المذهلين",
+      "title_en": "Spidey and His Amazing Friends",
+      "year": 2021,
+      "popularity": 34.1931
+    },
+    {
+      "slug": "black-torch",
+      "tmdb_id": 285993,
+      "title_ar": "الشعلة السوداء",
+      "title_en": "BLACK TORCH",
+      "year": 2026,
+      "popularity": 34.1773
+    },
+    {
+      "slug": "abbott-elementary",
+      "tmdb_id": 125935,
+      "title_ar": "أبوت الابتدائية",
+      "title_en": "Abbott Elementary",
+      "year": 2021,
+      "popularity": 33.9083
+    },
+    {
+      "slug": "shrouding-the-heavens",
+      "tmdb_id": 224839,
+      "title_ar": "حجب السماوات",
+      "title_en": "Shrouding the Heavens",
+      "year": 2023,
+      "popularity": 33.8831
+    },
+    {
+      "slug": "unexpectedly-naughty-fukami",
+      "tmdb_id": 284780,
+      "title_ar": "فوكامي المشاغب بشكل غير متوقع",
+      "title_en": "Unexpectedly Naughty Fukami",
+      "year": 2025,
+      "popularity": 33.3091
+    },
+    {
+      "slug": "dan-da-dan",
+      "tmdb_id": 240411,
+      "title_ar": "داندادان",
+      "title_en": "Dan Da Dan",
+      "year": 2024,
+      "popularity": 33.2708
+    },
+    {
+      "slug": "xo-kitty",
+      "tmdb_id": 195670,
+      "title_ar": "مع قبلاتي، كيتي",
+      "title_en": "XO, Kitty",
+      "year": 2023,
+      "popularity": 33.2089
+    },
+    {
+      "slug": "the-caf-terrace-and-its-goddesses",
+      "tmdb_id": 209707,
+      "title_ar": "شرفة المقهى وآلهاتها",
+      "title_en": "The Café Terrace and Its Goddesses",
+      "year": 2023,
+      "popularity": 33.1744
+    },
+    {
+      "slug": "the-joy-reid-show",
+      "tmdb_id": 107130,
+      "title_ar": "عرض جوي ريد",
+      "title_en": "The Joy Reid Show",
+      "year": 2020,
+      "popularity": 33.0739
+    },
+    {
+      "slug": "swords-into-plowshares",
+      "tmdb_id": 279446,
+      "title_ar": "السيوف في المحاريث",
+      "title_en": "Swords Into Plowshares",
+      "year": 2026,
+      "popularity": 33.0062
+    },
+    {
+      "slug": "my-adventures-with-superman",
+      "tmdb_id": 125928,
+      "title_ar": "مغامراتي مع سوبرمان",
+      "title_en": "My Adventures with Superman",
+      "year": 2023,
+      "popularity": 32.8979
+    },
+    {
+      "slug": "show-time",
+      "tmdb_id": 131660,
+      "title_ar": "موعد العرض!",
+      "title_en": "Show Time!",
+      "year": 2021,
+      "popularity": 32.8765
+    },
+    {
+      "slug": "it-welcome-to-derry",
+      "tmdb_id": 200875,
+      "title_ar": "إت: مرحبًا بك في ديري",
+      "title_en": "IT: Welcome to Derry",
+      "year": 2025,
+      "popularity": 32.8392
+    },
+    {
+      "slug": "boy-swallows-universe",
+      "tmdb_id": 209332,
+      "title_ar": "فتى يبتلع الكون",
+      "title_en": "Boy Swallows Universe",
+      "year": 2024,
+      "popularity": 32.7479
+    },
+    {
+      "slug": "taxi-driver",
+      "tmdb_id": 119769,
+      "title_ar": "سائق سيارة أجرة",
+      "title_en": "Taxi Driver",
+      "year": 2021,
+      "popularity": 32.7199
+    },
+    {
+      "slug": "blossom-2024",
+      "tmdb_id": 249972,
+      "title_ar": "زهر",
+      "title_en": "Blossom",
+      "year": 2024,
+      "popularity": 32.4799
+    },
+    {
+      "slug": "fbi-international",
+      "tmdb_id": 121658,
+      "title_ar": "مكتب التحقيقات الفيدرالي: دولي",
+      "title_en": "FBI: International",
+      "year": 2021,
+      "popularity": 32.4575
+    },
+    {
+      "slug": "eshref-ruya",
+      "tmdb_id": 283123,
+      "title_ar": "حلم أشرف",
+      "title_en": "Eshref Ruya",
+      "year": 2025,
+      "popularity": 32.3905
+    },
+    {
+      "slug": "heated-rivalry",
+      "tmdb_id": 301507,
+      "title_ar": "التنافس الساخن",
+      "title_en": "Heated Rivalry",
+      "year": 2025,
+      "popularity": 32.3092
+    },
+    {
+      "slug": "the-ramparts-of-ice",
+      "tmdb_id": 283428,
+      "title_ar": "أسوار الجليد",
+      "title_en": "The Ramparts of Ice",
+      "year": 2026,
+      "popularity": 32.2307
+    },
+    {
+      "slug": "the-cleaning-lady-2022",
+      "tmdb_id": 125282,
+      "title_ar": "سيدة التنظيف",
+      "title_en": "The Cleaning Lady",
+      "year": 2022,
+      "popularity": 32.165
+    },
+    {
+      "slug": "edens-zero",
+      "tmdb_id": 104711,
+      "title_ar": "عدن صفر",
+      "title_en": "EDENS ZERO",
+      "year": 2021,
+      "popularity": 31.9643
+    },
+    {
+      "slug": "bittersweet-love",
+      "tmdb_id": 316540,
+      "title_ar": "الحب الحلو والمر",
+      "title_en": "Bittersweet Love",
+      "year": 2026,
+      "popularity": 31.8963
+    },
+    {
+      "slug": "gen-v",
+      "tmdb_id": 205715,
+      "title_ar": "الجيل V",
+      "title_en": "Gen V",
+      "year": 2023,
+      "popularity": 31.878
+    },
+    {
+      "slug": "hazbin-hotel",
+      "tmdb_id": 94954,
+      "title_ar": "فندق \"هازبن\"",
+      "title_en": "Hazbin Hotel",
+      "year": 2024,
+      "popularity": 31.5966
+    },
+    {
+      "slug": "spider-noir",
+      "tmdb_id": 220102,
+      "title_ar": "سبايدر-نوار",
+      "title_en": "Spider-Noir",
+      "year": 2026,
+      "popularity": 31.5251
+    }
+  ]
+}
