@@ -183,19 +183,6 @@ export default async function SeriesDetails({ params }: PageProps) {
       ratingCount: series.vote_count || 0, bestRating: 10, worstRating: 0
     } : undefined
   }
-  const videoJsonLd = {
-    '@context':      'https://schema.org',
-    '@type':         'VideoObject',
-    name:            `مسلسل ${series.name_ar || series.name_en}`,
-    description:     (series.overview_ar || '').slice(0, 200),
-    thumbnailUrl:    series.backdrop_path
-      ? `https://4cima.com/tmdb/w1280${series.backdrop_path}`
-      : (series.poster_path ? `https://4cima.com/tmdb/w500${series.poster_path}` : 'https://4cima.com/og-image.png'),
-    uploadDate:      series.first_air_date || '2000-01-01',
-    duration:        undefined,
-    contentUrl:      `https://4cima.com/series/${series.slug}`,
-    embedUrl:        `https://4cima.com/series/${series.slug}`,
-  }
   const breadcrumbLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -209,7 +196,6 @@ export default async function SeriesDetails({ params }: PageProps) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(videoJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }} />
       <SeriesDetailsClient series={series} seasons={seasons} initialSimilar={initialSimilar} />
     </>

@@ -43,7 +43,7 @@ export function ProfileHeader() {
         {/* الأفاتار */}
         <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-amber-500/60 md:h-24 md:w-24">
           {avatarUrl ? (
-            <img src={avatarUrl} alt={name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+            <img src={avatarUrl} alt={name} width={96} height={96} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
           ) : (
             <span className="flex h-full w-full items-center justify-center bg-zinc-800 text-3xl font-black text-amber-400">
               {initial}

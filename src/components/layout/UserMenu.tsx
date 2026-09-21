@@ -73,6 +73,8 @@ export function UserMenu() {
         <img
           src={avatarUrl}
           alt={firstName}
+          width={32}
+          height={32}
           className="w-8 h-8 rounded-full object-cover border-2 border-zinc-700"
         />
         <span className="text-sm font-semibold text-white hidden sm:block">

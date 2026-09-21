@@ -13,12 +13,21 @@ export const AD_IN_ROW = getAdByNum(5)!
 /** الزون 5 معطّلة حاليًا (دومين التوصيل ميت) — لا يُحمَّل أي سكربت ولا يُحجز مكان */
 export const AD_IN_ROW_ENABLED = AD_IN_ROW.enabled !== false
 
-/** كارت الإعلان رقم 5 — نفس شكل ومقاس كارت الفيلم/المسلسل تمامًا — يختفي كليًا عند فشل الإعلان */
+/**
+ * كارت الإعلان رقم 5 — نفس شكل ومقاس كارت الفيلم/المسلسل تمامًا.
+ * سياسة الفشل (نفس سياسة AdsterraBanner): عند فشل الإعلان يبقى الكارت محجوزًا
+ * بمقاسه النهائي لكن visibility:hidden — إخفاؤه كليًا (null) كان يزق بقية
+ * الصف الأفقي بعد ثوانٍ من التحميل ويسبب CLS حقيقيًا عند الزوار.
+ */
 export function AdInRowCard({ pos }: { pos: string }) {
   const [failed, setFailed] = useState(false)
-  if (!AD_IN_ROW_ENABLED || failed) return null
+  if (!AD_IN_ROW_ENABLED) return null
   return (
-    <div className="flex-shrink-0 w-40 sm:w-48" data-ad-card-pos={pos}>
+    <div
+      className="flex-shrink-0 w-40 sm:w-48"
+      data-ad-card-pos={pos}
+      style={failed ? { visibility: 'hidden' } : undefined}
+    >
       <div className="bg-slate-900/20 border border-slate-800/60 rounded-2xl overflow-hidden flex flex-col relative">
         <div className="w-full relative overflow-hidden bg-slate-950 flex items-center justify-center">
           <AdsterraBanner ad={AD_IN_ROW} onFailure={() => setFailed(true)} />

@@ -743,6 +743,8 @@ export function SearchBox() {
                                       <img
                                         src={`/tmdb/w154${result.poster_path}`}
                                         alt={titleAr}
+                                        width={154}
+                                        height={231}
                                         className="w-full h-full object-cover group-hover:transition-transform duration-300"
                                         loading="lazy"
                                       />

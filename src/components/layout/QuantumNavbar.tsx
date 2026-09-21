@@ -116,6 +116,8 @@ export const QuantumNavbar = memo(() => {
                           <img
                             src={getAvatarUrl(profile?.avatar_url, user.id, user.email)}
                             alt={(profile?.username || user.email?.split('@')[0] || 'User').split(' ')[0]}
+                            width={24}
+                            height={24}
                             className="h-6 w-6 rounded-full object-cover ring-1 ring-cyan-300/40"
                           />
                           <span className="max-w-[80px] truncate text-[12px] font-extrabold tracking-wide text-slate-200 transition-colors duration-300 group-hover:text-white">
@@ -148,6 +150,8 @@ export const QuantumNavbar = memo(() => {
                                   <img
                                     src={getAvatarUrl(profile?.avatar_url, user.id, user.email)}
                                     alt={(profile?.username || user.email?.split('@')[0] || 'User').split(' ')[0]}
+                                    width={36}
+                                    height={36}
                                     className="h-9 w-9 shrink-0 rounded-full object-cover shadow-[0_4px_10px_-3px_rgba(0,0,0,0.8)] ring-2 ring-white/10"
                                   />
                                   <div className="min-w-0 flex-1">
