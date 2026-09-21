@@ -18,11 +18,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const lang = findNavLanguage(code)
   if (!lang) return { title: 'قسم غير موجود' }
 
+  /* المرحلة 1.2 من خطة استعادة الفهرسة: العربية فقط مفهرسة (في static.xml) —
+     باقي اللغات صفحات قوائم متداخلة مع /series ⇒ noindex,follow
+     (تحقق URL Inspection 21/9: غير معروفة لجوجل إطلاقًا). */
+  const indexable = code.toLowerCase() === 'ar'
+
   const title = `مسلسلات ${lang.label}`
   const url = `https://4cima.com/series/lang/${code}`
   return {
     title,
     description: `شاهد أفضل المسلسلات ${lang.label} بجودة عالية ومترجمة`,
+    robots: indexable ? undefined : { index: false, follow: true },
     alternates: { canonical: url },
     openGraph: {
       type: 'website',

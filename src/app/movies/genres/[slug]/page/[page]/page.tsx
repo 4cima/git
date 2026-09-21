@@ -9,13 +9,18 @@ import { paginationHref } from '@/components/pages/ListingPagination'
 import { safeJsonLd } from '@/lib/jsonld';
 
 /**
- * صفحات ترقيم ساكنة قابلة للزحف لصفحات تصنيفات الأفلام — /movies/genres/{slug}/page/{N}
+ * صفحات ترقيم ساكنة لصفحات تصنيف الأفلام — /movies/genres/{slug}/page/{N}
  *
  * المصدر: list_movies_genre (كاش مُجمّع — أعلى ~300/نوع بترتيب popularity)
  * ⇒ قراءة مغطاة ~24 صفًا/صفحة بدل استعلام json_each الحي (~410K صف).
  * بلا searchParams ⇒ ISR ثابت (revalidate 3600) — لا dynamic opt-in.
  * الصفحة 1 تبقى على المسار الأصلي مع سكرول لانهائي؛ هذه الصفحات (2..12)
- * شبكة ساكنة + شريط ترقيم <a> يفتح أعماق الكتالوج لمحركات البحث.
+ * شبكة ساكنة + شريط ترقيم <a>.
+ *
+ * المرحلة 1.2 من خطة استعادة الفهرسة: noindex,follow — محتواها متداخل مع
+ * صفحة التصنيف الأساسية، والروابط تبقى قابلة للزحف لتعميق الاكتشاف دون
+ * منافسة صفحات النواة على ميزانية الفهرسة (تحقق URL Inspection 21/9:
+ * كل صفحات الترقيم «unknown to Google» — لا مفهرس بينها).
  */
 
 export const revalidate = 3600
@@ -32,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const pageNum = parseInt(page, 10)
   try {
     const genre = await executeFirst('SELECT name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(slug)])
-    if (!genre) return { title: 'تصنيف غير موجود' }
+    if (!genre) return { title: 'تصنيف غير موجود', robots: { index: false, follow: true } }
     const genreName = String(genre.name_ar || genre.name_en || 'تصنيف')
     const genreTitle = `أفلام ${genreName} — صفحة ${pageNum}`
     const genreDescription = `استكشف أفلام ${genreName} — الصفحة ${pageNum} — جودة عالية ومترجم`
@@ -40,6 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: genreTitle,
       description: genreDescription,
+      robots: { index: false, follow: true },
       alternates: { canonical },
       openGraph: {
         type: 'website',
@@ -50,7 +56,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description: genreDescription,
       },
     }
-  } catch { return { title: 'تصنيف' } }
+  } catch { return { title: 'تصنيف', robots: { index: false, follow: true } } }
 }
 
 export default async function MovieGenrePaginatedPage({ params }: PageProps) {

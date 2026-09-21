@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   try {
     const genre = await executeFirst('SELECT name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(slug)])
-    if (!genre) return { title: 'تصنيف غير موجود' }
+    if (!genre) return { title: 'تصنيف غير موجود', robots: { index: false, follow: true } }
     const genreName = String(genre.name_ar || genre.name_en || 'تصنيف')
     // بدون «| فور سيما» — template في layout يضيفها تلقائياً
     const title = `أفلام ومسلسلات ${genreName} — تصفح كامل التصنيف`
@@ -28,6 +28,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         `مسلسلات ${genreName} مترجمة`, `تصنيف ${genreName}`, 'أفلام ومسلسلات', '4cima',
       ],
       alternates: { canonical: url },
+      /* المرحلة 1.2 من خطة استعادة الفهرسة: نظرة التصنيف العامة متداخلة مع
+         /movies/genres/[slug] + /series/genres/[slug] (الموجودتان في static.xml)
+         ⇒ noindex,follow — ليست في الـ sitemap و«unknown to Google» (21/9). */
+      robots: { index: false, follow: true },
       openGraph: {
         title,
         description,
@@ -38,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: title }],
       },
     }
-  } catch { return { title: 'تصنيف' } }
+  } catch { return { title: 'تصنيف', robots: { index: false, follow: true } } }
 }
 
 export const revalidate = 3600

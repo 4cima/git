@@ -9,12 +9,15 @@ import { paginationHref } from '@/components/pages/ListingPagination'
 import { safeJsonLd } from '@/lib/jsonld';
 
 /**
- * صفحات ترقيم ساكنة قابلة للزحف لصفحات تصنيفات المسلسلات — /series/genres/{slug}/page/{N}
+ * صفحات ترقيم ساكنة لصفحات تصنيف المسلسلات — /series/genres/{slug}/page/{N}
  *
  * المصدر: list_series_genre (كاش مُجمّع — أعلى ~300/نوع بترتيب popularity)
  * ⇒ قراءة مغطاة ~24 صفًا/صفحة بدل استعلام json_each الحي.
  * معرّفات التصنيف عبر getTvGenreIds (جولة التفريق: 28/12→10759، 53→9648+80، 10752→10768).
  * بلا searchParams ⇒ ISR ثابت (revalidate 3600) — لا dynamic opt-in.
+ *
+ * المرحلة 1.2 من خطة استعادة الفهرسة: noindex,follow — محتواها متداخل مع
+ * صفحة التصنيف الأساسية (تحقق URL Inspection 21/9: «unknown to Google»).
  */
 
 export const revalidate = 3600
@@ -31,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const pageNum = parseInt(page, 10)
   try {
     const genre = await executeFirst('SELECT name_ar, name_en FROM genres WHERE slug = ? LIMIT 1', [resolveGenreSlug(slug)])
-    if (!genre) return { title: 'تصنيف غير موجود' }
+    if (!genre) return { title: 'تصنيف غير موجود', robots: { index: false, follow: true } }
     const genreName = String(genre.name_ar || genre.name_en || 'تصنيف')
     const genreTitle = `مسلسلات ${genreName} — صفحة ${pageNum}`
     const genreDescription = `استكشف مسلسلات ${genreName} — الصفحة ${pageNum} — جودة عالية ومترجم`
@@ -39,6 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: genreTitle,
       description: genreDescription,
+      robots: { index: false, follow: true },
       alternates: { canonical },
       openGraph: {
         type: 'website',
@@ -49,7 +53,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         description: genreDescription,
       },
     }
-  } catch { return { title: 'تصنيف' } }
+  } catch { return { title: 'تصنيف', robots: { index: false, follow: true } } }
 }
 
 export default async function SeriesGenrePaginatedPage({ params }: PageProps) {
