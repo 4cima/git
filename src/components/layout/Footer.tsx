@@ -77,8 +77,9 @@ export const Footer = () => {
             </a>
           </div>
 
-          {/* Status & Trust - 2 cols */}
-          <div className="md:col-span-2 space-y-2">
+          {/* Status & Trust - 3 cols على md (العمود 2 = 100px أضيق من المحتوى ~150px كان يسبب overflow
+              أفقي 39px على التابلت) — يرجع 2 على lg+ كما كان */}
+          <div className="md:col-span-3 lg:col-span-2 space-y-2">
             {/* Server Status - Compact Inline */}
             <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-950/20 border border-emerald-900/30">
               <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">

@@ -487,8 +487,8 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
 
-      {/* Header banner — إعلان 1 (728×90): يتمدد مركزيًا ويصغر تلقائيًا على الموبايل */}
-      <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12">
+      {/* Header banner — إعلان 1 (728×90): مُزاح تحت النافبار الثابت (h-16) بـpt-24 — ويصغر تلقائيًا على الموبايل */}
+      <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 pt-24">
         <AdFrame ad={AD_HEADER} variant="x" />
       </div>
 

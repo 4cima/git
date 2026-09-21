@@ -294,8 +294,8 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-12">
       <div className="page-container">
-        {/* بنر 728×90 — نظام AdFrame */}
-        <div className="flex justify-center">
+        {/* بنر 728×90 — نظام AdFrame — pt-24 تزاح تحته من النافبار الثابت (h-16) */}
+        <div className="flex justify-center pt-24">
           <AdFrame ad={AD_HEADER} variant="x" />
         </div>
 

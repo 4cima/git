@@ -177,6 +177,9 @@ export const AdsterraBanner = ({
 /* ------------------------------------------------------------------ */
 /* إطار زخرفي موحّد حول البانر — عند فشل الإعلان يبقى بمقاسه مخفيًا     */
 /* (visibility:hidden) بدل الاختفاء الذي يزق المحتوى — صفر CLS         */
+/* ملاحظة: max-w-full على الطبقتين إلزامية — w-fit لوحدها تكسر سلسلة    */
+/* maxWidth:100% في AdsterraBanner فيبقى البنر 728px على موبايل 375     */
+/* (overflow أفقي + البنر مخفي خلف النافبار).                           */
 /* ------------------------------------------------------------------ */
 
 const FRAME_X = 'rounded-2xl bg-gradient-to-l from-red-500/60 via-slate-700/70 to-blue-500/60 p-[1.5px] shadow-lg shadow-slate-950/70'
@@ -196,8 +199,8 @@ export function AdFrame({ ad, variant }: { ad: AdRecord; variant: 'x' | 'y' }) {
     )
   }
   return (
-    <div className={`w-fit ${FRAME_X}`} style={failed ? { visibility: 'hidden' } : undefined}>
-      <div className="rounded-[14.5px] bg-slate-950 p-1">
+    <div className={`w-fit max-w-full ${FRAME_X}`} style={failed ? { visibility: 'hidden' } : undefined}>
+      <div className="max-w-full rounded-[14.5px] bg-slate-950 p-1">
         <AdsterraBanner ad={ad} onFailure={onFailure} />
       </div>
     </div>

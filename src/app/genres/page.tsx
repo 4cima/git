@@ -87,8 +87,8 @@ export default async function GenresPage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
 
-      {/* بنر الهيدر — 728×90 (بدون طلبات وسيطة) */}
-      <div className="w-full flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 py-3">
+      {/* بنر الهيدر — 728×90 (بدون طلبات وسيطة) — pt-24 تزاح تحته من النافبار الثابت (h-16) */}
+      <div className="w-full flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 pt-24 pb-3">
         <AdFrame ad={AD_HEADER} variant="x" />
       </div>
 

@@ -373,8 +373,10 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
       </div>
 
       <div className="relative z-10 page-container pt-24 pb-0">
-        {/* Layout: [بوستر 300px] [بيانات 1fr] [كاست 160px] [إعلان سايدبار 160px] */}
-        <div className="grid grid-cols-1 md:grid-cols-[300px_1fr_160px_160px] gap-4 items-start">
+        {/* Layout: [بوستر 300px] [بيانات 1fr] [كاست 160px] [إعلان سايدبار 160px (lg فقط)]
+            md (768–1023): 3 أعمدة بدون عمود الإعلان — منع الحجز الفاضي وتكدّس/قص الكاست.
+            minmax(0,1fr) بدل 1fr: يمنع عمود البيانات من التمدد فوق مساحته (grid min-width:auto) */}
+        <div className="grid grid-cols-1 md:grid-cols-[300px_minmax(0,1fr)_160px] lg:grid-cols-[300px_minmax(0,1fr)_160px_160px] gap-4 items-start">
 
           {/* عمود 1: البوستر + كلمات مفتاحية */}
           <div className="relative">
@@ -603,9 +605,10 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
             </div>
           )}
 
-          {/* عمود 4: إعلان سايدبار 160×600 — بنفس ارتفاع البوستر — يختفي كليًا عند فشل الإعلان */}
+          {/* عمود 4: إعلان سايدبار 160×600 (lg فقط) — الحاوية تأخذ ارتفاع الإعلان الطبيعي (600)
+              — كان قيودًا قديمًا 450px يجعل الإعلان الأطول يفيض بصريًا — يختفي كليًا عند فشل الإعلان */}
           <div
-            className="hidden lg:flex flex-col items-center justify-start lg:h-[450px]"
+            className="hidden lg:flex flex-col items-center justify-start"
           >
             <AdFrame ad={AD_SIDE} variant="y" />
           </div>
