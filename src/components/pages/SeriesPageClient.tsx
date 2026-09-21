@@ -7,7 +7,6 @@ import { Footer } from '@/components/layout/Footer'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
-import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
 import { useListingGenres, isFallbackGenreList } from '@/hooks/useListingGenres'
@@ -19,7 +18,8 @@ import { useListingUrlSync } from './useListingUrlSync'
 
 /* ===== خريطة إعلانات القسم — الأرقام من src/data/ads/4cima.com =====
    1: 728×90 هيدر | 2: 300×250 أعلى العمود الجانبي | 3: 160×600 سكرايبر ديسكتوب
-   4: 468×60 فاصل قبل الفوتر | 5: 160×300 كارت داخل الجريد (AdInRowCard)
+   4: 468×60 فاصل بين الجريد الأول والشبكة السفلية (بعرض كامل — لا كارت داخل الجريد:
+   أي كارت إعلان داخل الشبكة يكسر اكتمال الصفوف لأن عدد الأعمدة متغير حسب الشاشة)
    6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
 const AD_HEADER = getAdByNum(1)!
 const AD_SIDE_RECT = getAdByNum(2)!
@@ -689,11 +689,6 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
                         setCardStates(prev => ({ ...prev, [stateKey]: newState }))
                       }}
                     />
-                      {(index + 1) % AD_EVERY_N_CARDS === 0 && (
-                        <div className="flex justify-center">
-                          <AdInRowCard pos={`s-${index + 1}`} />
-                        </div>
-                      )}
                     </Fragment>
                   )
                 })}
@@ -708,6 +703,13 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
             </div>
           )}
             </div>
+            </div>
+
+            {/* فاصل إعلاني بعرض كامل (إعلان 4: 468×60) — بعد الجريد الأول (16 كارت) وقبل الشبكة السفلية.
+                خارج الجريد عمدًا: أي كارت إعلان داخل الشبكة يكسر اكتمال الصفوف (صف ناقص + فراغ كبير)
+                لأن عدد الأعمدة متغير حسب الشاشة. الفاصل بياخد صفه الخاص فلا يكسر شيئًا. */}
+            <div className="my-6 flex justify-center">
+              <AdFrame ad={AD_FOOTER_MID} variant="x" />
             </div>
 
             {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — بعرض كامل */}
@@ -733,11 +735,6 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
                             setCardStates(prev => ({ ...prev, [stateKey]: newState }))
                           }}
                         />
-                        {(index + 1) % AD_EVERY_N_CARDS === 0 && (
-                          <div className="flex justify-center">
-                            <AdInRowCard pos={`s-${index + 1}`} />
-                          </div>
-                        )}
                       </Fragment>
                     )
                   })}
@@ -778,10 +775,7 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
         </div>
       </section>
 
-      {/* إعلان 4 (468×60) — فاصل خفيف بين الشبكة والفوتر */}
-      <div className="flex justify-center px-4 py-2">
-        <AdFrame ad={AD_FOOTER_MID} variant="x" />
-      </div>
+      {/* إعلان 4 انتقل لفاصل منتصف الصفحة (بين الجريدين) — تُرِك مكانه فارغًا لتجنّب تكرار الزون نفسها */}
 
       {/* شريط الموبايل الثابت — إعلان 6 (320×50) */}
       <MobileStickyAd />

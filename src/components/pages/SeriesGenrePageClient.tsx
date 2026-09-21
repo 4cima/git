@@ -12,14 +12,14 @@ import { useListingUrlSync } from './useListingUrlSync'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { Footer } from '@/components/layout/Footer'
-import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
 import { ListingPagination, type StaticPagination } from './ListingPagination'
 
 /* ===== إعلانات صفحة التصنيف — أرقام موحّدة من src/data/ads/4cima.com (نظام موحّد لكل صفحات القوائم) =====
    1: 728×90 هيدر | 2: 300×250 عمود جانبي | 3: 160×600 سكرايبر ديسكتوب
-   4: 468×60 فاصل قبل الفوتر | 5: 160×300 كارت داخل الجريد (AdInRowCard)
+   4: 468×60 فاصل بين الجريد الأول والشبكة السفلية (بعرض كامل — لا كارت داخل الجريد:
+   أي كارت إعلان داخل الشبكة يكسر اكتمال الصفوف لأن عدد الأعمدة متغير حسب الشاشة)
    6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
 const AD_HEADER = getAdByNum(1)! // 728×90
 const AD_SIDE_RECT = getAdByNum(2)! // 300×250
@@ -468,11 +468,6 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
                 return (
                   <Fragment key={item.id}>
                     <MovieCard key={item.id} movie={enhancedItem} index={index} forceTv eager={index < LISTING_TOP_CARDS_COUNT} />
-                    {(index + 1) % AD_EVERY_N_CARDS === 0 && (
-                      <div className="flex justify-center">
-                        <AdInRowCard pos={`gs-${index + 1}`} />
-                      </div>
-                    )}
                   </Fragment>
                 )
               })}
@@ -489,20 +484,20 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
 
           </div>
 
+          {/* فاصل إعلاني بعرض كامل (إعلان 4: 468×60) — بعد الجريد الأول (16 كارت) وقبل الشبكة السفلية.
+              خارج الجريد عمدًا: أي كارت إعلان داخل الشبكة يكسر اكتمال الصفوف لأن عدد الأعمدة متغير حسب الشاشة */}
+          <div className="my-6 flex justify-center">
+            <AdFrame ad={AD_FOOTER_MID} variant="x" />
+          </div>
+
           <div className="min-w-0 mt-6">
             {restItems.length > 0 && (
               <div className="grid-responsive gap-4" suppressHydrationWarning>
                 {restItems.map((item: any, i: number) => {
-                  const gi = LISTING_TOP_CARDS_COUNT + i
                   const enhancedItem = { ...item, media_type: 'tv', isSeries: true }
                   return (
                     <Fragment key={item.id}>
-                      <MovieCard movie={enhancedItem} index={gi} forceTv />
-                      {(gi + 1) % AD_EVERY_N_CARDS === 0 && (
-                        <div className="flex justify-center">
-                          <AdInRowCard pos={`gs-${gi + 1}`} />
-                        </div>
-                      )}
+                      <MovieCard movie={enhancedItem} index={LISTING_TOP_CARDS_COUNT + i} forceTv />
                     </Fragment>
                   )
                 })}
@@ -540,10 +535,7 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
 
         </div>
 
-        {/* إعلان 4 (468×60) — فاصل خفيف قبل الفوتر (نفس نظام صفحات الأقسام) */}
-        <div className="flex justify-center px-4 py-2 mt-8">
-          <AdFrame ad={AD_FOOTER_MID} variant="x" />
-        </div>
+        {/* إعلان 4 انتقل لفاصل منتصف الصفحة (بين الجريدين) — تُرِك مكانه فارغًا لتجنّب تكرار الزون نفسها */}
 
         {/* ترقيم ساكن من السيرفر — روابط <a> حقيقية (مسارات /page/N الثابتة ISR) */}
         {staticPagination && staticPagination.totalPages > 1 && (

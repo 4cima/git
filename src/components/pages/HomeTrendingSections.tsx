@@ -21,7 +21,7 @@ import { HomeCardHeart } from './HomeCardHeart'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import { HomeExtraSections, type ExtraSectionDef } from './HomeExtraSections'
 import { interleave, mapItems } from './homeSectionUtils'
-import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
+import { AdInRowCard } from './HomeAdCard'
 import { SectionSplitHeader, SectionNavArrows } from './SectionSplitHeader'
 
 export interface MediaItem {
@@ -380,13 +380,11 @@ export function HomeTrendingSections({
                     toggleCardState={toggleCardState}
                     onCardClick={(e) => { if (trendingDrag.consumeIfDragged()) e.preventDefault() }}
                   />
-                  {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < trendingDisplayCount && (
-                    <AdInRowCard pos={`t-${idx + 1}`} />
-                  )}
                 </Fragment>
               ))}
 
-              {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة */}
+              {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة (نهاية الصف فقط:
+                  كروت منتصف الصف أزيلت — 25 تركيبًا لنفس الزون يثقلون الطابور التسلسلي بلا قيمة) */}
               <AdInRowCard pos="t-end" />
 
               {/* Sentinel for lazy loading */}

@@ -1,18 +1,14 @@
 'use client'
 
 /**
- * كارت الإعلان رقم 5 (160×300) جوه صفوف الرئيسية — نفس شكل ومقاس كارت الفيلم/المسلسل تمامًا:
- * كارت كل 12 كارت + كارت في المكان الفاضي أسفل القائمة.
- * (ملف مشترك بين HomeTrendingSections و HomeExtraSections لتجنّب الاستيراد الدائري)
+ * كارت الإعلان رقم 5 (160×300) — يُستخدم في نهاية الصفوف الأفقية بالرئيسية فقط.
+ * (لا يوضع داخل جريد الكتالوج: كارت إعلان داخل شبكة متغيرة الأعمدة يكسر اكتمال الصفوف)
  */
 import { useState } from 'react'
 import { AdsterraBanner } from '@/components/features/system/AdsterraBanner'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 export const AD_IN_ROW = getAdByNum(5)!
-/** كارت إعلان كل 12 كارت — متوافق مع دفعة الكتالوج (24 = مرتان بالدفعة):
-    بالإيقاع القديم (25) لم يظهر الإعلان أبدًا في الدفعة الأولى كاملة */
-export const AD_EVERY_N_CARDS = 12
 
 /** الزون 5 معطّلة حاليًا (دومين التوصيل ميت) — لا يُحمَّل أي سكربت ولا يُحجز مكان */
 export const AD_IN_ROW_ENABLED = AD_IN_ROW.enabled !== false

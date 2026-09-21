@@ -14,7 +14,7 @@ import { sanitizeTitle } from '@/utils/textSanitizer'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import type { CardState, MediaItem } from './HomeTrendingSections'
 import { HomeCardHeart } from './HomeCardHeart'
-import { AdInRowCard, AD_EVERY_N_CARDS } from './HomeAdCard'
+import { AdInRowCard } from './HomeAdCard'
 import { SectionSplitHeader, SectionNavArrows } from './SectionSplitHeader'
 
 /** عدد الكروت المعروضة أول مرة — نفس رقم الرائج بالظبط */
@@ -245,13 +245,10 @@ function ExtraRow({
                     toggleCardState={toggleCardState}
                     onCardClick={(e) => { if (drag.consumeIfDragged()) e.preventDefault() }}
                   />
-                  {(idx + 1) % AD_EVERY_N_CARDS === 0 && idx + 1 < displayCount && (
-                    <AdInRowCard pos={`x-${idx + 1}-${section.title}`} />
-                  )}
                 </Fragment>
               ))}
 
-              {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة (كل الأقسام — التوزيع كل 12 كارت) */}
+              {/* إعلان رقم 5 — في المكان الفاضي أسفل القائمة (كل الأقسام — نهاية الصف فقط) */}
               <AdInRowCard pos={`x-end-${section.title}`} />
 
               {/* كارت CTA الأخير — نفس href صفحة القسم المختلط (نفس مقاس كارت البوستر — لا قفز) */}
@@ -276,7 +273,7 @@ function ExtraRow({
       )
 }
 
-/** التوزيع الإعلاني: كل قسم يعرض إعلانًا في نهاية صفه + إعلان كل AD_EVERY_N_CARDS كارت — تباعد واسع يحافظ على قيمة الظهور */
+/** التوزيع الإعلاني: كل قسم يعرض إعلانًا واحدًا في نهاية صفه — لا كروت منتصف الصف (تباعد يحافظ على قيمة الظهور) */
 
 /** هيكل عظمي مطابق هيكليًا لصف القسم الحقيقي (نفس الارتفاعات الدقيقة):
     رأس بحجم SectionSplitHeader + شريط بنفس min-h للحاويات الأفقية —
