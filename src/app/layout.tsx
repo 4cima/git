@@ -118,6 +118,12 @@ export const metadata: Metadata = {
     },
   },
   verification: {
+    // HilltopAds site ownership (publisher site 920428) — المفتاح مخصص
+    // فيتطلب other{} (قائمة VerificationKeys البيضاء في Next)
+    other: {
+      'ed43f0389f279ed220d81c1d1f75b259f60bf72f':
+        'ed43f0389f279ed220d81c1d1f75b259f60bf72f',
+    },
     // TODO: أضف كود التحقق من Google Search Console
     // google: 'YOUR_GOOGLE_VERIFICATION_CODE',
   },
