@@ -206,11 +206,11 @@ export default function CopyrightPage() {
                   <div className="p-4 bg-slate-800/50 border border-slate-700 rounded-lg">
                     <p className="font-bold text-white mb-2">شكاوى DMCA:</p>
                     <a 
-                      href="mailto:dmca@4cima.online" 
+                      href="mailto:dmca@4cima.com" 
                       className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition"
                     >
                       <Mail className="w-4 h-4" />
-                      dmca@4cima.online
+                      dmca@4cima.com
                     </a>
                   </div>
                   

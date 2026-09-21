@@ -140,6 +140,8 @@ export const VideoCard = memo(
             <img
               src={imageSrc}
               alt={displayTitle}
+              width={480}
+              height={360}
               className='w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 select-none'
               onError={handleImageError}
               loading='lazy'

@@ -7,6 +7,8 @@
  * ============================================
  */
 
+import { CONFIG } from './constants';
+
 export interface ContentData {
   title_ar?: string;
   title_en?: string;
@@ -58,9 +60,8 @@ export function generateSEOKeywords(content: ContentData): string[] {
   // 2. الكلمات العربية الأساسية
   if (title_ar && title_ar !== 'TBD') {
     keywords.push(`مشاهدة ${typeAr} ${title_ar}`);
-    keywords.push(`تحميل ${typeAr} ${title_ar}`);
     keywords.push(`${typeAr} ${title_ar} مترجم`);
-    
+
     if (year) {
       keywords.push(`${typeAr} ${title_ar} ${year}`);
     }
@@ -69,22 +70,17 @@ export function generateSEOKeywords(content: ContentData): string[] {
   // 3. الكلمات الإنجليزية
   if (title_en && title_en !== 'TBD') {
     keywords.push(`Watch ${title_en} online`);
-    keywords.push(`${title_en} ${year || ''} HD`.trim());
-    
+
     if (title_ar && title_ar !== 'TBD') {
       keywords.push(`مشاهدة ${title_en} مترجم`);
     }
   }
 
-  // 4. تريندات الجودة والمنصات
+  // 4. كلمات عامة (اسم العمل + مترجم + عربي + شاهد)
   if (title_ar && title_ar !== 'TBD') {
-    keywords.push(`${typeAr} ${title_ar} HD`);
-    keywords.push(`${typeAr} ${title_ar} 4K`);
-    keywords.push(`${typeAr} ${title_ar} بدون اعلانات`);
-    keywords.push(`${typeAr} ${title_ar} ايجي بست`);
-    keywords.push(`${typeAr} ${title_ar} وي سيما`);
-    keywords.push(`${typeAr} ${title_ar} ماي سيما`);
-    keywords.push(`${typeAr} ${title_ar} تليجرام`);
+    keywords.push(`${title_ar} مترجم`);
+    keywords.push(`${title_ar} عربي`);
+    keywords.push(`شاهد ${title_ar}`);
   }
 
   // 5. كلمات التصنيف
@@ -205,7 +201,7 @@ export function generateSEODescription(content: ContentData): string {
 /**
  * توليد URL كانونيكال
  */
-export function generateCanonicalURL(content: ContentData, baseUrl: string = 'https://4cima.online'): string {
+export function generateCanonicalURL(content: ContentData, baseUrl: string = CONFIG.DOMAIN): string {
   const { slug, content_type = 'movie' } = content;
   
   if (!slug) {
@@ -219,7 +215,7 @@ export function generateCanonicalURL(content: ContentData, baseUrl: string = 'ht
 /**
  * توليد كل بيانات SEO دفعة واحدة
  */
-export function generateCompleteSEO(content: ContentData, baseUrl: string = 'https://4cima.online') {
+export function generateCompleteSEO(content: ContentData, baseUrl: string = CONFIG.DOMAIN) {
   return {
     seo_keywords: generateSEOKeywords(content),
     seo_title_ar: generateSEOTitle(content, 'ar'),

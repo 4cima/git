@@ -357,8 +357,11 @@ export const MovieCard = memo(({
               <img
                 src={thumbSrc}
                 alt={mainTitle}
+                width={342}
+                height={513}
                 loading={eager ? 'eager' : 'lazy'}
                 decoding={eager ? 'sync' : 'async'}
+                fetchPriority={eager ? 'high' : 'auto'}
                 className={`h-full w-full object-cover transition-all duration-500 ease-lumen ${isHovered ? 'brightness-75' : 'scale-100'}`}
                 onError={() => setThumbSrc('')}
               />
