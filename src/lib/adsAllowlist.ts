@@ -7,11 +7,12 @@
 
 export const NETWORK_HOSTS: Record<string, string[]> = {
   propellerads:  ['propellerads.com', 'propellerclick.com', 'propelleradsystem.com', 'al5sm.com', 'www.al5sm.com', 'monetag.com', 'www.monetag.com'],
-  adsterra:      ['adsterra.com', 'profitableratecpm.com', 'highperformancecpm.com', 'effectivegatecpm.com'],
+  adsterra:      ['adsterra.com', 'profitableratecpm.com', 'highperformancecpm.com', 'effectivegatecpm.com', 'professionalsusceptible.com'],
   exoclick:      ['exoclick.com', 'exosrv.com', 'exdynsrv.com', 'realsrv.com'],
   popads:        ['popads.net', 'popads.cn'],
   popcash:       ['popcash.net', 'popcashworld.com'],
-  hilltopads:    ['hilltopads.net', 'hilltopads.com', 'highrevenuecpm.com'],
+  // دومينات توصيل HilltopAds الفعلية من أكواد الزونات (7448001/7448009/7448025)
+  hilltopads:    ['hilltopads.net', 'hilltopads.com', 'highrevenuecpm.com', 'sadpicture.com', 'conventionalresponse.com', 'elementarywhole.com'],
   trafficstars:  ['traffic-stars.com', 'trafficjunky.com', 'tsyndicate.com'],
   custom:        [], // admin-registered hosts (added from the admin panel)
 };
