@@ -71,17 +71,22 @@ function SnippetBox({
     const el = ref.current
     if (!el || failed) return
     if (el.childElementCount === 0) injectHtml(el, snippet)
-    // فحص الفشل: سكربتات الشبكات بتاخد وقت في المزاد قبل ما ترسم iframe —
-    // فحص أولي عند 10s وتأكيد عند 25s → إخفاء كامل (سياسة الفشل)
-    const probes = [10000, 25000].map((ms) =>
-      window.setTimeout(() => {
-        if (!slotHasContent(ref.current)) {
-          setFailed(true)
-          onFailure?.()
-        }
-      }, ms),
-    )
-    return () => probes.forEach(clearTimeout)
+    // المزاد الإعلاني بياخد 8-15s أحيانًا قبل رسم الـiframe (مُثبت قياسًا) —
+    // فأي مؤشر مبكر بيقفل خانة هتتملى. إعادة حقن احتياطية عند 12s لو الحقن
+    // الأول فشل بصمت، والفصل النهائي الوحيد عند 25s.
+    const reinject = window.setTimeout(() => {
+      if (ref.current && ref.current.childElementCount === 0) injectHtml(ref.current, snippet)
+    }, 12000)
+    const finalProbe = window.setTimeout(() => {
+      if (!slotHasContent(ref.current)) {
+        setFailed(true)
+        onFailure?.()
+      }
+    }, 25000)
+    return () => {
+      clearTimeout(reinject)
+      clearTimeout(finalProbe)
+    }
   }, [snippet])
 
   if (!snippet.trim()) return null
