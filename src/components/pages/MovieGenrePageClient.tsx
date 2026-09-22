@@ -294,12 +294,9 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pb-12">
       <div className="page-container">
-        {/* بنر 728×90 — نظام AdFrame — pt-24 تزاح تحته من النافبار الثابت (h-16) */}
-        <div className="flex justify-center pt-24">
-          {/* أعلى الصفحة: Monetag Vignette Banner بعرض الشاشة */}
-          <div className="w-full flex justify-center px-3 sm:px-5 md:px-8 pt-24">
-            <VignetteSlot guard="vignette-top" />
-          </div>
+        {/* أعلى الصفحة: Monetag Vignette Banner بعرض الشاشة — نفس غلاف الكتالوج (pt-24 واحدة) */}
+        <div className="w-full flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 pt-24">
+          <VignetteSlot guard="vignette-top" />
         </div>
 
         {/* الصف الوحيد في الجريد: الهيدر + السورت، وبجانبهما الإعلان الجانبي (ديسكتوب فقط — مخفي تمامًا على الجوال).
@@ -500,7 +497,9 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
 
           <div className="min-w-0 mt-6">
             {restItems.length > 0 && (
-              <div className="grid-responsive gap-4" suppressHydrationWarning>
+              /* حاوية تجميع عادية — ممنوع grid-responsive هنا: كل مجموعة كروت
+                 شبكة مستقلة والبانر فاصل بينهم (زي صفحات الكتالوج بالظبط) */
+              <>
                 {Array.from({ length: Math.ceil(restItems.length / 16) }, (_, ci) => (
                   <Fragment key={`mrest-${ci}`}>
                     <div className="grid-responsive gap-4" suppressHydrationWarning>
@@ -514,7 +513,7 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
                     </div>
                   </Fragment>
                 ))}
-              </div>
+              </>
             )}
 
             {content.length > 0 && (
