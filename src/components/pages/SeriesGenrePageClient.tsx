@@ -10,6 +10,7 @@ import { YEARS, RATINGS, COUNTRIES, LANGUAGES, SERIES_SORT_OPTIONS as SORT_OPTIO
          readCommonFiltersFromSearchParams, readSortFromSearchParams } from './listingFilters'
 import { useListingUrlSync } from './useListingUrlSync'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { VignetteSlot, HilltopGridBanner } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { Footer } from '@/components/layout/Footer'
 import { getAdByNum } from '@/data/ads/4cima.com'
@@ -23,7 +24,6 @@ import { ListingPagination, type StaticPagination } from './ListingPagination'
    6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
 const AD_HEADER = getAdByNum(1)! // 728×90
 const AD_SIDE_RECT = getAdByNum(2)! // 300×250
-const AD_FOOTER_MID = getAdByNum(4)! // 468×60
 
 interface SeriesGenrePageClientProps {
   genre: any
@@ -468,6 +468,7 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
                 return (
                   <Fragment key={item.id}>
                     <MovieCard key={item.id} movie={enhancedItem} index={index} forceTv eager={index < LISTING_TOP_CARDS_COUNT} />
+                    {(index + 1) % 12 === 0 && <HilltopGridBanner pos={`sgenre-top-${index + 1}`} />}
                   </Fragment>
                 )
               })}
@@ -484,10 +485,9 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
 
           </div>
 
-          {/* فاصل إعلاني بعرض كامل (إعلان 4: 468×60) — بعد الجريد الأول وقبل الشبكة السفلية.
-              خارج الجريد عمدًا: كارت إعلان داخل شبكة متغيرة الأعمدة يكسر اكتمال الصفوف */}
+          {/* فاصل إعلاني وسط الصفحة: Monetag Vignette Banner عريض — محل زون 468×60 الميتة */}
           <div className="my-6 flex justify-center">
-            <AdFrame ad={AD_FOOTER_MID} variant="x" />
+            <VignetteSlot guard="vignette-genre" />
           </div>
 
           <div className="min-w-0 mt-6">
@@ -498,6 +498,7 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
                   return (
                     <Fragment key={item.id}>
                       <MovieCard movie={enhancedItem} index={LISTING_TOP_CARDS_COUNT + i} forceTv />
+                      {(i + 1) % 12 === 0 && <HilltopGridBanner pos={`sgenre-rest-${i + 1}`} />}
                     </Fragment>
                   )
                 })}

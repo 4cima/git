@@ -13,14 +13,12 @@ import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { openWatchWithPlayer } from '@/lib/openWatch'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
-import { MultiTagSlot, NativeCardSlot } from '@/components/features/system/adsV2'
+import { VignetteSlot, InPagePushSlot, NativeCardSlot } from '@/components/features/system/adsV2'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 /* الإعلانات المرجعية لصفحة تفاصيل الفيلم — أرقام ثابتة من ملف بيانات 4cima.com:
-   2 = 300×250 تحت البوستر (فولباك MultiTag) | 3 = 160×600 سايدبار | 4 = 468×60 فاصل */
+   2 = 300×250 تحت البوستر (بنر أدستيرا الرابح) */
 const AD_AFTER_PLAYER = getAdByNum(2)!
-const AD_SIDE = getAdByNum(3)!
-const AD_FOOTER_MID = getAdByNum(4)!
 
 interface MovieDetailsClientProps {
   movie: any
@@ -388,10 +386,9 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
               )}
             </div>
 
-            {/* سلوت تحت البوستر (أول نقطة نظر قبل زر المشاهدة): MultiTag In-Page
-                300×250 (HilltopAds) لو مفعّل في adsV2، وإلا بنر 300×250 القديم */}
+            {/* 300×250 تحت البوستر — بنر Adsterra الرابح (لمسة صفرية) */}
             <div className="mt-3 flex justify-center">
-              <MultiTagSlot legacy={<AdFrame ad={AD_AFTER_PLAYER} variant="x" />} />
+              <AdFrame ad={AD_AFTER_PLAYER} variant="x" />
             </div>
 
             {/* Keywords under poster */}
@@ -608,21 +605,20 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
             </div>
           )}
 
-          {/* عمود 4: إعلان سايدبار 160×600 (lg فقط) — الحاوية تأخذ ارتفاع الإعلان الطبيعي (600)
-              — كان قيودًا قديمًا 450px يجعل الإعلان الأطول يفيض بصريًا — يختفي كليًا عند فشل الإعلان */}
+          {/* عمود 4: Monetag In-Page Push (عمودي) — محل بنر 160×600 أدستيرا الميت */}
           <div
             className="hidden lg:flex flex-col items-center justify-start"
           >
-            <AdFrame ad={AD_SIDE} variant="y" />
+            <InPagePushSlot />
           </div>
 
         </div>
       </div>
 
-      {/* فاصل إعلاني 468×60 (بنر Adsterra المضمون الملء) — بعد المشغّل وقبل
-          «قد يعجبك أيضاً»: نقطة توقف طبيعية — يتصغر تلقائيًا على الشاشات الضيقة */}
+      {/* فاصل إعلاني (Monetag Vignette Banner عريض) — بعد المشغّل وقبل «قد يعجبك أيضاً»
+          — محل زون 468×60 أدستيرا الميتة */}
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 pb-10 flex justify-center">
-        <AdFrame ad={AD_FOOTER_MID} variant="x" />
+        <VignetteSlot guard="vignette-details" />
       </div>
 
       {/* Similar Movies Section — بيانات من الـSSR (روابط حقيقية في HTML أولي، بلا Skeleton) */}

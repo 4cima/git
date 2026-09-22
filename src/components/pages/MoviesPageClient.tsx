@@ -7,8 +7,7 @@ import { Footer } from '@/components/layout/Footer'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
-import { OverlaySlot } from '@/components/features/system/adsV2'
-import { ADS_V2 } from '@/config/adsV2'
+import { VignetteSlot, HilltopGridBanner } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
@@ -686,6 +685,9 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
                         setCardStates(prev => ({ ...prev, [stateKey]: newState }))
                       }}
                     />
+                    {(index + 1) % 12 === 0 && (
+                      <HilltopGridBanner pos={`movies-top-${index + 1}`} />
+                    )}
                     </Fragment>
                   )
                 })}
@@ -701,15 +703,9 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
           )}
             </div>
 
-            {/* فاصل إعلاني وسط الصفحة: MultiTag 300×250 (هيلتوب) متراكب فوق
-                بنر Adsterra 300×250 المضمون الملء — صفر ثقب + أعلى CPM */}
+            {/* فاصل إعلاني وسط الصفحة: Monetag Vignette Banner عريض — محل زون 468×60 الميتة */}
             <div className="my-6 flex justify-center">
-              <OverlaySlot
-                snippet={ADS_V2.multiTag.snippet}
-                guard="multitag-mid"
-                legacy={<AdFrame ad={AD_SIDE_RECT} variant="x" />}
-                height={250}
-              />
+              <VignetteSlot guard="vignette-catalog" />
             </div>
 
             {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — بعرض كامل */}
@@ -731,13 +727,16 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
                           index={index}
                           isVisible={true}
                           initialCardState={user ? cardStates[stateKey] : undefined}
-                        onStateChange={(newState) => {
-                          setCardStates(prev => ({ ...prev, [stateKey]: newState }))
-                        }}
-                      />
-                      </Fragment>
-                    )
-                  })}
+                          onStateChange={(newState) => {
+                            setCardStates(prev => ({ ...prev, [stateKey]: newState }))
+                          }}
+                        />
+                        {(i + 1) % 12 === 0 && (
+                          <HilltopGridBanner pos={`movies-rest-${i + 1}`} />
+                        )}
+                        </Fragment>
+                      )
+                    })}
                 </div>
               )}
 

@@ -6,7 +6,7 @@
  */
 
 export const NETWORK_HOSTS: Record<string, string[]> = {
-  propellerads:  ['propellerads.com', 'propellerclick.com', 'propelleradsystem.com', 'al5sm.com', 'www.al5sm.com', 'monetag.com', 'www.monetag.com'],
+  propellerads:  ['propellerads.com', 'propellerclick.com', 'propelleradsystem.com', 'al5sm.com', 'www.al5sm.com', 'monetag.com', 'www.monetag.com', 'n6wxm.com'],
   adsterra:      ['adsterra.com', 'profitableratecpm.com', 'highperformancecpm.com', 'effectivegatecpm.com', 'professionalsusceptible.com'],
   exoclick:      ['exoclick.com', 'exosrv.com', 'exdynsrv.com', 'realsrv.com'],
   popads:        ['popads.net', 'popads.cn'],

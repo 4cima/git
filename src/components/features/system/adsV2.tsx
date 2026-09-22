@@ -109,80 +109,56 @@ function SnippetBox({
 }
 
 /**
- * سلوت تراكبي — المعمارية الصحيحة ضد الثقوب الفاضية:
- *  1) البنر القديم المضمون الملء (legacy) يظهر فورًا — صفر ثقب أبدًا.
- *  2) سنيبت الشبكة الجديدة (هيلتوب) يُحقن مخفيًا فوقه.
- *  3) MutationObserver يترصد: أول ما هيلتوب يرسم iframe/صورة (المزاد ممكن
- *     ياخد 8-15s أو يملأ متأخر) → نطوي القديم ونعرض الجديد.
- *  لو هيلتوب ما ملّش أبدًا → القديم يفضل شغال = عائد دائم بلا فراغ.
+ * سلوت شبكة صافي (بلا أي تراكب): يُحقن السنيبت ويُخفى كليًا لو ملّش خلال 25s
+ * — ممنوع مربعات فاضية. يُستخدم للفورمات ذات المقاس المطابق فقط.
  */
-export function OverlaySlot({
+export function NetSlot({
   snippet,
   guard,
-  legacy,
-  height,
-  className = '',
+  minHeight = 250,
+  className = 'w-full',
 }: {
   snippet: string
   guard: string
-  legacy: ReactNode
-  height: number
+  minHeight?: number
   className?: string
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [filled, setFilled] = useState(false)
-  const filledRef = useRef(false)
-
-  useEffect(() => {
-    if (!snippet.trim()) return
-    const el = ref.current
-    if (!el || el.childElementCount === 0) {
-      const host = el ?? null
-      if (host) injectHtml(host, snippet)
-    }
-    const check = () => {
-      if (filledRef.current || !ref.current) return
-      if (slotHasContent(ref.current)) {
-        filledRef.current = true
-        setFilled(true)
-      }
-    }
-    // رصد لحظي لأي iframe/صورة يحشنها المزاد + فحوصات دورية احتياطية
-    const observer = new MutationObserver(check)
-    if (el) observer.observe(el, { childList: true, subtree: true })
-    const ticks = [4000, 9000, 16000, 25000].map((ms) => window.setTimeout(check, ms))
-    return () => {
-      observer.disconnect()
-      ticks.forEach(clearTimeout)
-    }
-  }, [snippet])
-
   if (!FLAGS.ADS_ENABLED) return null
-  if (!hasSnippet({ snippet })) return <>{legacy}</>
+  if (!hasSnippet({ snippet })) return null
   return (
-    <div className={`relative mx-auto ${className}`} style={{ maxWidth: '100%', minHeight: height }}>
-      {/* الطبقة الأساسية: البنر القديم المضمون — تختفي فقط لحظة ملء الجديد */}
-      <div style={{ visibility: filled ? 'hidden' : 'visible' }}>{legacy}</div>
-      {/* طبقة هيلتوب — مخفية حتى يرسم */}
-      <div
-        ref={ref}
-        data-ads-v2={guard}
-        className={filled ? '' : 'hidden'}
-        style={{ minHeight: height, overflow: 'hidden' }}
-      />
-    </div>
+    <SnippetBox
+      snippet={snippet}
+      minHeight={minHeight}
+      guard={guard}
+      className={className}
+    />
   )
 }
 
-/** سلوت MultiTag In-Page 300×250 فوق بنر Adsterra 300×250 القديم (لا ثقوب) */
-export function MultiTagSlot({ legacy }: { legacy: ReactNode }) {
+/** Monetag Vignette Banner — محلّ 468×60 العريض (وسط التفاصيل + التصنيفات + الكتالوج) */
+export function VignetteSlot({ guard = 'vignette' }: { guard?: string }) {
+  return <NetSlot snippet={ADS_V2.vignette.snippet} guard={guard} minHeight={120} className="w-full max-w-[728px] mx-auto" />
+}
+
+/** Monetag In-Page Push — محلّ 160×600 سايدبار التفاصيل (عمودي) */
+export function InPagePushSlot() {
+  return <NetSlot snippet={ADS_V2.inPagePush.snippet} guard="inpage-push" minHeight={400} className="w-full" />
+}
+
+/** هيلتوب MultiTag 300×250 — بنر كامل العرض وسط كروت الشبكات (بعد كل سطرين تقريبًا) */
+export function HilltopGridBanner({ pos }: { pos: string }) {
+  if (!FLAGS.ADS_ENABLED) return null
+  if (!hasSnippet(ADS_V2.multiTag)) return null
   return (
-    <OverlaySlot
-      snippet={ADS_V2.multiTag.snippet}
-      guard="multitag"
-      legacy={legacy}
-      height={250}
-    />
+    <div className="col-span-full flex justify-center my-2" data-grid-banner-pos={pos}>
+      <SnippetBox
+        snippet={ADS_V2.multiTag.snippet}
+        width={300}
+        height={250}
+        guard={'grid-' + pos}
+        className="rounded-xl border border-slate-800/60 bg-slate-950/40"
+      />
+    </div>
   )
 }
 
@@ -272,12 +248,9 @@ export function GlobalAdsV2() {
   )
 }
 
-/** زون الستيتشي القديم 320×50 — يبقى فولباك حتى تفعيل Vignette */
-const AD_MOBILE_LEGACY = getAdByNum(6)! // 320×50
-
 /**
- * الستيتشي السفلي للموبايل: Vignette Banner (Monetag) لو مفعّل،
- * وإلا بنر Adsterra 320×50 القديم — نفس الصدفة (قابل للإغلاق، يختفي عند الفشل).
+ * الستيتشي السفلي للموبايل — كان Adsterra 320×50 (إيراد ميت، حُذف نهائيًا).
+ * يتفعل تلقائيًا عند لصق كود هيلتوب MultiTag 300×100 (موبايل) في stickyMobile.
  */
 export function StickyBottomAd() {
   const [closed, setClosed] = useState(false)
@@ -285,8 +258,8 @@ export function StickyBottomAd() {
   const onFailure = useCallback(() => setFailed(true), [])
 
   if (closed || failed || !FLAGS.ADS_ENABLED) return null
+  if (!hasSnippet(ADS_V2.stickyMobile)) return null
 
-  const v2Active = hasSnippet(ADS_V2.vignette)
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden" role="complementary" aria-label="إعلان">
       <div className="relative mx-auto w-fit max-w-full rounded-t-xl border-x border-t border-slate-700/60 bg-slate-950/95 px-1 pt-1 shadow-[0_-8px_30px_rgba(0,0,0,0.55)] backdrop-blur">
@@ -297,17 +270,13 @@ export function StickyBottomAd() {
         >
           ✕
         </button>
-        {v2Active ? (
-          <SnippetBox
-            snippet={ADS_V2.vignette.snippet}
-            minHeight={50}
-            guard="vignette"
-            className="w-[320px] max-w-[calc(100vw-16px)]"
-            onFailure={onFailure}
-          />
-        ) : (
-          AD_MOBILE_LEGACY && <AdsterraBanner ad={AD_MOBILE_LEGACY} onFailure={onFailure} />
-        )}
+        <SnippetBox
+          snippet={ADS_V2.stickyMobile.snippet}
+          minHeight={100}
+          guard="sticky-mobile"
+          className="w-[300px] max-w-[calc(100vw-16px)]"
+          onFailure={onFailure}
+        />
       </div>
     </div>
   )

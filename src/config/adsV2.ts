@@ -55,11 +55,24 @@ l.parentNode.insertBefore(s, l);
   native: { snippet: '' } as SnippetUnit,
 
   /**
-   * Vignette Banner (Monetag) — الستيتشي السفلي للموبايل (قابل للإغلاق).
-   * أنشئ الزون في platforms.propellerads.com/Monetag والصق الكود هنا.
-   * حتى ذلك الحين يظل بنر Adsterra 320×50 القديم يعمل في نفس الصدفة.
+   * Vignette Banner (Monetag) — زون 11699162 (Wonderful tag)
+   * يحل مكان مقاسات 468×60 العريضة في: وسط التفاصيل + قبل فوتر التصنيفات + وسط الكتالوج
    */
-  vignette: { snippet: '' } as SnippetUnit,
+  vignette: {
+    snippet: `<script>(function(s){s.dataset.zone='11699162',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>`,
+  } as SnippetUnit,
+
+  /**
+   * In-Page Push (Monetag) — زون 11699161 (Great tag)
+   * يحل مكان 160×600 سايدبار التفاصيل — بانتظار لصق الكود من داشبورد مونتاج
+   */
+  inPagePush: { snippet: '' } as SnippetUnit,
+
+  /**
+   * ستيتشي الموبايل — كان Adsterra 320×50 (إيراد ميت $0.007، حُذف)
+   * المكان الجديد: هيلتوب MultiTag In-Page 300×100 (موبايل فقط) — بانتظار إنشاء الزون ولصق الكود
+   */
+  stickyMobile: { snippet: '' } as SnippetUnit,
 
   /**
    * Video Slider (HilltopAds) — فيديو عايم في رُكن الشاشة بعد تأخير.
@@ -90,12 +103,12 @@ l.parentNode.insertBefore(s, l);
   },
 
   popunder: {
-    /** Monetag/PropellerAds — فعّال (زون 11691417) — نص الجلسات A/B */
+    /** Monetag — معطّل بقرار صاحب الموقع: البوباندَر انتقل لهيلتوب بالكامل */
     monetag: {
-      scriptUrl: 'https://al5sm.com/tag.min.js',
-      zoneId: '11691417',
+      scriptUrl: '',
+      zoneId: '',
     },
-    /** HilltopAds — زون 7448001 (معتمدة) — النص الآخر من A/B */
+    /** HilltopAds — زون 7448001 (معتمدة) — البوباندَر الوحيد */
     hilltop: {
       scriptUrl:
         'https://sadpicture.com/cdDl9.6/bt2D5MlZSdWIQv9qNMz/QO0xOODdAPwHMbS/0F3xNND-QO4nMKDQA/1O',

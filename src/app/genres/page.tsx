@@ -4,13 +4,13 @@ import { Film, Tv, Clapperboard } from 'lucide-react'
 import { getGenresWithCounts } from '@/lib/genres'
 import { getGenreColor } from '@/utils/genreColors'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { VignetteSlot } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { Footer } from '@/components/layout/Footer'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { safeJsonLd } from '@/lib/jsonld';
 
 const AD_HEADER = getAdByNum(1)! // 728×90
-const AD_FOOTER_MID = getAdByNum(4)! // 468×60 — فاصل قبل الفوتر (موحّد مع باقي صفحات التصنيفات)
 
 export const metadata: Metadata = {
   // بدون «| فور سيما» — template في layout يضيفها تلقائياً
@@ -199,9 +199,9 @@ export default async function GenresPage() {
           })}
         </div>
 
-        {/* إعلان 4 (468×60) — فاصل خفيف قبل الفوتر (بنر Adsterra المضمون الملء) */}
+        {/* فاصل إعلاني: Monetag Vignette Banner عريض — محل زون 468×60 الميتة */}
         <div className="flex justify-center px-4 py-2 mt-8">
-          <AdFrame ad={AD_FOOTER_MID} variant="x" />
+          <VignetteSlot guard="vignette-genre" />
         </div>
       </div>
 
