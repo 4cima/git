@@ -242,13 +242,34 @@ export function GlobalAdsV2() {
 export function StickyBottomAd() {
   const [closed, setClosed] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [filled, setFilled] = useState(false)
+  const fillProbeRef = useRef<HTMLDivElement>(null)
   const onFailure = useCallback(() => setFailed(true), [])
+
+  /* الشريط ما يبانش غير لما الإعلان يرسم فعليًا — الانتظار 4-8 ثواني (مزاد
+     الشبكة) بكارت فاضي كان بيبدو معطّلًا؛ والموضع fixed فالإخفاء بلا CLS */
+  useEffect(() => {
+    if (closed || failed || filled) return
+    const el = fillProbeRef.current
+    if (!el) return
+    const check = () => {
+      if (el.querySelector('iframe, img, video')) setFilled(true)
+    }
+    check()
+    const id = window.setInterval(check, 400)
+    return () => window.clearInterval(id)
+  }, [closed, failed, filled])
 
   if (closed || failed || !FLAGS.ADS_ENABLED) return null
   if (!hasScriptSrc(ADS_V2.stickyMobile)) return null
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden" role="complementary" aria-label="إعلان">
+    <div
+      className="fixed bottom-0 inset-x-0 z-40 lg:hidden"
+      role="complementary"
+      aria-label="إعلان"
+      style={filled ? undefined : { visibility: 'hidden' }}
+    >
       <div className="relative mx-auto w-fit max-w-full rounded-t-xl border-x border-t border-slate-700/60 bg-slate-950/95 px-1 pt-1 shadow-[0_-8px_30px_rgba(0,0,0,0.55)] backdrop-blur">
         <button
           onClick={() => setClosed(true)}
@@ -257,14 +278,16 @@ export function StickyBottomAd() {
         >
           ✕
         </button>
-        <SnippetBox
-          scriptSrc={ADS_V2.stickyMobile.scriptSrc}
-          zoneId={ADS_V2.stickyMobile.zoneId}
-          minHeight={100}
-          guard="sticky-mobile"
-          className="w-[300px] max-w-[calc(100vw-16px)]"
-          onFailure={onFailure}
-        />
+        <div ref={fillProbeRef}>
+          <SnippetBox
+            scriptSrc={ADS_V2.stickyMobile.scriptSrc}
+            zoneId={ADS_V2.stickyMobile.zoneId}
+            minHeight={100}
+            guard="sticky-mobile"
+            className="w-[300px] max-w-[calc(100vw-16px)]"
+            onFailure={onFailure}
+          />
+        </div>
       </div>
     </div>
   )

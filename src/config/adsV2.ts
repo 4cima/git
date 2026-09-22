@@ -21,11 +21,14 @@ export type SnippetUnit = {
 
 export const ADS_V2 = {
   /**
-   * Social Bar (Adsterra) — عالمي على كل الصفحات، يُحقن بعد أول رسمة + idle.
-   * زون 31352043 (SocialBar_1) على 4cima.com — تُزرع فوق </body>.
+   * Social Bar (Adsterra) — **معطّلة بقرار اسلام 2026-09-22**: كانت بتتراكم
+   * فوق إشعارات مونتاج في صفحات التفاصيل (3 إشعارات متراكبة) — الاتفاق:
+   * الإبقاء على إشعارات مونتاج المتشابهة فقط. للترجيع: إعادة لصق الرابط.
+   * (زون 31352043 SocialBar_1 على 4cima.com)
+   * scriptSrc كان: https://professionalsusceptible.com/6b/2d/9c/6b2d9ce00c7c6273639af52472cf6980.js
    */
   socialBar: {
-    scriptSrc: 'https://professionalsusceptible.com/6b/2d/9c/6b2d9ce00c7c6273639af52472cf6980.js',
+    scriptSrc: '',
   },
 
   /**
