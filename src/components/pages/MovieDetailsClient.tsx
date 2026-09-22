@@ -17,9 +17,10 @@ import { MultiTagSlot, NativeCardSlot } from '@/components/features/system/adsV2
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 /* الإعلانات المرجعية لصفحة تفاصيل الفيلم — أرقام ثابتة من ملف بيانات 4cima.com:
-   2 = 300×250 تحت البوستر (فولباك MultiTag) | 3 = 160×600 سايدبار */
+   2 = 300×250 تحت البوستر (فولباك MultiTag) | 3 = 160×600 سايدبار | 4 = 468×60 فاصل */
 const AD_AFTER_PLAYER = getAdByNum(2)!
 const AD_SIDE = getAdByNum(3)!
+const AD_FOOTER_MID = getAdByNum(4)!
 
 interface MovieDetailsClientProps {
   movie: any
@@ -618,8 +619,11 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
         </div>
       </div>
 
-      {/* (زون 468×60 القديمة أُزيلت — الخطة الجديدة: أعلى عائد من فورمات
-          الضغط والفورمات المتموهة لا من بنر رخيص قبل «قد يعجبك أيضاً») */}
+      {/* فاصل إعلاني 468×60 (بنر Adsterra المضمون الملء) — بعد المشغّل وقبل
+          «قد يعجبك أيضاً»: نقطة توقف طبيعية — يتصغر تلقائيًا على الشاشات الضيقة */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 pb-10 flex justify-center">
+        <AdFrame ad={AD_FOOTER_MID} variant="x" />
+      </div>
 
       {/* Similar Movies Section — بيانات من الـSSR (روابط حقيقية في HTML أولي، بلا Skeleton) */}
       {similarMovies.length > 0 && (

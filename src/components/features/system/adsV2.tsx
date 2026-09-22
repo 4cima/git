@@ -108,17 +108,80 @@ function SnippetBox({
   )
 }
 
-/** سلوت MultiTag In-Page 300×250 — الجديد لو مفعّل وإلا بنر Adsterra القديم */
-export function MultiTagSlot({ legacy }: { legacy: ReactNode }) {
+/**
+ * سلوت تراكبي — المعمارية الصحيحة ضد الثقوب الفاضية:
+ *  1) البنر القديم المضمون الملء (legacy) يظهر فورًا — صفر ثقب أبدًا.
+ *  2) سنيبت الشبكة الجديدة (هيلتوب) يُحقن مخفيًا فوقه.
+ *  3) MutationObserver يترصد: أول ما هيلتوب يرسم iframe/صورة (المزاد ممكن
+ *     ياخد 8-15s أو يملأ متأخر) → نطوي القديم ونعرض الجديد.
+ *  لو هيلتوب ما ملّش أبدًا → القديم يفضل شغال = عائد دائم بلا فراغ.
+ */
+export function OverlaySlot({
+  snippet,
+  guard,
+  legacy,
+  height,
+  className = '',
+}: {
+  snippet: string
+  guard: string
+  legacy: ReactNode
+  height: number
+  className?: string
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [filled, setFilled] = useState(false)
+  const filledRef = useRef(false)
+
+  useEffect(() => {
+    if (!snippet.trim()) return
+    const el = ref.current
+    if (!el || el.childElementCount === 0) {
+      const host = el ?? null
+      if (host) injectHtml(host, snippet)
+    }
+    const check = () => {
+      if (filledRef.current || !ref.current) return
+      if (slotHasContent(ref.current)) {
+        filledRef.current = true
+        setFilled(true)
+      }
+    }
+    // رصد لحظي لأي iframe/صورة يحشنها المزاد + فحوصات دورية احتياطية
+    const observer = new MutationObserver(check)
+    if (el) observer.observe(el, { childList: true, subtree: true })
+    const ticks = [4000, 9000, 16000, 25000].map((ms) => window.setTimeout(check, ms))
+    return () => {
+      observer.disconnect()
+      ticks.forEach(clearTimeout)
+    }
+  }, [snippet])
+
   if (!FLAGS.ADS_ENABLED) return null
-  if (!hasSnippet(ADS_V2.multiTag)) return <>{legacy}</>
+  if (!hasSnippet({ snippet })) return <>{legacy}</>
   return (
-    <SnippetBox
+    <div className={`relative mx-auto ${className}`} style={{ maxWidth: '100%', minHeight: height }}>
+      {/* الطبقة الأساسية: البنر القديم المضمون — تختفي فقط لحظة ملء الجديد */}
+      <div style={{ visibility: filled ? 'hidden' : 'visible' }}>{legacy}</div>
+      {/* طبقة هيلتوب — مخفية حتى يرسم */}
+      <div
+        ref={ref}
+        data-ads-v2={guard}
+        className={filled ? '' : 'hidden'}
+        style={{ minHeight: height, overflow: 'hidden' }}
+      />
+    </div>
+  )
+}
+
+/** سلوت MultiTag In-Page 300×250 فوق بنر Adsterra 300×250 القديم (لا ثقوب) */
+export function MultiTagSlot({ legacy }: { legacy: ReactNode }) {
+  return (
+    <OverlaySlot
       snippet={ADS_V2.multiTag.snippet}
-      width={300}
-      height={250}
       guard="multitag"
-      className="mx-auto rounded-xl border border-slate-700/60 bg-slate-950/60"
+      legacy={legacy}
+      height={250}
     />
   )
 }

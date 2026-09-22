@@ -7,7 +7,8 @@ import { Footer } from '@/components/layout/Footer'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
-import { MultiTagSlot } from '@/components/features/system/adsV2'
+import { OverlaySlot } from '@/components/features/system/adsV2'
+import { ADS_V2 } from '@/config/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
@@ -484,10 +485,9 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
 
-      {/* Header slot — MultiTag In-Page 300×250 (HilltopAds) لو مفعّل في adsV2،
-          وإلا بنر 728×90 القديم: مُزاح تحت النافبار الثابت (h-16) بـpt-24 */}
+      {/* Header banner — إعلان 1 (728×90): بنر Adsterra المضمون الملء — بيصغر تلقائيًا على الموبايل */}
       <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 pt-24">
-        <MultiTagSlot legacy={<AdFrame ad={AD_HEADER} variant="x" />} />
+        <AdFrame ad={AD_HEADER} variant="x" />
       </div>
 
       {/* Main Content */}
@@ -701,8 +701,16 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
           )}
             </div>
 
-            {/* (زون 468×60 القديمة أُزيلت — الخطة الجديدة تستبدل الفواصل الرخيصة
-                بفورمات الضغط وفورمات المحتوى) */}
+            {/* فاصل إعلاني وسط الصفحة: MultiTag 300×250 (هيلتوب) متراكب فوق
+                بنر Adsterra 300×250 المضمون الملء — صفر ثقب + أعلى CPM */}
+            <div className="my-6 flex justify-center">
+              <OverlaySlot
+                snippet={ADS_V2.multiTag.snippet}
+                guard="multitag-mid"
+                legacy={<AdFrame ad={AD_SIDE_RECT} variant="x" />}
+                height={250}
+              />
+            </div>
 
             {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — بعرض كامل */}
             <div className="min-w-0 mt-6">

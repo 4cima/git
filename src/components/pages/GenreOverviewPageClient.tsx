@@ -10,8 +10,9 @@ import { Footer } from '@/components/layout/Footer'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 /* ===== إعلانات صفحة النظرة العامة — أرقام موحّدة من src/data/ads/4cima.com (نفس نظام صفحات الأقسام) =====
-   1: 728×90 هيدر | 6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
+   1: 728×90 هيدر | 4: 468×60 فاصل قبل الفوتر | 6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
 const AD_HEADER = getAdByNum(1)! // 728×90
+const AD_FOOTER_MID = getAdByNum(4)! // 468×60
 
 interface GenreOverviewPageClientProps {
   genre: any
@@ -181,8 +182,10 @@ export function GenreOverviewPageClient({
           )}
         </section>
 
-        {/* (زون 468×60 القديمة أُزيلت — الخطة الجديدة تستبدل الفواصل الرخيصة
-            بفورمات الضغط وفورمات المحتوى) */}
+        {/* إعلان 4 (468×60) — فاصل خفيف قبل الفوتر (بنر Adsterra المضمون الملء) */}
+        <div className="flex justify-center px-4 py-2 mt-8">
+          <AdFrame ad={AD_FOOTER_MID} variant="x" />
+        </div>
       </div>
 
       <div className="pb-12"><Footer /></div>

@@ -17,9 +17,10 @@ import { MultiTagSlot, NativeCardSlot } from '@/components/features/system/adsV2
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 /* الإعلانات لصفحة تفاصيل المسلسل — مطابقة لصفحة تفاصيل الفيلم:
-   2 = 300×250 تحت البوستر (فولباك MultiTag) | 3 = 160×600 سايدبار */
+   2 = 300×250 تحت البوستر (فولباك MultiTag) | 3 = 160×600 سايدبار | 4 = 468×60 فاصل */
 const AD_AFTER_PLAYER = getAdByNum(2)!
 const AD_SIDE = getAdByNum(3)!
+const AD_FOOTER_MID = getAdByNum(4)!
 
 interface SeriesDetailsClientProps {
   series: any
@@ -714,8 +715,11 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
         </div>
       </div>
 
-      {/* (زون 468×60 القديمة أُزيلت — الخطة الجديدة: أعلى عائد من فورمات
-          الضغط والفورمات المتموهة لا من بنر رخيص قبل «قد يعجبك أيضاً») */}
+      {/* فاصل إعلاني 468×60 (بنر Adsterra المضمون الملء) — بعد المشغّل وقبل
+          «قد يعجبك أيضاً»: نقطة توقف طبيعية — يتصغر تلقائيًا على الشاشات الضيقة */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 pb-10 flex justify-center">
+        <AdFrame ad={AD_FOOTER_MID} variant="x" />
+      </div>
 
       {/* Similar Series Section — بيانات من الـSSR (روابط حقيقية في HTML أولي، بلا Skeleton) */}
       {similarSeries.length > 0 && (
