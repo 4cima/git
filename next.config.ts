@@ -371,9 +371,10 @@ const nextConfig: NextConfig = {
           },
           // Report-only CSP (monitoring only — nothing blocked): full policy
           // including ad script/frame hosts; no report-uri by design.
+          // hilltopads.* — شبكة HilltopAds (وحدات adsV2: MultiTag/Slider/بوباندَر)
           {
             key: 'Content-Security-Policy-Report-Only',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://professionalsusceptible.com https://al5sm.com https://www.highrevenueformat.com https://highrevenueformat.com; script-src-elem 'self' 'unsafe-inline' https://professionalsusceptible.com https://al5sm.com https://www.highrevenueformat.com https://highrevenueformat.com; img-src 'self' data: blob: https://image.tmdb.org https://play-lh.googleusercontent.com https://upload.wikimedia.org https://assets-global.website-files.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; frame-src 'self' https://professionalsusceptible.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://professionalsusceptible.com https://al5sm.com https://www.highrevenueformat.com https://highrevenueformat.com https://hilltopads.net https://*.hilltopads.net https://hilltopads.com; script-src-elem 'self' 'unsafe-inline' https://professionalsusceptible.com https://al5sm.com https://www.highrevenueformat.com https://highrevenueformat.com https://hilltopads.net https://*.hilltopads.net https://hilltopads.com; img-src 'self' data: blob: https://image.tmdb.org https://play-lh.googleusercontent.com https://upload.wikimedia.org https://assets-global.website-files.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; frame-src 'self' https://professionalsusceptible.com https://hilltopads.net https://*.hilltopads.net; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
           },
         ],
       },

@@ -6,6 +6,7 @@ import { QuantumNavbar } from '@/components/layout/QuantumNavbar'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ClientInit } from './ClientInit'
+import { GlobalAdsV2 } from '@/components/features/system/adsV2'
 import { safeJsonLd } from '@/lib/jsonld';
 
 const websiteJsonLd = {
@@ -141,10 +142,10 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" data-scroll-behavior="smooth">
       <head>
         {/* لا preconnect/dns-prefetch لدومينات الإعلانات إطلاقًا — اتصالات
-            الشبكات الإعلانية (professionalsusceptible وغيرها) تُفتح ضمنياً
-            فقط عند تحميل سكربتات البنرات (adsterraQueue) أو عند تفعيل
-            البوبندر من داخل ضغطة زرار مشاهدة (adsClick). لا يُحمَّل أي
-            سكربت إعلان عند الإقلاع أو أول سكرول. */}
+            الشبكات الإعلانية تُفتح ضمنيًا فقط عند تحميل وحدات adsV2 المؤجلة
+            (src/config/adsV2.ts) أو عند تفعيل طابور الضغطات من زر المشاهدة
+            (src/lib/ads/waterfall.ts). لا يُحمَّل أي سكربت إعلان عند الإقلاع
+            أو أول سكرول. */}
       </head>
       <body className={`${cairo.className} bg-black text-white min-h-screen`}>
         <script
@@ -157,6 +158,7 @@ export default function RootLayout({
         />
         <AuthProvider>
           <ClientInit />
+          <GlobalAdsV2 />
           <Providers>
             <QuantumNavbar />
             <main className="min-h-screen">

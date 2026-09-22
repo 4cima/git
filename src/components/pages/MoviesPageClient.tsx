@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/Footer'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { MultiTagSlot } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
@@ -24,7 +25,6 @@ import { useListingUrlSync } from './useListingUrlSync'
    6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
 const AD_HEADER = getAdByNum(1)!
 const AD_SIDE_RECT = getAdByNum(2)!
-const AD_FOOTER_MID = getAdByNum(4)!
 
 const GENRES = [
   { name: 'دراما',        slug: 'drama',            emoji: '🎭' },
@@ -484,9 +484,10 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
 
-      {/* Header banner — إعلان 1 (728×90): مُزاح تحت النافبار الثابت (h-16) بـpt-24 — ويصغر تلقائيًا على الموبايل */}
+      {/* Header slot — MultiTag In-Page 300×250 (HilltopAds) لو مفعّل في adsV2،
+          وإلا بنر 728×90 القديم: مُزاح تحت النافبار الثابت (h-16) بـpt-24 */}
       <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 pt-24">
-        <AdFrame ad={AD_HEADER} variant="x" />
+        <MultiTagSlot legacy={<AdFrame ad={AD_HEADER} variant="x" />} />
       </div>
 
       {/* Main Content */}
@@ -700,12 +701,8 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
           )}
             </div>
 
-            {/* فاصل إعلاني بعرض كامل (إعلان 4: 468×60) — بعد الجريد الأول (16 كارت) وقبل الشبكة السفلية.
-                خارج الجريد عمدًا: أي كارت إعلان داخل الشبكة يكسر اكتمال الصفوف (صف ناقص + فراغ كبير)
-                لأن عدد الأعمدة متغير حسب الشاشة. الفاصل بياخد صفه الخاص فلا يكسر شيئًا. */}
-            <div className="my-6 flex justify-center">
-              <AdFrame ad={AD_FOOTER_MID} variant="x" />
-            </div>
+            {/* (زون 468×60 القديمة أُزيلت — الخطة الجديدة تستبدل الفواصل الرخيصة
+                بفورمات الضغط وفورمات المحتوى) */}
 
             {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — بعرض كامل */}
             <div className="min-w-0 mt-6">

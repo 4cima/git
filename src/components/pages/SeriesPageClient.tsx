@@ -6,6 +6,7 @@ import { Tv, X } from 'lucide-react'
 import { Footer } from '@/components/layout/Footer'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { MultiTagSlot } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
@@ -17,13 +18,11 @@ import { YEARS, RATINGS, COUNTRIES, SERIES_SORT_OPTIONS as SORT_OPTIONS,
 import { useListingUrlSync } from './useListingUrlSync'
 
 /* ===== خريطة إعلانات القسم — الأرقام من src/data/ads/4cima.com =====
-   1: 728×90 هيدر | 2: 300×250 أعلى العمود الجانبي | 3: 160×600 سكرايبر ديسكتوب
-   4: 468×60 فاصل بين الجريد الأول والشبكة السفلية (بعرض كامل — لا كارت داخل الجريد:
-   أي كارت إعلان داخل الشبكة يكسر اكتمال الصفوف لأن عدد الأعمدة متغير حسب الشاشة)
+   2: 300×250 أعلى العمود الجانبي | 3: 160×600 سكرايبر ديسكتوب
+   (زون 468×60 أُزيلت — الخطة الجديدة تستبدل الفواصل الرخيصة بفورمات الضغط)
    6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
 const AD_HEADER = getAdByNum(1)!
 const AD_SIDE_RECT = getAdByNum(2)!
-const AD_FOOTER_MID = getAdByNum(4)!
 import { useAuth } from '@/hooks/useAuth'
 
 /* سلاجات التصنيفات — مُتحقَّق منها حياً على D1 (2026-09-16): الـ13 كلها موجودة في جدول genres
@@ -705,12 +704,8 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
             </div>
             </div>
 
-            {/* فاصل إعلاني بعرض كامل (إعلان 4: 468×60) — بعد الجريد الأول (16 كارت) وقبل الشبكة السفلية.
-                خارج الجريد عمدًا: أي كارت إعلان داخل الشبكة يكسر اكتمال الصفوف (صف ناقص + فراغ كبير)
-                لأن عدد الأعمدة متغير حسب الشاشة. الفاصل بياخد صفه الخاص فلا يكسر شيئًا. */}
-            <div className="my-6 flex justify-center">
-              <AdFrame ad={AD_FOOTER_MID} variant="x" />
-            </div>
+            {/* (زون 468×60 القديمة أُزيلت — الخطة الجديدة تستبدل الفواصل الرخيصة
+                بفورمات الضغط وفورمات المحتوى) */}
 
             {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — بعرض كامل */}
             <div className="min-w-0 mt-6">

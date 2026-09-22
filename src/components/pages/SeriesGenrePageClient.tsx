@@ -23,7 +23,6 @@ import { ListingPagination, type StaticPagination } from './ListingPagination'
    6: 320×50 شريط الموبايل الثابت (MobileStickyAd) */
 const AD_HEADER = getAdByNum(1)! // 728×90
 const AD_SIDE_RECT = getAdByNum(2)! // 300×250
-const AD_FOOTER_MID = getAdByNum(4)! // 468×60
 
 interface SeriesGenrePageClientProps {
   genre: any
@@ -484,11 +483,8 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
 
           </div>
 
-          {/* فاصل إعلاني بعرض كامل (إعلان 4: 468×60) — بعد الجريد الأول (16 كارت) وقبل الشبكة السفلية.
-              خارج الجريد عمدًا: أي كارت إعلان داخل الشبكة يكسر اكتمال الصفوف لأن عدد الأعمدة متغير حسب الشاشة */}
-          <div className="my-6 flex justify-center">
-            <AdFrame ad={AD_FOOTER_MID} variant="x" />
-          </div>
+          {/* (زون 468×60 القديمة أُزيلت — الخطة الجديدة تستبدل الفواصل الرخيصة
+              بفورمات الضغط وفورمات المحتوى) */}
 
           <div className="min-w-0 mt-6">
             {restItems.length > 0 && (

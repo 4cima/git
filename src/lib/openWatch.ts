@@ -1,7 +1,7 @@
 'use client'
 
 import { CONFIG } from './constants'
-import { requestPopunderFromUserGesture } from '@/components/features/system/adsClick'
+import { watchFlowStart } from '@/lib/ads/waterfall'
 
 export type WatchTarget = {
   type: 'movie' | 'tv'
@@ -15,9 +15,9 @@ export type WatchTarget = {
   who?: string
 }
 
-// البوبندر — تفعيل واحد لكل جلسة، داخل ضغطة زرار مشاهدة فقط:
-// راجع requestPopunderFromUserGesture() في src/components/features/system/adsClick.ts
-// (لا prefetch ولا window.open عند onload — قُصّ من الإقلاع نهائيًا)
+// طابور ضغطات المشاهدة (adsV2): ضغطة 1 بوباندَر (A/B بين Monetag وHilltopAds)،
+// ضغطة 2 سمارتلينك، ضغطة 3 بوباندَر الشبكة الأخرى، ثم هدوء 30 دقيقة.
+// راجع src/lib/ads/waterfall.ts — التفعيل متزامن داخل الـgesture ولا يعلّق المشاهدة أبدًا.
 
 // Anti-bot: the player host is never present as a plain string in the
 // client bundle / static HTML — it is decoded at runtime only inside the
@@ -65,10 +65,9 @@ export function toPlayerUrl(target: WatchTarget): string {
 }
 
 /**
- * Watch flow:
- *  1) تفعيل البوبندر مرة واحدة لكل جلسة — فقط من داخل ضغطة زرار مشاهدة
- *     حقيقية (requestPopunderFromUserGesture تُحقن السكربت داخل نفس الـ
- *     click gesture وتنتظر حتى ~1s كحد أقصى، وتفشل بصمت بدون تعطيل المشاهدة).
+ * Watch flow (adsV2):
+ *  1) خطوة الطابور تُحسم متزامنة أول الضغطة: بوباندَر (A/B) أو سمارتلينك —
+ *     راجع src/lib/ads/waterfall.ts. فشل الإعلان لا يعلّق المشاهدة أبدًا.
  *  2) ثم الانتقال لصفحة المشغّل على 4cima.stream بمعرّف الفيلم/المسلسل.
  *
  * When the visitor has a session, a short-lived signed player bridge token
@@ -77,9 +76,9 @@ export function toPlayerUrl(target: WatchTarget): string {
  * just without the bridge.
  */
 export async function openWatchWithPlayer(target: WatchTarget): Promise<void> {
-  // البوّابة الوحيدة للإعلان العدواني — داخل نفس الضغطة، مرة واحدة لكل جلسة.
-  // firedNow = true فقط لو هي أول ضغطة مشاهدة في الجلسة.
-  const firedNow = await requestPopunderFromUserGesture()
+  // خطوة الطابور تُحسم متزامنة أول الضغطة (بوباندَر/سمارتلينك) — داخل نفس
+  // الـgesture الحقيقي، وفشلها لا يمنع المشاهدة أبدًا.
+  const flow = watchFlowStart()
   let url = toPlayerUrl(target)
   try {
     const ctrl = new AbortController()
@@ -95,10 +94,13 @@ export async function openWatchWithPlayer(target: WatchTarget): Promise<void> {
   } catch {
     /* bridge unavailable — watch without it */
   }
-  if (firedNow) {
+  if (flow.waitForMs > 0) {
     // أعطِ سكربت الشبكة (المحقون داخل الضغطة) فرصة قصيرة لتشغيل البوبندر
     // قبل التنقل في نفس التاب — التنقل الفوري في نفس اللحظة قد يقتل الـ
-    // window.open المعلّق. 2 rAF + 400ms تكفي، والتالي الحالي يكمل للمشغّل.
+    // window.open المعلّق. ~1s كحد أقصى، والتالي الحالي يكمل للمشغّل.
+    await new Promise((r) => setTimeout(r, flow.waitForMs))
+  }
+  if (flow.fired) {
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         setTimeout(() => {
@@ -108,6 +110,6 @@ export async function openWatchWithPlayer(target: WatchTarget): Promise<void> {
     )
     return
   }
-  // الجلسة شغّلت الإعلان قبل كده (أو الإعلان معطّل) → للمشغّل مباشرة
+  // لا إعلان في هذه الضغطة (أو الإعلانات معطّلة) → للمشغّل مباشرة
   window.location.href = url
 }

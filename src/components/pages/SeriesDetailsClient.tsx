@@ -13,13 +13,13 @@ import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { openWatchWithPlayer } from '@/lib/openWatch'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { MultiTagSlot, NativeCardSlot } from '@/components/features/system/adsV2'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 /* الإعلانات لصفحة تفاصيل المسلسل — مطابقة لصفحة تفاصيل الفيلم:
-   2 = 300×250 بعد المشغّال | 3 = 160×600 سايدبار */
+   2 = 300×250 تحت البوستر (فولباك MultiTag) | 3 = 160×600 سايدبار */
 const AD_AFTER_PLAYER = getAdByNum(2)!
 const AD_SIDE = getAdByNum(3)!
-const AD_FOOTER_MID = getAdByNum(4)! // 468×60 — فاصل بعد المشغّل قبل «قد يعجبك أيضاً»
 
 interface SeriesDetailsClientProps {
   series: any
@@ -258,8 +258,8 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
   const handleWatch = () => {
     // Log watch progress, then open the external player (hosted on
     // 4cima.stream) passing series id + season/episode.
-    // البوبندر يتفعّل داخل openWatchWithPlayer — من نفس الضغطة، مرة واحدة
-    // لكل جلسة (requestPopunderFromUserGesture)، ولا يوقف المشاهدة أبدًا.
+    // البوبندر/السمارتلينك يتفعّلان داخل openWatchWithPlayer — طابور الضغطات
+    // (src/lib/ads/waterfall.ts) من نفس الضغطة، ولا يوقف المشاهدة أبدًا.
     const id = Number(series?.tmdb_id)
     if (!(Number.isFinite(id) && id > 0)) return
     logWatch()
@@ -444,9 +444,10 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
               )}
             </div>
 
-            {/* إعلان 300×250 تحت البوستر — يختفي كليًا (بإطاره) عند فشل الإعلان */}
+            {/* سلوت تحت البوستر (أول نقطة نظر قبل زر المشاهدة): MultiTag In-Page
+                300×250 (HilltopAds) لو مفعّل في adsV2، وإلا بنر 300×250 القديم */}
             <div className="mt-3 flex justify-center">
-              <AdFrame ad={AD_AFTER_PLAYER} variant="x" />
+              <MultiTagSlot legacy={<AdFrame ad={AD_AFTER_PLAYER} variant="x" />} />
             </div>
 
             {/* Keywords under poster */}
@@ -713,11 +714,8 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
         </div>
       </div>
 
-      {/* فاصل إعلاني 468×60 (إعلان رقم 4) — بعد المشغّل وقبل «قد يعجبك أيضاً»:
-          نقطة توقف طبيعية في الصفحة — يتصغر تلقائيًا على الشاشات الضيقة (AdFrame max-w-full) */}
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 pb-10 flex justify-center">
-        <AdFrame ad={AD_FOOTER_MID} variant="x" />
-      </div>
+      {/* (زون 468×60 القديمة أُزيلت — الخطة الجديدة: أعلى عائد من فورمات
+          الضغط والفورمات المتموهة لا من بنر رخيص قبل «قد يعجبك أيضاً») */}
 
       {/* Similar Series Section — بيانات من الـSSR (روابط حقيقية في HTML أولي، بلا Skeleton) */}
       {similarSeries.length > 0 && (
@@ -742,6 +740,10 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
                   />
                 ))}
           </div>
+
+          {/* Native Banner (Adsterra) — شريط تيزرات متموه مع المحتوى بعد «قد يعجبك أيضاً»
+              (خارج الجريد عمدًا: كارت إعلان داخل شبكة متغيرة الأعمدة يكسر اكتمال الصفوف) */}
+          <NativeCardSlot fit="block" />
         </div>
       )}
 

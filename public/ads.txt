@@ -5,3 +5,7 @@ adsterra.com, 2018051, DIRECT
 # Monetag (Propeller Ads group) — site ID from publishers.monetag.com
 monetag.com, 3471530, DIRECT
 propellerads.com, 3471530, DIRECT, 5d62403b1874469b
+# HilltopAds — account 404814 (user.hilltopads.com) — تأكد من السطر الرسمي في
+# داشبورد الناشر (Manage Sites & Zones) عند إنشاء الزونات
+hilltopads.com, 404814, DIRECT
+hilltopads.net, 404814, DIRECT

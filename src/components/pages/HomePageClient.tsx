@@ -14,6 +14,7 @@ import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { MultiTagSlot } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
@@ -720,11 +721,10 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
               </span>
             </Link>
 
-            {/* الخلية 2 — إعلان رقم 2 (300×250) داخل إطار موحّد — بلا أي قص، على كل المقاسات:
-                AdFrame أصبح max-w-full → الإعلان يتصغر سليمًا حيثما ضاقت الخلية
-                (موبايل: عمود كامل ≥300px يظهر بمقاسه — تابلت sm→lg: عمودان فيتقلص طفيفًا — lg+: مقاسه الأصلي) */}
+            {/* الخلية 2 — سلوت MultiTag In-Page 300×250 (HilltopAds) لو مفعّل في adsV2،
+                وإلا بنر 300×250 القديم — بلا أي قص، على كل المقاسات */}
             <div className="relative flex items-center justify-center overflow-visible py-2">
-              <AdFrame ad={AD_CTA} variant="x" />
+              <MultiTagSlot legacy={<AdFrame ad={AD_CTA} variant="x" />} />
             </div>
 
             {/* الخلية 3 — زر كل المسلسلات — كارت سينمائي 3D (ذهبي: #78350f → #f59e0b) */}
