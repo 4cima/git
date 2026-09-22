@@ -67,12 +67,13 @@ export const ADS_V2 = {
   },
 
   /**
-   * ستيتشي الموبايل — كان Adsterra 320×50 (إيراد ميت، حُذف)
-   * المكان الجديد: هيلتوب MultiTag In-Page 300×100 (موبايل فقط) — بانتظار إنشاء الزون
+   * ستيتشي الموبايل — هيلتوب MultiTag In-Page 300×100 (موبايل فقط)
+   * زون 7450617 (4cima-Mobile-Only) — الشريط السفلي الثابت بجميع الصفحات
+   * (المكوّن StickyBottomAd راكب في كل الصفحات عبر MobileStickyAd — بيتفعل تلقائيًا بالتعبئة)
    */
   stickyMobile: {
-    zoneId: '',
-    scriptSrc: '',
+    zoneId: '7450617',
+    scriptSrc: 'https://conventionalresponse.com/buXaV.s_d-G/le0NY/WmcT/QeTmc9Hu/ZSU/lUkDP/T/cw0kN/TtA/2/MFTGcbt/NWzsQQ1wMFD-YmynMPQq',
   },
 
   /**
