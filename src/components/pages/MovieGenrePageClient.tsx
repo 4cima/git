@@ -468,7 +468,7 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
                 </div>
               )}
             <div className="grid-responsive gap-4" suppressHydrationWarning>
-              {topItems.slice(0, 8).map((item: any, index: number) => (
+              {topItems.slice(0, 16).map((item: any, index: number) => (
                 <Fragment key={item.id}>
                   <MovieCard key={item.id} movie={item} index={index} eager={index < LISTING_TOP_CARDS_COUNT} />
                 </Fragment>
@@ -481,7 +481,7 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
               <AdFrame ad={AD_HEADER} variant="x" />
             </div>
             <div className="grid-responsive gap-4" suppressHydrationWarning>
-              {topItems.slice(8).map((item: any, index: number) => (
+              {topItems.slice(16).map((item: any, index: number) => (
                 <Fragment key={item.id}>
                   <MovieCard key={item.id} movie={item} index={index} />
                 </Fragment>
@@ -501,10 +501,10 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
           <div className="min-w-0 mt-6">
             {restItems.length > 0 && (
               <div className="grid-responsive gap-4" suppressHydrationWarning>
-                {Array.from({ length: Math.ceil(restItems.length / 8) }, (_, ci) => (
+                {Array.from({ length: Math.ceil(restItems.length / 16) }, (_, ci) => (
                   <Fragment key={`mrest-${ci}`}>
                     <div className="grid-responsive gap-4" suppressHydrationWarning>
-                      {restItems.slice(ci * 8, ci * 8 + 8).map((item: any, i: number) => (
+                      {restItems.slice(ci * 16, ci * 16 + 16).map((item: any, i: number) => (
                         <MovieCard key={item.id} movie={item} index={LISTING_TOP_CARDS_COUNT + ci * 8 + i} />
                       ))}
                     </div>

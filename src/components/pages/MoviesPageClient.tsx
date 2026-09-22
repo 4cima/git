@@ -665,10 +665,10 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
                     <div className="h-full w-1/2 rounded-full bg-gradient-to-l from-[#b91c1c] via-[#f59e0b] to-[#b91c1c] animate-pulse" />
                   </div>
                 )}
-                {Array.from({ length: Math.ceil(topItems.length / 8) }, (_, ci) => (
+                {Array.from({ length: Math.ceil(topItems.length / 16) }, (_, ci) => (
                   <Fragment key={`mtop-${ci}`}>
                     <div className="grid-responsive gap-6">
-                    {topItems.slice(ci * 8, ci * 8 + 8).map((item: any, j: number) => {
+                    {topItems.slice(ci * 16, ci * 16 + 16).map((item: any, j: number) => {
                       const index = ci * 8 + j
                       const tmdbId = item.tmdb_id || item.id
                       const stateKey = `movie-${tmdbId}`
@@ -711,10 +711,10 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
             <div className="min-w-0 mt-6">
               {restItems.length > 0 && (
                 <>
-                {Array.from({ length: Math.ceil(restItems.length / 8) }, (_, ci) => (
+                {Array.from({ length: Math.ceil(restItems.length / 16) }, (_, ci) => (
                   <Fragment key={`mrest-${ci}`}>
                     <div className="grid-responsive gap-6">
-                    {restItems.slice(ci * 8, ci * 8 + 8).map((item: any, j: number) => {
+                    {restItems.slice(ci * 16, ci * 16 + 16).map((item: any, j: number) => {
                       const index = LISTING_TOP_CARDS_COUNT + ci * 8 + j
                       const tmdbId = item.tmdb_id || item.id
                       const stateKey = `movie-${tmdbId}`

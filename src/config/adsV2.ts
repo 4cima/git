@@ -25,74 +25,65 @@ export const ADS_V2 = {
    * زون 31352043 (SocialBar_1) على 4cima.com — تُزرع فوق </body>.
    */
   socialBar: {
-    snippet: '<script src="https://professionalsusceptible.com/6b/2d/9c/6b2d9ce00c7c6273639af52472cf6980.js"></script>',
-  } as SnippetUnit,
+    scriptSrc: 'https://professionalsusceptible.com/6b/2d/9c/6b2d9ce00c7c6273639af52472cf6980.js',
+  },
 
   /**
    * MultiTag In-Page 300×250 (HilltopAds) — تحت بوستر التفاصيل وترُوس الكتالوجات.
    * زون 7448009 (4cima-inpage-300x250، معتمدة) — In-Page + Popup مدمجان.
    */
   multiTag: {
-    snippet: `<script>
-(function(lmjkg){
-var d = document,
-    s = d.createElement('script'),
-    l = d.currentScript || d.scripts[d.scripts.length - 1];
-s.settings = lmjkg || {};
-s.src = "//conventionalresponse.com/bqXrVss.d/GTlw0UYNWmcS/he-ma9/uDZVUYl/kePaTUcu0LNWDTgUwnMnDpk/tGNszxQB0XOcD/A/x/M-wD";
-s.async = true;
-s.referrerPolicy = 'no-referrer-when-downgrade';
-l.parentNode.insertBefore(s, l);
-})({})
-</script>`,
-  } as SnippetUnit,
+    zoneId: '7448009',
+    scriptSrc: 'https://conventionalresponse.com/bqXrVss.d/GTlw0UYNWmcS/he-ma9/uDZVUYl/kePaTUcu0LNWDTgUwnMnDpk/tGNszxQB0XOcD/A/x/M-wD',
+  },
 
   /**
    * Native Banner (Adsterra) — كارت بوستر في نهاية الصفوف وشريط تيزرات بعد
    * «قد يعجبك أيضاً». الزون أُنشئت على 4cima.com لكن كودها لم يُجلب بعد —
    * الصق الكود هنا (GET CODE من داشبورد Adsterra) فتتفعّل السلوتات تلقائيًا.
    */
-  native: { snippet: '' } as SnippetUnit,
+  native: {
+    zoneId: '',
+    scriptSrc: '',
+  },
 
   /**
    * Vignette Banner (Monetag) — زون 11699162 (Wonderful tag)
-   * يحل مكان مقاسات 468×60 العريضة في: وسط التفاصيل + قبل فوتر التصنيفات + وسط الكتالوج
+   * يُحقن في الـbody بنفس نمط مونتاج — مونتاج بيقرر مكان الرسم بنفسه (بانر ثابت قابل للإغلاق)
+   * يستخدم في: أعلى كل الصفحات + تحت هيرو الرئيسية
    */
   vignette: {
-    snippet: `<script>(function(s){s.dataset.zone='11699162',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>`,
-  } as SnippetUnit,
+    zoneId: '11699162',
+    scriptSrc: 'https://n6wxm.com/vignette.min.js',
+  },
 
   /**
    * In-Page Push (Monetag) — زون 11699161 (Great tag)
-   * يحل مكان 160×600 سايدبار التفاصيل — بانتظار لصق الكود من داشبورد مونتاج
+   * محل 160×600 سايدبار التفاصيل — بانتظار لصق كود الزون (نستخرج منه scriptSrc)
    */
-  inPagePush: { snippet: '' } as SnippetUnit,
+  inPagePush: {
+    zoneId: '11699161',
+    scriptSrc: '',
+  },
 
   /**
-   * ستيتشي الموبايل — كان Adsterra 320×50 (إيراد ميت $0.007، حُذف)
-   * المكان الجديد: هيلتوب MultiTag In-Page 300×100 (موبايل فقط) — بانتظار إنشاء الزون ولصق الكود
+   * ستيتشي الموبايل — كان Adsterra 320×50 (إيراد ميت، حُذف)
+   * المكان الجديد: هيلتوب MultiTag In-Page 300×100 (موبايل فقط) — بانتظار إنشاء الزون
    */
-  stickyMobile: { snippet: '' } as SnippetUnit,
+  stickyMobile: {
+    zoneId: '',
+    scriptSrc: '',
+  },
 
   /**
    * Video Slider (HilltopAds) — فيديو عايم في رُكن الشاشة بعد تأخير.
    * زون 7448025 (4cima-video-slider، معتمدة).
    */
   videoSlider: {
-    snippet: `<script>
-(function(udu){
-var d = document,
-    s = d.createElement('script'),
-    l = d.currentScript || d.scripts[d.scripts.length - 1];
-s.settings = udu || {};
-s.src = "//conventionalresponse.com/b.XcVxsod/Gnl_0EYGWSct/fesmb9/uCZyU/lrkVPfTLch0zNUDegBwIMvjYU/t/NLzDQn0/OaDCACyyOlQ-";
-s.async = true;
-s.referrerPolicy = 'no-referrer-when-downgrade';
-l.parentNode.insertBefore(s, l);
-})({})
-</script>`,
+    zoneId: '7448025',
+    scriptSrc: 'https://conventionalresponse.com/b.XcVxsod/Gnl_0EYGWSct/fesmb9/uCZyU/lrkVPfTLch0zNUDegBwIMvjYU/t/NLzDQn0/OaDCACyyOlQ-',
     delayMs: 45_000,
-  } as SnippetUnit & { delayMs: number },
+  },
 
   /**
    * SmartLink — ضغطة المشاهدة الثانية في الطابور (ولاحقًا أزرار التحميل).
@@ -121,6 +112,6 @@ l.parentNode.insertBefore(s, l);
 }
 
 /** هل الوحدة النصية مفعّلة؟ (سنيبت غير فارغ) */
-export function hasSnippet(u: { snippet: string }): boolean {
-  return u.snippet.trim().length > 0
+export function hasScriptSrc(u: { scriptSrc: string }): boolean {
+  return u.scriptSrc.trim().length > 0
 }

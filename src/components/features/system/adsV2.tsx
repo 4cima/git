@@ -10,37 +10,39 @@
  * - GlobalAdsV2: يُركَّب مرة واحدة في layout الجذر.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { ADS_V2, hasSnippet } from '@/config/adsV2'
+import { ADS_V2, hasScriptSrc } from '@/config/adsV2'
 import { FLAGS } from '@/lib/constants'
 import { AdsterraBanner } from './AdsterraBanner'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 /** حقن HTML شبكة (يشمل وسوم script) داخل حاوية — innerHTML لا ينفذ السكربتات
  *  فنُعيد إنشاءها كعناصر حقيقية مع نسخ كل الخصائص. */
-function injectHtml(container: HTMLElement, html: string): void {
-  const doc = new DOMParser().parseFromString(html, 'text/html')
-  Array.from(doc.body.childNodes).forEach((node) => {
-    if (node.nodeName === 'SCRIPT') {
-      const old = node as HTMLScriptElement
-      const s = document.createElement('script')
-      Array.from(old.attributes).forEach((a) => s.setAttribute(a.name, a.value))
-      s.text = old.textContent || ''
-      container.appendChild(s)
-    } else {
-      container.appendChild(document.importNode(node, true))
-    }
-  })
+/** حقن سكربت شبكة مباشرة (بلا DOMParser — كان بيفشل بصمت في المتصفح) */
+function injectScriptTo(container: HTMLElement, src: string, zoneId?: string): void {
+  const s = document.createElement('script')
+  s.src = src
+  s.async = true
+  if (zoneId) s.dataset.zone = zoneId
+  container.appendChild(s)
 }
 
-/** هل الحاوية فيها محتوى إعلاني حقيقي (iframe/صورة/فيديو/نص)؟ */
-function slotHasContent(container: HTMLElement | null): boolean {
+/** حقن تاج مونتاج في الـbody — نفس نمط مونتاج حرفيًا (مونتاج بيقرر مكان الرسم بنفسه) */
+function injectMonetagToBody(zoneId: string, src: string): void {
+  const s = document.createElement('script')
+  s.dataset.zone = zoneId
+  s.src = src
+  ;([document.documentElement, document.body].filter(Boolean).pop() as HTMLElement).appendChild(s)
+}
+
+/** هل الحاوية فيها محتوى إعلاني حقيقي (iframe/صورة/فيديو)؟ */
+function slotHasIframe(container: HTMLElement | null): boolean {
   if (!container) return false
-  if (container.querySelector('iframe, img, video')) return true
-  return container.textContent !== null && container.textContent.trim().length > 0
+  return !!container.querySelector('iframe, img, video')
 }
 
 type SnippetBoxProps = {
-  snippet: string
+  scriptSrc: string
+  zoneId?: string
   /** أبعاد محجوزة من أول رسمة (CLS صفر) */
   width?: number
   height?: number
@@ -49,13 +51,13 @@ type SnippetBoxProps = {
   onFailure?: () => void
   /** مفتاح فحص التكرار في الـDOM */
   guard: string
-  /** hide: يُزال كليًا عند الفشل | ghost: يبقى بحجمه المحجوز visibility:hidden
-   *  (للصفوف الأفقية — الانهيار بعد ثوانٍ يزق الصف ويسبب CLS) */
+  /** hide: يُزال كليًا عند الفشل | ghost: يبقى بحجمه المحجوز visibility:hidden */
   failurePolicy?: 'hide' | 'ghost'
 }
 
 function SnippetBox({
-  snippet,
+  scriptSrc,
+  zoneId,
   width,
   height,
   minHeight,
@@ -70,15 +72,15 @@ function SnippetBox({
   useEffect(() => {
     const el = ref.current
     if (!el || failed) return
-    if (el.childElementCount === 0) injectHtml(el, snippet)
+    if (el.childElementCount === 0) injectScriptTo(el, scriptSrc, zoneId)
     // المزاد الإعلاني بياخد 8-15s أحيانًا قبل رسم الـiframe (مُثبت قياسًا) —
     // فأي مؤشر مبكر بيقفل خانة هتتملى. إعادة حقن احتياطية عند 12s لو الحقن
     // الأول فشل بصمت، والفصل النهائي الوحيد عند 25s.
     const reinject = window.setTimeout(() => {
-      if (ref.current && ref.current.childElementCount === 0) injectHtml(ref.current, snippet)
+      if (ref.current && ref.current.childElementCount === 0) injectScriptTo(ref.current, scriptSrc, zoneId)
     }, 12000)
     const finalProbe = window.setTimeout(() => {
-      if (!slotHasContent(ref.current)) {
+      if (!slotHasIframe(ref.current)) {
         setFailed(true)
         onFailure?.()
       }
@@ -87,9 +89,9 @@ function SnippetBox({
       clearTimeout(reinject)
       clearTimeout(finalProbe)
     }
-  }, [snippet])
+  }, [scriptSrc])
 
-  if (!snippet.trim()) return null
+  if (!scriptSrc.trim()) return null
   if (failed && failurePolicy === 'hide') return null
   return (
     <div
@@ -113,21 +115,24 @@ function SnippetBox({
  * — ممنوع مربعات فاضية. يُستخدم للفورمات ذات المقاس المطابق فقط.
  */
 export function NetSlot({
-  snippet,
+  scriptSrc,
+  zoneId,
   guard,
   minHeight = 250,
   className = 'w-full',
 }: {
-  snippet: string
+  scriptSrc: string
+  zoneId?: string
   guard: string
   minHeight?: number
   className?: string
 }) {
   if (!FLAGS.ADS_ENABLED) return null
-  if (!hasSnippet({ snippet })) return null
+  if (!scriptSrc.trim()) return null
   return (
     <SnippetBox
-      snippet={snippet}
+      scriptSrc={scriptSrc}
+      zoneId={zoneId}
       minHeight={minHeight}
       guard={guard}
       className={className}
@@ -135,20 +140,29 @@ export function NetSlot({
   )
 }
 
-/** Monetag Vignette Banner — بعرض الشاشة/الحاوية (أعلى الصفحات + تحت هيرو الرئيسية) */
-export function VignetteSlot({
-  guard = 'vignette',
-  className = 'w-full max-w-[1100px] mx-auto',
-}: {
-  guard?: string
-  className?: string
-}) {
-  return <NetSlot snippet={ADS_V2.vignette.snippet} guard={guard} minHeight={120} className={className} />
+/** تاج مونتاج في الـbody — مونتاج بيدير مكان الرسم بنفسه (صفر بصمة تخطيط) */
+function MonetagTag({ zoneId, scriptSrc, guard }: { zoneId: string; scriptSrc: string; guard: string }) {
+  useEffect(() => {
+    if (!scriptSrc.trim() || document.querySelector('[data-ads-v2="' + guard + '"]')) return
+    const wrap = document.createElement('div')
+    wrap.setAttribute('data-ads-v2', guard)
+    wrap.style.display = 'none'
+    document.body.appendChild(wrap)
+    injectMonetagToBody(zoneId, scriptSrc)
+  }, [zoneId, scriptSrc, guard])
+  return null
 }
 
-/** Monetag In-Page Push — محلّ 160×600 سايدبار التفاصيل (عمودي) */
+/** Monetag Vignette Banner — بعرض الشاشة (أعلى الصفحات + تحت هيرو الرئيسية) */
+export function VignetteSlot({ guard = 'vignette' }: { guard?: string }) {
+  if (!FLAGS.ADS_ENABLED) return null
+  return <MonetagTag zoneId={ADS_V2.vignette.zoneId} scriptSrc={ADS_V2.vignette.scriptSrc} guard={guard} />
+}
+
+/** Monetag In-Page Push — محل 160×600 سايدبار التفاصيل (عمودي) */
 export function InPagePushSlot() {
-  return <NetSlot snippet={ADS_V2.inPagePush.snippet} guard="inpage-push" minHeight={400} className="w-full" />
+  if (!FLAGS.ADS_ENABLED) return null
+  return <MonetagTag zoneId={ADS_V2.inPagePush.zoneId} scriptSrc={ADS_V2.inPagePush.scriptSrc} guard="inpage-push" />
 }
 
 /** سلوت Native Banner — fit=row: كارت بنهاية الصفوف الأفقية، fit=block: شريط بعرض الكتلة */
@@ -160,10 +174,11 @@ export function NativeCardSlot({
   fit?: 'row' | 'block'
 }) {
   if (!FLAGS.ADS_ENABLED) return null
-  if (!hasSnippet(ADS_V2.native)) return <>{legacy}</>
+  if (!ADS_V2.native.scriptSrc.trim()) return <>{legacy}</>
   return (
     <SnippetBox
-      snippet={ADS_V2.native.snippet}
+      scriptSrc={ADS_V2.native.scriptSrc}
+      zoneId={ADS_V2.native.zoneId}
       minHeight={fit === 'row' ? 240 : 260}
       guard={fit === 'row' ? 'native-row' : 'native-block'}
       failurePolicy={fit === 'row' ? 'ghost' : 'hide'}
@@ -179,29 +194,19 @@ export function NativeCardSlot({
 /** Social Bar (Adsterra) — تاج عالمي يُحقن بعد أول رسمة + idle */
 function SocialBarAd() {
   useEffect(() => {
-    const snippet = ADS_V2.socialBar.snippet
-    if (!FLAGS.ADS_ENABLED || !snippet.trim()) return
-    let cancelled = false
-    const inject = () => {
-      if (cancelled || document.querySelector('[data-ads-v2="social-bar"]')) return
-      const wrap = document.createElement('div')
-      wrap.setAttribute('data-ads-v2', 'social-bar')
-      wrap.style.display = 'none'
-      injectHtml(wrap, snippet)
-      document.body.appendChild(wrap)
-    }
+    const scriptSrc = ADS_V2.socialBar.scriptSrc
+    if (!FLAGS.ADS_ENABLED || !scriptSrc.trim()) return
+    if (document.querySelector('script[src*="professionalsusceptible.com/6b/2d"]')) return
     const w = window as Window & {
       requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number
     }
     const onLoaded = () => {
+      const inject = () => injectScriptTo(document.body, scriptSrc)
       if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(inject, { timeout: 4000 })
       else setTimeout(inject, 2000)
     }
     if (document.readyState === 'complete') onLoaded()
     else window.addEventListener('load', onLoaded, { once: true })
-    return () => {
-      cancelled = true
-    }
   }, [])
   return null
 }
@@ -209,20 +214,13 @@ function SocialBarAd() {
 /** Video Slider (HilltopAds) — يُحقن بعد مهلة (45 ثانية افتراضيًا) */
 function VideoSliderAd() {
   useEffect(() => {
-    const snippet = ADS_V2.videoSlider.snippet
-    if (!FLAGS.ADS_ENABLED || !snippet.trim()) return
-    let cancelled = false
+    const { scriptSrc, zoneId } = ADS_V2.videoSlider
+    if (!FLAGS.ADS_ENABLED || !scriptSrc.trim()) return
+    if (document.querySelector('script[data-zone="' + zoneId + '"]')) return
     const timer = window.setTimeout(() => {
-      if (cancelled || document.querySelector('[data-ads-v2="video-slider"]')) return
-      const wrap = document.createElement('div')
-      wrap.setAttribute('data-ads-v2', 'video-slider')
-      injectHtml(wrap, snippet)
-      document.body.appendChild(wrap)
+      injectScriptTo(document.body, scriptSrc, zoneId)
     }, ADS_V2.videoSlider.delayMs)
-    return () => {
-      cancelled = true
-      clearTimeout(timer)
-    }
+    return () => clearTimeout(timer)
   }, [])
   return null
 }
@@ -247,7 +245,7 @@ export function StickyBottomAd() {
   const onFailure = useCallback(() => setFailed(true), [])
 
   if (closed || failed || !FLAGS.ADS_ENABLED) return null
-  if (!hasSnippet(ADS_V2.stickyMobile)) return null
+  if (!hasScriptSrc(ADS_V2.stickyMobile)) return null
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden" role="complementary" aria-label="إعلان">
@@ -260,7 +258,8 @@ export function StickyBottomAd() {
           ✕
         </button>
         <SnippetBox
-          snippet={ADS_V2.stickyMobile.snippet}
+          scriptSrc={ADS_V2.stickyMobile.scriptSrc}
+          zoneId={ADS_V2.stickyMobile.zoneId}
           minHeight={100}
           guard="sticky-mobile"
           className="w-[300px] max-w-[calc(100vw-16px)]"

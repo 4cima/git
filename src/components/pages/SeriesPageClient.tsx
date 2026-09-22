@@ -668,10 +668,10 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
                     <div className="h-full w-1/2 rounded-full bg-gradient-to-l from-[#b45309] via-[#f59e0b] to-[#b45309] animate-pulse" />
                   </div>
                 )}
-              {Array.from({ length: Math.ceil(topItems.length / 8) }, (_, ci) => (
+              {Array.from({ length: Math.ceil(topItems.length / 16) }, (_, ci) => (
                 <Fragment key={`stop-${ci}`}>
                   <div className="grid-responsive gap-6">
-                  {topItems.slice(ci * 8, ci * 8 + 8).map((item: any, j: number) => {
+                  {topItems.slice(ci * 16, ci * 16 + 16).map((item: any, j: number) => {
                     const index = ci * 8 + j
                     const tmdbId = item.tmdb_id || item.id
                     const stateKey = `tv-${tmdbId}`
@@ -715,10 +715,10 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
             <div className="min-w-0 mt-6">
               {restItems.length > 0 && (
                 <>
-                {Array.from({ length: Math.ceil(restItems.length / 8) }, (_, ci) => (
+                {Array.from({ length: Math.ceil(restItems.length / 16) }, (_, ci) => (
                   <Fragment key={`srest-${ci}`}>
                     <div className="grid-responsive gap-6">
-                    {restItems.slice(ci * 8, ci * 8 + 8).map((item: any, j: number) => {
+                    {restItems.slice(ci * 16, ci * 16 + 16).map((item: any, j: number) => {
                       const index = LISTING_TOP_CARDS_COUNT + ci * 8 + j
                       const tmdbId = item.tmdb_id || item.id
                       const stateKey = `tv-${tmdbId}`

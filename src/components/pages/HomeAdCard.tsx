@@ -10,7 +10,7 @@
 import { useState } from 'react'
 import { AdsterraBanner } from '@/components/features/system/AdsterraBanner'
 import { NativeCardSlot } from '@/components/features/system/adsV2'
-import { hasSnippet, ADS_V2 } from '@/config/adsV2'
+import { hasScriptSrc, ADS_V2 } from '@/config/adsV2'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 export const AD_IN_ROW = getAdByNum(5)!
@@ -26,7 +26,7 @@ export const AD_IN_ROW_ENABLED = AD_IN_ROW.enabled !== false
  */
 export function AdInRowCard({ pos }: { pos: string }) {
   const [failed, setFailed] = useState(false)
-  const nativeActive = hasSnippet(ADS_V2.native)
+  const nativeActive = hasScriptSrc(ADS_V2.native)
   if (!nativeActive && !AD_IN_ROW_ENABLED) return null
   return (
     <div
