@@ -59,11 +59,11 @@ export const ADS_V2 = {
 
   /**
    * In-Page Push (Monetag) — زون 11699161 (Great tag)
-   * محل 160×600 سايدبار التفاصيل — بانتظار لصق كود الزون (نستخرج منه scriptSrc)
+   * محل 160×600 سايدبار التفاصيل — الكود من اسلام (nap5k.com/tag.min.js)
    */
   inPagePush: {
     zoneId: '11699161',
-    scriptSrc: '',
+    scriptSrc: 'https://nap5k.com/tag.min.js',
   },
 
   /**
