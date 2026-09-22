@@ -135,31 +135,20 @@ export function NetSlot({
   )
 }
 
-/** Monetag Vignette Banner — محلّ 468×60 العريض (وسط التفاصيل + التصنيفات + الكتالوج) */
-export function VignetteSlot({ guard = 'vignette' }: { guard?: string }) {
-  return <NetSlot snippet={ADS_V2.vignette.snippet} guard={guard} minHeight={120} className="w-full max-w-[728px] mx-auto" />
+/** Monetag Vignette Banner — بعرض الشاشة/الحاوية (أعلى الصفحات + تحت هيرو الرئيسية) */
+export function VignetteSlot({
+  guard = 'vignette',
+  className = 'w-full max-w-[1100px] mx-auto',
+}: {
+  guard?: string
+  className?: string
+}) {
+  return <NetSlot snippet={ADS_V2.vignette.snippet} guard={guard} minHeight={120} className={className} />
 }
 
 /** Monetag In-Page Push — محلّ 160×600 سايدبار التفاصيل (عمودي) */
 export function InPagePushSlot() {
   return <NetSlot snippet={ADS_V2.inPagePush.snippet} guard="inpage-push" minHeight={400} className="w-full" />
-}
-
-/** هيلتوب MultiTag 300×250 — بنر كامل العرض وسط كروت الشبكات (بعد كل سطرين تقريبًا) */
-export function HilltopGridBanner({ pos }: { pos: string }) {
-  if (!FLAGS.ADS_ENABLED) return null
-  if (!hasSnippet(ADS_V2.multiTag)) return null
-  return (
-    <div className="col-span-full flex justify-center my-2" data-grid-banner-pos={pos}>
-      <SnippetBox
-        snippet={ADS_V2.multiTag.snippet}
-        width={300}
-        height={250}
-        guard={'grid-' + pos}
-        className="rounded-xl border border-slate-800/60 bg-slate-950/40"
-      />
-    </div>
-  )
 }
 
 /** سلوت Native Banner — fit=row: كارت بنهاية الصفوف الأفقية، fit=block: شريط بعرض الكتلة */

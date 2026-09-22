@@ -10,7 +10,7 @@ import { YEARS, RATINGS, COUNTRIES, LANGUAGES, MOVIE_SORT_OPTIONS as SORT_OPTION
          readCommonFiltersFromSearchParams, readSortFromSearchParams } from './listingFilters'
 import { useListingUrlSync } from './useListingUrlSync'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
-import { VignetteSlot, HilltopGridBanner } from '@/components/features/system/adsV2'
+import { VignetteSlot } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { Footer } from '@/components/layout/Footer'
 import { getAdByNum } from '@/data/ads/4cima.com'
@@ -296,7 +296,10 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
       <div className="page-container">
         {/* بنر 728×90 — نظام AdFrame — pt-24 تزاح تحته من النافبار الثابت (h-16) */}
         <div className="flex justify-center pt-24">
-          <AdFrame ad={AD_HEADER} variant="x" />
+          {/* أعلى الصفحة: Monetag Vignette Banner بعرض الشاشة */}
+          <div className="w-full flex justify-center px-3 sm:px-5 md:px-8 pt-24">
+            <VignetteSlot guard="vignette-top" />
+          </div>
         </div>
 
         {/* الصف الوحيد في الجريد: الهيدر + السورت، وبجانبهما الإعلان الجانبي (ديسكتوب فقط — مخفي تمامًا على الجوال).
@@ -465,13 +468,24 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
                 </div>
               )}
             <div className="grid-responsive gap-4" suppressHydrationWarning>
-              {topItems.map((item: any, index: number) => (
+              {topItems.slice(0, 8).map((item: any, index: number) => (
                 <Fragment key={item.id}>
                   <MovieCard key={item.id} movie={item} index={index} eager={index < LISTING_TOP_CARDS_COUNT} />
-                  {(index + 1) % 12 === 0 && <HilltopGridBanner pos={`mgenre-top-${index + 1}`} />}
                 </Fragment>
               ))}
             </div>
+            </div>
+
+            {/* بانر عريض 728×90 أدستيرا — بعد أول مجموعة كروت */}
+            <div className="my-6 flex justify-center">
+              <AdFrame ad={AD_HEADER} variant="x" />
+            </div>
+            <div className="grid-responsive gap-4" suppressHydrationWarning>
+              {topItems.slice(8).map((item: any, index: number) => (
+                <Fragment key={item.id}>
+                  <MovieCard key={item.id} movie={item} index={index} />
+                </Fragment>
+              ))}
             </div>
 
           </>
@@ -484,18 +498,20 @@ export function MovieGenrePageClient({ genre, slug, initialMovies, initialHasMor
 
           </div>
 
-          {/* فاصل إعلاني وسط الصفحة: Monetag Vignette Banner عريض — محل زون 468×60 الميتة */}
-          <div className="my-6 flex justify-center">
-            <VignetteSlot guard="vignette-genre" />
-          </div>
-
           <div className="min-w-0 mt-6">
             {restItems.length > 0 && (
               <div className="grid-responsive gap-4" suppressHydrationWarning>
-                {restItems.map((item: any, i: number) => (
-                  <Fragment key={item.id}>
-                    <MovieCard movie={item} index={LISTING_TOP_CARDS_COUNT + i} />
-                    {(i + 1) % 12 === 0 && <HilltopGridBanner pos={`mgenre-rest-${i + 1}`} />}
+                {Array.from({ length: Math.ceil(restItems.length / 8) }, (_, ci) => (
+                  <Fragment key={`mrest-${ci}`}>
+                    <div className="grid-responsive gap-4" suppressHydrationWarning>
+                      {restItems.slice(ci * 8, ci * 8 + 8).map((item: any, i: number) => (
+                        <MovieCard key={item.id} movie={item} index={LISTING_TOP_CARDS_COUNT + ci * 8 + i} />
+                      ))}
+                    </div>
+                    {/* بانر عريض 728×90 أدستيرا — بعد كل مجموعة كروت */}
+                    <div className="my-6 flex justify-center">
+                      <AdFrame ad={AD_HEADER} variant="x" />
+                    </div>
                   </Fragment>
                 ))}
               </div>

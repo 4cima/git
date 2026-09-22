@@ -6,7 +6,7 @@ import { Tv, X } from 'lucide-react'
 import { Footer } from '@/components/layout/Footer'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
-import { VignetteSlot, HilltopGridBanner } from '@/components/features/system/adsV2'
+import { VignetteSlot } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { getAdByNum } from '@/data/ads/4cima.com'
 import { LISTING_PAGE_SIZE, LISTING_TOP_CARDS_COUNT } from '@/lib/listing-config'
@@ -486,9 +486,9 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
 
-      {/* Header banner — إعلان 1 (728×90): مُزاح تحت النافبار الثابت (h-16) بـpt-24 — ويصغر تلقائيًا على الموبايل */}
+      {/* أعلى الصفحة: Monetag Vignette Banner بعرض الشاشة */}
       <div className="w-full bg-slate-950 flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 pt-24">
-        <AdFrame ad={AD_HEADER} variant="x" />
+        <VignetteSlot guard="vignette-top" />
       </div>
 
       {/* Main Content */}
@@ -668,19 +668,21 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
                     <div className="h-full w-1/2 rounded-full bg-gradient-to-l from-[#b45309] via-[#f59e0b] to-[#b45309] animate-pulse" />
                   </div>
                 )}
-              <div className="grid-responsive gap-6">
-                {topItems.map((item: any, index: number) => {
-                  const tmdbId = item.tmdb_id || item.id
-                  const stateKey = `tv-${tmdbId}`
-                  return (
-                    <Fragment key={item.id}>
+              {Array.from({ length: Math.ceil(topItems.length / 8) }, (_, ci) => (
+                <Fragment key={`stop-${ci}`}>
+                  <div className="grid-responsive gap-6">
+                  {topItems.slice(ci * 8, ci * 8 + 8).map((item: any, j: number) => {
+                    const index = ci * 8 + j
+                    const tmdbId = item.tmdb_id || item.id
+                    const stateKey = `tv-${tmdbId}`
+                    return (
                       <MovieCard
                       key={item.id}
                       movie={{
                         ...item,
                         media_type: 'tv'
-                      }} 
-                      index={index} 
+                      }}
+                      index={index}
                       isVisible={true}
                       eager={index < LISTING_TOP_CARDS_COUNT}
                       initialCardState={user ? cardStates[stateKey] : undefined}
@@ -688,13 +690,15 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
                         setCardStates(prev => ({ ...prev, [stateKey]: newState }))
                       }}
                     />
-                    {(index + 1) % 12 === 0 && (
-                      <HilltopGridBanner pos={`series-top-${index + 1}`} />
-                    )}
-                    </Fragment>
-                  )
-                })}
-                </div>
+                    )
+                  })}
+                  </div>
+                  {/* بانر عريض 728×90 أدستيرا — بعد كل مجموعة كروت */}
+                  <div className="my-6 flex justify-center">
+                    <AdFrame ad={AD_HEADER} variant="x" />
+                  </div>
+                </Fragment>
+              ))}
               </div>
             </>
           ) : (
@@ -707,21 +711,18 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
             </div>
             </div>
 
-            {/* فاصل إعلاني وسط الصفحة: Monetag Vignette Banner عريض — محل زون 468×60 الميتة */}
-            <div className="my-6 flex justify-center">
-              <VignetteSlot guard="vignette-catalog" />
-            </div>
-
             {/* الشبكة السفلية: بقية الأعمال + السكرول اللانهائي — بعرض كامل */}
             <div className="min-w-0 mt-6">
               {restItems.length > 0 && (
-                <div className="grid-responsive gap-6">
-                  {restItems.map((item: any, i: number) => {
-                    const index = LISTING_TOP_CARDS_COUNT + i
-                    const tmdbId = item.tmdb_id || item.id
-                    const stateKey = `tv-${tmdbId}`
-                    return (
-                      <Fragment key={item.id}>
+                <>
+                {Array.from({ length: Math.ceil(restItems.length / 8) }, (_, ci) => (
+                  <Fragment key={`srest-${ci}`}>
+                    <div className="grid-responsive gap-6">
+                    {restItems.slice(ci * 8, ci * 8 + 8).map((item: any, j: number) => {
+                      const index = LISTING_TOP_CARDS_COUNT + ci * 8 + j
+                      const tmdbId = item.tmdb_id || item.id
+                      const stateKey = `tv-${tmdbId}`
+                      return (
                         <MovieCard
                           key={item.id}
                           movie={{
@@ -735,13 +736,16 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
                             setCardStates(prev => ({ ...prev, [stateKey]: newState }))
                           }}
                         />
-                        {(i + 1) % 12 === 0 && (
-                          <HilltopGridBanner pos={`series-rest-${i + 1}`} />
-                        )}
-                      </Fragment>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                    </div>
+                    {/* بانر عريض 728×90 أدستيرا — بعد كل مجموعة كروت */}
+                    <div className="my-6 flex justify-center">
+                      <AdFrame ad={AD_HEADER} variant="x" />
+                    </div>
+                  </Fragment>
+                ))}
+                </>
               )}
 
               {series.length > 0 && (

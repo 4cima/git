@@ -14,6 +14,7 @@ import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
+import { VignetteSlot } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
@@ -678,6 +679,11 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
           </div>
         </section>
       )}
+
+      {/* بانر عريض بعرض الشاشة — تحت الهيرو مباشرة (Monetag Vignette) */}
+      <div className="w-full bg-slate-950 flex justify-center px-4 sm:px-6 md:px-8 lg:px-12 py-6">
+        <VignetteSlot guard="vignette-home-hero" />
+      </div>
 
       {/* 3. Trending Content Sections — lazy client chunk (off critical path) */}
       <section className="w-full bg-slate-950">

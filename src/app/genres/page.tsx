@@ -87,9 +87,9 @@ export default async function GenresPage() {
         dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
 
-      {/* بنر الهيدر — 728×90 (بدون طلبات وسيطة) — pt-24 تزاح تحته من النافبار الثابت (h-16) */}
+      {/* أعلى الصفحة: Monetag Vignette Banner بعرض الشاشة — pt-24 تزاح تحته من النافبار الثابت */}
       <div className="w-full flex justify-center px-3 sm:px-5 md:px-8 lg:px-12 pt-24 pb-3">
-        <AdFrame ad={AD_HEADER} variant="x" />
+        <VignetteSlot guard="vignette-top" />
       </div>
 
       <div className="mx-auto max-w-[1600px] px-3 sm:px-5 md:px-8 pb-16">
@@ -197,11 +197,6 @@ export default async function GenresPage() {
               </div>
             )
           })}
-        </div>
-
-        {/* فاصل إعلاني: Monetag Vignette Banner عريض — محل زون 468×60 الميتة */}
-        <div className="flex justify-center px-4 py-2 mt-8">
-          <VignetteSlot guard="vignette-genre" />
         </div>
       </div>
 

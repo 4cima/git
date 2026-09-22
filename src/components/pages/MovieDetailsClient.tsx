@@ -373,6 +373,10 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
       </div>
 
       <div className="relative z-10 page-container pt-24 pb-0">
+        {/* بانر عريض بعرض الشاشة أعلى الصفحة (Monetag Vignette) */}
+        <div className="w-full flex justify-center pb-4">
+          <VignetteSlot guard="vignette-top" />
+        </div>
         {/* Layout: [بوستر 300px] [بيانات 1fr] [كاست 160px] [إعلان سايدبار 160px (lg فقط)]
             md (768–1023): 3 أعمدة بدون عمود الإعلان — منع الحجز الفاضي وتكدّس/قص الكاست.
             minmax(0,1fr) بدل 1fr: يمنع عمود البيانات من التمدد فوق مساحته (grid min-width:auto) */}
@@ -613,12 +617,6 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
           </div>
 
         </div>
-      </div>
-
-      {/* فاصل إعلاني (Monetag Vignette Banner عريض) — بعد المشغّل وقبل «قد يعجبك أيضاً»
-          — محل زون 468×60 أدستيرا الميتة */}
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 pb-10 flex justify-center">
-        <VignetteSlot guard="vignette-details" />
       </div>
 
       {/* Similar Movies Section — بيانات من الـSSR (روابط حقيقية في HTML أولي، بلا Skeleton) */}

@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Film, Tv, ChevronLeft, Flame } from 'lucide-react'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { getGenreColor } from '@/utils/genreColors'
-import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { VignetteSlot } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { Footer } from '@/components/layout/Footer'
@@ -40,9 +39,9 @@ export function GenreOverviewPageClient({
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 pt-20 pb-12">
       <div className="page-container">
-        {/* بنر 728×90 — نظام AdFrame (بدون طلبات وسيطة، لا CLS، يختفي بصمت عند الفشل) */}
+        {/* أعلى الصفحة: Monetag Vignette Banner بعرض الشاشة */}
         <div className="mb-6 flex justify-center">
-          <AdFrame ad={AD_HEADER} variant="x" />
+          <VignetteSlot guard="vignette-top" />
         </div>
 
         {/* مسار التنقل (SEO + UX) */}
@@ -181,11 +180,6 @@ export function GenreOverviewPageClient({
             </div>
           )}
         </section>
-
-        {/* فاصل إعلاني: Monetag Vignette Banner عريض — محل زون 468×60 الميتة */}
-        <div className="flex justify-center px-4 py-2 mt-8">
-          <VignetteSlot guard="vignette-genre" />
-        </div>
       </div>
 
       <div className="pb-12"><Footer /></div>
