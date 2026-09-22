@@ -71,8 +71,9 @@ function SnippetBox({
     const el = ref.current
     if (!el || failed) return
     if (el.childElementCount === 0) injectHtml(el, snippet)
-    // فحص الفشل: بلا محتوى بعد 6s ثم تأكيد عند 12s → إخفاء كامل (سياسة الفشل)
-    const probes = [6000, 12000].map((ms) =>
+    // فحص الفشل: سكربتات الشبكات بتاخد وقت في المزاد قبل ما ترسم iframe —
+    // فحص أولي عند 10s وتأكيد عند 25s → إخفاء كامل (سياسة الفشل)
+    const probes = [10000, 25000].map((ms) =>
       window.setTimeout(() => {
         if (!slotHasContent(ref.current)) {
           setFailed(true)
