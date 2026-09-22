@@ -123,11 +123,11 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
     return `https://www.youtube.com/embed/${trailerKey}?${params.toString()}`
   }, [trailerKey])
 
-  /* تسليح البوباندَر مسبقًا: السكربت يتحمّل هنا بدل لحظة ضغطة المشاهدة —
-     عشان يفتح من أول ضغطة (الحقن لحظة الضغطة بيموت مع التنقل للمشغّل) */
+  /* تسليح البوباندَر فور فتح الصفحة (بلا أي تأخير): سكربت الشبكة محتاج 1-2s
+     يتجهز بعد التحميل — أي تأخير إضافي كان بيخلي ضغطة المشاهدة تسبقه فيفتح
+     البوبندر في الضغطة التالية بدل الأولى */
   useEffect(() => {
-    const t = setTimeout(() => preArmPopunder(), 2000)
-    return () => clearTimeout(t)
+    preArmPopunder()
   }, [])
   
   // Sync volume with YouTube iframe
