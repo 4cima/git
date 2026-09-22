@@ -115,7 +115,9 @@ export function watchFlowStart(): { fired: boolean; waitForMs: number } {
     if (state.fired[net]) return false
     const cfg = popunderConfig(net)
     if (!cfg) return false
-    injectPopunder(net, cfg)
+    // السكربت ممكن يكون متسلّح مسبقًا (preArmPopunder في صفحات التفاصيل) —
+    // الحقن التاني كان هيحمّل نسخة مكررة؛ المتسلّح يفتح بنفسه داخل هذه الضغطة
+    if (!document.querySelector('script[src="' + cfg.scriptUrl + '"]')) injectPopunder(net, cfg)
     state.fired[net] = true
     state.lastPopAt = Date.now()
     return true
@@ -152,4 +154,28 @@ export function watchFlowStart(): { fired: boolean; waitForMs: number } {
 
   writeState(state)
   return { fired, waitForMs }
+}
+
+let preArmedOnce = false
+
+/**
+ * تسليح مسبق للبوباندَر — يُنادى من صفحات التفاصيل بعد استقرار الصفحة.
+ * السبب: الحقن لحظة الضغطة كان متأخرًا — سكربت الشبكة يحمل بعد 1-3s والانتقال
+ * للمشغّل (4cima.stream — مستند مختلف) بيدمّر الصفحة قبله، فيفتح البوبندر في
+ * الضغطة التالية فقط (مؤكد من اسلام). بالتسليح المبكر السكربت محمّل ومتسلّح
+ * قبل ضغطة المشاهدة فيفتح من أول ضغطة.
+ * الفتح نفسه يبقى دائمًا داخل ضغطة حقيقية — السكربت مش بيفتح بغير ضغطة.
+ */
+export function preArmPopunder(): void {
+  if (preArmedOnce || typeof window === 'undefined') return
+  preArmedOnce = true
+  if (!FLAGS.ADS_ENABLED) return
+  const state = readState()
+  for (const net of ['hilltop', 'monetag'] as NetworkId[]) {
+    if (state.fired[net]) continue
+    const cfg = popunderConfig(net)
+    if (!cfg) continue
+    if (document.querySelector('script[src="' + cfg.scriptUrl + '"]')) continue
+    injectPopunder(net, cfg)
+  }
 }

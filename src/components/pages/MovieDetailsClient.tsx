@@ -12,6 +12,7 @@ import { useImageBrightness } from '@/utils/imageAnalysis'
 import { MovieCard } from '@/components/features/media/MovieCard'
 import { useAuth } from '@/hooks/useAuth'
 import { openWatchWithPlayer } from '@/lib/openWatch'
+import { preArmPopunder } from '@/lib/ads/waterfall'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
 import { VignetteSlot, InPagePushSlot, NativeCardSlot } from '@/components/features/system/adsV2'
 import { getAdByNum } from '@/data/ads/4cima.com'
@@ -121,6 +122,13 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
     })
     return `https://www.youtube.com/embed/${trailerKey}?${params.toString()}`
   }, [trailerKey])
+
+  /* تسليح البوباندَر مسبقًا: السكربت يتحمّل هنا بدل لحظة ضغطة المشاهدة —
+     عشان يفتح من أول ضغطة (الحقن لحظة الضغطة بيموت مع التنقل للمشغّل) */
+  useEffect(() => {
+    const t = setTimeout(() => preArmPopunder(), 2000)
+    return () => clearTimeout(t)
+  }, [])
   
   // Sync volume with YouTube iframe
   useEffect(() => {
