@@ -14,7 +14,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { openWatchWithPlayer } from '@/lib/openWatch'
 import { preArmPopunder } from '@/lib/ads/waterfall'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
-import { VignetteSlot, InPagePushSlot, NativeCardSlot } from '@/components/features/system/adsV2'
+import { VignetteSlot, InPagePushSlot, NativeCardSlot, StickyBottomAd } from '@/components/features/system/adsV2'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 /* الإعلانات المرجعية لصفحة تفاصيل الفيلم — أرقام ثابتة من ملف بيانات 4cima.com:
@@ -687,6 +687,9 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
       )}
 
       <Footer />
+
+      {/* الشريط السفلي الثابت للموبايل (هيلتوب 300×100) — نفس باقي الصفحات */}
+      <StickyBottomAd />
     </div>
   )
 }
