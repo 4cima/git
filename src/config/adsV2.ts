@@ -64,11 +64,15 @@ export const ADS_V2 = {
 
   /**
    * In-Page Push (Monetag) — زون 11699161 (Great tag)
-   * محل 160×600 سايدبار التفاصيل — الكود من اسلام (nap5k.com/tag.min.js)
+   * ⛔ معطّل بأمر اسلام 2026-09-25 — «احذف إشعارات مونتاج» — أقل إعلان عائدًا في
+   * المنظومة ($0.004/يوم) بينما ياخد سايدبار صفحات التفاصيل.
+   * للترجيع: أعد لصق الرابط (الزون شغالة على مونتاج):
+   *   zoneId: '11699161',
+   *   scriptSrc: 'https://nap5k.com/tag.min.js'
    */
   inPagePush: {
-    zoneId: '11699161',
-    scriptSrc: 'https://nap5k.com/tag.min.js',
+    zoneId: '',
+    scriptSrc: '',
   },
 
   /**
