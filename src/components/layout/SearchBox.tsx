@@ -115,6 +115,11 @@ function YouTubeKeyboard({ onKeyPress, onClose }: { onKeyPress: (key: string) =>
 export function SearchBox() {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
+  // زرار تحميل التطبيق مخفي داخل تطبيق فور سيما نفسه (مفيش منطق لتحميل التطبيق وأنت فيه)
+  const [showDownload, setShowDownload] = useState(false)
+  useEffect(() => {
+    setShowDownload(!/FourCimaApp/.test(navigator.userAgent))
+  }, [])
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
@@ -480,8 +485,8 @@ export function SearchBox() {
 
   return (
     <div ref={searchRef} className="relative flex items-center gap-3">
-      {/* Android App Button — تحميل التطبيق الرسمي (APK موقّع على /app/4cima-app.apk) — مجسم: إطار متدرج + قرص بارز */}
-      {!isOpen && (
+      {/* Android App Button — تحميل التطبيق الرسمي (APK موقّع على /app/4cima-app.apk) — مجسم: إطار متدرج + قرص بارز — مخفي داخل التطبيق */}
+      {!isOpen && showDownload && (
         <a
           href="/app/4cima-app.apk"
           download
