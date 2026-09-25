@@ -20,20 +20,20 @@ html {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  تأكيد اللمس — كل ضغطة على الكارت بتتلمس فورًا تحت الصباع (بلا تأخير)       */
+/*  تأكيد اللمس — إضاءة فقط بلا scale: أي تحريك للحدود بيفشل الكليك قرب الأطراف */
 /* -------------------------------------------------------------------------- */
 .card-polished {
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition: filter 0.15s ease, opacity 0.15s ease;
 }
 .card-polished:active {
-  transform: scale(0.965);
-  opacity: 0.82;
-  transition: transform 0.08s ease, opacity 0.08s ease;
+  filter: brightness(1.35);
+  opacity: 0.9;
+  transition: filter 0.08s ease, opacity 0.08s ease;
 }
 /* الفوري لحظة النزول — عبر مستمع اللمس في ClientInit (بلا أي انتظار) */
 .touch-pressed {
-  transform: scale(0.965) !important;
-  opacity: 0.82 !important;
+  filter: brightness(1.35) !important;
+  opacity: 0.9 !important;
   transition: none !important;
 }
 
