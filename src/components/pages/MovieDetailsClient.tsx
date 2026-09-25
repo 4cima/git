@@ -110,13 +110,11 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
     if (!trailerKey) return null
     const params = new URLSearchParams({
       autoplay: '1',
-      controls: '1',
+      controls: '0', // واجهتنا الخاصة (إغلاق/صوت/فول سكرين) — من غير شريط يوتيوب
       modestbranding: '1',
       rel: '0',
-      showinfo: '0',
       fs: '0', // Disable YouTube's fullscreen button
       iv_load_policy: '3',
-      vq: 'medium', // Force 480p quality
       disablekb: '1', // Disable keyboard controls to prevent conflicts
       enablejsapi: '1' // Enable JavaScript API for volume control
     })
@@ -330,11 +328,43 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
 
   const handleOpenTrailer = () => {
     setIsModalOpen(true)
+    // فول سكرين أفقي فوري — لازم يتنفذ جوه نطاق ضغطة المستخدم (transient activation)
+    requestAnimationFrame(() => {
+      const modalElement = document.querySelector('.trailer-modal') as HTMLElement | null
+      if (modalElement && !document.fullscreenElement) {
+        modalElement.requestFullscreen?.()
+          .then(() => {
+            ;(screen.orientation as any)?.lock?.('landscape')?.catch(() => {})
+          })
+          .catch(() => {})
+      }
+    })
   }
 
   const handleCloseTrailer = () => {
     setIsModalOpen(false)
+    // لو المودال ماخدة فول سكرين — نخرج عشان الصفحة ماتفضلش فول سكرين بعد القفل
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => {})
+    }
   }
+
+  // دفعة تشغيل فورية مزدوجة — autoplay الجاهز بيتعوق أحيانًا، بنكبه بأمر playVideo بعد تحميل الإطار
+  useEffect(() => {
+    if (!isModalOpen) return
+    const sendPlay = () => {
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+        'https://www.youtube.com'
+      )
+    }
+    const t1 = setTimeout(sendPlay, 600)
+    const t2 = setTimeout(sendPlay, 1800)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [isModalOpen])
 
   const toggleFullscreen = () => {
     const modalElement = document.querySelector('.trailer-modal') as HTMLElement
