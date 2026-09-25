@@ -1,12 +1,20 @@
 @import "tailwindcss";
 
 /* -------------------------------------------------------------------------- */
+/*  سلوك اللمس — تطبيقي: نقرة واحدة فورية بلا تسليح النقرة المزدوجة            */
+/*  (manipulation = pan + pinch-zoom مسموحين، double-tap-zoom مقفول)           */
+/* -------------------------------------------------------------------------- */
+html {
+  touch-action: manipulation;
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Performance helpers — reduce render cost of offscreen rows (INP/CLS)       */
 /* -------------------------------------------------------------------------- */
 .horizontal-scroll {
   overflow-x: auto;
   overflow-y: hidden;
-  touch-action: auto;
+  touch-action: manipulation;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
