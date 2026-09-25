@@ -480,19 +480,21 @@ export function SearchBox() {
 
   return (
     <div ref={searchRef} className="relative flex items-center gap-3">
-      {/* Android App Button — تحميل التطبيق الرسمي (APK موقّع على /app/4cima-app.apk) */}
+      {/* Android App Button — تحميل التطبيق الرسمي (APK موقّع على /app/4cima-app.apk) — مجسم: إطار متدرج + قرص بارز */}
       {!isOpen && (
         <a
           href="/app/4cima-app.apk"
           download
-          className="relative h-9 px-2.5 bg-gradient-to-br from-slate-800/95 to-slate-700/95 hover:from-slate-700/95 hover:to-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 group overflow-hidden animate-[nav-enter-left_0.3s_ease-out] hover:scale-[1.02] active:scale-[0.98]"
           aria-label="تحميل التطبيق"
+          className="group relative h-9 rounded-lg bg-gradient-to-b from-emerald-400/50 to-emerald-700/20 p-[1.5px] shadow-[0_5px_14px_-4px_rgba(0,0,0,0.75)] transition-all duration-300 overflow-hidden animate-[nav-enter-left_0.3s_ease-out] hover:shadow-[0_8px_22px_-4px_rgba(16,185,129,0.4)] active:translate-y-[1px]"
         >
-          <div className="flex items-center gap-1.5 relative z-10">
-            <svg className="w-6 h-6 text-green-400 group-hover:text-green-300 transition-colors" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5"/>
-            </svg>
-            <span className="hidden sm:inline text-sm font-semibold text-slate-200 group-hover:text-white transition-colors whitespace-nowrap">تحميل التطبيق</span>
+          <div className="flex h-full items-center gap-2 rounded-[7px] bg-gradient-to-b from-slate-800 to-slate-950 px-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-1px_0_rgba(0,0,0,0.5)]">
+            <span className="relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-emerald-400 to-emerald-700 shadow-[0_2px_5px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.4)] transition-transform duration-300 group-hover:scale-110">
+              <svg className="h-[14px] w-[14px] text-slate-950 transition-transform duration-300 group-hover:-translate-y-[0.5px]" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5"/>
+              </svg>
+            </span>
+            <span className="hidden sm:inline text-[12.5px] font-extrabold tracking-wide text-slate-200 group-hover:text-white transition-colors whitespace-nowrap">تحميل التطبيق</span>
           </div>
         </a>
       )}
