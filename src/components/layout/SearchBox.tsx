@@ -480,19 +480,21 @@ export function SearchBox() {
 
   return (
     <div ref={searchRef} className="relative flex items-center gap-3">
-      {/* Android App Button - Coming Soon (يختفي فقط أثناء فتح البحث — يظهر دائماً في كل المقاسات) */}
+      {/* Android App Button — تحميل التطبيق الرسمي (APK موقّع على /app/4cima-app.apk) */}
       {!isOpen && (
-        <button
+        <a
+          href="/app/4cima-app.apk"
+          download
           className="relative h-9 px-2.5 bg-gradient-to-br from-slate-800/95 to-slate-700/95 hover:from-slate-700/95 hover:to-slate-600/95 backdrop-blur-sm border border-slate-500/50 hover:border-slate-400 rounded-md shadow-lg transition-all duration-300 group overflow-hidden animate-[nav-enter-left_0.3s_ease-out] hover:scale-[1.02] active:scale-[0.98]"
-          aria-label="التطبيق قريباً"
+          aria-label="تحميل التطبيق"
         >
           <div className="flex items-center gap-1.5 relative z-10">
             <svg className="w-6 h-6 text-green-400 group-hover:text-green-300 transition-colors" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.43 11.43 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.81 10.81 0 0 0 1 18h22a10.81 10.81 0 0 0-5.4-8.52M7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5m10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5"/>
             </svg>
-            <span className="hidden sm:inline text-sm font-semibold text-slate-200 group-hover:text-white transition-colors whitespace-nowrap">قريباً</span>
+            <span className="hidden sm:inline text-sm font-semibold text-slate-200 group-hover:text-white transition-colors whitespace-nowrap">تحميل التطبيق</span>
           </div>
-        </button>
+        </a>
       )}
 
       {/* Search Button - Modern Glass Design */}
