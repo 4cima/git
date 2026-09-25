@@ -158,6 +158,8 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
     if (!isModalOpen) return
 
     const handleScroll = () => {
+      // جوه الفول سكرين المتصفح بيطلق scroll وهو بيكبّر العنصر/بيدوّر الشاشة — ماتقفلش
+      if (document.fullscreenElement) return
       handleCloseTrailer()
     }
 
