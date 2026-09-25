@@ -11,15 +11,18 @@ import { useInitAuth } from '@/hooks/useInitAuth'
 export function ClientInit() {
   useInitAuth()
 
-  /* تأكيد اللمس — كل ضغطة بتتلمس لحظة نزول الصباع (بلا أي انتظار) + ضمانة الفتح:
-     1) :active بتتأخر جوه الصفوف القابلة للسكرول فبنحط class فوري على أقرب عنصر تفاعلي
-        — تأثير إضاءة بس (بلا scale) عشان حدود العنصر ماتتحركش والكليك ماتفشلش.
-     2) لو المتصفح ألغى كليك نقرة نظيفة على لينك (انحراف بالبكسل) بنستدينه بعد 100ms.
-     3) اهتزازة تأكيد خفيفة بس للنقرات الحقيقية على مكوّنات — لا للفاضي ولا للسكرول. */
+  /* تأكيد اللمس — الحكم بالسكرول الفعلي مش انحراف الصباع (يحل غموض صفوف الرئيسية
+     بين نقرة/سكرول عمودي/سكرول أفقي): لو الصفحة والصف ماتحركوش = دي ضغطة مضمونة.
+     + ضمانة الفتح (استرجاع كليك لينك ملغي بعد 100ms) + اهتزاز تأكيد يقرأ
+     مفتاح fc_haptics من localStorage (بيتزامن من إعدادات التطبيق النايتيف). */
   useEffect(() => {
     const SEL = '.card-polished, a, button, [role="button"]'
     let pressed: Element | null = null
     let linkEl: HTMLAnchorElement | null = null
+    let rowEl: HTMLElement | null = null
+    let scrollX0 = 0
+    let scrollY0 = 0
+    let rowScroll0 = 0
     let startX = 0
     let startY = 0
     let startAt = 0
@@ -40,6 +43,10 @@ export function ClientInit() {
       const target = e.target as Element | null
       pressed = target?.closest?.(SEL) ?? null
       linkEl = (target?.closest?.('a[href]') as HTMLAnchorElement) ?? null
+      rowEl = (target?.closest?.('.horizontal-scroll') as HTMLElement | null) ?? null
+      scrollX0 = window.scrollX
+      scrollY0 = window.scrollY
+      rowScroll0 = rowEl?.scrollLeft ?? 0
       const t = e.touches[0]
       startX = t?.clientX ?? 0
       startY = t?.clientY ?? 0
@@ -59,15 +66,19 @@ export function ClientInit() {
       const link = linkEl
       linkEl = null
       if (!t || !link) return
-      const dx = t.clientX - startX
-      const dy = t.clientY - startY
-      if (Math.hypot(dx, dy) > 10 || Date.now() - startAt > 400) return
+      // هل اتحركت حاجة فعلًا؟ (صفحة/صف) — ده الفيصل بين الضغطة والسحب
+      const pageMoved = Math.abs(window.scrollX - scrollX0) > 8 || Math.abs(window.scrollY - scrollY0) > 8
+      const rowMoved = rowEl ? Math.abs(rowEl.scrollLeft - rowScroll0) > 8 : false
+      if (pageMoved || rowMoved) return
+      if (Date.now() - startAt > 600) return
       // الإصبع لسه فعلاً على اللينك؟ لو انزلق بره فدي مش نية فتح
       const endTarget = document.elementFromPoint(t.clientX, t.clientY)
       const stillOn = !!endTarget && (link === endTarget || link.contains(endTarget) || endTarget.contains(link))
       if (!stillOn) return
-      // نقرة حقيقية على مكوّن — اهتزازة تأكيد خفيفة (بيحترم إعدادات النظام)
-      navigator.vibrate?.(10)
+      // نقرة حقيقية على مكوّن — اهتزازة تأكيد (لو مفعّلة من إعدادات التطبيق)
+      let hapticsOff = false
+      try { hapticsOff = localStorage.getItem('fc_haptics') === 'off' } catch { }
+      if (!hapticsOff) navigator.vibrate?.(10)
       // ضمانة الفتح — للأنكورات بس عشان مفيش تفعيل مزدوج للأزرار
       clickPassed = false
       window.setTimeout(() => {

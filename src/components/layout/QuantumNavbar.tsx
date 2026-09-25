@@ -17,6 +17,8 @@ export const QuantumNavbar = memo(() => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { user, profile, signOut } = useAuth()
+  // داخل تطبيق فور سيما فقط (الـUA فيه بصمة FourCimaApp) — لعنصر إعدادات التطبيق
+  const isApp = typeof navigator !== 'undefined' && /FourCimaApp/.test(navigator.userAgent)
   // Full current path (+query) so the login link returns to the same page.
   // Resolved client-side only (useSearchParams would force a CSR bailout and
   // break static prerendering of pages using the navbar).
@@ -401,6 +403,27 @@ export const QuantumNavbar = memo(() => {
                     </div>
                   </div>
                 </div>
+
+                {/* إعدادات التطبيق — يظهر داخل تطبيق فور سيما فقط */}
+                {isApp && (
+                  <div className="px-2.5 pb-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSidebarOpen(false)
+                        window.location.href = 'fourcima://settings'
+                      }}
+                      className="group relative block w-full rounded-xl bg-gradient-to-b from-amber-300/45 to-amber-500/15 p-[1.5px] shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)] transition-all duration-300 hover:shadow-[0_0_18px_rgba(252,211,77,0.25)] active:translate-y-[1px]"
+                    >
+                      <span className="flex items-center gap-2.5 rounded-[10px] bg-gradient-to-b from-slate-800 to-slate-950 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.5)]">
+                        <Settings size={15} className="shrink-0 text-amber-300" />
+                        <span className="text-[12px] font-extrabold tracking-wide text-slate-200">
+                          إعدادات التطبيق
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                )}
 
 
               </div>
