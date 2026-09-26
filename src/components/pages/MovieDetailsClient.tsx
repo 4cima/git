@@ -14,7 +14,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { openWatchWithPlayer } from '@/lib/openWatch'
 import { preArmPopunder } from '@/lib/ads/waterfall'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
-import { VignetteSlot, InPagePushSlot, NativeCardSlot, StickyBottomAd } from '@/components/features/system/adsV2'
+import { VignetteSlot, InPagePushSlot, NativeCardSlot, StickyBottomAd, MultiTagSlot } from '@/components/features/system/adsV2'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
 /* الإعلانات المرجعية لصفحة تفاصيل الفيلم — أرقام ثابتة من ملف بيانات 4cima.com:
@@ -430,9 +430,9 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
               )}
             </div>
 
-            {/* 300×250 تحت البوستر — بنر Adsterra الرابح (لمسة صفرية) */}
+            {/* 300×250 تحت البوستر — سلوت ذكي: هيلتوب In-Page شغال، وبنر أدستيرا القديم احتياطي */}
             <div className="mt-3 flex justify-center">
-              <AdFrame ad={AD_AFTER_PLAYER} variant="x" />
+              <MultiTagSlot legacy={<AdFrame ad={AD_AFTER_PLAYER} variant="x" />} />
             </div>
 
             {/* Keywords under poster */}

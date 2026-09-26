@@ -17,8 +17,15 @@ import { getAdByNum } from '@/data/ads/4cima.com'
 
 /** حقن HTML شبكة (يشمل وسوم script) داخل حاوية — innerHTML لا ينفذ السكربتات
  *  فنُعيد إنشاءها كعناصر حقيقية مع نسخ كل الخصائص. */
-/** حقن سكربت شبكة مباشرة (بلا DOMParser — كان بيفشل بصمت في المتصفح) */
-function injectScriptTo(container: HTMLElement, src: string, zoneId?: string): void {
+/** حقن سكربت شبكة مباشرة (بلا DOMParser — كان بيفشل بصمت في المتصفح).
+ *  containerId: أدستيرا Native بيرسم جوه div بمعرّف حرفي container-<hash>
+ *  لازم يكون جنب السكربت قبل تحميله — فبتولّد هنا من رابط السكربت نفسه. */
+function injectScriptTo(container: HTMLElement, src: string, zoneId?: string, containerId?: string): void {
+  if (containerId && !container.querySelector('[id="' + containerId + '"]')) {
+    const box = document.createElement('div')
+    box.id = containerId
+    container.appendChild(box)
+  }
   const s = document.createElement('script')
   s.src = src
   s.async = true
@@ -43,6 +50,8 @@ function slotHasIframe(container: HTMLElement | null): boolean {
 type SnippetBoxProps = {
   scriptSrc: string
   zoneId?: string
+  /** حاوية بمعرّف حرفي تتولَّد قبل السكربت (أدستيرا Native) */
+  containerId?: string
   /** أبعاد محجوزة من أول رسمة (CLS صفر) */
   width?: number
   height?: number
@@ -58,6 +67,7 @@ type SnippetBoxProps = {
 function SnippetBox({
   scriptSrc,
   zoneId,
+  containerId,
   width,
   height,
   minHeight,
@@ -72,12 +82,12 @@ function SnippetBox({
   useEffect(() => {
     const el = ref.current
     if (!el || failed) return
-    if (el.childElementCount === 0) injectScriptTo(el, scriptSrc, zoneId)
+    if (el.childElementCount === 0) injectScriptTo(el, scriptSrc, zoneId, containerId)
     // المزاد الإعلاني بياخد 8-15s أحيانًا قبل رسم الـiframe (مُثبت قياسًا) —
     // فأي مؤشر مبكر بيقفل خانة هتتملى. إعادة حقن احتياطية عند 12s لو الحقن
     // الأول فشل بصمت، والفصل النهائي الوحيد عند 25s.
     const reinject = window.setTimeout(() => {
-      if (ref.current && ref.current.childElementCount === 0) injectScriptTo(ref.current, scriptSrc, zoneId)
+      if (ref.current && ref.current.childElementCount === 0) injectScriptTo(ref.current, scriptSrc, zoneId, containerId)
     }, 12000)
     const finalProbe = window.setTimeout(() => {
       if (!slotHasIframe(ref.current)) {
@@ -89,7 +99,7 @@ function SnippetBox({
       clearTimeout(reinject)
       clearTimeout(finalProbe)
     }
-  }, [scriptSrc])
+  }, [scriptSrc, containerId])
 
   if (!scriptSrc.trim()) return null
   if (failed && failurePolicy === 'hide') return null
@@ -175,10 +185,12 @@ export function NativeCardSlot({
 }) {
   if (!FLAGS.ADS_ENABLED) return null
   if (!ADS_V2.native.scriptSrc.trim()) return <>{legacy}</>
+  const hash = ADS_V2.native.scriptSrc.match(/\/([0-9a-f]{16,64})\/invoke\.js/)?.[1]
   return (
     <SnippetBox
       scriptSrc={ADS_V2.native.scriptSrc}
       zoneId={ADS_V2.native.zoneId}
+      containerId={hash ? 'container-' + hash : undefined}
       minHeight={fit === 'row' ? 240 : 260}
       guard={fit === 'row' ? 'native-row' : 'native-block'}
       failurePolicy={fit === 'row' ? 'ghost' : 'hide'}
@@ -187,6 +199,33 @@ export function NativeCardSlot({
           ? 'flex-shrink-0 w-40 sm:w-48 rounded-2xl overflow-hidden'
           : 'w-full rounded-xl overflow-hidden'
       }
+    />
+  )
+}
+
+/**
+ * سلوت هيلتوب MultiTag In-Page 300×250 — سلوت ذكي: الوحدة الجديدة لو مفعّلة،
+ * وإلا القديم (legacy) يكمل شغله حتى التحول — صفر خسارة عائد أثناء الانتقال.
+ * الموضع المعتمد: تحت بوستر صفحات التفاصيل (ويدجت In-Page + Popup مدمجين).
+ */
+export function MultiTagSlot({
+  legacy,
+  className = 'w-full',
+  minHeight = 250,
+}: {
+  legacy?: ReactNode
+  className?: string
+  minHeight?: number
+}) {
+  if (!FLAGS.ADS_ENABLED) return legacy ?? null
+  if (!hasScriptSrc(ADS_V2.multiTag)) return <>{legacy}</>
+  return (
+    <SnippetBox
+      scriptSrc={ADS_V2.multiTag.scriptSrc}
+      zoneId={ADS_V2.multiTag.zoneId}
+      minHeight={minHeight}
+      guard="multi-tag"
+      className={className}
     />
   )
 }
