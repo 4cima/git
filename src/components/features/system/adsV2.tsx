@@ -18,19 +18,20 @@ import { getAdByNum } from '@/data/ads/4cima.com'
 /** حقن HTML شبكة (يشمل وسوم script) داخل حاوية — innerHTML لا ينفذ السكربتات
  *  فنُعيد إنشاءها كعناصر حقيقية مع نسخ كل الخصائص. */
 /** حقن سكربت شبكة مباشرة (بلا DOMParser — كان بيفشل بصمت في المتصفح).
- *  containerId: أدستيرا Native بيرسم جوه div بمعرّف حرفي container-<hash>
- *  لازم يكون جنب السكربت قبل تحميله — فبتولّد هنا من رابط السكربت نفسه. */
+ *  containerId: أدستيرا Native بيرسم جوه div بمعرّف حرفي container-<hash> —
+ *  كود GET CODE الرسمي بيرتبهم السكربت الأول ثم الحاوية بعده مباشرة،
+ *  فبنلتزم بترتيبه الحرفي فأي نمط بحث جوه السكربت (بالمعرّف أو كجار) هيلاقيها. */
 function injectScriptTo(container: HTMLElement, src: string, zoneId?: string, containerId?: string): void {
-  if (containerId && !container.querySelector('[id="' + containerId + '"]')) {
-    const box = document.createElement('div')
-    box.id = containerId
-    container.appendChild(box)
-  }
   const s = document.createElement('script')
   s.src = src
   s.async = true
   if (zoneId) s.dataset.zone = zoneId
   container.appendChild(s)
+  if (containerId && !container.querySelector('[id="' + containerId + '"]')) {
+    const box = document.createElement('div')
+    box.id = containerId
+    container.appendChild(box)
+  }
 }
 
 /** حقن تاج مونتاج في الـbody — نفس نمط مونتاج حرفيًا (مونتاج بيقرر مكان الرسم بنفسه) */
