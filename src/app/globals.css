@@ -2566,3 +2566,18 @@ h1 {
    fade + y10 خلال 0.45s ease-out = نفس قيم framer السابقة، يعمل مرة عند التحميل */
 .listing-title-in { animation: nav-fade-up 0.45s ease-out both; }
 @media (prefers-reduced-motion: reduce) { .listing-title-in { animation: none; } }
+
+/* -------------------------------------------------------------------------- */
+/*  شاشات اللمس (موبايل/تابلت): مفيش سكرول بار — السحب بالإصبع والتطبيقات       */
+/*  العالمية بتفضله مخفي (الديسكتوب بالماوس شايله عادي)                        */
+/* -------------------------------------------------------------------------- */
+@media (hover: none) and (pointer: coarse) {
+  * {
+    scrollbar-width: none !important;
+  }
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+}
