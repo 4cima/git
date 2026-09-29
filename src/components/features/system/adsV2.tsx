@@ -226,6 +226,9 @@ export function MultiTagSlot({
       zoneId={ADS_V2.multiTag.zoneId}
       minHeight={minHeight}
       guard="multi-tag"
+      /* ghost لا hide: لو الإعلان فشل يفضل المكان محجوز مخفي — إخفاؤه الكلي
+         بعد 25s كان بيزق المحتوى اللي تحت البوستر ويسجل CLS (درس c292c32) */
+      failurePolicy="ghost"
       className={className}
     />
   )
