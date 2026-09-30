@@ -80,25 +80,31 @@ export async function openWatchWithPlayer(target: WatchTarget): Promise<void> {
   // الـgesture الحقيقي، وفشلها لا يمنع المشاهدة أبدًا.
   const flow = watchFlowStart()
   let url = toPlayerUrl(target)
-  try {
-    const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), 1500)
-    const res = await fetch('/api/player/token', { signal: ctrl.signal })
-    clearTimeout(timer)
-    if (res.ok) {
-      const data = await res.json()
-      if (data?.token) {
-        url += (url.includes('?') ? '&' : '?') + `pt=${encodeURIComponent(data.token)}`
+  // جلب توكن الجسر وانتظار سكربت الشبكة **بالتوازي** — كانوا متسلسلين
+  // (≤1.5s توكن ثم ~1s انتظار بوباندَر) فبيضيفوا لحتى 2.5s قبل فتح المشغّل
+  // في كل ضغطة مشاهدة. التوازي بيوفّر ~ثانية ولا يغيّر توقيت الإعلان إطلاقًا.
+  const tokenPromise = (async (): Promise<string | undefined> => {
+    try {
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 1500)
+      const res = await fetch('/api/player/token', { signal: ctrl.signal })
+      clearTimeout(timer)
+      if (res.ok) {
+        const data = await res.json()
+        return data?.token as string | undefined
       }
+    } catch {
+      /* bridge unavailable — watch without it */
     }
-  } catch {
-    /* bridge unavailable — watch without it */
-  }
-  if (flow.waitForMs > 0) {
-    // أعطِ سكربت الشبكة (المحقون داخل الضغطة) فرصة قصيرة لتشغيل البوبندر
-    // قبل التنقل في نفس التاب — التنقل الفوري في نفس اللحظة قد يقتل الـ
-    // window.open المعلّق. ~1s كحد أقصى، والتالي الحالي يكمل للمشغّل.
-    await new Promise((r) => setTimeout(r, flow.waitForMs))
+    return undefined
+  })()
+  const waitPromise: Promise<void> =
+    flow.waitForMs > 0
+      ? new Promise((r) => setTimeout(r, flow.waitForMs))
+      : Promise.resolve()
+  const [token] = await Promise.all([tokenPromise, waitPromise])
+  if (token) {
+    url += (url.includes('?') ? '&' : '?') + `pt=${encodeURIComponent(token)}`
   }
   if (flow.fired) {
     requestAnimationFrame(() =>

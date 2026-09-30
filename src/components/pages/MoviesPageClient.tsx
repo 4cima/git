@@ -247,9 +247,10 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
     order: sortOrder,
   }, lastWrittenQueryRef)
 
-  // Debounce search
+  // Debounce search — الـCinematicSearch بيعمل debounce داخلي 250ms بعد آخر
+  // حرف، فـ100ms هنا للتكملة فقط (كان 400 قبل التخزين الداخلي)
   useEffect(() => {
-    const t = setTimeout(() => { setPage(1); setDebouncedSearch(searchQuery) }, 400)
+    const t = setTimeout(() => { setPage(1); setDebouncedSearch(searchQuery) }, 100)
     return () => clearTimeout(t)
   }, [searchQuery])
 

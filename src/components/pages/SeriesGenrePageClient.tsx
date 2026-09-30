@@ -242,9 +242,9 @@ export function SeriesGenrePageClient({ genre, slug, initialSeries, initialHasMo
     order,
   }, lastWrittenQueryRef)
 
-  /* Debounce للبحث — نفس سلوك صفحات اللغة */
+  /* Debounce للبحث — الـCinematicSearch بيعمل debounce داخلي 250ms، فـ100ms هنا للتكملة فقط */
   useEffect(() => {
-    const t = setTimeout(() => { setPage(1); setDebouncedSearch(searchQuery) }, 400)
+    const t = setTimeout(() => { setPage(1); setDebouncedSearch(searchQuery) }, 100)
     return () => clearTimeout(t)
   }, [searchQuery])
 

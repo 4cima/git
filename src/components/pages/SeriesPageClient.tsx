@@ -249,9 +249,9 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
     order: sortOrder,
   }, lastWrittenQueryRef)
 
-  // Debounce search
+  // Debounce search — الـCinematicSearch بيعمل debounce داخلي 250ms، فـ100ms هنا للتكملة فقط
   useEffect(() => {
-    const t = setTimeout(() => { setPage(1); setDebouncedSearch(searchQuery) }, 400)
+    const t = setTimeout(() => { setPage(1); setDebouncedSearch(searchQuery) }, 100)
     return () => clearTimeout(t)
   }, [searchQuery])
 

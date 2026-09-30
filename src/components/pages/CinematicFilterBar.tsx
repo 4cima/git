@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ChevronDown, Search } from 'lucide-react'
 import {
   activeBtnClasses,
@@ -184,6 +184,29 @@ interface CinematicSearchProps {
 }
 
 export function CinematicSearch({ id, value, onChange, placeholder, ariaLabel, accent }: CinematicSearchProps) {
+  // تخزين داخلي مؤجل: الكتابة تحدّث هذا المكوّن وحده — الصفحة كلها (جريد
+  // الكتالوج) ما بتتعادش رسمتها مع كل حرف، وده كان سبب INP بطيء على خانات
+  // البحث. الإبلاغ للأب يوصل بعد 250ms سكون بعد آخر حرف، وأي تغيير خارجي
+  // (مسح شيبس البحث/تزامن الرابط) يتزامن فورًا مع الإنبوت.
+  const [inner, setInner] = useState(value)
+  const committedRef = useRef(value)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (value !== committedRef.current) {
+      setInner(value)
+      committedRef.current = value
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [value])
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+  const handleChange = (v: string) => {
+    setInner(v)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      committedRef.current = v
+      onChange(v)
+    }, 250)
+  }
   const focusRing =
     accent === 'movie'
       ? 'focus:border-[#b91c1c] focus:ring-2 focus:ring-[#b91c1c]/40'
@@ -195,8 +218,8 @@ export function CinematicSearch({ id, value, onChange, placeholder, ariaLabel, a
         id={id}
         name="search"
         placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
+        value={inner}
+        onChange={e => handleChange(e.target.value)}
         className={`w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 pr-10 text-zinc-100 placeholder-zinc-500 focus:outline-none ${focusRing} text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300`}
         aria-label={ariaLabel}
       />
