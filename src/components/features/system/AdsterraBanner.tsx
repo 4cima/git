@@ -189,6 +189,8 @@ export function AdFrame({ ad, variant }: { ad: AdRecord; variant: 'x' | 'y' }) {
   const [failed, setFailed] = useState(false)
   const onFailure = useCallback(() => setFailed(true), [])
   if (!FLAGS.ADS_ENABLED) return null
+  // زون معطّلة من ملف البيانات (enabled: false) → لا صندوق ولا سكربت إطلاقًا
+  if (ad.enabled === false) return null
   if (variant === 'y') {
     return (
       <div className={`${FRAME_Y} w-full`} style={failed ? { visibility: 'hidden' } : undefined}>

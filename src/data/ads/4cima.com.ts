@@ -58,7 +58,8 @@ export const ADS_4CIMA_COM: AdRecord[] = [
     height: 90,
     size: '728x90',
     placementHint: 'بنر أفقي كبير — أعلى الصفحة تحت الهيدر أو فوق الهيرو',
-    notes: 'أفضل بنر للديسكتوب في أعلى الصفحة',
+    notes: '⛔ مُعطّل 2/10 بحكم الأرقام: 482 ظهور/يوم → $0.00 (eCPM صفر) — رأس صفحات الكتالوجات. للترجيع: enabled: true',
+    enabled: false,
   },
   {
     num: 2,

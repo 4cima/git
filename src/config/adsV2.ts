@@ -32,12 +32,17 @@ export const ADS_V2 = {
   },
 
   /**
-   * MultiTag In-Page 300×250 (HilltopAds) — تحت بوستر التفاصيل وترُوس الكتالوجات.
-   * زون 7448009 (4cima-inpage-300x250، معتمدة) — In-Page + Popup مدمجان.
+   * MultiTag In-Page 300×250 (HilltopAds) — زون 7448009 (4cima-inpage-300x250)
+   * ⛔ مُعطّل 2/10 بحكم الأرقام: 438 ظهور → ~$0.001 (eCPM $0.002) بينما البنر
+   * الرابح أدستيرا 300×250 (31008095) بيدفع $0.12/يوم بـeCPM $0.381 في نفس
+   * المقاس — بتفريغ الحقلين يرجع البنر الرابح تحت بوستر التفاصيل تلقائيًا
+   * (سلوت ذكي بلا خسارة عائد).
+   * للترجيع: أعد لصق الرابط (الزون شغالة على هيلتوب):
+   *   scriptSrc: 'https://conventionalresponse.com/bqXrVss.d/GTlw0UYNWmcS/he-ma9/uDZVUYl/kePaTUcu0LNWDTgUwnMnDpk/tGNszxQB0XOcD/A/x/M-wD'
    */
   multiTag: {
-    zoneId: '7448009',
-    scriptSrc: 'https://conventionalresponse.com/bqXrVss.d/GTlw0UYNWmcS/he-ma9/uDZVUYl/kePaTUcu0LNWDTgUwnMnDpk/tGNszxQB0XOcD/A/x/M-wD',
+    zoneId: '',
+    scriptSrc: '',
   },
 
   /**
@@ -78,21 +83,28 @@ export const ADS_V2 = {
 
   /**
    * ستيتشي الموبايل — هيلتوب MultiTag In-Page 300×100 (موبايل فقط)
-   * زون 7450617 (4cima-Mobile-Only) — الشريط السفلي الثابت بجميع الصفحات
-   * (المكوّن StickyBottomAd راكب في كل الصفحات عبر MobileStickyAd — بيتفعل تلقائيًا بالتعبئة)
+   * زون 7450617 (4cima-Mobile-Only)
+   * ⛔ مُعطّل 2/10 بحكم الأرقام: 717 ظهور في 8 أيام → $0.0005 (eCPM $0.001)
+   * — شريط دائم على كل صفحة موبايل ببلاش (قاعدة التنظيف: eCPM أقل من $0.05 يتشال).
+   * للترجيع: أعد لصق الرابط (الزون شغالة على هيلتوب):
+   *   scriptSrc: 'https://conventionalresponse.com/buXaV.s_d-G/le0NY/WmcT/QeTmc9Hu/ZSU/lUkDP/T/cw0kN/TtA/2/MFTGcbt/NWzsQQ1wMFD-YmynMPQq'
    */
   stickyMobile: {
     zoneId: '7450617',
-    scriptSrc: 'https://conventionalresponse.com/buXaV.s_d-G/le0NY/WmcT/QeTmc9Hu/ZSU/lUkDP/T/cw0kN/TtA/2/MFTGcbt/NWzsQQ1wMFD-YmynMPQq',
+    scriptSrc: '',
   },
 
   /**
    * Video Slider (HilltopAds) — فيديو عايم في رُكن الشاشة بعد تأخير.
-   * زون 7448025 (4cima-video-slider، معتمدة).
+   * زون 7448025 (4cima-video-slider)
+   * ⛔ مُعطّل 2/10 بحكم الأرقام: 1,457 ظهور / 37 إعلان → ~$0.016 (eCPM $0.011)
+   * — فيديو ركن مزعج بأقل عائد في المنظومة تقريبًا (يُشال من المشغّل كذلك).
+   * للترجيع: أعد لصق الرابط (الزون شغالة على هيلتوب):
+   *   scriptSrc: 'https://conventionalresponse.com/b.XcVxsod/Gnl_0EYGWSct/fesmb9/uCZyU/lrkVPfTLch0zNUDegBwIMvjYU/t/NLzDQn0/OaDCACyyOlQ-'
    */
   videoSlider: {
     zoneId: '7448025',
-    scriptSrc: 'https://conventionalresponse.com/b.XcVxsod/Gnl_0EYGWSct/fesmb9/uCZyU/lrkVPfTLch0zNUDegBwIMvjYU/t/NLzDQn0/OaDCACyyOlQ-',
+    scriptSrc: '',
     delayMs: 45_000,
   },
 
