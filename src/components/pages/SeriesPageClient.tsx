@@ -462,7 +462,7 @@ export function SeriesPageClient({ initialSeries = [], initialHasMore = false, f
   const headerTitle = title ?? 'المسلسلات'
   const headerDescription = isLangMode
     ? `استكشف جميع مسلسلات ${langLabel} المترجمة`
-    : 'استكشف جميع المسلسلات المترجمة بجودة عالية'
+    : 'استكشف جميع المسلسلات المترجمة مع وصف عربي وتقييمات'
   const headerBreadcrumb = isLangMode
     ? [
         { label: 'الرئيسية', href: '/' },

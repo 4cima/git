@@ -461,7 +461,7 @@ export function MoviesPageClient({ initialMovies = [], initialHasMore = false, f
   const headerTitle = title ?? 'الأفلام'
   const headerDescription = isLangMode
     ? `استكشف جميع أفلام ${langLabel} المترجمة`
-    : 'استكشف جميع الأفلام المترجمة بجودة عالية'
+    : 'استكشف جميع الأفلام المترجمة مع وصف عربي وتقييمات'
   const headerBreadcrumb = isLangMode
     ? [
         { label: 'الرئيسية', href: '/' },

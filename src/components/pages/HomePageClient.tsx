@@ -427,14 +427,15 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                 </div>
               </div>
               {/* Backdrop Background — عنصر الـLCP الوحيد في الصفحة:
-                  موبايل w300 فقط (ديسكتوب w780 عبر srcset — الموبايل ما ينزّلوش).
-                  الـpreload as=image (واحد فقط) يتولّد تلقائياً من React 19
-                  للـimg ذات fetchPriority="high" — بنفس imagesrcset/imagesizes. */}
+                  موبايل w300 (ديسكتوب w780/w1280 عبر srcset — الموبايل ما ينزّلوش)
+                  — w1280 أُضيفت (بند 8) لأن sizes=1280px كانت بتخلّي الشاشات الكبيرة
+                  تكبّر w780 مع تبلور (blur). الـpreload as=image (واحد فقط) يتولّد
+                  تلقائياً من React 19 للـimg ذات fetchPriority="high". */}
               {(heroItem.backdrop_path || heroItem.poster_path) ? (
                 <img
                     key={`backdrop-${heroItem.id}`}
-                    src={`/img/w300${heroItem.backdrop_path || heroItem.poster_path}`}
-                    srcSet={`/img/w300${heroItem.backdrop_path || heroItem.poster_path} 300w, /img/w780${heroItem.backdrop_path || heroItem.poster_path} 780w`}
+                    src={`/img/w780${heroItem.backdrop_path || heroItem.poster_path}`}
+                    srcSet={`/img/w300${heroItem.backdrop_path || heroItem.poster_path} 300w, /img/w780${heroItem.backdrop_path || heroItem.poster_path} 780w, /img/w1280${heroItem.backdrop_path || heroItem.poster_path} 1280w`}
                     sizes="(max-width: 640px) 100vw, 1280px"
                     alt=""
                     aria-hidden="true"
