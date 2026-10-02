@@ -66,6 +66,13 @@ const TYPES = [
    بـjson_each (الفرع الثالث) — الدلالات مطابقة حرفيًا لـjson_each الخالص
    (إثبات تكافؤ كامل الكتالوج 19/9: movies 62,509 / tv_series 24,664).
    ⚠️ أي تعديل على بوابات build-genre-index.js يستلزم مراجعة الحارس هنا. */
+/* ── بوابة الضعف (قرار 4 — 2/10/2026) — مطابقة لـSITEMAP_THIN_GATE_SQL في lib ──
+   صف بلا تريلر وتقييمه من أقل من 50 صوت = هزيل: لا يُدرج في sitemap_urls،
+   وصفحة التفاصيل بتاعته تُصدَر noindex,follow (تبقى ظاهرة للزائر). */
+const SITEMAP_THIN_MAX_VOTES = 50;
+const SITEMAP_THIN_GATE_SQL =
+  `AND NOT (vote_count < ${SITEMAP_THIN_MAX_VOTES} AND (trailer_key IS NULL OR trailer_key = ''))`;
+
 function detailFilterSql(table, yearColumn) {
   const excludedTable = table === 'movies' ? 'excluded_genre_movie_ids' : 'excluded_genre_series_ids';
   return (
@@ -73,7 +80,8 @@ function detailFilterSql(table, yearColumn) {
     `OR (${yearColumn} >= 2000 AND NOT EXISTS (SELECT 1 FROM ${excludedTable} eg WHERE eg.tmdb_id = ${table}.tmdb_id)) ` +
     `OR NOT EXISTS (SELECT 1 FROM json_each(${table}.genres_json) ` +
     `WHERE json_extract(value, '$.tmdb_id') IN (${EXCLUDED_GENRE_IDS.join(', ')}))) ` +
-    `AND (${yearColumn} >= 2015 OR vote_count >= 1000)`
+    `AND (${yearColumn} >= 2015 OR vote_count >= 1000)` +
+    SITEMAP_THIN_GATE_SQL
   );
 }
 
@@ -201,6 +209,7 @@ function checkParity() {
     ['export const SITEMAP_MIN_VOTE_COUNT = 1000', 'SITEMAP_MIN_VOTE_COUNT = 1000', libSrc],
     ['OR NOT EXISTS (SELECT 1 FROM json_each(', 'sitemapDetailFilterSql()', libSrc],
     ['>= 2000 AND NOT EXISTS (SELECT 1 FROM', 'sitemapDetailFilterSql() — anti-join بحارس السنة', libSrc],
+    [`SITEMAP_THIN_MAX_VOTES = ${SITEMAP_THIN_MAX_VOTES}`, 'SITEMAP_THIN_MAX_VOTES (بوابة الضعف — قرار 4)', libSrc],
   ];
   const bad = [];
   for (const [needle, label, hay] of checks) {

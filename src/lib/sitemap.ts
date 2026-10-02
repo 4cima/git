@@ -99,6 +99,13 @@ export const CLEAN_ITEM_SQL =
 // - NULL مسموح (8210 مسلسل نظيف بلا genres_json كانوا سيُستبعدون خطأً بنمط NOT LIKE).
 // - عتبة المصوّتين للأقدم من 2015: vote_count >= 1000 — لا توجد عتبة جودة
 //   موحّدة في السحب/الفلتر (أقربها 50/100 لأغراض مشابهة أخرى) فثُبّتت 1000 صراحةً.
+//
+// ── بوابة الضعف (قرار 4 — 2/10/2026): صف بلا تريلر وتقييمه من أقل من 50 صوت
+// = هزيل لا يُدرج في السايت ماب، وصفحة التفاصيل بتاعته تُصدَر noindex,follow
+// (تبقى ظاهرة للزائر) — وتعود للأهلية تلقائيًا لو اتحسّنت (تريلر أو أصوات ≥ 50).
+export const SITEMAP_THIN_MAX_VOTES = 50;
+export const SITEMAP_THIN_GATE_SQL =
+  "AND NOT (vote_count < " + SITEMAP_THIN_MAX_VOTES + " AND (trailer_key IS NULL OR trailer_key = ''))";
 
 export const SITEMAP_MIN_YEAR = 2015;
 export const SITEMAP_MIN_VOTE_COUNT = 1000;
@@ -113,7 +120,8 @@ export function sitemapDetailFilterSql(table: 'movies' | 'tv_series'): string {
     `OR (${yearColumn} >= 2000 AND NOT EXISTS (SELECT 1 FROM ${excludedTable} eg WHERE eg.tmdb_id = ${table}.tmdb_id)) ` +
     `OR NOT EXISTS (SELECT 1 FROM json_each(${table}.genres_json) ` +
     `WHERE json_extract(value, '$.tmdb_id') IN (${excludedIds}))) ` +
-    `AND (${yearColumn} >= ${SITEMAP_MIN_YEAR} OR vote_count >= ${SITEMAP_MIN_VOTE_COUNT})`
+    `AND (${yearColumn} >= ${SITEMAP_MIN_YEAR} OR vote_count >= ${SITEMAP_MIN_VOTE_COUNT})` +
+    SITEMAP_THIN_GATE_SQL
   );
 }
 

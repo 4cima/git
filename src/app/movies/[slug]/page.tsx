@@ -17,7 +17,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const movie = await executeFirst(
-    `SELECT title_ar, title_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path, release_year, genres_json
+    `SELECT title_ar, title_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path, release_year, genres_json, vote_count, trailer_key
      FROM movies
      WHERE slug = ?
        AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
@@ -27,6 +27,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   )
   // العمل غير موجود → 404 فعلي (كان يُرجع { title: 'فيلم غير موجود' } مع HTTP 200 — سبب الـ soft 404)
   if (!movie) notFound()
+
+  // بوابة الضعف (قرار 4 — 2/10/2026): صف بلا تريلر وتقييمه من أقل من 50 صوت
+  // = هزيل لجوجل → noindex,follow (الصفحة تظل ظاهرة للزائر) — نفس بوابة سايت ماب.
+  const isThin =
+    Number(movie.vote_count || 0) < 50 &&
+    !(movie.trailer_key && String(movie.trailer_key).trim() !== '')
 
   // تفادي تكرار اسم الموقع داخل العنوان (يُعاد { absolute } لتجاوز قالب layout)
   const stripBrand = (s: unknown): string =>
@@ -90,6 +96,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     keywords,
     alternates: { canonical: pageUrl },
+    // الصفحات الهزيلة فقط تتخطى الفهرسة (noindex,follow) — الباقي يرث الافتراضي من layout
+    ...(isThin ? { robots: { index: false as const, follow: true as const } } : {}),
     openGraph: {
       type: 'video.movie' as const,
       url: pageUrl,

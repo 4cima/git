@@ -6,6 +6,7 @@ import {
   xmlUnavailableResponse,
   sitemapCacheMatch,
   sitemapCachePut,
+  sitemapQuery,
 } from '@/lib/sitemap'
 
 export const runtime = 'nodejs'
@@ -14,32 +15,45 @@ export const dynamic = 'force-dynamic'
 /**
  * /sitemap-index.xml — sitemap index Route Handler (raw XML).
  *
- * المرحلة 1.1 من خطة استعادة الفهرسة (INDEXING-RECOVERY-PLAN.md): الفهرس
- * يرشّح النواة فقط — لا استعلام D1 ولا عدّ شظايا بعد الآن:
+ * (قرار 4 — 2/10/2026) الفهرس بيرجع يدرج شظايا الكتالوج كاملة بعد بوابة الضعف:
  *   /sitemap/static.xml   (الصفحات الثابتة + صفحات الهبوط للتصنيفات)
  *   /sitemap/priority.xml (أفضل 3,000 فيلم + 2,000 مسلسل حسب popularity)
+ *   /sitemap/movies-0..N.xml + /sitemap/series-0..M.xml (شظايا 10,000)
  *
- * شظايا الكتالوج (movies-0..N / series-0..N) تبقى حية وتُخدم من مسارها
- * بلا تغيير — لكنها خارج قائمة الفهرس مؤقتاً: جوجل يعرفها من الـ history
- * ويستمر باكتشافها عبر الروابط الداخلية، وتُعاد دفعة-دفعة في المرحلة 5
- * ببوابات قياس (لا يُرشَّح أكثر مما يُفهرس فعلاً). إعادتها = استرجاع عدّاد
- * الشظايا في git history.
+ * الشظايا بعد إعادة بناء sitemap_urls ببوابة الضعف (vote_count<50 بلا تريلر
+ * = غير مدرج) تحتوي الروابط الأهيلة فقط — ومتزامنة مع noindex صفحات التفاصيل
+ * الضعيفة، فالسايت ماب كله قابل للفهرسة بلا تعارض.
  *
- * طبقة كاش واحدة (Cache API على الحافة، 24 ساعة): الرد ثابت لا يتطلب D1.
- * ⚠️ بعد أي نشر يلمس هذا الملف: purge لكاش الحافة لمسار /sitemap* (الكاش يوم كامل).
+ * عدّ الشظايا: استعلام واحد رخيص (MAX على الفهرس — صفّان) بكاش حافة 24 ساعة
+ * + كاش ذاكرة الـWorker في shardCache — لا مسح جداول ولا COUNT.
+ *
+ * ⚠️ بعد أي نشر يلمس هذا الملف: CI بيعمل purge_everything تلقائيًا (الكاش يوم كامل).
  *
  * Any database failure → 503 XML (never an empty or partial index with 200).
  */
+
+const SHARD_COUNTS_SQL =
+  `SELECT (SELECT MAX(shard) + 1 FROM sitemap_urls WHERE media_type = 'movie')  AS movie_shards, ` +
+  `(SELECT MAX(shard) + 1 FROM sitemap_urls WHERE media_type = 'series') AS series_shards`
+
+type ShardCounts = { movie_shards?: number | null; series_shards?: number | null }
+
 export async function GET(request: Request) {
   try {
-    /* كاش الحافة أولاً — لا يوجد استعلام D1 في هذا المسار */
+    /* كاش الحافة أولاً */
     const edgeHit = await sitemapCacheMatch(request)
     if (edgeHit) return edgeHit
+
+    const rows = await sitemapQuery<ShardCounts>(SHARD_COUNTS_SQL)
+    const movieShards = Math.max(0, Number(rows[0]?.movie_shards) || 0)
+    const seriesShards = Math.max(0, Number(rows[0]?.series_shards) || 0)
 
     const locs: string[] = [
       `${SITEMAP_BASE_URL}/sitemap/static.xml`,
       `${SITEMAP_BASE_URL}/sitemap/priority.xml`,
     ]
+    for (let i = 0; i < movieShards; i++) locs.push(`${SITEMAP_BASE_URL}/sitemap/movies-${i}.xml`)
+    for (let i = 0; i < seriesShards; i++) locs.push(`${SITEMAP_BASE_URL}/sitemap/series-${i}.xml`)
 
     const response = xmlSuccessResponse(sitemapindexXml(locs), INDEX_CACHE_CONTROL)
     await sitemapCachePut(request, response)
