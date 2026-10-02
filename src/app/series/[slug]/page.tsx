@@ -4,6 +4,7 @@ import { executeFirst } from '@/lib/db'
 import { getSimilarSeries } from '@/lib/similar-server'
 import { SeriesDetailsClient } from '@/components/pages/SeriesDetailsClient'
 import { safeJsonLd } from '@/lib/jsonld';
+import { buildDetailsTitle, cleanOverviewText, truncateDescription } from '@/lib/details-seo'
 
 // ساعة بدل دقيقة: كاش الحافة (edge-cache-worker) بيغطي الزيارات، وده بيقلل إعادة التوليد من D1
 // 60 مرة. التحديثات بعد المزامنة بتوصل فورًا عبر purge_everything في سلسلة ما بعد المزامنة.
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // العمل غير موجود → 404 فعلي (كان يُرجع { title: 'مسلسل غير موجود' } مع HTTP 200 — سبب الـ soft 404)
   if (!series) notFound()
 
-  // تفادي تكرار اسم الموقع داخل العنوان (القالب في layout.tsx يضيف «| فور سيما | 4cima»)
+  // تفادي تكرار اسم الموقع داخل العنوان (يُعاد { absolute } لتجاوز قالب layout)
   const stripBrand = (s: unknown): string =>
     String(s ?? '')
       .replace(/فور\s*سيما/gi, '')
@@ -38,29 +39,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const nameAr = stripBrand(series.name_ar || series.name_en) || 'مسلسل'
   const nameEn = stripBrand(series.name_en)
 
-  // القاعدة الجديدة (Max 60 حرف) — suffix بـ 11 حرف بدل 19 من قالب layout
-  // يُعاد عبر { absolute } لتجاوز قالب layout («%s | فور سيما | 4cima») ومنع تكرار العلامة
-  const suffix = ' | فور سيما'
-  const brandPrefix = 'مسلسل'
-  const base = `${brandPrefix} ${nameAr}`
-  const enPart = nameEn && nameEn !== nameAr ? ` | ${nameEn}` : ''
+  // القالب الجديد (بند 4): «مسلسل {عربي} ({سنة}) {إنجليزي} – المواسم والحلقات والأبطال | فور سيما»
+  const title = buildDetailsTitle({
+    typePrefix: 'مسلسل',
+    nameAr,
+    nameEn,
+    year: series.first_air_year,
+    intent: ' – المواسم والحلقات والأبطال',
+  })
 
-  // جرّب العنوان الكامل
-  let title = `${base}${enPart}${suffix}`
-
-  // لو طويل: شيل الجزء الإنجليزي
-  if (title.length > 60) {
-    title = `${base}${suffix}`
-  }
-
-  // لو لسه طويل: اقتطع الاسم العربي
-  if (title.length > 60) {
-    const maxBase = 60 - suffix.length - brandPrefix.length - 2 // -2 للنقاط
-    const truncated = nameAr.slice(0, maxBase).trim()
-    title = `${brandPrefix} ${truncated}…${suffix}`
-  }
-
-  // الوصف: أول تصنيفين عربيين من genres_json + سنة أول عرض كبادئة قبل النص الأساسي
+  // التصنيفات للقالب الاحتياطي للوصف
   let genres: string[] = []
   try {
     const parsed = series.genres_json ? JSON.parse(String(series.genres_json)) : []
@@ -69,21 +57,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   } catch {}
 
-  const prefixParts: string[] = []
-  if (genres.length) prefixParts.push(genres.join(' · '))
-  if (series.first_air_year) prefixParts.push(String(series.first_air_year))
-  const prefix = prefixParts.length ? `${prefixParts.join(' · ')} — ` : ''
-
-  const baseDesc = String(
-    (series.seo_description_ar && String(series.seo_description_ar).trim()) ||
-    series.overview_ar ||
-    'شاهد على فور سيما'
-  ).trim().replace(/\s+/g, ' ')
-
-  let description = prefix + baseDesc
-  if (description.length > 158) {
-    description = description.slice(0, 155).trim() + '…'
-  }
+  // القالب الجديد (بند 3): الوصف يبدأ بالقصة ويُقتطع عند حد جملة/كلمة،
+  // وقالب احتياطي فريد من بيانات حقيقية لو مفيش قصة
+  const overview = cleanOverviewText(series.overview_ar || series.overview)
+  const fallbackDesc = `مسلسل ${nameAr}${series.first_air_year ? ` (${series.first_air_year})` : ''}${nameEn ? ` «${nameEn}»` : ''} — ${genres.join('، ') || 'عمل تلفزيوني'} من مسلسلات فور سيما.`
+  const description = truncateDescription(overview || fallbackDesc)
   
   let keywords: string | undefined
   try {
