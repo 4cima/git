@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         type: 'website',
         locale: 'ar_EG',
         url: canonical,
-        siteName: '4cima',
+        siteName: 'فور سيما',
         title: `${genreTitle} | فور سيما`,
         description: genreDescription,
       },

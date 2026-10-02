@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ar_EG',
     url: 'https://4cima.com/series',
-    siteName: '4cima',
+    siteName: 'فور سيما',
     title: 'المسلسلات المترجمة | فور سيما',
     description: 'استكشف آلاف المسلسلات المترجمة بجودة عالية - دراما، أكشن، كوميديا، وأكثر',
     images: [

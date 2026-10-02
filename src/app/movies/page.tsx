@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ar_EG',
     url: 'https://4cima.com/movies',
-    siteName: '4cima',
+    siteName: 'فور سيما',
     title: 'الأفلام المترجمة | فور سيما',
     description: 'استكشف آلاف الأفلام المترجمة بجودة عالية - أفلام أكشن، كوميديا، دراما، رعب، وأكثر',
     images: [

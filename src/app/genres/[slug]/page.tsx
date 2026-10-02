@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title,
         description,
         url,
-        siteName: '4cima',
+        siteName: 'فور سيما',
         type: 'website',
         locale: 'ar_EG',
         images: [{ url: '/og-image.png', width: 1200, height: 630, alt: title }],

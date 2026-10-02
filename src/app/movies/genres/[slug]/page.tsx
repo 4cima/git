@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         type: 'website',
         locale: 'ar_EG',
         url: genrePageUrl,
-        siteName: '4cima',
+        siteName: 'فور سيما',
         title: `${genreTitle} | فور سيما`,
         description: genreDescription,
         images: [

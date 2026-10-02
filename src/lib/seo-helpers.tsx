@@ -46,7 +46,7 @@ export function generateContentMetadata(content: SEOContent): Metadata {
       title,
       description,
       url: seoData.canonical_url,
-      siteName: '4cima',
+      siteName: 'فور سيما',
       images: [
         {
           url: posterUrl,

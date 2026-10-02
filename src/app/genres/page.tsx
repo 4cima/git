@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     description:
       'استكشف جميع تصنيفات الأفلام والمسلسلات مقسّمة: أفلام ومسلسلات لكل نوع — أكشن، دراما، كوميديا، رعب وخيال علمي.',
     url: '/genres',
-    siteName: '4cima',
+    siteName: 'فور سيما',
     type: 'website',
     locale: 'ar_EG',
     images: [
