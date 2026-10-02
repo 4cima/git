@@ -495,16 +495,20 @@ export const MovieCard = memo(({
               )}
             </div>
 
-            {/* Overview on Hover - Replaces titles — CSS خالص (fade + y 0.2s زي قبل) */}
-            <div
-              className={`absolute inset-0 p-2.5 flex items-center transition-[opacity,translate] duration-200 ${
-                isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-[5px]'
-              }`}
-            >
-              <p className="text-[12px] leading-relaxed text-zinc-300 line-clamp-3">
-                {movie.overview_ar || movie.overview || 'لا يوجد وصف متاح'}
-              </p>
-            </div>
+            {/* Overview on Hover - Replaces titles — CSS خالص (fade + y 0.2s زي قبل)
+                يُعرض فقط مع وصف حقيقي — لا نص بديل عام («لا يوجد وصف متاح» كان
+                يتكرر على كل كروت «قد يعجبك أيضاً» لأن صفوف similar بلا overview) */}
+            {(movie.overview_ar || movie.overview) && (
+              <div
+                className={`absolute inset-0 p-2.5 flex items-center transition-[opacity,translate] duration-200 ${
+                  isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-[5px]'
+                }`}
+              >
+                <p className="text-[12px] leading-relaxed text-zinc-300 line-clamp-3">
+                  {movie.overview_ar || movie.overview}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </Link>

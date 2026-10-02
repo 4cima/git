@@ -53,7 +53,7 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
 
   const title = sanitizeTitle(series?.name_ar || series?.name || series?.original_name || 'مسلسل')
   const titleEn = sanitizeTitle(series?.name_en || series?.name || series?.original_name)
-  const overview = sanitizeOverview(series?.overview_ar || series?.overview || 'لا يوجد وصف متاح')
+  const overview = sanitizeOverview(series?.overview_ar || series?.overview || '')
   const year = series?.first_air_date ? new Date(series.first_air_date).getFullYear() : 'غير محدد'
   // بوابة التقييم: لا يُعرض إلا مع 50 صوتًا فأكثر (تقييمات الأصوات القليلة غير موثوقة)
   const rating = series?.vote_average && (series?.vote_count || 0) >= 50 ? Math.round(series.vote_average * 10) / 10 : 0
@@ -679,9 +679,7 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
                 <div className="prose prose-invert max-w-none">
                   <p className="text-base leading-relaxed text-zinc-300">
                     <span className="font-bold text-cyan-400 relative -top-2">القصة </span>
-                    <span className="font-bold text-blue-600">"</span>
                     {overview}
-                    <span className="font-bold text-blue-600">"</span>
                   </p>
                 </div>
               </div>

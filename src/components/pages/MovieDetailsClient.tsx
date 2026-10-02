@@ -48,7 +48,7 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
 
   const title = sanitizeTitle(movie?.title_ar || movie?.title_en || movie?.title || 'فيلم')
   const titleEn = sanitizeTitle(movie?.title_en || movie?.title)
-  const overview = sanitizeOverview(movie?.overview_ar || movie?.overview || 'لا يوجد وصف متاح')
+  const overview = sanitizeOverview(movie?.overview_ar || movie?.overview || '')
   const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : (movie?.release_year || 'غير محدد')
   // بوابة التقييم: لا يُعرض إلا مع 50 صوتًا فأكثر (تقييمات الأصوات القليلة غير موثوقة)
   const rating = movie?.vote_average && (movie?.vote_count || 0) >= 50 ? Math.round(movie.vote_average * 10) / 10 : 0
@@ -585,9 +585,7 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
                 <div className="prose prose-invert max-w-none">
                   <p className="text-base leading-relaxed text-zinc-300">
                     <span className="font-bold text-cyan-400 relative -top-2">القصة </span>
-                    <span className="font-bold text-blue-600">"</span>
                     {overview}
-                    <span className="font-bold text-blue-600">"</span>
                   </p>
                 </div>
               </div>
