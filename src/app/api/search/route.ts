@@ -22,17 +22,16 @@ export async function GET(request: NextRequest) {
     try {
       const limiter = (getCloudflareContext().env as any)?.SEARCH_RATE_LIMITER
       if (limiter?.limit) {
-        // الحدود صريحة في الاستدعاء (30/60s) — تغطي وضعي الإعداد (simple/يدوي)
+        // الربط العالمي — fail-open على الخطة المجانية (بيرجع success دايمًا):
+        // بيفعّل تلقائيًا لو الخطة سمحت. الإنفاذ العالمي الفعلي دلوقتي
+        // بقاعدة WAF Rate Limiting من الداشبورد (مجانية — 1 قاعدة) — 2/10/2026.
         const res = await limiter.limit({ key: clientKey(request, 'search'), requests: 30, period: 60 })
-        console.log('[rl] binding called — success:', res?.success)
         if (!res?.success) return rateLimited()
       } else {
-        console.log('[rl] binding missing — memory fallback')
         const blocked = guard(request, 'search', 30, 60_000)
         if (blocked) return blocked
       }
-    } catch (e) {
-      console.error('[rl] binding error:', e instanceof Error ? e.message : String(e))
+    } catch {
       const blocked = guard(request, 'search', 30, 60_000)
       if (blocked) return blocked
     }
