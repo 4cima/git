@@ -150,6 +150,20 @@ export default async function MovieDetails({ params }: PageProps) {
       }
     })(),
     inLanguage:      movie.original_language || 'ar',
+    // الممثلون من cast_json (P3) — أسماء إنجليزية/عربية كما هي في البيانات
+    actor: (() => {
+      try {
+        const cast = movie.cast_json ? JSON.parse(String(movie.cast_json)) : []
+        if (!Array.isArray(cast)) return undefined
+        const actors = cast
+          .filter((p: any) => p?.name_en || p?.name_ar)
+          .slice(0, 8)
+          .map((p: any) => ({ '@type': 'Person', name: p.name_ar || p.name_en }))
+        return actors.length ? actors : undefined
+      } catch {
+        return undefined
+      }
+    })(),
     url:             `https://4cima.com/movies/${slug}`,
     // بوابة التقييم: لا يُصدَّر aggregateRating إلا مع 50 صوتًا فأكثر (يمنع تقييمات غير موثوقة مثل 10/10 بصوت واحد)
     aggregateRating: movie.vote_average && (movie.vote_count || 0) >= 50 ? {

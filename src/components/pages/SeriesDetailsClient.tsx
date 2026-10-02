@@ -735,8 +735,13 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
                         <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-zinc-400 text-xs">؟</div>
                       )}
                     </div>
-                    {/* الاسم بجانب الصورة من اليسار لليمين */}
-                    <p className="text-[11px] text-zinc-200 leading-tight truncate font-medium flex-1 text-left">{person.name_en || person.name_ar}</p>
+                    {/* الاسم + اسم الدور (P3 — character_name موجود في البيانات) */}
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-[11px] text-zinc-200 leading-tight truncate font-medium">{person.name_en || person.name_ar}</p>
+                      {(person.character_name || person.character) && (
+                        <p className="text-[9px] text-zinc-500 leading-tight truncate">{person.character_name || person.character}</p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

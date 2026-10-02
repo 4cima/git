@@ -161,6 +161,20 @@ export default async function SeriesDetails({ params }: PageProps) {
       }
     })(),
     inLanguage:       series.original_language || 'ar',
+    // الممثلون من cast_json (P3) — أسماء إنجليزية/عربية كما هي في البيانات
+    actor: (() => {
+      try {
+        const cast = series.cast_json ? JSON.parse(String(series.cast_json)) : []
+        if (!Array.isArray(cast)) return undefined
+        const actors = cast
+          .filter((p: any) => p?.name_en || p?.name_ar)
+          .slice(0, 8)
+          .map((p: any) => ({ '@type': 'Person', name: p.name_ar || p.name_en }))
+        return actors.length ? actors : undefined
+      } catch {
+        return undefined
+      }
+    })(),
     numberOfSeasons:  series.number_of_seasons || seasons.length,
     numberOfEpisodes: series.number_of_episodes || undefined,
     url:              `https://4cima.com/series/${slug}`,
