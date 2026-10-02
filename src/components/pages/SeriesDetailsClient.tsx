@@ -454,6 +454,28 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
   const episodeCount = currentSeason?.episode_count || 1
   const episodes = Array.from({ length: episodeCount }, (_, i) => i + 1)
 
+  // (P3 بند 17) بيانات الحلقات الحقيقية من episodes_json — اسم الحلقة يظهر في السيلاكت
+  // لما يتوفر: lookup [season][episode] → { name_en, air_date } يُحسب مرة واحدة
+  const episodeMeta = useMemo(() => {
+    try {
+      const rows = series?.episodes_json ? JSON.parse(String(series.episodes_json)) : []
+      if (!Array.isArray(rows) || rows.length === 0) return null
+      const map: Record<string, Record<string, { name_en?: string; air_date?: string }>> = {}
+      for (const r of rows) {
+        if (!r || typeof r.season_number !== 'number' || typeof r.episode_number !== 'number') continue
+        const sKey = String(r.season_number)
+        ;(map[sKey] ||= {})[String(r.episode_number)] = {
+          name_en: r.name_en || undefined,
+          air_date: r.air_date || undefined,
+        }
+      }
+      return map
+    } catch {
+      return null
+    }
+  }, [series?.episodes_json])
+  const currentEpisodeMeta = episodeMeta?.[String(selectedSeason)]?.[String(selectedEpisode)]
+
   return (
     <div className="min-h-screen bg-zinc-800 text-white relative overflow-hidden">
       {/* Backdrop with Adaptive Overlay - يغطي الشاشة كاملة من أول بكسل */}
@@ -617,11 +639,14 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
                         aria-label="اختر الحلقة"
                         className="h-full w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-zinc-900 pr-3 pl-8 text-sm font-bold text-white shadow-xl transition-colors duration-200 hover:border-white/30 focus:outline-none"
                       >
-                        {episodes.map((ep) => (
-                          <option key={ep} value={ep} className="bg-zinc-900 text-white">
-                            حلقة {ep}
-                          </option>
-                        ))}
+                        {episodes.map((ep) => {
+                          const meta = episodeMeta?.[String(selectedSeason)]?.[String(ep)]
+                          return (
+                            <option key={ep} value={ep} className="bg-zinc-900 text-white">
+                              {meta?.name_en ? `حلقة ${ep} · ${meta.name_en}` : `حلقة ${ep}`}
+                            </option>
+                          )
+                        })}
                       </select>
                       <ChevronDown aria-hidden="true" className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     </div>
