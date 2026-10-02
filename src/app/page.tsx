@@ -3,11 +3,12 @@ import { Metadata } from 'next'
 import { executeAll } from '@/lib/db'
 import { HomePageClient } from '@/components/pages/HomePageClient'
 import { mapItems } from '@/components/pages/homeSectionUtils'
+import { safeJsonLd } from '@/lib/jsonld'
 
 export const metadata: Metadata = {
   title: 'فور سيما | شاهد أحدث الأفلام والمسلسلات المترجمة',
   description:
-    'موقع فور سيما لمشاهدة أحدث الأفلام والمسلسلات المترجمة بجودة عالية - أكشن، دراما، كوميديا، رعب، وأكثر. الرائج، خيال علمي، أنمي، جريمة، وأفلام ومسلسلات عربية.',
+    'موقع فور سيما لمشاهدة أحدث الأفلام والمسلسلات المترجمة - أكشن، دراما، كوميديا، رعب، وأكثر. الرائج، خيال علمي، أنمي، جريمة، وأفلام ومسلسلات عربية.',
   keywords: [
     'افلام',
     'مسلسلات',
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
     url: 'https://4cima.com/',
     siteName: 'فور سيما',
     title: 'فور سيما | شاهد أحدث الأفلام والمسلسلات المترجمة',
-    description: 'مشاهدة أحدث الأفلام والمسلسلات المترجمة بجودة عالية — الرائج والأقسام المختلطة (أفلام + مسلسلات).',
+    description: 'مشاهدة أحدث الأفلام والمسلسلات المترجمة — الرائج والأقسام المختلطة (أفلام + مسلسلات).',
     images: [
       {
         url: 'https://4cima.com/og-image.png',
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'فور سيما | شاهد أحدث الأفلام والمسلسلات المترجمة',
-    description: 'مشاهدة أحدث الأفلام والمسلسلات المترجمة بجودة عالية على فور سيما.',
+    description: 'مشاهدة أحدث الأفلام والمسلسلات المترجمة على فور سيما.',
     images: ['https://4cima.com/og-image.png'],
   },
 }
@@ -202,7 +203,7 @@ async function HomeBody() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
       <HomePageClient initialData={homeData} />
     </>
