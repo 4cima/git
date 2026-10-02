@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
     try {
       const limiter = (getCloudflareContext().env as any)?.SEARCH_RATE_LIMITER
       if (limiter?.limit) {
-        const res = await limiter.limit({ key: clientKey(request, 'search') })
+        // الحدود صريحة في الاستدعاء (30/60s) — تغطي وضعي الإعداد (simple/يدوي)
+        const res = await limiter.limit({ key: clientKey(request, 'search'), requests: 30, period: 60 })
         console.log('[rl] binding called — success:', res?.success)
         if (!res?.success) return rateLimited()
       } else {
