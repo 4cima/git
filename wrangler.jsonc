@@ -39,5 +39,14 @@
       "database_name": "4cima-db",
       "database_id": "b50ec43e-b6c9-4b4e-937d-9ac8d9c975e6"
     }
+  ],
+  // بوابة استهلاك عالمية (عبر كل نسخ العامل) لواجهة البحث — 30 طلب/دقيقة/مفتاح
+  // Rate Limiting API من كلاودفلير نفسها — محسوبة مركزيًا مش في ذاكرة كل نسخة
+  "ratelimits": [
+    {
+      "name": "SEARCH_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 30, "period": 60 }
+    }
   ]
 }
