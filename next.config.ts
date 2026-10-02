@@ -25,6 +25,14 @@ const nextConfig: NextConfig = {
   // Redirects from old watch URLs to new detail pages
   async redirects() {
     return [
+      // (P2) المسار القديم /tmdb/ → 301 دائم إلى /img/ — توحيد روابط الصور
+      // في رابط واحد (القديم كان alias بـ200 — ملاحظة ديب سيك سؤال 6).
+      // الـredirects بتتنفذ قبل الـrewrites فمش محتاجين قاعدة الـrewrite القديمة.
+      {
+        source: '/tmdb/:path*',
+        destination: '/img/:path*',
+        statusCode: 301,
+      },
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.4cima.com' }],
@@ -319,16 +327,11 @@ const nextConfig: NextConfig = {
     ]
   },
   // Proxy poster/backdrop images to bypass ISP blocks and AdBlockers.
-  // المسار العام الجديد /img/ — والمسار القديم /tmdb/ يبقى alias بنفس الوجهة
-  // حتى لا تنكسر الصور المفهرسة في جوجل والصفحات المخزنة في كاش الحافة (شهر).
+  // المسار العام الوحيد /img/ — والمسار القديم /tmdb/ صار 301 دائم أعلاه.
   async rewrites() {
     return [
       {
         source: '/img/:path*',
-        destination: 'https://image.tmdb.org/t/p/:path*',
-      },
-      {
-        source: '/tmdb/:path*',
         destination: 'https://image.tmdb.org/t/p/:path*',
       },
     ]

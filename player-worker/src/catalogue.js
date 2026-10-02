@@ -6,9 +6,10 @@
 
 export const PLAY_BASE = 'https://4cima.com';
 
-// أحجام صور TMDB المضبوطة: w780 للخلفية، w500 للبوستر الاحتياطي.
-export const TMDB_BACKDROP_BASE = 'https://image.tmdb.org/t/p/w780/';
-export const TMDB_POSTER_BASE = 'https://image.tmdb.org/t/p/w500/';
+// أحجام صور مضبوطة: w780 للخلفية، w500 للبوستر الاحتياطي — عبر بروكسي
+// 4cima.com/img/ (مسار محايد + كاش طويل) بدل مصدر الصور المباشر (قرار 2/10).
+export const TMDB_BACKDROP_BASE = 'https://4cima.com/img/w780/';
+export const TMDB_POSTER_BASE = 'https://4cima.com/img/w500/';
 
 export const safeDecode = (s) => {
   try { return decodeURIComponent(s); } catch { return s; }
