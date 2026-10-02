@@ -56,8 +56,8 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
   const overview = sanitizeOverview(series?.overview_ar || series?.overview || 'لا يوجد وصف متاح')
   const year = series?.first_air_date ? new Date(series.first_air_date).getFullYear() : 'غير محدد'
   const rating = series?.vote_average ? Math.round(series.vote_average * 10) / 10 : 0
-  const poster = series?.poster_url || (series?.poster_path ? `/tmdb/w342${series.poster_path}` : '')
-  const backdrop = series?.backdrop_url || (series?.backdrop_path ? `/tmdb/w780${series.backdrop_path}` : '')
+  const poster = series?.poster_url || (series?.poster_path ? `/img/w342${series.poster_path}` : '')
+  const backdrop = series?.backdrop_url || (series?.backdrop_path ? `/img/w780${series.backdrop_path}` : '')
   
   // Analyze backdrop brightness for adaptive overlay
   const overlayConfig = useImageBrightness(backdrop)
@@ -731,7 +731,7 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
                     {/* صورة على اليسار */}
                     <div className="rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/10" style={{width: '36px', height: '36px'}}>
                       {person.profile_path ? (
-                        <img src={`/tmdb/w45${person.profile_path}`} alt={person.name_ar || person.name_en} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={`/img/w45${person.profile_path}`} alt={person.name_ar || person.name_en} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-zinc-400 text-xs">؟</div>
                       )}

@@ -33,8 +33,8 @@ interface TmdbImageProps extends React.HTMLAttributes<HTMLDivElement> {
 const getUrl = (path: string, size: TmdbImageSize) => {
   // If it's already a full URL, return as-is
   if (path.startsWith('http://') || path.startsWith('https://')) return path
-  // Otherwise, construct TMDB URL using local proxy rewrite to bypass ISP blocks
-  return `/tmdb/${size}${path}`
+  // Otherwise, construct image URL using the local proxy rewrite (/img/) to bypass ISP blocks and AdBlockers
+  return `/img/${size}${path}`
 }
 
 export const TmdbImage = memo(({

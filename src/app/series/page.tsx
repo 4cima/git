@@ -78,7 +78,7 @@ export default async function SeriesPage() {
       position: i + 1,
       url: `https://4cima.com/series/${s.slug}`,
       name: s.name_ar || s.name_en,
-      image: s.poster_path ? `https://image.tmdb.org/t/p/w342${s.poster_path}` : undefined,
+      image: s.poster_path ? `https://4cima.com/img/w342${s.poster_path}` : undefined,
     })),
   }
 

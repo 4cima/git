@@ -51,8 +51,8 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
   const overview = sanitizeOverview(movie?.overview_ar || movie?.overview || 'لا يوجد وصف متاح')
   const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : (movie?.release_year || 'غير محدد')
   const rating = movie?.vote_average ? Math.round(movie.vote_average * 10) / 10 : 0
-  const poster = movie?.poster_url || (movie?.poster_path ? `/tmdb/w342${movie.poster_path}` : '')
-  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/tmdb/w780${movie.backdrop_path}` : '')
+  const poster = movie?.poster_url || (movie?.poster_path ? `/img/w342${movie.poster_path}` : '')
+  const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/img/w780${movie.backdrop_path}` : '')
   
   // Analyze backdrop brightness for adaptive overlay
   const overlayConfig = useImageBrightness(backdrop)
@@ -636,7 +636,7 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
                     {/* صورة على اليسار */}
                     <div className="rounded-full overflow-hidden bg-zinc-800 flex-shrink-0 ring-1 ring-white/10" style={{width: '36px', height: '36px'}}>
                       {person.profile_path ? (
-                        <img src={`/tmdb/w45${person.profile_path}`} alt={person.name_ar || person.name_en} className="w-full h-full object-cover" loading="lazy" />
+                        <img src={`/img/w45${person.profile_path}`} alt={person.name_ar || person.name_en} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <div className="w-full h-full bg-zinc-700 flex items-center justify-center text-zinc-400 text-xs">؟</div>
                       )}

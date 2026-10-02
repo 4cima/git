@@ -99,11 +99,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch {}
   
   // og:image: خلفية 16:9 إن توفّرت (أقرب مقاس متاح من TMDB لـ 1200×630 هو w1280 بـ 1280×720)،
-  // وإلا الملصق، وإلا صورة الموقع العامة — الصور عبر بروكسي /tmdb/ وليس image.tmdb.org مباشرة
+  // وإلا الملصق، وإلا صورة الموقع العامة — الصور عبر بروكسي /img/ (مسار عام محايد) وليس image.tmdb.org مباشرة
   const ogImage = movie.backdrop_path
-    ? { url: `https://4cima.com/tmdb/w1280${movie.backdrop_path}`, width: 1280, height: 720, alt: title }
+    ? { url: `https://4cima.com/img/w1280${movie.backdrop_path}`, width: 1280, height: 720, alt: title }
     : movie.poster_path
-      ? { url: `https://4cima.com/tmdb/w500${movie.poster_path}`, width: 500, height: 750, alt: title }
+      ? { url: `https://4cima.com/img/w500${movie.poster_path}`, width: 500, height: 750, alt: title }
       : { url: 'https://4cima.com/og-image.png', width: 1200, height: 630, alt: 'فور سيما' }
   const pageUrl = `https://4cima.com/movies/${slug}`
 
@@ -154,7 +154,7 @@ export default async function MovieDetails({ params }: PageProps) {
     name:            movie.title_ar || movie.title_en || 'فيلم',
     alternateName:   movie.title_en || undefined,
     description:     movie.overview_ar || movie.overview || undefined,
-    image:           movie.poster_path ? `https://4cima.com/tmdb/w500${movie.poster_path}` : undefined,
+    image:           movie.poster_path ? `https://4cima.com/img/w500${movie.poster_path}` : undefined,
     datePublished:   movie.release_date || undefined,
     genre:           (() => {
       try {

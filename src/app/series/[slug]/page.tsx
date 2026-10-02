@@ -98,11 +98,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   } catch {}
   
   // og:image: خلفية 16:9 إن توفّرت (أقرب مقاس متاح من TMDB لـ 1200×630 هو w1280 بـ 1280×720)،
-  // وإلا الملصق، وإلا صورة الموقع العامة — الصور عبر بروكسي /tmdb/ وليس image.tmdb.org مباشرة
+  // وإلا الملصق، وإلا صورة الموقع العامة — الصور عبر بروكسي /img/ (مسار عام محايد) وليس image.tmdb.org مباشرة
   const ogImage = series.backdrop_path
-    ? { url: `https://4cima.com/tmdb/w1280${series.backdrop_path}`, width: 1280, height: 720, alt: title }
+    ? { url: `https://4cima.com/img/w1280${series.backdrop_path}`, width: 1280, height: 720, alt: title }
     : series.poster_path
-      ? { url: `https://4cima.com/tmdb/w500${series.poster_path}`, width: 500, height: 750, alt: title }
+      ? { url: `https://4cima.com/img/w500${series.poster_path}`, width: 500, height: 750, alt: title }
       : { url: 'https://4cima.com/og-image.png', width: 1200, height: 630, alt: 'فور سيما' }
   const pageUrl = `https://4cima.com/series/${slug}`
 
@@ -165,7 +165,7 @@ export default async function SeriesDetails({ params }: PageProps) {
     name:             series.name_ar || series.name_en || 'مسلسل',
     alternateName:    series.name_en || undefined,
     description:      series.overview_ar || series.overview || undefined,
-    image:            series.poster_path ? `https://4cima.com/tmdb/w500${series.poster_path}` : undefined,
+    image:            series.poster_path ? `https://4cima.com/img/w500${series.poster_path}` : undefined,
     datePublished:    series.first_air_date || undefined,
     genre:            (() => {
       try {

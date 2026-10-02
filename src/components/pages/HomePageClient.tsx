@@ -433,8 +433,8 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
               {(heroItem.backdrop_path || heroItem.poster_path) ? (
                 <img
                     key={`backdrop-${heroItem.id}`}
-                    src={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path}`}
-                    srcSet={`/tmdb/w300${heroItem.backdrop_path || heroItem.poster_path} 300w, /tmdb/w780${heroItem.backdrop_path || heroItem.poster_path} 780w`}
+                    src={`/img/w300${heroItem.backdrop_path || heroItem.poster_path}`}
+                    srcSet={`/img/w300${heroItem.backdrop_path || heroItem.poster_path} 300w, /img/w780${heroItem.backdrop_path || heroItem.poster_path} 780w`}
                     sizes="(max-width: 640px) 100vw, 1280px"
                     alt=""
                     aria-hidden="true"
@@ -652,8 +652,8 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                         >
                           {/* بوستر جوّه الهيرو — مش LCP: w92/w154 مع low/lazy (باقة B) */}
                           <img
-                            src={`/tmdb/w92${item.poster_path}`}
-                            srcSet={`/tmdb/w92${item.poster_path} 92w, /tmdb/w154${item.poster_path} 154w`}
+                            src={`/img/w92${item.poster_path}`}
+                            srcSet={`/img/w92${item.poster_path} 92w, /img/w154${item.poster_path} 154w`}
                             sizes="(max-width: 640px) 160px, 192px"
                             alt={item.title_ar}
                             width={92}

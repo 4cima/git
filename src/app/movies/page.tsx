@@ -80,7 +80,7 @@ export default async function MoviesPage() {
       position: i + 1,
       url: `https://4cima.com/movies/${m.slug}`,
       name: m.title_ar || m.title_en,
-      image: m.poster_path ? `https://image.tmdb.org/t/p/w342${m.poster_path}` : undefined,
+      image: m.poster_path ? `https://4cima.com/img/w342${m.poster_path}` : undefined,
     })),
   }
 

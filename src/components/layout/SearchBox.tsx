@@ -750,7 +750,7 @@ export function SearchBox() {
                                   <div className="relative aspect-[2/3] bg-slate-800">
                                     {result.poster_path ? (
                                       <img
-                                        src={`/tmdb/w154${result.poster_path}`}
+                                        src={`/img/w154${result.poster_path}`}
                                         alt={titleAr}
                                         width={154}
                                         height={231}
