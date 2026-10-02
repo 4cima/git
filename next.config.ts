@@ -318,9 +318,15 @@ const nextConfig: NextConfig = {
       },
     ]
   },
-  // Proxy TMDB images to bypass ISP blocks and AdBlockers
+  // Proxy poster/backdrop images to bypass ISP blocks and AdBlockers.
+  // المسار العام الجديد /img/ — والمسار القديم /tmdb/ يبقى alias بنفس الوجهة
+  // حتى لا تنكسر الصور المفهرسة في جوجل والصفحات المخزنة في كاش الحافة (شهر).
   async rewrites() {
     return [
+      {
+        source: '/img/:path*',
+        destination: 'https://image.tmdb.org/t/p/:path*',
+      },
       {
         source: '/tmdb/:path*',
         destination: 'https://image.tmdb.org/t/p/:path*',
