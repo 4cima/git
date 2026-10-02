@@ -492,7 +492,7 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
                         </span>
                         <span className="flex min-w-0 flex-col text-right">
                           <span className="text-base sm:text-lg leading-tight font-black whitespace-nowrap">مشاهدة الفيلم</span>
-                          <span className="text-xs font-medium leading-tight text-white/85">تشغيل فوري بجودة عالية</span>
+                          <span className="text-xs font-medium leading-tight text-white/85">تشغيل مباشر — جودة المصدر</span>
                         </span>
                       </button>
                     </div>

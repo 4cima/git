@@ -63,7 +63,7 @@ export default function PrivacyPage() {
 
                 <p className="font-semibold text-white mt-4">2. معلومات اختيارية:</p>
                 <ul className="list-disc list-inside space-y-2 mr-6">
-                  <li>البريد الإلكتروني (عند الاشتراك في النشرة الإخبارية)</li>
+                  <li>البريد الإلكتروني (عند إنشاء حساب على الموقع)</li>
                   <li>تفضيلات المشاهدة والبحث</li>
                 </ul>
 

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ShieldCheck, Lock, Server, ExternalLink, AlertTriangle, Gauge } from 'lucide-react'
+import { ExternalLink, AlertTriangle } from 'lucide-react'
 
 export const Footer = () => {
   return (
@@ -21,10 +21,10 @@ export const Footer = () => {
           {/* Brand Section - 3 cols */}
           <div className="md:col-span-3 space-y-1">
             <p className="text-zinc-500 text-xs leading-relaxed">
-              منصة المشاهدة الأولى في الوطن العربي.
+              منصة مشاهدة أفلام ومسلسلات مترجمة أونلاين.
             </p>
             <p className="text-zinc-500 text-xs leading-relaxed">
-              أفلام ومسلسلات بجودة عالية.
+              وصف عربي، تريلرات، وتقييمات لكل عمل.
             </p>
           </div>
 
@@ -77,45 +77,8 @@ export const Footer = () => {
             </a>
           </div>
 
-          {/* Status & Trust - 3 cols على md (العمود 2 = 100px أضيق من المحتوى ~150px كان يسبب overflow
-              أفقي 39px على التابلت) — يرجع 2 على lg+ كما كان */}
-          <div className="md:col-span-3 lg:col-span-2 space-y-2">
-            {/* Server Status - Compact Inline */}
-            <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-950/20 border border-emerald-900/30">
-              <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                <Server size={10} />
-                الخوادم
-              </span>
-              <div className="flex items-center gap-1.5">
-                <div className="h-1 w-16 bg-slate-900/50 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 w-[98%]" />
-                </div>
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
-                </span>
-                <span className="text-[10px] font-bold text-emerald-400">متصل</span>
-              </div>
-            </div>
-
-            {/* Trust Badges - Compact Horizontal */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900/30 border border-slate-800/50 hover:border-emerald-500/30 transition-colors group">
-                <Lock size={10} className="text-emerald-400" />
-                <span className="text-[9px] font-bold text-slate-400 group-hover:text-emerald-400 transition">SSL</span>
-              </div>
-              
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900/30 border border-slate-800/50 hover:border-blue-500/30 transition-colors group">
-                <ShieldCheck size={10} className="text-blue-400" />
-                <span className="text-[9px] font-bold text-slate-400 group-hover:text-blue-400 transition">آمن</span>
-              </div>
-              
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900/30 border border-slate-800/50 hover:border-amber-500/30 transition-colors group">
-                <Gauge size={10} className="text-amber-400" />
-                <span className="text-[9px] font-bold text-slate-400 group-hover:text-amber-400 transition">سريع</span>
-              </div>
-            </div>
-          </div>
+          {/* (بند 6) كتلة «الخوادم/متصل/SSL/آمن/سريع» شيلت — كانت مؤشرات حالة مزيفة
+              مش مربوطة بأي قياس فعلي، وبتعرض ادعاءات الموقع مش بيقدر يسندها */}
 
           {/* Genres SEO - Full Width (تصنيفات الأفلام والمسلسلات — روابط داخلية في كل الصفحات) */}
           <div className="md:col-span-12">
@@ -152,8 +115,6 @@ export const Footer = () => {
           <div className="md:col-span-12 text-center border-t border-white/5 pt-3">
             <p className="text-[10px] text-zinc-600">
               © {new Date().getFullYear()} <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-amber-500 font-bold">فور سيما</span> - جميع الحقوق محفوظة
-              <span className="mx-2">•</span>
-              <span className="px-1.5 py-0.5 rounded bg-slate-800/50 text-slate-400 border border-slate-700 font-bold">v2.4.0</span>
             </p>
           </div>
         </div>
