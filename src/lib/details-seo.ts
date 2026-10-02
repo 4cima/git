@@ -15,29 +15,32 @@ const DESC_CAP = 158
 
 export function buildDetailsTitle(opts: {
   typePrefix: string // «فيلم» أو «مسلسل»
-  nameAr: string
-  nameEn?: string | null
-  year?: number | string | null
+  nameAr: unknown
+  nameEn?: unknown
+  year?: unknown
   intent: string // مثال: « – القصة والأبطال والتريلر»
 }): string {
-  const yearPart = opts.year ? ` (${opts.year})` : ''
-  const en = (opts.nameEn || '').trim()
-  const enPart = en && en !== opts.nameAr ? ` ${en}` : ''
-  const full = `${opts.typePrefix} ${opts.nameAr}${yearPart}${enPart}${opts.intent}${BRAND_SUFFIX}`
+  // صفوف D1 بترجع SqlValue — نوحّدها نصوصًا هنا
+  const nameAr = String(opts.nameAr ?? '').trim()
+  const year = opts.year == null || opts.year === false || opts.year === '' ? null : String(opts.year)
+  const yearPart = year ? ` (${year})` : ''
+  const en = String(opts.nameEn ?? '').trim()
+  const enPart = en && en !== nameAr ? ` ${en}` : ''
+  const full = `${opts.typePrefix} ${nameAr}${yearPart}${enPart}${opts.intent}${BRAND_SUFFIX}`
   if (full.length <= TITLE_CAP) return full
 
   // 1) شيل نية البحث
-  const noIntent = `${opts.typePrefix} ${opts.nameAr}${yearPart}${enPart}${BRAND_SUFFIX}`
+  const noIntent = `${opts.typePrefix} ${nameAr}${yearPart}${enPart}${BRAND_SUFFIX}`
   if (noIntent.length <= TITLE_CAP) return noIntent
 
   // 2) شيل العنوان الإنجليزي (السنة تبقى دائمًا)
-  const noEn = `${opts.typePrefix} ${opts.nameAr}${yearPart}${BRAND_SUFFIX}`
+  const noEn = `${opts.typePrefix} ${nameAr}${yearPart}${BRAND_SUFFIX}`
   if (noEn.length <= TITLE_CAP) return noEn
 
   // 3) اقتطاع الاسم العربي عند حد كلمة
   const room = TITLE_CAP - `${opts.typePrefix}${yearPart}${BRAND_SUFFIX}`.length - 1
   if (room > 8) {
-    const cut = opts.nameAr.slice(0, room)
+    const cut = nameAr.slice(0, room)
     const sp = cut.lastIndexOf(' ')
     const truncated = (sp > 8 ? cut.slice(0, sp) : cut).replace(/[\s\-–—]+$/, '')
     return `${opts.typePrefix} ${truncated}…${yearPart}${BRAND_SUFFIX}`
@@ -46,7 +49,7 @@ export function buildDetailsTitle(opts: {
 }
 
 /** تنظيف نص القصة: شيل علامات الاقتباس المحيطة والمسافات المتضخمة */
-export function cleanOverviewText(raw: string | null | undefined): string {
+export function cleanOverviewText(raw: unknown): string {
   return String(raw ?? '')
     .replace(/[\u201C\u201D\u00AB\u00BB"]/g, '')
     .replace(/\s+/g, ' ')
