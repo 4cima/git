@@ -10,8 +10,10 @@
  * - GlobalAdsV2: يُركَّب مرة واحدة في layout الجذر.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import { ADS_V2, hasScriptSrc } from '@/config/adsV2'
 import { FLAGS } from '@/lib/constants'
+import { isHostAllowed } from '@/lib/adsAllowlist'
 import { AdsterraBanner } from './AdsterraBanner'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
@@ -180,9 +182,12 @@ export function InPagePushSlot() {
 export function NativeCardSlot({
   legacy,
   fit = 'block',
+  minHeight,
 }: {
   legacy?: ReactNode
   fit?: 'row' | 'block'
+  /** تجاوز الارتفاع المحجوز الافتراضي (240/260) — للمواضع الصغيرة */
+  minHeight?: number
 }) {
   if (!FLAGS.ADS_ENABLED) return null
   if (!ADS_V2.native.scriptSrc.trim()) return <>{legacy}</>
@@ -192,7 +197,7 @@ export function NativeCardSlot({
       scriptSrc={ADS_V2.native.scriptSrc}
       zoneId={ADS_V2.native.zoneId}
       containerId={hash ? 'container-' + hash : undefined}
-      minHeight={fit === 'row' ? 240 : 260}
+      minHeight={minHeight ?? (fit === 'row' ? 240 : 260)}
       guard={fit === 'row' ? 'native-row' : 'native-block'}
       failurePolicy={fit === 'row' ? 'ghost' : 'hide'}
       className={
@@ -268,12 +273,36 @@ function VideoSliderAd() {
   return null
 }
 
+/** بوباندَر مونتاج الشامل — دائمًا متفعل على كل الصفحات ما عدا تفاصيل
+ * الأفلام/المسلسلات (هناك طابور المشاهدة هيلتوب يملك الضغطات — بدون تصادم).
+ * يُسلَّح مرة واحدة (فحص الـDOM — السكربت يعيش في الـbody عبر التنقل الداخلي)
+ * والسكربت نفسه بيفتح داخل ضغطة حقيقية بتردد داشبورد مونتاج. */
+function MonetagPopunderSiteWide() {
+  const pathname = usePathname()
+  useEffect(() => {
+    if (!FLAGS.ADS_ENABLED) return
+    const cfg = ADS_V2.popunderWide
+    if (!cfg.scriptUrl.trim() || !cfg.zoneId) return
+    // تفاصيل الأفلام/المسلسلات = ملك طابور المشاهدة (هيلتوب) — مونتاج يستثنيها
+    if (/^\/(movies|series)\/(?!genres\b|lang\b)[^/]+\/?$/.test(pathname)) return
+    if (document.querySelector('script[data-zone="' + cfg.zoneId + '"]')) return
+    if (!isHostAllowed('propellerads', cfg.scriptUrl)) return
+    const s = document.createElement('script')
+    s.async = true
+    s.dataset.zone = cfg.zoneId
+    s.src = cfg.scriptUrl
+    document.body.appendChild(s)
+  }, [pathname])
+  return null
+}
+
 /** الوحدات العالمية — تُركَّب مرة واحدة في layout الجذر */
 export function GlobalAdsV2() {
   return (
     <>
       <SocialBarAd />
       <VideoSliderAd />
+      <MonetagPopunderSiteWide />
     </>
   )
 }

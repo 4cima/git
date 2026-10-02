@@ -14,7 +14,7 @@ import { getGenreColor, getMediaTypeColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
 import { Footer } from '@/components/layout/Footer'
 import { AdFrame } from '@/components/features/system/AdsterraBanner'
-import { VignetteSlot } from '@/components/features/system/adsV2'
+import { VignetteSlot, NativeCardSlot } from '@/components/features/system/adsV2'
 import { MobileStickyAd } from '@/components/features/system/MobileStickyAd'
 import { getAdByNum } from '@/data/ads/4cima.com'
 
@@ -570,7 +570,15 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
                 </div>
 
                 {/* Animated Poster Thumbnail with Swipe Gesture */}
-                <div className="hidden lg:flex lg:col-span-4 items-center justify-center">
+                <div className="hidden lg:flex lg:col-span-4 flex-col items-center justify-center gap-3">
+                  {/* نيتف أدستيرا مدمج جوه الهيرو — كارت بيتماهي مع التصميم
+                      (يختفي تلقائيًا لو ماملىش خلال 25 ثانية — صفر CLS لعنصر absolute) */}
+                  <div
+                    className="w-full max-w-[340px] rounded-2xl border border-white/10 bg-slate-950/60 p-1.5 shadow-2xl backdrop-blur-md"
+                    data-hero-no-swipe
+                  >
+                    <NativeCardSlot fit="block" minHeight={120} />
+                  </div>
                   <div
                     className="relative w-64 aspect-[2/3] cursor-grab active:cursor-grabbing select-none hover:animate-wiggle"
                     data-hero-no-swipe
@@ -680,9 +688,11 @@ export function HomePageClient({ initialData }: HomePageClientProps) {
         </section>
       )}
 
-      {/* بانر عريض بعرض الشاشة — تحت الهيرو مباشرة (Monetag Vignette) */}
-      <div className="w-full bg-slate-950 flex justify-center px-4 sm:px-6 md:px-8 lg:px-12 py-6">
+      {/* تحت الهيرو مباشرة: بنر 300×250 الرابح (eCPM $0.381 — أعلى موضع مشاهدة في الموقع)
+          + خانة الفيجنت القديمة (معطلة — ترجيعها سطر) */}
+      <div className="w-full bg-slate-950 flex justify-center px-4 sm:px-6 md:px-8 lg:px-12 py-4">
         <VignetteSlot guard="vignette-home-hero" />
+        <AdFrame ad={AD_CTA} variant="x" />
       </div>
 
       {/* 3. Trending Content Sections — lazy client chunk (off critical path) */}
