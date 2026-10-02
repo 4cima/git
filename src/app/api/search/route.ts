@@ -23,12 +23,15 @@ export async function GET(request: NextRequest) {
       const limiter = (getCloudflareContext().env as any)?.SEARCH_RATE_LIMITER
       if (limiter?.limit) {
         const res = await limiter.limit({ key: clientKey(request, 'search') })
+        console.log('[rl] binding called — success:', res?.success)
         if (!res?.success) return rateLimited()
       } else {
+        console.log('[rl] binding missing — memory fallback')
         const blocked = guard(request, 'search', 30, 60_000)
         if (blocked) return blocked
       }
-    } catch {
+    } catch (e) {
+      console.error('[rl] binding error:', e instanceof Error ? e.message : String(e))
       const blocked = guard(request, 'search', 30, 60_000)
       if (blocked) return blocked
     }
