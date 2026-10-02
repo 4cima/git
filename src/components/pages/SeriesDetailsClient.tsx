@@ -55,7 +55,8 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
   const titleEn = sanitizeTitle(series?.name_en || series?.name || series?.original_name)
   const overview = sanitizeOverview(series?.overview_ar || series?.overview || 'لا يوجد وصف متاح')
   const year = series?.first_air_date ? new Date(series.first_air_date).getFullYear() : 'غير محدد'
-  const rating = series?.vote_average ? Math.round(series.vote_average * 10) / 10 : 0
+  // بوابة التقييم: لا يُعرض إلا مع 50 صوتًا فأكثر (تقييمات الأصوات القليلة غير موثوقة)
+  const rating = series?.vote_average && (series?.vote_count || 0) >= 50 ? Math.round(series.vote_average * 10) / 10 : 0
   const poster = series?.poster_url || (series?.poster_path ? `/img/w342${series.poster_path}` : '')
   const backdrop = series?.backdrop_url || (series?.backdrop_path ? `/img/w780${series.backdrop_path}` : '')
   

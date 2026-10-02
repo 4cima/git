@@ -165,7 +165,8 @@ export default async function MovieDetails({ params }: PageProps) {
     })(),
     inLanguage:      movie.original_language || 'ar',
     url:             `https://4cima.com/movies/${slug}`,
-    aggregateRating: movie.vote_average ? {
+    // بوابة التقييم: لا يُصدَّر aggregateRating إلا مع 50 صوتًا فأكثر (يمنع تقييمات غير موثوقة مثل 10/10 بصوت واحد)
+    aggregateRating: movie.vote_average && (movie.vote_count || 0) >= 50 ? {
       '@type': 'AggregateRating', ratingValue: movie.vote_average,
       ratingCount: movie.vote_count || 0, bestRating: 10, worstRating: 0
     } : undefined

@@ -50,7 +50,8 @@ export const MovieDetailsClient = ({ movie, initialSimilar }: MovieDetailsClient
   const titleEn = sanitizeTitle(movie?.title_en || movie?.title)
   const overview = sanitizeOverview(movie?.overview_ar || movie?.overview || 'لا يوجد وصف متاح')
   const year = movie?.release_date ? new Date(movie.release_date).getFullYear() : (movie?.release_year || 'غير محدد')
-  const rating = movie?.vote_average ? Math.round(movie.vote_average * 10) / 10 : 0
+  // بوابة التقييم: لا يُعرض إلا مع 50 صوتًا فأكثر (تقييمات الأصوات القليلة غير موثوقة)
+  const rating = movie?.vote_average && (movie?.vote_count || 0) >= 50 ? Math.round(movie.vote_average * 10) / 10 : 0
   const poster = movie?.poster_url || (movie?.poster_path ? `/img/w342${movie.poster_path}` : '')
   const backdrop = movie?.backdrop_url || (movie?.backdrop_path ? `/img/w780${movie.backdrop_path}` : '')
   

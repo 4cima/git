@@ -178,7 +178,8 @@ export default async function SeriesDetails({ params }: PageProps) {
     numberOfSeasons:  series.number_of_seasons || seasons.length,
     numberOfEpisodes: series.number_of_episodes || undefined,
     url:              `https://4cima.com/series/${slug}`,
-    aggregateRating:  series.vote_average ? {
+    // بوابة التقييم: لا يُصدَّر aggregateRating إلا مع 50 صوتًا فأكثر (يمنع تقييمات غير موثوقة مثل 10/10 بصوت واحد)
+    aggregateRating:  series.vote_average && (series.vote_count || 0) >= 50 ? {
       '@type': 'AggregateRating', ratingValue: series.vote_average,
       ratingCount: series.vote_count || 0, bestRating: 10, worstRating: 0
     } : undefined

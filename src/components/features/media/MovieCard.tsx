@@ -147,7 +147,11 @@ export const MovieCard = memo(({
   }
   
   const voteAvg = typeof movie.vote_average === 'number' ? movie.vote_average : parseFloat(String(movie.vote_average || 0))
-  const rating = voteAvg > 0 ? Math.round(voteAvg * 10) / 10 : null
+  // بوابة التقييم: لو الصف جاي معاه vote_count نعرض النجمة فقط من 50 صوتًا فأكثر
+  // (صفوف مش بتوصل vote_count زي بعض القوائم المجمّعة — سلوكها الحالي زي ما هو لحد ما البايلود يتحدث)
+  const votesKnown = typeof (movie as any).vote_count === 'number'
+  const votesEnough = !votesKnown || (movie as any).vote_count >= 50
+  const rating = voteAvg > 0 && votesEnough ? Math.round(voteAvg * 10) / 10 : null
 
   // Extract and translate genre to Arabic
   const extractGenre = (genresJson: string | undefined): string | null => {

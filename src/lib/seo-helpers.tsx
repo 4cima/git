@@ -99,7 +99,7 @@ export function generateMovieSchema(content: SEOContent) {
       : undefined,
     datePublished: content.release_date,
     keywords: keywords.join(', '),
-    aggregateRating: content.vote_average ? {
+    aggregateRating: content.vote_average && (content.vote_count || 0) >= 50 ? {
       '@type': 'AggregateRating',
       ratingValue: content.vote_average,
       ratingCount: content.vote_count || 0,
@@ -131,7 +131,7 @@ export function generateTVSeriesSchema(content: SEOContent) {
       : undefined,
     datePublished: content.first_air_date,
     keywords: keywords.join(', '),
-    aggregateRating: content.vote_average ? {
+    aggregateRating: content.vote_average && (content.vote_count || 0) >= 50 ? {
       '@type': 'AggregateRating',
       ratingValue: content.vote_average,
       ratingCount: content.vote_count || 0,
