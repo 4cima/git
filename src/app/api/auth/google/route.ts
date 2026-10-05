@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beginGoogleAuth } from '@/lib/auth-server';
+import { guard } from '@/lib/rateLimit';
 
 export async function GET(req: NextRequest) {
+  // حد بداية تسجيل الدخول — نفس دلو callback (20/دقيقة لكل IP) فمحاولة دخول
+  // كاملة بتاخد 2 (بدء + رجوع) = 10 محاولات/دقيقة (تدقيق أمني 2026-10-04).
+  const limited = guard(req, 'auth', 20);
+  if (limited) return limited;
   const origin = new URL(req.url).origin;
   const auth   = await beginGoogleAuth(origin);
   const res    = NextResponse.redirect(auth.url);

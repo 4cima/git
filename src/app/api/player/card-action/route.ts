@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeAll, executeFirst } from '@/lib/db';
 import { bearerFrom, playerCors, verifyPlayerToken } from '@/lib/player-bridge';
+import { guard } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs'
 
@@ -16,6 +17,10 @@ export async function OPTIONS(req: NextRequest) {
 // completed → neutral), but authenticated with the short-lived signed
 // player bridge token instead of the site session cookie.
 export async function POST(req: NextRequest) {
+  // كتابة في D1 — أضيق من القراءة: 30/دقيقة لكل IP (تدقيق أمني 2026-10-04).
+  // OPTIONS من غير حد عشان الـprefetch بتاع المتصفح ماتكسرش.
+  const limited = guard(req, 'player-write', 30);
+  if (limited) return limited;
   const payload = await verifyPlayerToken(bearerFrom(req));
   if (!payload) return withCors({ error: 'Unauthorized' }, req, 401);
 

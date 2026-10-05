@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeFirst } from '@/lib/db';
 import { bearerFrom, playerCors, verifyPlayerToken } from '@/lib/player-bridge';
+import { guard } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs'
 
@@ -15,6 +16,9 @@ export async function OPTIONS(req: NextRequest) {
 // Verify a player bridge token and return the user + current heart state
 // for one item (same state keys as /api/user/card-state).
 export async function GET(req: NextRequest) {
+  // نفس دلو توكن المشغّل — 60/دقيقة لكل IP (تدقيق أمني 2026-10-04).
+  const limited = guard(req, 'player-bridge', 60);
+  if (limited) return limited;
   const payload = await verifyPlayerToken(bearerFrom(req));
   if (!payload) return withCors({ error: 'Unauthorized' }, req, 401);
 

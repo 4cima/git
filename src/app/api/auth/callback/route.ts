@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleAuthCallback, SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/auth-server';
 import { signPlayerToken } from '@/lib/player-bridge';
+import { guard } from '@/lib/rateLimit';
 
 export async function GET(req: NextRequest) {
+  // نفس دلو /api/auth/google — الفحص الأول في handleAuthCallback هو حالة
+  // state الكوكي، والحد هنا بيمنع العبث قبل أي قراءة D1 (تدقيق 2026-10-04).
+  const limited = guard(req, 'auth', 20);
+  if (limited) return limited;
   const result = await handleAuthCallback(req);
 
   if (!result?.sessionId) {

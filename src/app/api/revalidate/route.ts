@@ -7,8 +7,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { secret, tag } = body
 
-    // Verify the secret (constant-time comparison)
-    const secretOk = await safeEqual(String(secret ?? ''), process.env.REVALIDATE_SECRET ?? '')
+    // Verify the secret (constant-time comparison).
+    // فشل-مغلق: لو السر مش متظبط في البيئة الباب مقفول — من غير الحارس ده
+    // المقارنة كانت بتبقى فراغ=فراغ وتمرّ (تدقيق أمني 2026-10-04).
+    const expected = process.env.REVALIDATE_SECRET;
+    if (!expected) {
+      return NextResponse.json({ error: 'Invalid secret' }, { status: 401 });
+    }
+    const secretOk = await safeEqual(String(secret ?? ''), expected)
     if (!secretOk) {
       return NextResponse.json(
         { error: 'Invalid secret' },

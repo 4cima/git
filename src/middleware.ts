@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import { safeEqual } from '@/lib/timingSafeEqual';
 import { getSiteSettingsFresh, getMaintenanceUntil } from '@/lib/settings';
+import { guard } from '@/lib/rateLimit';
 
 const BUILD_SHA = process.env.NEXT_PUBLIC_BUILD_SHA || 'unknown';
 
@@ -171,6 +172,17 @@ export async function middleware(request: NextRequest) {
   });
   response.headers.set('x-build-sha', BUILD_SHA);
 
+  // بروكسي الصور /img/* — حد تكرار (تدقيق أمني 2026-10-04): كان بلا أي حارس
+  // وكل طلب بيحرق حصة الـWorker اليومية المشتركة مع الموقع كله. الحارس محلي
+  // في الذاكرة (نفس نمط /api/ads/serve) — بيشتغل فعلًا على الخطة المجانية.
+  // قبل فحص الصيانة عشان طلب الصورة ماتعملش قراءة D1، وقبل البوابة الإدارية.
+  // الـ429 نفسه بـno-store فمايتخزنش في أي كاش.
+  if (request.nextUrl.pathname.startsWith('/img/')) {
+    const limited = guard(request, 'img', 120, 60_000);
+    if (limited) return limited;
+    return response;
+  }
+
   // Ad endpoints must never be cached — kill switch must be instant.
   if (request.nextUrl.pathname.startsWith('/api/ads')) {
     response.headers.set('Cache-Control', 'private, no-store');
@@ -242,5 +254,8 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // /img/* بتنتهي بامتدادات صور مستثناة من النمط العام — مدخل صريح عشان
+    // الحارس يشتغل عليها (الاستثناء الأصلي مفهومه تجاهل الأصول الثابتة)
+    '/img/:path*',
   ],
 };
