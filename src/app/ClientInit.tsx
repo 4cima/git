@@ -99,6 +99,15 @@ export function ClientInit() {
     }
   }, [])
 
+  /* منع سحب الصور/اللينكات نايتيف — فايرفوكس مش بيحترم CSS user-drag
+     فالمنع القياسي على مستوى حدث dragstart نفسه = كل المتصفحات بلا استثناء:
+     الصفوف بتتسحب مرنة من غير صورة شبح بتتبع المؤشر بعد الإفلات. */
+  useEffect(() => {
+    const blockDrag = (e: DragEvent) => e.preventDefault()
+    document.addEventListener('dragstart', blockDrag)
+    return () => document.removeEventListener('dragstart', blockDrag)
+  }, [])
+
   /* Monetag verification meta — متأجَّلة (تأجيل مش حذف):
      كانت في أول الـ <head> من السيرفر (تؤثر على أول رسمة) — الآن تُحقن
      في الـDOM بعد window load + idle، فتبقى متاحة لأي فحص تحقّق لاحق. */
