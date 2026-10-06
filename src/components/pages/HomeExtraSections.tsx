@@ -80,6 +80,7 @@ function ExtraCard({
               <div className="absolute inset-0 bg-slate-800 animate-pulse" />
               {/* باقة B: w92 افتراضي + srcset w92/w154 — ممنوع w185/w300 على كروت الرئيسية */}
               <img
+                draggable={false}
                 src={`/img/w92${item.poster_path}`}
                 srcSet={`/img/w92${item.poster_path} 92w, /img/w154${item.poster_path} 154w`}
                 sizes="(max-width: 640px) 160px, 192px"

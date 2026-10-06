@@ -359,6 +359,7 @@ export const MovieCard = memo(({
           <div className="relative aspect-[2/3] w-full overflow-hidden bg-lumen-muted">
             {thumbSrc ? (
               <img
+                draggable={false}
                 src={thumbSrc}
                 alt={mainTitle}
                 width={342}
