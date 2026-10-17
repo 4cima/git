@@ -3,7 +3,7 @@
 import { useState, memo, useRef, useEffect } from 'react'
 
 // Fallback poster image (gradient with cinema theme)
-const FALLBACK_POSTER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23374151;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%231f2937;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="300" height="450" fill="url(%23grad)"/%3E%3Ctext x="150" y="225" font-size="24" fill="%239ca3af" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-weight="bold"%3E🎬%3C/text%3E%3Ctext x="150" y="280" font-size="16" fill="%236b7280" text-anchor="middle" dominant-baseline="middle" font-family="Arial"%3Eسينما أونلاين%3C/text%3E%3C/svg%3E'
+const FALLBACK_POSTER = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450"%3E%3Cdefs%3E%3ClinearGradient id="grad" x1="0%25" y1="0%25" x2="100%25" y2="100%25"%3E%3Cstop offset="0%25" style="stop-color:%23374151;stop-opacity:1" /%3E%3Cstop offset="100%25" style="stop-color:%231f2937;stop-opacity:1" /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width="300" height="450" fill="url(%23grad)"/%3E%3Ctext x="150" y="225" font-size="24" fill="%239ca3af" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-weight="bold"%3E🎬%3C/text%3E%3Ctext x="150" y="280" font-size="16" fill="%236b7280" text-anchor="middle" dominant-baseline="middle" font-family="Arial"%3Eسينما%3C/text%3E%3C/svg%3E'
 
 export type TmdbImageSize = 'w92' | 'w154' | 'w185' | 'w300' | 'w342' | 'w500' | 'w780' | 'w1280' | 'original'
 

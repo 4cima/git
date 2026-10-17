@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { executeFirst } from '@/lib/db'
+import { extractTmdbIdFromSlug } from '@/lib/slugGenerator'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 3600
@@ -13,16 +14,16 @@ export async function GET(
 
     console.log('🔄 [API /movies/:slug] Fetching movie:', slug)
 
-    // Numeric lookups resolve by tmdb_id (used by the player worker's
-    // /watch?id=… fallback); text slugs match the slug column only.
-    const isNumeric = /^\d+$/.test(slug)
+    // المرحلة 2 بند 3: احتياط tmdb_id لأي صيغة سلاج — رقم صريح، w-{id}-{year}،
+    // أو {كلمات}-{id} — حتى لا يفقد مشغّل 4cima.stream تشغيله بعد تغيير السلاج.
+    const tmdbId = extractTmdbIdFromSlug(slug)
     const movie = await executeFirst(
       `SELECT * FROM movies
-            WHERE (slug = ?${isNumeric ? ' OR tmdb_id = ?' : ''})
+            WHERE (slug = ? OR tmdb_id = ?)
               AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
               AND release_year IS NOT NULL AND release_year >= 2000
             LIMIT 1`,
-      isNumeric ? [slug, Number(slug)] : [slug]
+      [slug, tmdbId ?? -1]
     )
     
     if (!movie) {

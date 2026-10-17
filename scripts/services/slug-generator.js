@@ -1,20 +1,14 @@
 /**
- * scripts/services/slug-generator.js — المرحلة 4: نسخة Node/CJS من src/lib/slugGenerator.ts
+ * scripts/services/slug-generator.js — نسخة Node/CJS من src/lib/slugGenerator.ts
  * (المصدر الموحّد) لاستخدامها في سكربتات الـingestion فقط.
  *
- * نفس المنطق تمامًا:
- *   - يعرّب (سبايدر → sbaydr) عبر جدول ARABIC_TO_LATIN مع حذف التشكيل
- *   - lowercase → مسافات إلى شرطات → إزالة غير [a-z0-9-] → دمج الشرطات
- *   - ينظّف الشرطات من الأطراف (-x → x، x- → x، -- → -)
- *   - fallback للـCJK: عنوان CJK صِرف يُعاد كسلسلة فارغة (لا 'unknown')
- *   - لا يستخدم Date.now() أبدًا — التفرّد عبر لواحق (سنة/نوع) ثم رقم تسلسلي
- *   - toSlug() يرجع null لو الاسم فاضي (مش string فاضي) — استخدمه مع ||
- *
- * تنبيه أمان: هذه الأداة للسكربتات الجديدة فقط — لا تُعاد كتابة أي slug موجود
- * في D1 (تغيير الـslugs يكسر الفهرسة والروابط المفهرسة).
+ * النظام الرقمي الصريح (2026-10): السلاج القياسي لأي عمل هو `String(tmdb_id)` فقط —
+ *   بلا حروف إنجليزية ولا بادئات w- (مثال: /movies/190859 و /series/1396).
+ *   مسارات API الموقع تطابق (slug = ? OR tmdb_id = ?) فلا ينكسر مشغّل 4cima.stream.
+ *   - التفرّد عبر tmdb_id — بلا Date.now() ولا عشوائية.
  */
 
-/* جدول التحويل — منقول حرفيًا من src/lib/slugGenerator.ts */
+/* جدول التحويل — منقول حرفيًا من src/lib/slugGenerator.ts (يُستخدم في toSlug الاحتياطي فقط) */
 const ARABIC_TO_LATIN = {
   'ا': 'a', 'أ': 'a', 'إ': 'i', 'آ': 'a',
   'ب': 'b',
@@ -56,9 +50,16 @@ function transliterateArabic(text) {
   return text.split('').map((c) => ARABIC_TO_LATIN[c] || c).join('')
 }
 
+/** نطاق الحروف العربية (نفس src/lib/slugGenerator.ts) */
+const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F]/
+
+function hasArabicScript(text) {
+  return ARABIC_RE.test(String(text ?? ''))
+}
+
 /**
- * toSlug — نفس generateSlug في src/lib/slugGenerator.ts (بدون contentId/maxLength
- * لأن سكربتات الـingestion تتحقق من التفرّد بنفسها وتضيف السنة/النوع).
+ * toSlug — نفس toSlug في src/lib/slugGenerator.ts (بدون contentId/maxLength
+ * لأن سكربتات الـingestion تتحقق من التفرّد بنفسها).
  * @returns {string|null} slug أو null لو الاسم فاضي/الناتج فاضي (CJK بدون id)
  */
 function toSlug(text, contentId) {
@@ -78,7 +79,7 @@ function toSlug(text, contentId) {
   return slug
 }
 
-/** نفس isValidSlug في slugGenerator.ts — للتحقق قبل الإدراج. */
+/** نفس isValidSlug في slugGenerator.ts — للتحقق قبل الإدراج (الأرقام صالحة). */
 function isValidSlug(slug) {
   if (!slug || String(slug).trim() === '') return false
   if (!/^[a-z0-9-]+$/.test(slug)) return false
@@ -87,39 +88,54 @@ function isValidSlug(slug) {
   return true
 }
 
-/**
- * generateUniqueSlug — نفس التوقيع القديم (db أولاً) حتى لا ينكسر 1-fetch-and-enrich.js،
- * لكن بالمنطق الموحّد وبلا Date.now(): base → base-year → base-year-genre → رقم تسلسلي.
- * يجب استدعاؤها داخل db.transaction() كما سابقًا.
- */
-function generateUniqueSlug(db, titleEn, releaseYear, genre, table) {
-  const base = toSlug(titleEn)
-  if (!base) {
-    // اسم فاضي/CJK بلا ترجمة → خطأ صريح بدل 'untitled' أو Date.now()
-    throw new Error('generateUniqueSlug: عنوان فاضي أو غير قابل للتحويل — أدخل title صالحًا')
-  }
+/** سنة صالحة للسلاج — لم تعد تُستخدم في التوليد (بقيت للتوافق مع الاستدعاءات). */
+function safeYear(releaseYear) {
+  const y = Number(releaseYear)
+  return Number.isFinite(y) && y >= 1900 && y <= 2100 ? y : 2026
+}
 
-  const candidates = [
-    base,
-    releaseYear ? `${base}-${releaseYear}` : null,
-    releaseYear && genre ? `${base}-${releaseYear}-${toSlug(genre)}` : null,
-  ].filter(Boolean)
+/**
+ * buildStealthSlug — النظام الرقمي الصريح (2026-10):
+ * السلاج القياسي = String(tmdb_id) فقط — بلا حروف ولا بادئات.
+ * التوقيع القديم (titleAr, tmdbId, releaseYear) محفوظ للتوافق مع الاستدعاءات.
+ */
+function buildStealthSlug(titleAr, tmdbId, releaseYear) {
+  const id = Number(tmdbId)
+  if (!Number.isFinite(id) || id <= 0) {
+    throw new Error('buildStealthSlug: tmdb_id غير صالح — لا يمكن توليد سلاج رقمي')
+  }
+  return String(id)
+}
+
+/**
+ * generateUniqueSlug — التوقيع الجديد: (db, titleAr, tmdbId, releaseYear, table).
+ * يولّد السلاج الرقمي `String(tmdb_id)` ويتحقق من التفرّد في القاعدة (نظريًا
+ * مستحيل الاصطدام لأن tmdb_id فريد لكل صف، لكن الحارس يبقى دفاعًا).
+ * يجب استدعاؤها داخل db.transaction().
+ */
+function generateUniqueSlug(db, titleAr, tmdbId, releaseYear, table) {
+  const base = buildStealthSlug(titleAr, tmdbId, releaseYear)
+  if (!base || !/^[a-z0-9-]+$/.test(base)) {
+    throw new Error('generateUniqueSlug: تعذّر توليد سلاج صالح — تأكد من tmdb_id')
+  }
 
   const checkStmt = db.prepare(`SELECT tmdb_id FROM ${table} WHERE slug = ?`)
+  if (!checkStmt.get(base)) return base
 
-  for (const candidate of candidates) {
-    if (!checkStmt.get(candidate)) return candidate
-  }
-
-  // رقم تسلسلي (نادر) — بديل Date.now()، محدود ومتوقع
-  const lastAttempt = candidates[candidates.length - 1] || base
+  // اصطدام شبه مستحيل (tmdb_id مضمّن) — لاحقة تسلسلية دفاعية بلا Date.now()
   for (let i = 2; i <= 999; i++) {
-    const s = `${lastAttempt}-${i}`
+    const s = `${base}-${i}`
     if (!checkStmt.get(s)) return s
   }
-
   throw new Error(`generateUniqueSlug: كل الـcandidates محجوزة لـ"${base}" (999 محاولة)`)
 }
 
-module.exports = { toSlug, generateUniqueSlug, isValidSlug, transliterateArabic }
-
+module.exports = {
+  toSlug,
+  generateUniqueSlug,
+  isValidSlug,
+  transliterateArabic,
+  hasArabicScript,
+  buildStealthSlug,
+  safeYear,
+}

@@ -21,7 +21,7 @@ export const Footer = () => {
           {/* Brand Section - 3 cols */}
           <div className="md:col-span-3 space-y-1">
             <p className="text-zinc-500 text-xs leading-relaxed">
-              منصة مشاهدة أفلام ومسلسلات مترجمة أونلاين.
+              دليل وموسوعة معلوماتية للأفلام والمسلسلات: القصص، طاقم العمل، والملصقات.
             </p>
             <p className="text-zinc-500 text-xs leading-relaxed">
               وصف عربي، تريلرات، وتقييمات لكل عمل.

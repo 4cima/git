@@ -39,11 +39,8 @@ const nextConfig: NextConfig = {
         destination: 'https://4cima.com/:path*',
         permanent: true,
       },
-      {
-        source: '/sitemap.xml',
-        destination: '/sitemap-index.xml',
-        statusCode: 301,
-      },
+      // المرحلة 2 بند 4: حُذف توجيه /sitemap.xml → /sitemap-index.xml —
+      // كلا المسارين القياسيين يجب أن يرجعا 404 حتى لا تكشف البوتات وجود الخريطة.
       // Junk referral path seen in Search Console (/http://4cima.com) → home
       {
         source: '/http\\://4cima.com',
@@ -420,8 +417,9 @@ const nextConfig: NextConfig = {
         ],
       },
       // Sitemaps are plain XML documents: drop Next's RSC negotiation Vary
+      // المرحلة 2 بند 4: مسار الفهرس الجديد المخفي (القديم /sitemap-index.xml حُذف)
       {
-        source: '/sitemap-index.xml',
+        source: '/smap-4c-idx.xml',
         headers: [
           {
             key: 'Vary',

@@ -3,7 +3,8 @@
  * scripts/rebuild-sitemap-quality.js — فلتر الجودة على sitemap_urls (المرحلة 2).
  *
  * لماذا: مولّد slug قديم في سكربتات الـingestion أنتج slugs "قمامة" انزلقت إلى
- * sitemap_urls (تبدأ بـ- / تنتهي بـ- / حرف واحد / رقم فقط مثل سنة / شرطة مزدوجة).
+ * sitemap_urls (تبدأ بـ- / تنتهي بـ- / حرف واحد / شرطة مزدوجة). أُزيل شرط "رقم فقط" —
+ * السلاج الرقمي الصريح (tmdb_id مثل 190859) هو المعيار المعتمد منذ 2026-10.
  * هذه الروابط صفحات 404/ضعيفة في السايت ماب. الصفحات نفسها (movies/tv_series)
  * لا تُلمس — الجدول فهرس فقط، والحذف من sitemap_urls لا يكسر أي صفحة موجودة.
  *
@@ -11,7 +12,7 @@
  *   - slug موجود وغير فارغ
  *   - LENGTH(slug) > 1        (يحذف الحرف الواحد و'-' وحده)
  *   - لا يبدأ بـ'-' ولا ينتهي بـ'-' ولا يحتوي '--'
- *   - ليس رقمًا فقط (يشمل slugs السنة "2010" — GLOB '*[^0-9]*')
+ *   (أُزيل شرط "ليس رقمًا فقط" — السلاج الرقمي الصريح tmdb_id هو المعيار الجديد)
  *
  * إعادة الترقيم (بعد الحذف، لكل media_type):
  *   ordinal = ROW_NUMBER() بترتيب ordinal القديم (يحافظ على ترتيب tmdb_id ASC الأصلي)
@@ -45,7 +46,7 @@ const BACKUP_TABLE = 'sitemap_urls_backup_20260917';
 const SLUG_QUALITY_BAD =
   `slug IS NULL OR slug = '' OR LENGTH(slug) <= 1` +
   ` OR slug LIKE '-%' OR slug LIKE '%-' OR slug LIKE '%--%'` +
-  ` OR slug NOT GLOB '*[^0-9]*'`;
+   ` OR slug LIKE '%--%'`;
 
 /** قواعد العرض (إحصاء مستقل لكل قاعدة — متداخلة بينها، والإجمالي هو UNIQUE). */
 const RULES = [
@@ -53,7 +54,6 @@ const RULES = [
   { label: 'slug ينتهي بـ "-"',    where: `slug LIKE '%-'` },
   { label: 'slug = "-" فقط',       where: `slug = '-'` },
   { label: 'حرف واحد أو أقل (≤1)', where: `LENGTH(slug) <= 1` },
-  { label: 'أرقام فقط (سنة/ID)',   where: `slug NOT GLOB '*[^0-9]*' AND slug != ''` },
   { label: 'شرطة مزدوجة "--"',     where: `slug LIKE '%--%'` },
 ];
 

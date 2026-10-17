@@ -4,9 +4,11 @@
  */
 
 export const SERVERS = [
+  // VidRock الأول — الافتراضي (ترجمته العربية سليمة — قرار اسلام 4/10)
+  // ومطابق لترتيب STREAM_SERVERS في الموقع الرئيسي (vidsrc_vip الأول هناك)
+  { id: 'vidsrc_vip',   name: 'VidRock',   short: 'VM',  base: 'https://vidrock.net/embed' },
   { id: 'vidlink',      name: 'VidLink',   short: 'VL',  base: 'https://vidlink.pro' },
   { id: 'vidsrc_me',    name: 'VidSrc.me', short: 'VS',  base: 'https://vidsrc.me/embed' },
-  { id: 'vidsrc_vip',   name: 'VidRock',   short: 'VM',  base: 'https://vidrock.net/embed' },
   { id: 'videasy',      name: 'Videasy',   short: 'VY',  base: 'https://player.videasy.net' },
   { id: '111movies',    name: '111Movies', short: '1M',  base: 'https://111movies.com' },
   { id: 'autoembed_co', name: 'AutoEmbed', short: 'AM',  base: 'https://autoembed.co' },

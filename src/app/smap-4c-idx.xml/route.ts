@@ -1,3 +1,21 @@
+/**
+ * /smap-4c-idx.xml — sitemap index Route Handler (raw XML) — المرحلة 2 بند 4.
+ *
+ * الاسم متعمّدًا غير قياسي ("smap-4c-idx") — لا يُعلن في robots.txt ولا يُقدَّم
+ * عند /sitemap-index.xml أو /sitemap.xml (حُذفا؛ يرجعان 404) — مخفي عن ماسحات
+ * البصمة الأجنبية، والوصول إليه فقط بمعرفة المسار.
+ *
+ * الفهرس يدرج شظايا الكتالوج كاملة بعد بوابة الجودة المشدّدة:
+ *   /sitemap/static.xml   (الصفحات الثابتة + صفحات الهبوط للتصنيفات)
+ *   /sitemap/priority.xml (أفضل 3,000 فيلم + 2,000 مسلسل حسب popularity)
+ *   /sitemap/movies-0..N.xml + /sitemap/series-0..M.xml (شظايا 10,000)
+ *
+ * الشظايا بعد إعادة بناء sitemap_urls (vote_count >= 150 + تريلر + قصة عربية
+ * = المدرج فقط) تحتوي الروابط الأهيلة فقط.
+ *
+ * Any database failure → 503 XML (never an empty or partial index with 200).
+ */
+
 import {
   SITEMAP_BASE_URL,
   INDEX_CACHE_CONTROL,
@@ -11,26 +29,6 @@ import {
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-/**
- * /sitemap-index.xml — sitemap index Route Handler (raw XML).
- *
- * (قرار 4 — 2/10/2026) الفهرس بيرجع يدرج شظايا الكتالوج كاملة بعد بوابة الضعف:
- *   /sitemap/static.xml   (الصفحات الثابتة + صفحات الهبوط للتصنيفات)
- *   /sitemap/priority.xml (أفضل 3,000 فيلم + 2,000 مسلسل حسب popularity)
- *   /sitemap/movies-0..N.xml + /sitemap/series-0..M.xml (شظايا 10,000)
- *
- * الشظايا بعد إعادة بناء sitemap_urls ببوابة الضعف (vote_count<50 بلا تريلر
- * = غير مدرج) تحتوي الروابط الأهيلة فقط — ومتزامنة مع noindex صفحات التفاصيل
- * الضعيفة، فالسايت ماب كله قابل للفهرسة بلا تعارض.
- *
- * عدّ الشظايا: استعلام واحد رخيص (MAX على الفهرس — صفّان) بكاش حافة 24 ساعة
- * + كاش ذاكرة الـWorker في shardCache — لا مسح جداول ولا COUNT.
- *
- * ⚠️ بعد أي نشر يلمس هذا الملف: CI بيعمل purge_everything تلقائيًا (الكاش يوم كامل).
- *
- * Any database failure → 503 XML (never an empty or partial index with 200).
- */
 
 const SHARD_COUNTS_SQL =
   `SELECT (SELECT MAX(shard) + 1 FROM sitemap_urls WHERE media_type = 'movie')  AS movie_shards, ` +

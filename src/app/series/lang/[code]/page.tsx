@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const url = `https://4cima.com/series/lang/${code}`
   return {
     title,
-    description: `شاهد أفضل المسلسلات ${lang.label} بجودة عالية ومترجمة`,
+    description: `دليل أفضل المسلسلات ${lang.label} — القصة، التقييمات، والإعلان الرسمي`,
     robots: indexable ? undefined : { index: false, follow: true },
     alternates: { canonical: url },
     openGraph: {
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url,
       siteName: 'فور سيما',
       title: `${title} | فور سيما`,
-      description: `شاهد أفضل المسلسلات ${lang.label} بجودة عالية ومترجمة`,
+      description: `دليل أفضل المسلسلات ${lang.label} — القصة، التقييمات، والإعلان الرسمي`,
       images: [{ url: 'https://4cima.com/og-image.png', width: 1200, height: 630, alt: title }],
     },
   }

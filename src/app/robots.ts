@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
         '/search',
       ],
     },
-    sitemap: 'https://4cima.com/sitemap-index.xml',
+    // المرحلة 2 بند 4: لا يُعلن عن أي سايت ماب في robots.txt — الإشارة لموقع
+    // الخريطة تكشف بنية الأرشيف لمصنّفات المحتوى (المسار يظل متاحًا للمحققين).
   }
 }

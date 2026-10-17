@@ -6,6 +6,7 @@ import clsx from 'clsx'
 import Link from 'next/link'
 import { getGenreColor } from '@/utils/genreColors'
 import { sanitizeTitle, sanitizeOverview } from '@/utils/textSanitizer'
+import { StealthText, encodeStealthText } from '@/components/ui/StealthText'
 import { genreSlugById } from '@/lib/genre-slugs'
 import { Footer } from '../layout/Footer'
 import { useImageBrightness } from '@/utils/imageAnalysis'
@@ -547,7 +548,14 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
                       <h1 className="text-xl md:text-2xl font-black text-zinc-100">{title}</h1>
                     </div>
                     {titleEn && titleEn !== title && (
-                      <h2 className="text-xl text-zinc-400 mt-2 font-medium tracking-wide text-left">{titleEn}</h2>
+                      /* الاسم الإنجليزي يُعرض عبر StealthText — يراه الزائر البشري كما هو
+                         (نفس الخط والحجم عبر ::after من data-text) ولا يظهر كنص صريح
+                         في الـSSR HTML (حماية من بوتات السكرابينج) */
+                      <StealthText
+                        as="h2"
+                        encodedText={encodeStealthText(titleEn)}
+                        className="text-xl text-zinc-400 mt-2 font-medium tracking-wide text-left"
+                      />
                     )}
                   </div>
                 </div>
@@ -569,7 +577,11 @@ export const SeriesDetailsClient = ({ series, seasons, initialSimilar }: SeriesD
                           <Play className="ml-0.5 h-5 w-5 fill-current" />
                         </span>
                         <span className="flex min-w-0 flex-col text-right">
-                          <span className="text-base sm:text-lg leading-tight font-black whitespace-nowrap">مشاهدة المسلسل</span>
+                          {/* نص الزر عبر StealthText — عبارة البث لا تظهر في الـSSR HTML */}
+                          <StealthText
+                            encodedText={encodeStealthText('مشاهدة المسلسل')}
+                            className="text-base sm:text-lg leading-tight font-black whitespace-nowrap"
+                          />
                           <span className="text-xs font-medium leading-tight text-white/85">الموسم {selectedSeason} - الحلقة {selectedEpisode}</span>
                         </span>
                       </button>

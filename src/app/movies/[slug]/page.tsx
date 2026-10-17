@@ -1,10 +1,11 @@
 import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import { executeFirst } from '@/lib/db'
 import { getSimilarMovies } from '@/lib/similar-server'
 import { MovieDetailsClient } from '@/components/pages/MovieDetailsClient'
 import { safeJsonLd } from '@/lib/jsonld';
-import { buildDetailsTitle, cleanOverviewText, truncateDescription } from '@/lib/details-seo'
+import { buildDetailsTitle, cleanOverviewText, truncateDescription, sanitizeSeoKeywords } from '@/lib/details-seo'
+import { extractTmdbIdFromSlug } from '@/lib/slugGenerator'
 
 // ساعة بدل دقيقة: كاش الحافة (edge-cache-worker) بيغطي الزيارات، وده بيقلل إعادة التوليد من D1
 // 60 مرة. التحديثات بعد المزامنة بتوصل فورًا عبر purge_everything في سلسلة ما بعد المزامنة.
@@ -16,23 +17,25 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
+  // المرحلة 2 بند 1: الأعمدة المخزّنة seo_title_ar/seo_description_ar لا تُقرأ ولا تُستخدم
+  // أبدًا (قد تحوي كلمات مشاهدة/تحميل أو الاسم الإنجليزي) — التوليد الحي الآمن هو المصدر.
+  // المرحلة 2 بند 3: احتياط tmdb_id — استخراج المعرّف من أي صيغة سلاج للجلب المباشر.
+  const tmdbId = extractTmdbIdFromSlug(slug) ?? -1
   const movie = await executeFirst(
-    `SELECT title_ar, title_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path, release_year, genres_json, vote_count, trailer_key
+    `SELECT title_ar, title_en, overview_ar, seo_keywords_json, poster_path, backdrop_path, release_year, genres_json, vote_count, trailer_key, slug
      FROM movies
-     WHERE slug = ?
+     WHERE (slug = ? OR tmdb_id = ?)
        AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
      AND release_year IS NOT NULL AND release_year >= 2000
      LIMIT 1`,
-    [slug]
+    [slug, tmdbId]
   )
   // العمل غير موجود → 404 فعلي (كان يُرجع { title: 'فيلم غير موجود' } مع HTTP 200 — سبب الـ soft 404)
   if (!movie) notFound()
 
-  // بوابة الضعف (قرار 4 — 2/10/2026): صف بلا تريلر وتقييمه من أقل من 50 صوت
-  // = هزيل لجوجل → noindex,follow (الصفحة تظل ظاهرة للزائر) — نفس بوابة سايت ماب.
-  const isThin =
-    Number(movie.vote_count || 0) < 50 &&
-    !(movie.trailer_key && String(movie.trailer_key).trim() !== '')
+/* الشمول الكامل 100% (تعديل 2026-10-17): شرط noindex الهزيل مُلغى — كل صفحة
+     عمل (clean/reviewed_approved أو NULL) قابلة للفهرسة (index,follow) وتطابق
+     وجودها في السايت ماب. */
 
   // تفادي تكرار اسم الموقع داخل العنوان (يُعاد { absolute } لتجاوز قالب layout)
   const stripBrand = (s: unknown): string =>
@@ -44,13 +47,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       .trim()
 
   const nameAr = stripBrand(movie.title_ar || movie.title_en) || 'فيلم'
-  const nameEn = stripBrand(movie.title_en)
 
-  // القالب الجديد (بند 4): «فيلم {عربي} ({سنة}) {إنجليزي} – القصة والأبطال والتريلر | فور سيما»
+  // القالب (تعديل 2026-10): «فيلم {عربي} ({سنة}) – القصة والأبطال والتريلر | فور سيما»
+  // الاسم الإنجليزي لم يعد يدخل وسم <title> إطلاقًا (حماية من تصنيف الصفحة كبث مقرصن)
   const title = buildDetailsTitle({
     typePrefix: 'فيلم',
     nameAr,
-    nameEn,
     year: movie.release_year,
     intent: ' – القصة والأبطال والتريلر',
   })
@@ -67,20 +69,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // القالب الجديد (بند 3): الوصف يبدأ بالقصة ويُقتطع عند حد جملة/كلمة،
   // وقالب احتياطي فريد من بيانات حقيقية لو مفيش قصة
   const overview = cleanOverviewText(movie.overview_ar || movie.overview)
-  const fallbackDesc = `فيلم ${nameAr}${movie.release_year ? ` (${movie.release_year})` : ''}${nameEn ? ` «${nameEn}»` : ''} — ${genres.join('، ') || 'عمل سينمائي'} من أفلام فور سيما.`
+  const fallbackDesc = `فيلم ${nameAr}${movie.release_year ? ` (${movie.release_year})` : ''} — ${genres.join('، ') || 'عمل سينمائي'} من أفلام فور سيما.`
   const description = truncateDescription(overview || fallbackDesc)
   
-  let keywords: string | undefined
-  try {
-    if (movie.seo_keywords_json) {
-      const keywordsArray = typeof movie.seo_keywords_json === 'string' 
-        ? JSON.parse(movie.seo_keywords_json) 
-        : movie.seo_keywords_json
-      if (Array.isArray(keywordsArray) && keywordsArray.length > 0) {
-        keywords = keywordsArray.join(', ')
-      }
-    }
-  } catch {}
+  // المرحلة 2 بند 1: الكلمات المفتاحية تُفحص — يُسقط أي كلمة لاتينية أو كلمات
+  // (مشاهدة/تحميل/اون لاين/اونلاين/مباشر) المتبقية من الجيل القديم في القاعدة.
+  const keywords = sanitizeSeoKeywords(movie.seo_keywords_json)
   
   // og:image: خلفية 16:9 إن توفّرت (أقرب مقاس متاح من TMDB لـ 1200×630 هو w1280 بـ 1280×720)،
   // وإلا الملصق، وإلا صورة الموقع العامة — الصور عبر بروكسي /img/ (مسار عام محايد) وليس image.tmdb.org مباشرة
@@ -89,15 +83,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : movie.poster_path
       ? { url: `https://4cima.com/img/w500${movie.poster_path}`, width: 500, height: 750, alt: title }
       : { url: 'https://4cima.com/og-image.png', width: 1200, height: 630, alt: 'فور سيما' }
-  const pageUrl = `https://4cima.com/movies/${slug}`
+  // canonical دائمًا على السلاج المخزّن (لو الطلب عبر سلاج قديم/احتياط tmdb_id)
+  const pageUrl = `https://4cima.com/movies/${movie.slug || slug}`
 
   return {
     title: { absolute: title },
     description,
     keywords,
     alternates: { canonical: pageUrl },
-    // الصفحات الهزيلة فقط تتخطى الفهرسة (noindex,follow) — الباقي يرث الافتراضي من layout
-    ...(isThin ? { robots: { index: false as const, follow: true as const } } : {}),
+    // الشمول الكامل 100%: كل الصفحات قابلة للفهرسة — ترث الافتراضي من layout
     openGraph: {
       type: 'video.movie' as const,
       url: pageUrl,
@@ -117,16 +111,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MovieDetails({ params }: PageProps) {
   const { slug }    = await params
-  /* بوابة الإخفاء: المحجوب (blocked) → 404 نظيف بلا JSON-LD ولا بيانات صفحة */
+  /* بوابة الإخفاء: المحجوب (blocked) → 404 نظيف بلا JSON-LD ولا بيانات صفحة
+     المرحلة 2 بند 3: احتياط tmdb_id — أي صيغة سلاج تُحلّ عبر المعرّف،
+     والسلاج غير المطابق للسلاج المخزّن → permanentRedirect 308 للرابط القانوني. */
+  const tmdbId      = extractTmdbIdFromSlug(slug) ?? -1
   const movieData   = await executeFirst(
     `SELECT * FROM movies
-     WHERE slug = ?
+     WHERE (slug = ? OR tmdb_id = ?)
        AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
      AND release_year IS NOT NULL AND release_year >= 2000
      LIMIT 1`,
-    [slug]
+    [slug, tmdbId]
   )
   if (!movieData) notFound()
+  if (movieData.slug && movieData.slug !== slug) {
+    permanentRedirect(`/movies/${movieData.slug}`)
+  }
   const movie       = JSON.parse(JSON.stringify(movieData))
 
   /* «قد يعجبك أيضاً» — SSR من جداول similar-cache (~15 صفًا بالـPK بدل ~145K في
@@ -138,7 +138,6 @@ export default async function MovieDetails({ params }: PageProps) {
     '@context': 'https://schema.org',
     '@type': 'Movie',
     name:            movie.title_ar || movie.title_en || 'فيلم',
-    alternateName:   movie.title_en || undefined,
     description:     movie.overview_ar || movie.overview || undefined,
     image:           movie.poster_path ? `https://4cima.com/img/w500${movie.poster_path}` : undefined,
     datePublished:   movie.release_date || undefined,

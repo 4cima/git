@@ -71,3 +71,6 @@ measure-*.js
 # Secrets migration helper (manual run only)
 migrate-secrets.ps1
 .tmp/
+
+# zcode agent artifacts
+.zcode/

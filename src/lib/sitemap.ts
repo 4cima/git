@@ -85,30 +85,25 @@ export const CLEAN_ITEM_SQL =
 
 // ── Detail-link filter (sitemap only — لا يمس استعلامات صفحات الموقع) ────────
 //
-// جوجل يزور الأشهر/الأحدث بدل مئات الآلاف: روابط التفاصيل في الخريطة =
-// (حديث: سنة >= 2015) أو (أقدم من 2015 بتقييمات كافية)، مع استبعاد أنواع
-// المحتوى الممنوعة الموجودة أصلًا (Talk Show/War & Politics/Documentary/History).
+// الشمول الكامل 100% (تعديل 2026-10-17 — قرار إسلام: إلغاء بوابة الاستبعاد):
+// روابط التفاصيل في الخريطة = كل صف معتمد (clean — نفس بوابة الصفحات) بلا أي
+// شرط على vote_count أو trailer_key أو overview_ar — مطابقة 1:1 مع الصفحات
+// المفهرسة (index,follow).
 //
-// - الاستبعاد anti-join على جدول الممنوعات المُجمّع (build-genre-index.js) مع حارس
-//   سنة >= 2000: الجدول المجمّع بُني ببوابة (clean/reviewed + سنة >= 2000 + tmdb) وهي
-//   أضيق شرطين من شرط السايت ماب (clean فقط + سنة>=2015 أو تصويتات) — فالصفوف داخل
-//   البوابة تُفحص بـprobe على PK (رخيص) والأقدم من 2000 تُفحص بـjson_each (الفرع
-//   الثالث) لتبقى الدلالات مطابقة حرفيًا لـjson_each الخالص. إثبات تكافؤ كامل
-//   الكتالوج (19/9): movies 62,509 وtv_series 24,664 idًا متطابقين بالترتيب.
+// - حارس السنة (2000): الجدول المجمّع بُني ببوابة (clean/reviewed + سنة >= 2000 + tmdb)
+//   وهي أضيق من شرط السايت ماب، فالصفوف داخلها تُفحص بـprobe على PK (رخيص)
+//   والأقدم من 2000 تُفحص بـjson_each (الفرع الثالث) لتبقى الدلالات مطابقة
+//   حرفيًا لـjson_each الخالص.
 //   ⚠️ أي تعديل مستقبلي على بوابات build-genre-index.js يستلزم مراجعة الحارس هنا.
 // - NULL مسموح (8210 مسلسل نظيف بلا genres_json كانوا سيُستبعدون خطأً بنمط NOT LIKE).
-// - عتبة المصوّتين للأقدم من 2015: vote_count >= 1000 — لا توجد عتبة جودة
-//   موحّدة في السحب/الفلتر (أقربها 50/100 لأغراض مشابهة أخرى) فثُبّتت 1000 صراحةً.
+// - لا توجد أي عتبة أصوات/سنة إضافية (أُلغيت 2026-10-17 — شمول 100%).
 //
-// ── بوابة الضعف (قرار 4 — 2/10/2026): صف بلا تريلر وتقييمه من أقل من 50 صوت
-// = هزيل لا يُدرج في السايت ماب، وصفحة التفاصيل بتاعته تُصدَر noindex,follow
-// (تبقى ظاهرة للزائر) — وتعود للأهلية تلقائيًا لو اتحسّنت (تريلر أو أصوات ≥ 50).
-export const SITEMAP_THIN_MAX_VOTES = 50;
-export const SITEMAP_THIN_GATE_SQL =
-  "AND NOT (vote_count < " + SITEMAP_THIN_MAX_VOTES + " AND (trailer_key IS NULL OR trailer_key = ''))";
-
-export const SITEMAP_MIN_YEAR = 2015;
-export const SITEMAP_MIN_VOTE_COUNT = 1000;
+// ── بوابة الجودة (المرحلة 2 بند 4) — مُلغاة 2026-10-17: SITEMAP_THIN_GATE_SQL
+// فارغة وكل الصفحات index,follow — التفاصيل محفوظة في سجل القرارات فقط.
+/* المرحلة 2 بند 4 (ملغاة 2026-10-17 — شمول 100%): بوابة الجودة أُلغيت —
+   كل صف معتمد يدخل sitemap_urls. الثابتان محفوظان للتوافق فقط. */
+export const SITEMAP_THIN_MAX_VOTES = 0;
+export const SITEMAP_THIN_GATE_SQL = '';
 
 /** فلتر روابط التفاصيل في السايت ماب لجدول محدد (عمود السنة يختلف بين الجدولين). */
 export function sitemapDetailFilterSql(table: 'movies' | 'tv_series'): string {
@@ -120,8 +115,7 @@ export function sitemapDetailFilterSql(table: 'movies' | 'tv_series'): string {
     `OR (${yearColumn} >= 2000 AND NOT EXISTS (SELECT 1 FROM ${excludedTable} eg WHERE eg.tmdb_id = ${table}.tmdb_id)) ` +
     `OR NOT EXISTS (SELECT 1 FROM json_each(${table}.genres_json) ` +
     `WHERE json_extract(value, '$.tmdb_id') IN (${excludedIds}))) ` +
-    `AND (${yearColumn} >= ${SITEMAP_MIN_YEAR} OR vote_count >= ${SITEMAP_MIN_VOTE_COUNT})` +
-    SITEMAP_THIN_GATE_SQL
+    `AND ${yearColumn} IS NOT NULL`
   );
 }
 

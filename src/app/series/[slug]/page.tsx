@@ -1,10 +1,11 @@
 import { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
+import { extractTmdbIdFromSlug } from '@/lib/slugGenerator'
 import { executeFirst } from '@/lib/db'
 import { getSimilarSeries } from '@/lib/similar-server'
 import { SeriesDetailsClient } from '@/components/pages/SeriesDetailsClient'
 import { safeJsonLd } from '@/lib/jsonld';
-import { buildDetailsTitle, cleanOverviewText, truncateDescription } from '@/lib/details-seo'
+import { buildDetailsTitle, cleanOverviewText, sanitizeSeoKeywords, truncateDescription } from '@/lib/details-seo'
 
 // ساعة بدل دقيقة: كاش الحافة (edge-cache-worker) بيغطي الزيارات، وده بيقلل إعادة التوليد من D1
 // 60 مرة. التحديثات بعد المزامنة بتوصل فورًا عبر purge_everything في سلسلة ما بعد المزامنة.
@@ -16,22 +17,24 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug }  = await params
+  // المرحلة 2 بند 1: الأعمدة المخزّنة seo_title_ar/seo_description_ar لا تُقرأ ولا تُستخدم
+  // أبدًا (قد تحوي كلمات مشاهدة/تحميل أو الاسم الإنجليزي) — التوليد الحي الآمن هو المصدر.
+  // المرحلة 2 بند 3: احتياط tmdb_id — استخراج المعرّف من أي صيغة سلاج للجلب المباشر.
+  const tmdbId = extractTmdbIdFromSlug(slug) ?? -1
   const series    = await executeFirst(
-    `SELECT name_ar, name_en, overview_ar, seo_title_ar, seo_description_ar, seo_keywords_json, poster_path, backdrop_path, first_air_year, genres_json, vote_count, trailer_key
+    `SELECT name_ar, name_en, overview_ar, seo_keywords_json, poster_path, backdrop_path, first_air_year, genres_json, vote_count, trailer_key, slug
      FROM tv_series
-     WHERE slug = ?
+     WHERE (slug = ? OR tmdb_id = ?)
        AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
      AND first_air_year IS NOT NULL AND first_air_year >= 2000
-     LIMIT 1`, [slug]
+     LIMIT 1`, [slug, tmdbId]
   )
   // العمل غير موجود → 404 فعلي (كان يُرجع { title: 'مسلسل غير موجود' } مع HTTP 200 — سبب الـ soft 404)
   if (!series) notFound()
 
-  // بوابة الضعف (قرار 4 — 2/10/2026): صف بلا تريلر وتقييمه من أقل من 50 صوت
-  // = هزيل لجوجل → noindex,follow (الصفحة تظل ظاهرة للزائر) — نفس بوابة سايت ماب.
-  const isThin =
-    Number(series.vote_count || 0) < 50 &&
-    !(series.trailer_key && String(series.trailer_key).trim() !== '')
+/* الشمول الكامل 100% (تعديل 2026-10-17): شرط noindex الهزيل مُلغى — كل صفحة
+     عمل (clean/reviewed_approved أو NULL) قابلة للفهرسة (index,follow) وتطابق
+     وجودها في السايت ماب. */
 
   // تفادي تكرار اسم الموقع داخل العنوان (يُعاد { absolute } لتجاوز قالب layout)
   const stripBrand = (s: unknown): string =>
@@ -43,13 +46,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       .trim()
 
   const nameAr = stripBrand(series.name_ar || series.name_en) || 'مسلسل'
-  const nameEn = stripBrand(series.name_en)
 
-  // القالب الجديد (بند 4): «مسلسل {عربي} ({سنة}) {إنجليزي} – المواسم والحلقات والأبطال | فور سيما»
+  // القالب (تعديل 2026-10): «مسلسل {عربي} ({سنة}) – المواسم والحلقات والأبطال | فور سيما»
+  // الاسم الإنجليزي لم يعد يدخل وسم <title> إطلاقًا (حماية من تصنيف الصفحة كبث مقرصن)
   const title = buildDetailsTitle({
     typePrefix: 'مسلسل',
     nameAr,
-    nameEn,
     year: series.first_air_year,
     intent: ' – المواسم والحلقات والأبطال',
   })
@@ -66,20 +68,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // القالب الجديد (بند 3): الوصف يبدأ بالقصة ويُقتطع عند حد جملة/كلمة،
   // وقالب احتياطي فريد من بيانات حقيقية لو مفيش قصة
   const overview = cleanOverviewText(series.overview_ar || series.overview)
-  const fallbackDesc = `مسلسل ${nameAr}${series.first_air_year ? ` (${series.first_air_year})` : ''}${nameEn ? ` «${nameEn}»` : ''} — ${genres.join('، ') || 'عمل تلفزيوني'} من مسلسلات فور سيما.`
+  const fallbackDesc = `مسلسل ${nameAr}${series.first_air_year ? ` (${series.first_air_year})` : ''} — ${genres.join('، ') || 'عمل تلفزيوني'} من مسلسلات فور سيما.`
   const description = truncateDescription(overview || fallbackDesc)
   
-  let keywords: string | undefined
-  try {
-    if (series.seo_keywords_json) {
-      const keywordsArray = typeof series.seo_keywords_json === 'string' 
-        ? JSON.parse(series.seo_keywords_json) 
-        : series.seo_keywords_json
-      if (Array.isArray(keywordsArray) && keywordsArray.length > 0) {
-        keywords = keywordsArray.join(', ')
-      }
-    }
-  } catch {}
+  // المرحلة 2 بند 1: الكلمات المفتاحية تُفحص — يُسقط أي كلمة لاتينية أو كلمات
+  // (مشاهدة/تحميل/اون لاين/اونلاين/مباشر) المتبقية من الجيل القديم في القاعدة.
+  const keywords = sanitizeSeoKeywords(series.seo_keywords_json)
   
   // og:image: خلفية 16:9 إن توفّرت (أقرب مقاس متاح من TMDB لـ 1200×630 هو w1280 بـ 1280×720)،
   // وإلا الملصق، وإلا صورة الموقع العامة — الصور عبر بروكسي /img/ (مسار عام محايد) وليس image.tmdb.org مباشرة
@@ -88,15 +82,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : series.poster_path
       ? { url: `https://4cima.com/img/w500${series.poster_path}`, width: 500, height: 750, alt: title }
       : { url: 'https://4cima.com/og-image.png', width: 1200, height: 630, alt: 'فور سيما' }
-  const pageUrl = `https://4cima.com/series/${slug}`
+  const pageUrl = `https://4cima.com/series/${series.slug || slug}`
 
   return {
     title: { absolute: title },
     description,
     keywords,
     alternates: { canonical: pageUrl },
-    // الصفحات الهزيلة فقط تتخطى الفهرسة (noindex,follow) — الباقي يرث الافتراضي من layout
-    ...(isThin ? { robots: { index: false as const, follow: true as const } } : {}),
+    // الشمول الكامل 100%: كل الصفحات قابلة للفهرسة — ترث الافتراضي من layout
     openGraph: {
       type: 'video.tv_show' as const,
       url: pageUrl,
@@ -116,16 +109,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SeriesDetails({ params }: PageProps) {
   const { slug }   = await params
-  /* بوابة الإخفاء: المحجوب (blocked) → 404 نظيف بلا JSON-LD ولا بيانات صفحة */
+  /* بوابة الإخفاء: المحجوب (blocked) → 404 نظيف بلا JSON-LD ولا بيانات صفحة
+     المرحلة 2 بند 3: احتياط tmdb_id — أي صيغة سلاج تُحلّ عبر المعرّف،
+     والسلاج غير المطابق للسلاج المخزّن → permanentRedirect 308 للرابط القانوني. */
+  const tmdbId     = extractTmdbIdFromSlug(slug) ?? -1
   const seriesData = await executeFirst(
     `SELECT * FROM tv_series
-     WHERE slug = ?
+     WHERE (slug = ? OR tmdb_id = ?)
        AND (filter_status IN ('clean', 'reviewed_approved') OR filter_status IS NULL)
      AND first_air_year IS NOT NULL AND first_air_year >= 2000
      LIMIT 1`,
-    [slug]
+    [slug, tmdbId]
   )
   if (!seriesData) notFound()
+  if (seriesData.slug && seriesData.slug !== slug) {
+    permanentRedirect(`/series/${seriesData.slug}`)
+  }
 
   let seasons: any[] = []
   try {
@@ -149,7 +148,6 @@ export default async function SeriesDetails({ params }: PageProps) {
     '@context': 'https://schema.org',
     '@type': 'TVSeries',
     name:             series.name_ar || series.name_en || 'مسلسل',
-    alternateName:    series.name_en || undefined,
     description:      series.overview_ar || series.overview || undefined,
     image:            series.poster_path ? `https://4cima.com/img/w500${series.poster_path}` : undefined,
     datePublished:    series.first_air_date || undefined,

@@ -92,7 +92,6 @@ export function generateMovieSchema(content: SEOContent) {
     '@context': 'https://schema.org',
     '@type': 'Movie',
     name: content.title_ar,
-    alternateName: content.title_en,
     description: content.overview_ar || '',
     image: content.poster_path 
       ? `/img/w780${content.poster_path}`
@@ -124,7 +123,6 @@ export function generateTVSeriesSchema(content: SEOContent) {
     '@context': 'https://schema.org',
     '@type': 'TVSeries',
     name: content.title_ar,
-    alternateName: content.title_en,
     description: content.overview_ar || '',
     image: content.poster_path 
       ? `/img/w780${content.poster_path}`

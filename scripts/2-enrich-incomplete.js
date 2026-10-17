@@ -4,6 +4,11 @@ const pLimit = pLimitModule.default || pLimitModule;
 const db = require('./services/local-db');
 const { translateField } = require('./services/translation-service');
 const { shouldRejectWork } = require('./services/content-filter');
+/* المرحلة 2: مولّد سلاج "التخفي" — إعادة توليد السلاج من الاسم العربي + tmdb_id
+   عند اكتمال الترجمة لأول مرة (السلاج القديم كان مبنيًا على الاسم الإنجليزي). */
+const { generateUniqueSlug, buildStealthSlug } = require('./services/slug-generator');
+
+const CANONICAL_BASE = 'https://4cima.com';
 
 const limiter = pLimit(10);
 const args = process.argv.slice(2);
@@ -61,6 +66,18 @@ async function enrichMovie(movie) {
     db.prepare(`UPDATE movies SET title_ar=?, overview_ar=?, is_complete=?, updated_at=datetime('now') WHERE tmdb_id=?`)
       .run(title_ar || null, overview_ar || null, isComplete, movie.tmdb_id);
 
+    /* المرحلة 2: لو اكتمل الاسم العربي الآن والسلاج الحالي ليس بصيغة "التخفي"
+       (مولّد من الإنجليزي سابقًا) → أعد توليده من العربي + tmdb_id وحوّثه. */
+    if (title_ar && !movie.title_ar) {
+      const stealth = buildStealthSlug(title_ar, movie.tmdb_id, movie.release_year);
+      if (movie.slug && movie.slug !== stealth) {
+        const newSlug = generateUniqueSlug(db, title_ar, movie.tmdb_id, movie.release_year, 'movies');
+        db.prepare(`UPDATE movies SET slug=?, canonical_url=? WHERE tmdb_id=?`)
+          .run(newSlug, `${CANONICAL_BASE}/movies/${newSlug}`, movie.tmdb_id);
+        stats.moviesReslugged = (stats.moviesReslugged || 0) + 1;
+      }
+    }
+
     isComplete ? stats.moviesFixed++ : stats.moviesStillFailed++;
   } catch (err) {
     console.error(`❌ فيلم ${movie.tmdb_id}:`, err.message);
@@ -84,6 +101,17 @@ async function enrichSeries(series) {
 
     db.prepare(`UPDATE tv_series SET name_ar=?, overview_ar=?, is_complete=?, updated_at=datetime('now') WHERE tmdb_id=?`)
       .run(name_ar || null, overview_ar || null, isComplete, series.tmdb_id);
+
+    /* المرحلة 2: نفس منطق الأفلام — إعادة توليد السلاج من العربي + tmdb_id */
+    if (name_ar && !series.name_ar) {
+      const stealth = buildStealthSlug(name_ar, series.tmdb_id, series.first_air_year);
+      if (series.slug && series.slug !== stealth) {
+        const newSlug = generateUniqueSlug(db, name_ar, series.tmdb_id, series.first_air_year, 'tv_series');
+        db.prepare(`UPDATE tv_series SET slug=?, canonical_url=? WHERE tmdb_id=?`)
+          .run(newSlug, `${CANONICAL_BASE}/series/${newSlug}`, series.tmdb_id);
+        stats.seriesReslugged = (stats.seriesReslugged || 0) + 1;
+      }
+    }
 
     isComplete ? stats.seriesFixed++ : stats.seriesStillFailed++;
   } catch (err) {

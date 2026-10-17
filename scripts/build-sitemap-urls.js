@@ -15,7 +15,7 @@
  * المخطط (المعتمد — نفس SQL في المرآة والإنتاج):
  *   sitemap_urls(media_type, ordinal, shard, seq, slug, updated_at)
  *     PRIMARY KEY (media_type, ordinal)
- *     ordinal = ترتيب عام 1-based داخل النوع (ترتيب tmdb_id ASC)
+ *     ordinal = ترتيب عام 1-based داخل النوع (ترتيب popularity DESC)
  *     shard   = (ordinal-1)/10000
  *     seq     = ((ordinal-1)%10000)+1   (ترتيب داخل الشظية)
  *   idx_sitemap_shard   (media_type, shard, seq)       — مسار الشظية: بحث نطاقي مرتّب بـ seq
@@ -49,7 +49,12 @@ const DATABASE_ID = process.env.CLOUDFLARE_DATABASE_ID || 'b50ec43e-b6c9-4b4e-93
 const D1_QUERY_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`;
 const D1_RAW_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/raw`;
 
-/* ── تعريف مجموعة روابط التفاصيل (B) — نسخة مطابقة لـ src/lib/sitemap.ts ──── */
+/* ── تعريف مجموعة روابط التفاصيل (B) — نسخة مطابقة لـ src/lib/sitemap.ts ────
+   الشمول الكامل 100% (2026-10-17): أي صف معتمد (clean — نفس بوابة الصفحات)
+   يدخل sitemap_urls، بدون أي شرط على vote_count أو trailer_key أو overview_ar.
+   الترتيب popularity DESC حتى تكون الشظايا مرتبة بانتظام.
+   ملاحظة (2026-10-17): لا فلتر جودة على مستوى slug — السلاج الرقمي الصريح
+   (tmdb_id مثل '190859') هو المعيار، والـ CLEAN_ITEM_SQL أعلاه يكفي. */
 const EXCLUDED_GENRE_IDS = [10767, 10768, 99, 36]; // Talk Show / War & Politics / Documentary / History
 const CLEAN_ITEM_SQL =
   "filter_status = 'clean' AND slug IS NOT NULL AND slug != '' AND tmdb_id IS NOT NULL";
@@ -66,12 +71,10 @@ const TYPES = [
    بـjson_each (الفرع الثالث) — الدلالات مطابقة حرفيًا لـjson_each الخالص
    (إثبات تكافؤ كامل الكتالوج 19/9: movies 62,509 / tv_series 24,664).
    ⚠️ أي تعديل على بوابات build-genre-index.js يستلزم مراجعة الحارس هنا. */
-/* ── بوابة الضعف (قرار 4 — 2/10/2026) — مطابقة لـSITEMAP_THIN_GATE_SQL في lib ──
-   صف بلا تريلر وتقييمه من أقل من 50 صوت = هزيل: لا يُدرج في sitemap_urls،
-   وصفحة التفاصيل بتاعته تُصدَر noindex,follow (تبقى ظاهرة للزائر). */
-const SITEMAP_THIN_MAX_VOTES = 50;
-const SITEMAP_THIN_GATE_SQL =
-  `AND NOT (vote_count < ${SITEMAP_THIN_MAX_VOTES} AND (trailer_key IS NULL OR trailer_key = ''))`;
+/* الشمول الكامل 100% (تعديل 2026-10-17): بوابة النحافة مُلغاة — القيمة ''
+   تعني عدم إضافة أي شرط (كل صف معتمد يدخل sitemap_urls). مطابقة لـ src/lib/sitemap.ts. */
+/* المرحلة 2 بند 4 (ملغاة 2026-10-17 — شمول 100%): بوابة الجودة أُلغيت —
+   كل صف معتمد يدخل sitemap_urls بلا شروط أصوات/تريلر/قصة. */
 
 function detailFilterSql(table, yearColumn) {
   const excludedTable = table === 'movies' ? 'excluded_genre_movie_ids' : 'excluded_genre_series_ids';
@@ -80,18 +83,9 @@ function detailFilterSql(table, yearColumn) {
     `OR (${yearColumn} >= 2000 AND NOT EXISTS (SELECT 1 FROM ${excludedTable} eg WHERE eg.tmdb_id = ${table}.tmdb_id)) ` +
     `OR NOT EXISTS (SELECT 1 FROM json_each(${table}.genres_json) ` +
     `WHERE json_extract(value, '$.tmdb_id') IN (${EXCLUDED_GENRE_IDS.join(', ')}))) ` +
-    `AND (${yearColumn} >= 2015 OR vote_count >= 1000)` +
-    SITEMAP_THIN_GATE_SQL
+    `AND ${yearColumn} IS NOT NULL`
   );
 }
-
-/* ── فلتر الجودة على مستوى slug (المرحلة 2.4) — أي محتوى جديد بـslug فاشل ────
-   لا يُدرج في sitemap_urls. النفي المزدوج لنفس قواعد scripts/rebuild-sitemap-quality.js:
-   slug موجود، غير فارغ، > 1 حرف، لا يبدأ/ينتهي بـ'-'، لا يحتوي '--'، ليس رقمًا فقط. */
-const SLUG_QUALITY_WHERE =
-  `slug IS NOT NULL AND slug != '' AND LENGTH(slug) > 1 ` +
-  `AND slug NOT LIKE '-%' AND slug NOT LIKE '%-' AND slug NOT LIKE '%--%' ` +
-  `AND slug GLOB '*[^0-9]*'`;
 
 /* ── DDL (نفس SQL المعتمد: ordinal + PK + فهرسان غير مغطّيين) ─────────────── */
 const DDL_STATEMENTS = [
@@ -117,9 +111,9 @@ function insertSql({ mediaType, table, yearColumn }) {
   return (
     `INSERT INTO sitemap_urls (media_type, ordinal, shard, seq, slug, updated_at)\n` +
     `SELECT '${mediaType}', rn, (rn - 1) / ${SHARD_SIZE}, ((rn - 1) % ${SHARD_SIZE}) + 1, slug, updated_at FROM (\n` +
-    `  SELECT ROW_NUMBER() OVER (ORDER BY tmdb_id ASC, id ASC) AS rn, slug, updated_at\n` +
+    `  SELECT ROW_NUMBER() OVER (ORDER BY popularity DESC, tmdb_id ASC, id ASC) AS rn, slug, updated_at\n` +
     `  FROM ${table}\n` +
-    `  WHERE ${CLEAN_ITEM_SQL} AND ${detailFilterSql(table, yearColumn)} AND ${SLUG_QUALITY_WHERE}\n` +
+    `  WHERE ${CLEAN_ITEM_SQL} AND ${detailFilterSql(table, yearColumn)}\n` +
     `)`
   );
 }
@@ -205,11 +199,11 @@ function checkParity() {
     [`export const SHARD_SIZE = ${SHARD_SIZE}`, 'SHARD_SIZE', libSrc],
     [`export const PRIORITY_PER_TYPE = ${PRIORITY_PER_TYPE}`, 'PRIORITY_PER_TYPE', libSrc],
     [CLEAN_ITEM_SQL, 'CLEAN_ITEM_SQL', libSrc],
-    ['export const SITEMAP_MIN_YEAR = 2015', 'SITEMAP_MIN_YEAR = 2015', libSrc],
-    ['export const SITEMAP_MIN_VOTE_COUNT = 1000', 'SITEMAP_MIN_VOTE_COUNT = 1000', libSrc],
+    [`export const SITEMAP_THIN_MAX_VOTES = 0`, 'SITEMAP_THIN_MAX_VOTES (البوابة ملغاة — شمول 100%)', libSrc],
+    [`export const SITEMAP_THIN_GATE_SQL = '';`, 'SITEMAP_THIN_GATE_SQL فارغة', libSrc],
+    ['`AND ${yearColumn} IS NOT NULL`', 'sitemapDetailFilterSql() — بلا عتبة سنة/أصوات', libSrc],
     ['OR NOT EXISTS (SELECT 1 FROM json_each(', 'sitemapDetailFilterSql()', libSrc],
     ['>= 2000 AND NOT EXISTS (SELECT 1 FROM', 'sitemapDetailFilterSql() — anti-join بحارس السنة', libSrc],
-    [`SITEMAP_THIN_MAX_VOTES = ${SITEMAP_THIN_MAX_VOTES}`, 'SITEMAP_THIN_MAX_VOTES (بوابة الضعف — قرار 4)', libSrc],
   ];
   const bad = [];
   for (const [needle, label, hay] of checks) {
@@ -368,7 +362,7 @@ async function main() {
     let ok = true;
     for (const t of TYPES) {
       const oldShard = await db.all(
-        `SELECT slug FROM ${t.table} WHERE ${legacyFilter(t)} ORDER BY tmdb_id ASC LIMIT ${SHARD_SIZE}`
+        `SELECT slug FROM ${t.table} WHERE ${legacyFilter(t)} ORDER BY popularity DESC, tmdb_id ASC LIMIT ${SHARD_SIZE}`
       );
       const newShard = await db.all(READ_SQL.shard(t.mediaType, 0));
       ok =

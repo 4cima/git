@@ -163,7 +163,8 @@ async function processMovie(tmdbId) {
     if (!keywordsJson) stats.moviesKeywordsEmpty++
 
     const insertMovie = db.transaction(() => {
-      const slug = generateUniqueSlug(db, title_en, release_year, primary_genre, 'movies');
+      /* المرحلة 2 — سلاج التخفي: من الاسم العربي + tmdb_id (الإنجليزي ممنوع في الرابط) */
+      const slug = generateUniqueSlug(db, title_ar, tmdbId, release_year, 'movies');
 
       db.prepare(`
         INSERT INTO movies (
@@ -304,7 +305,8 @@ async function processSeries(tmdbId) {
     if (!keywordsJson) stats.seriesKeywordsEmpty++
 
     const insertSeries = db.transaction(() => {
-      const slug = generateUniqueSlug(db, name_en, first_air_year, primary_genre, 'tv_series');
+      /* المرحلة 2 — سلاج التخفي: من الاسم العربي + tmdb_id (الإنجليزي ممنوع في الرابط) */
+      const slug = generateUniqueSlug(db, name_ar, tmdbId, first_air_year, 'tv_series');
 
       db.prepare(`
         INSERT INTO tv_series (

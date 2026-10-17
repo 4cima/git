@@ -176,13 +176,13 @@ function generateSEODescription(content) {
     return null;
   }
 
-  let description = `مشاهدة وتحميل ${typeAr} ${title_ar}`;
+  let description = `${typeAr} ${title_ar}`;
   
   if (year) {
     description += ` ${year}`;
   }
   
-  description += ' مترجم كامل بجودة عالية HD';
+  description += ' – القصة والأبطال والتريلر من فور سيما';
   
   if (primary_genre) {
     description += ` من نوع ${primary_genre}`;
@@ -192,11 +192,11 @@ function generateSEODescription(content) {
     description += ` - تقييم ${vote_average}/10`;
   }
   
-  description += '. مشاهدة مباشرة اون لاين بدون اعلانات.';
+  description += '. معلومات كاملة، ملصق رسمي، وإعلان رسمي.';
   
   // الحد الأقصى 160 حرف
   if (description.length > 160) {
-    description = `مشاهدة ${typeAr} ${title_ar} ${year || ''} مترجم HD - ${primary_genre || 'افلام اجنبية'}. تحميل مباشر بجودة عالية.`.trim();
+    description = `${typeAr} ${title_ar} ${year || ''} - القصة والأبطال والتقييمات والتريلر الرسمي.`.trim();
   }
   
   return description;

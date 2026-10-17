@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeFirst } from '@/lib/db'
+import { extractTmdbIdFromSlug } from '@/lib/slugGenerator'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 3600
@@ -17,9 +18,11 @@ export async function GET(
     
     console.log('🔄 [API /series/:slug] Fetching series:', slug)
     
+    // المرحلة 2 بند 3: احتياط tmdb_id لأي صيغة سلاج (رقم / w-{id}-{year} / {كلمات}-{id})
+    const tmdbId = extractTmdbIdFromSlug(slug)
     const series = await executeFirst(
-      'SELECT * FROM tv_series WHERE slug = ? LIMIT 1',
-      [slug]
+      'SELECT * FROM tv_series WHERE (slug = ? OR tmdb_id = ?) LIMIT 1',
+      [slug, tmdbId ?? -1]
     )
     
     if (!series) {

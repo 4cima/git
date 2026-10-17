@@ -5,8 +5,8 @@ require('dotenv').config({ path: './.env.local' })
 const db = require('./services/local-db')
 const { translateContent } = require('./translation-service-cjs')
 const { shouldFilterContent, getFilterReason } = require('./services/content-filter')
-// المرحلة 4: مولّد موحّد (نسخة CJS من src/lib/slugGenerator.ts) — بدل generateSlug المحلي
-const { toSlug, isValidSlug } = require('./services/slug-generator')
+// النظام الرقمي الصريح (2026-10): slug = String(tmdb_id) عبر buildStealthSlug
+const { buildStealthSlug } = require('./services/slug-generator')
 
 const TMDB_KEY = process.env.TMDB_API_KEY || 'afef094e7c0de13c1cac98227a61da4d'
 const TMDB_URL = 'https://api.themoviedb.org/3'
@@ -80,14 +80,8 @@ async function processAndSaveMovie(movie) {
     const titleAr = await translateContent(details.title, 'ar')
     const overviewAr = details.overview ? await translateContent(details.overview, 'ar') : ''
     
-    // حفظ في القاعدة
-    const slug = generateSlug(details.title, details.release_date?.split('-')[0])
-    if (!slug) {
-      // عنوان فاضي/غير قابل للتحويل — لا يُدرج بلا slug (يمنع slugs مثل "2019" فقط)
-      stats.filtered++
-      console.log(`   ⚠️ بدون slug صالح: ${details.title}`)
-      return
-    }
+    // حفظ في القاعدة — النظام الرقمي الصريح: slug = String(tmdb_id)
+    const slug = buildStealthSlug(details.title, details.id)
     
     db.prepare(`
       INSERT INTO movies (
@@ -121,13 +115,7 @@ async function processAndSaveMovie(movie) {
   }
 }
 
-// المرحلة 4: مولّد موحّد — يعرّب + ينظّف الشرطات + يرجع null للفاضي (لا Date.now)
-function generateSlug(title, year) {
-  const base = toSlug(title)
-  if (!base || !isValidSlug(base)) return null
-  const slug = year ? `${base}-${year}` : base
-  return isValidSlug(slug) ? slug : null
-}
+// النظام الرقمي الصريح: buildStealthSlug (من services/slug-generator) يولّد String(tmdb_id) — لا مولّد محلي
 
 async function fetchFromEndpoint(endpoint, pages, label) {
   console.log(`\n${'='.repeat(80)}`)

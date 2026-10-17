@@ -10,7 +10,7 @@
  * purge بالملفات أدق ويكفي (15 ملفاً < حد 30).
  *
  * Usage: node scripts/purge-sitemap-cache.mjs [--verify]
- *   --verify  بعد الـ purge يفحص أن sitemap-index.xml يعرض الخريطتين المتوقعتين
+ *   --verify  بعد الـ purge يفحص أن smap-4c-idx.xml يعرض الخريطتين المتوقعتين
  */
 import fs from 'node:fs';
 
@@ -32,7 +32,7 @@ if (!TOKEN || !ZONE) {
 
 const BASE = 'https://4cima.com';
 const files = [
-  `${BASE}/sitemap-index.xml`,
+  `${BASE}/smap-4c-idx.xml`,
   `${BASE}/sitemap/static.xml`,
   `${BASE}/sitemap/priority.xml`,
   ...Array.from({ length: 7 }, (_, i) => `${BASE}/sitemap/movies-${i}.xml`),
@@ -53,9 +53,9 @@ console.log(`✓ purged ${files.length} sitemap URLs from edge cache`);
 
 if (process.argv.includes('--verify')) {
   await new Promise((r) => setTimeout(r, 3000));
-  const xml = await (await fetch(`${BASE}/sitemap-index.xml`, { cache: 'no-store' })).text();
+  const xml = await (await fetch(`${BASE}/smap-4c-idx.xml`, { cache: 'no-store' })).text();
   const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-  console.log('sitemap-index.xml now lists:');
+  console.log('smap-4c-idx.xml now lists:');
   for (const l of locs) console.log(`  ${l}`);
   const ok =
     locs.length === 2 &&
