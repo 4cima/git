@@ -48,8 +48,25 @@ export async function GET(request: Request) {
 
     const locs: string[] = [
       `${SITEMAP_BASE_URL}/sitemap/static.xml`,
-      `${SITEMAP_BASE_URL}/sitemap/priority.xml`,
     ]
+
+    // أضف priority.xml فقط إذا كانت هناك روابط أولوية مؤهلة (تطابق منطق buildPriority)
+    const priorityCheck = await sitemapQuery<{ c: number }>(`
+      SELECT COUNT(*) c FROM (
+        SELECT 1 FROM movies WHERE filter_status = 'clean' AND release_year >= 2000
+          AND slug IS NOT NULL AND slug != '' AND LENGTH(slug) > 1
+          AND slug NOT LIKE '-%' AND slug NOT LIKE '%-' AND slug NOT LIKE '%--%' LIMIT 1
+        UNION ALL
+        SELECT 1 FROM tv_series WHERE filter_status = 'clean' AND first_air_year >= 2000
+          AND slug IS NOT NULL AND slug != '' AND LENGTH(slug) > 1
+          AND slug NOT LIKE '-%' AND slug NOT LIKE '%-' AND slug NOT LIKE '%--%' LIMIT 1
+      )
+    `)
+    const hasPriority = Number(priorityCheck[0]?.c || 0) > 0
+    if (hasPriority) {
+      locs.push(`${SITEMAP_BASE_URL}/sitemap/priority.xml`)
+    }
+
     for (let i = 0; i < movieShards; i++) locs.push(`${SITEMAP_BASE_URL}/sitemap/movies-${i}.xml`)
     for (let i = 0; i < seriesShards; i++) locs.push(`${SITEMAP_BASE_URL}/sitemap/series-${i}.xml`)
 

@@ -205,7 +205,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ shar
     if (shard === 'priority.xml') {
       const { urls, edgeResponse } = await cachedEntries(request, 'priority', buildPriority)
       if (edgeResponse) return edgeResponse
-      if (urls.length === 0) return xmlNotFoundResponse('no priority urls') /* 404 يُكاش في الحافة (max-age=86400) */
+      // إذا القائمة فاضية → 200 مع URLset فارغ صالح (ليس 404)
       const response = xmlSuccessResponse(urlset(urls), SHARD_CACHE_CONTROL)
       await sitemapCachePut(request, response)
       return response
