@@ -128,8 +128,9 @@ async function buildPriority(): Promise<string[]> {
   const out: string[] = []
   const slugQuality =
     `slug IS NOT NULL AND slug != '' AND LENGTH(slug) > 1 ` +
-    `AND slug NOT LIKE '-%' AND slug NOT LIKE '%-' AND slug NOT LIKE '%--%' ` +
-    `AND slug GLOB '*[^0-9]*'`
+    `AND slug NOT LIKE '-%' AND slug NOT LIKE '%-' AND slug NOT LIKE '%--%' `
+  // ملاحظة (2026-10): السلاغ numérique الصريح (String(tmdb_id)) معتمد الآن —
+  // لا نرفض السلاغ كاملاً بالأرقام (تُ算了 سابقًا via GLOB '*[^0-9]*').
   const sources = [
     { table: 'movies', yearCol: 'release_year', limit: PRIORITY_MOVIE_COUNT, prefix: '/movies/' },
     { table: 'tv_series', yearCol: 'first_air_year', limit: PRIORITY_SERIES_COUNT, prefix: '/series/' },

@@ -33,6 +33,9 @@ db.exec(schema)
 // IF NOT EXISTS لا يعدّل جدولاً قائماً) — ترقية idempotent بنفس أسلوب synced_to_d1 أعلاه
 try { db.prepare('ALTER TABLE movies    ADD COLUMN keywords_json TEXT').run() } catch {}
 try { db.prepare('ALTER TABLE tv_series ADD COLUMN keywords_json TEXT').run() } catch {}
+// علامة مزامنة D1 — يستخدمها 3-sync-to-d1.js (منفصلة عن synced_to_turso القديم)
+try { db.prepare('ALTER TABLE movies    ADD COLUMN synced_to_d1 INTEGER DEFAULT 0').run() } catch {}
+try { db.prepare('ALTER TABLE tv_series ADD COLUMN synced_to_d1 INTEGER DEFAULT 0').run() } catch {}
 
 console.log('✅ Database initialized successfully!')
 console.log(`📊 Database: ${dbPath}`)

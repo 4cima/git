@@ -44,7 +44,9 @@ function importIdsToTable(buffer, table) {
   const lines = buffer.toString('utf-8').split('\n');
   let inserted = 0, skipped = 0, belowThreshold = 0;
 
-  const insertStmt = db.prepare(`INSERT OR IGNORE INTO ${table} (tmdb_id, is_fetched, is_complete) VALUES (?, 0, 0)`);
+  /* النظام الرقمي الصريح (2026-10): slug = String(tmdb_id) منذ لحظة التنزيل —
+     عمود slug في القاعدة المحلية NOT NULL UNIQUE فلا يمكن إدراج tmdb_id وحده. */
+  const insertStmt = db.prepare(`INSERT OR IGNORE INTO ${table} (tmdb_id, slug, is_fetched, is_complete) VALUES (?, ?, 0, 0)`);
 
   db.transaction((lines) => {
     for (const line of lines) {
@@ -54,7 +56,7 @@ function importIdsToTable(buffer, table) {
       try { data = JSON.parse(trimmed); } catch { skipped++; continue; }
       if (!data.id || data.adult === true) { skipped++; continue; }
       if (data.id < minId) { belowThreshold++; continue; }
-      const result = insertStmt.run(data.id);
+      const result = insertStmt.run(data.id, String(data.id));
       if (result.changes > 0) inserted++;
     }
   })(lines);

@@ -2,7 +2,6 @@ require('dotenv').config({ path: '.env.local' });
 const pLimitModule = require('p-limit');
 const pLimit = pLimitModule.default || pLimitModule;
 const db = require('./services/local-db');
-const { generateUniqueSlug } = require('./services/slug-generator');
 const { fetchMovieDetails, fetchSeriesDetails, fetchSeasonDetails } = require('./services/tmdb-api');
 const { shouldFilterContent, getFilterReason, getFilterDetails, shouldRejectWork } = require('./services/content-filter');
 const { getGenreNameAr } = require('./services/genre-translations');
@@ -163,8 +162,17 @@ async function processMovie(tmdbId) {
     if (!keywordsJson) stats.moviesKeywordsEmpty++
 
     const insertMovie = db.transaction(() => {
-      /* المرحلة 2 — سلاج التخفي: من الاسم العربي + tmdb_id (الإنجليزي ممنوع في الرابط) */
-      const slug = generateUniqueSlug(db, title_ar, tmdbId, release_year, 'movies');
+      /* النظام الرقمي الصريح (2026-10): slug = String(tmdb_id) دائماً —
+         بلا حروف إنجليزية ولا بادئات. canonical_url رقمي مطابق. */
+      const slug = String(tmdbId);
+      const canonical_url = `https://4cima.com/movies/${tmdbId}`;
+
+      /* النظام الرقمي الصريح (2026-10): slug = String(tmdb_id) دائماً —
+         بلا حروف إنجليزية ولا بادئات. canonical_url رقمي مطابق.
+         الجداول المطبعة (content_genres/people/cast_crew) غير موجودة في المخطط
+         الحالي — نحفظ genres_json/cast_json مباشرة (نفس شكل D1). */
+      const genresJson = JSON.stringify((movie.genres || []).map(g => ({ id: g.id, name: g.name, name_ar: getGenreNameAr(g.name) })));
+      const castJson = JSON.stringify((movie.credits?.cast || []).slice(0, 15).map(p => ({ name: p.name, character: p.character || '', profile_path: p.profile_path || null })));
 
       db.prepare(`
         INSERT INTO movies (
@@ -172,8 +180,10 @@ async function processMovie(tmdbId) {
           poster_path, backdrop_path, release_date, release_year, runtime,
           vote_average, vote_count, popularity, trailer_key, imdb_id,
           original_language, country_of_origin, primary_genre, age_rating, keywords_json,
+          genres_json, cast_json,
+          seo_title_ar, seo_description_ar, canonical_url,
           is_fetched, is_filtered, filter_status, is_complete, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,'clean',?,datetime('now'))
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,NULL,?,1,0,'clean',?,datetime('now'))
         ON CONFLICT(tmdb_id) DO UPDATE SET
           slug=excluded.slug, title_en=excluded.title_en, title_ar=excluded.title_ar,
           title_original=excluded.title_original, overview_en=excluded.overview_en,
@@ -184,39 +194,18 @@ async function processMovie(tmdbId) {
           popularity=excluded.popularity, trailer_key=excluded.trailer_key,
           imdb_id=excluded.imdb_id, original_language=excluded.original_language,
           country_of_origin=excluded.country_of_origin, primary_genre=excluded.primary_genre,
-          age_rating=excluded.age_rating, keywords_json=excluded.keywords_json, is_fetched=1, is_filtered=0, filter_status='clean',
+          age_rating=excluded.age_rating, keywords_json=excluded.keywords_json,
+          genres_json=excluded.genres_json, cast_json=excluded.cast_json,
+          seo_title_ar=NULL, seo_description_ar=NULL, canonical_url=excluded.canonical_url,
+          is_fetched=1, is_filtered=0, filter_status='clean',
           is_complete=excluded.is_complete, updated_at=datetime('now')
       `).run(
         tmdbId, slug, title_en, title_ar || null, movie.original_title, movie.overview, overview_ar || null,
         movie.poster_path, movie.backdrop_path, movie.release_date, release_year, movie.runtime,
         movie.vote_average, movie.vote_count, movie.popularity, trailer?.key || null, movie.imdb_id,
         movie.original_language, movie.production_countries?.[0]?.iso_3166_1 || null,
-        primary_genre, age_rating, keywordsJson, isComplete
+        primary_genre, age_rating, keywordsJson, genresJson, castJson, canonical_url, isComplete
       );
-
-      for (const genre of movie.genres || []) {
-        db.prepare(`INSERT INTO genres (tmdb_id, name_en, name_ar, slug) VALUES (?,?,?,?)
-          ON CONFLICT(tmdb_id) DO UPDATE SET name_ar = excluded.name_ar`)
-          .run(genre.id, genre.name, getGenreNameAr(genre.name), genre.name.toLowerCase().replace(/\s+/g, '-'));
-        db.prepare(`INSERT OR IGNORE INTO content_genres (content_tmdb_id, content_type, genre_tmdb_id) VALUES (?,'movie',?)`)
-          .run(tmdbId, genre.id);
-      }
-
-      const castList = (movie.credits?.cast || []).slice(0, 15);
-      castList.forEach((person, i) => {
-        db.prepare(`INSERT OR IGNORE INTO people (tmdb_id, name_en, profile_path, gender, known_for_department, popularity) VALUES (?,?,?,?,?,?)`)
-          .run(person.id, person.name, person.profile_path, person.gender, person.known_for_department, person.popularity || 0);
-        db.prepare(`INSERT OR IGNORE INTO cast_crew (content_tmdb_id, content_type, person_tmdb_id, role_type, character_name, cast_order) VALUES (?,'movie',?,'cast',?,?)`)
-          .run(tmdbId, person.id, person.character || '', i);
-      });
-
-      const directors = (movie.credits?.crew || []).filter(c => c.job === 'Director').slice(0, 3);
-      for (const person of directors) {
-        db.prepare(`INSERT OR IGNORE INTO people (tmdb_id, name_en, profile_path, gender, known_for_department, popularity) VALUES (?,?,?,?,?,?)`)
-          .run(person.id, person.name, person.profile_path, person.gender, person.known_for_department, person.popularity || 0);
-        db.prepare(`INSERT OR IGNORE INTO cast_crew (content_tmdb_id, content_type, person_tmdb_id, role_type, job, department) VALUES (?,'movie',?,'crew',?,?)`)
-          .run(tmdbId, person.id, person.job, person.department);
-      }
     });
 
     insertMovie();
@@ -305,8 +294,14 @@ async function processSeries(tmdbId) {
     if (!keywordsJson) stats.seriesKeywordsEmpty++
 
     const insertSeries = db.transaction(() => {
-      /* المرحلة 2 — سلاج التخفي: من الاسم العربي + tmdb_id (الإنجليزي ممنوع في الرابط) */
-      const slug = generateUniqueSlug(db, name_ar, tmdbId, first_air_year, 'tv_series');
+      /* النظام الرقمي الصريح (2026-10): slug = String(tmdb_id) دائماً —
+         بلا حروف إنجليزية ولا بادئات. canonical_url رقمي مطابق.
+         الجداول المطبعة/المواسم غير موجودة في المخطط الحالي —
+         نحفظ genres_json/cast_json/seasons_json/episodes_json مباشرة (نفس شكل D1). */
+      const genresJson = JSON.stringify((series.genres || []).map(g => ({ id: g.id, name: g.name, name_ar: getGenreNameAr(g.name) })));
+      const castJson = JSON.stringify((series.credits?.cast || []).slice(0, 15).map(p => ({ name: p.name, character: p.character || '', profile_path: p.profile_path || null })));
+      const seasonsJson = JSON.stringify((seasonsData || []).map(s => ({ season_number: s.season_number, name: s.name, episode_count: s.episodes?.length || 0, air_date: s.air_date, poster_path: s.poster_path })));
+      const episodesJson = JSON.stringify((seasonsData || []).flatMap(s => (s.episodes || []).map(e => ({ season_number: s.season_number, episode_number: e.episode_number, name: e.name }))));
 
       db.prepare(`
         INSERT INTO tv_series (
@@ -315,8 +310,10 @@ async function processSeries(tmdbId) {
           number_of_seasons, number_of_episodes, status, vote_average, vote_count,
           popularity, trailer_key, imdb_id, original_language, country_of_origin,
           primary_genre, age_rating, keywords_json,
+          genres_json, cast_json, seasons_json, episodes_json,
+          seo_title_ar, seo_description_ar, canonical_url,
           is_fetched, is_filtered, filter_status, is_complete, updated_at
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,0,'clean',?,datetime('now'))
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,NULL,?,1,0,'clean',?,datetime('now'))
         ON CONFLICT(tmdb_id) DO UPDATE SET
           slug=excluded.slug, name_en=excluded.name_en, name_ar=excluded.name_ar,
           name_original=excluded.name_original, overview_en=excluded.overview_en,
@@ -329,6 +326,9 @@ async function processSeries(tmdbId) {
           original_language=excluded.original_language, country_of_origin=excluded.country_of_origin,
           primary_genre=excluded.primary_genre, age_rating=excluded.age_rating,
           keywords_json=excluded.keywords_json,
+          genres_json=excluded.genres_json, cast_json=excluded.cast_json,
+          seasons_json=excluded.seasons_json, episodes_json=excluded.episodes_json,
+          seo_title_ar=NULL, seo_description_ar=NULL, canonical_url=excluded.canonical_url,
           is_fetched=1, is_filtered=0, filter_status='clean', is_complete=excluded.is_complete, updated_at=datetime('now')
       `).run(
         tmdbId, slug, name_en, name_ar || null, series.original_name, series.overview, overview_ar || null,
@@ -336,47 +336,8 @@ async function processSeries(tmdbId) {
         series.number_of_seasons, series.number_of_episodes, status, series.vote_average, series.vote_count,
         series.popularity, trailer?.key || null, series.external_ids?.imdb_id || null,
         series.original_language, series.production_countries?.[0]?.iso_3166_1 || null,
-        primary_genre, age_rating, keywordsJson, isComplete
+        primary_genre, age_rating, keywordsJson, genresJson, castJson, seasonsJson, episodesJson, canonical_url, isComplete
       );
-
-      for (const genre of series.genres || []) {
-        db.prepare(`INSERT INTO genres (tmdb_id, name_en, name_ar, slug) VALUES (?,?,?,?)
-          ON CONFLICT(tmdb_id) DO UPDATE SET name_ar = excluded.name_ar`)
-          .run(genre.id, genre.name, getGenreNameAr(genre.name), genre.name.toLowerCase().replace(/\s+/g, '-'));
-        db.prepare(`INSERT OR IGNORE INTO content_genres (content_tmdb_id, content_type, genre_tmdb_id) VALUES (?,'tv',?)`)
-          .run(tmdbId, genre.id);
-      }
-
-      const castList = (series.credits?.cast || []).slice(0, 15);
-      castList.forEach((person, i) => {
-        db.prepare(`INSERT OR IGNORE INTO people (tmdb_id, name_en, profile_path, gender, known_for_department, popularity) VALUES (?,?,?,?,?,?)`)
-          .run(person.id, person.name, person.profile_path, person.gender, person.known_for_department, person.popularity || 0);
-        db.prepare(`INSERT OR IGNORE INTO cast_crew (content_tmdb_id, content_type, person_tmdb_id, role_type, character_name, cast_order) VALUES (?,'tv',?,'cast',?,?)`)
-          .run(tmdbId, person.id, person.character || '', i);
-      });
-
-      // المواسم + الحلقات الكاملة (متطابق مع الـ interface المتفق عليه مع Claude 2)
-      for (const season of seasonsData) {
-        const seasonAirYear = season.air_date ? parseInt(season.air_date.split('-')[0], 10) : null;
-
-        db.prepare(`
-          INSERT INTO seasons (series_tmdb_id, season_number, name_en, overview_en, poster_path, air_date, air_year, episode_count)
-          VALUES (?,?,?,?,?,?,?,?)
-          ON CONFLICT(series_tmdb_id, season_number) DO UPDATE SET
-            name_en=excluded.name_en, overview_en=excluded.overview_en, poster_path=excluded.poster_path,
-            air_date=excluded.air_date, air_year=excluded.air_year, episode_count=excluded.episode_count
-        `).run(tmdbId, season.season_number, season.name, season.overview, season.poster_path, season.air_date, seasonAirYear, season.episodes?.length || 0);
-
-        for (const episode of season.episodes || []) {
-          db.prepare(`
-            INSERT INTO episodes (series_tmdb_id, season_number, episode_number, name_en, overview_en, still_path, air_date, runtime, vote_average)
-            VALUES (?,?,?,?,?,?,?,?,?)
-            ON CONFLICT(series_tmdb_id, season_number, episode_number) DO UPDATE SET
-              name_en=excluded.name_en, overview_en=excluded.overview_en, still_path=excluded.still_path,
-              air_date=excluded.air_date, runtime=excluded.runtime, vote_average=excluded.vote_average
-          `).run(tmdbId, season.season_number, episode.episode_number, episode.name, episode.overview, episode.still_path, episode.air_date, episode.runtime || null, episode.vote_average || 0);
-        }
-      }
     });
 
     insertSeries();

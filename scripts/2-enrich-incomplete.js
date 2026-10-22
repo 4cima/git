@@ -4,9 +4,8 @@ const pLimit = pLimitModule.default || pLimitModule;
 const db = require('./services/local-db');
 const { translateField } = require('./services/translation-service');
 const { shouldRejectWork } = require('./services/content-filter');
-/* المرحلة 2: مولّد سلاج "التخفي" — إعادة توليد السلاج من الاسم العربي + tmdb_id
-   عند اكتمال الترجمة لأول مرة (السلاج القديم كان مبنيًا على الاسم الإنجليزي). */
-const { generateUniqueSlug, buildStealthSlug } = require('./services/slug-generator');
+/* النظام الرقمي الصريح (2026-10): slug = String(tmdb_id) دائماً + canonical رقمي —
+   إكمال الترجمة فقط، بلا إعادة توليد من الأسماء. SEO يُترك NULL ليولّده SSR. */
 
 const CANONICAL_BASE = 'https://4cima.com';
 
@@ -63,20 +62,11 @@ async function enrichMovie(movie) {
     const overview_ar = movie.overview_ar || await translateField(movie.overview_en, null, 'overview');
     const isComplete = title_ar ? 1 : 0;
 
-    db.prepare(`UPDATE movies SET title_ar=?, overview_ar=?, is_complete=?, updated_at=datetime('now') WHERE tmdb_id=?`)
-      .run(title_ar || null, overview_ar || null, isComplete, movie.tmdb_id);
-
-    /* المرحلة 2: لو اكتمل الاسم العربي الآن والسلاج الحالي ليس بصيغة "التخفي"
-       (مولّد من الإنجليزي سابقًا) → أعد توليده من العربي + tmdb_id وحوّثه. */
-    if (title_ar && !movie.title_ar) {
-      const stealth = buildStealthSlug(title_ar, movie.tmdb_id, movie.release_year);
-      if (movie.slug && movie.slug !== stealth) {
-        const newSlug = generateUniqueSlug(db, title_ar, movie.tmdb_id, movie.release_year, 'movies');
-        db.prepare(`UPDATE movies SET slug=?, canonical_url=? WHERE tmdb_id=?`)
-          .run(newSlug, `${CANONICAL_BASE}/movies/${newSlug}`, movie.tmdb_id);
-        stats.moviesReslugged = (stats.moviesReslugged || 0) + 1;
-      }
-    }
+    /* النظام الرقمي الصريح (2026-10): فرض slug/canonical رقمي + SEO=NULL ليولّده SSR */
+    const slug = String(movie.tmdb_id);
+    const canonical_url = `${CANONICAL_BASE}/movies/${slug}`;
+    db.prepare(`UPDATE movies SET title_ar=?, overview_ar=?, is_complete=?, slug=?, canonical_url=?, seo_title_ar=NULL, seo_description_ar=NULL, updated_at=datetime('now') WHERE tmdb_id=?`)
+      .run(title_ar || null, overview_ar || null, isComplete, slug, canonical_url, movie.tmdb_id);
 
     isComplete ? stats.moviesFixed++ : stats.moviesStillFailed++;
   } catch (err) {
@@ -99,19 +89,11 @@ async function enrichSeries(series) {
     const overview_ar = series.overview_ar || await translateField(series.overview_en, null, 'overview');
     const isComplete = name_ar ? 1 : 0;
 
-    db.prepare(`UPDATE tv_series SET name_ar=?, overview_ar=?, is_complete=?, updated_at=datetime('now') WHERE tmdb_id=?`)
-      .run(name_ar || null, overview_ar || null, isComplete, series.tmdb_id);
-
-    /* المرحلة 2: نفس منطق الأفلام — إعادة توليد السلاج من العربي + tmdb_id */
-    if (name_ar && !series.name_ar) {
-      const stealth = buildStealthSlug(name_ar, series.tmdb_id, series.first_air_year);
-      if (series.slug && series.slug !== stealth) {
-        const newSlug = generateUniqueSlug(db, name_ar, series.tmdb_id, series.first_air_year, 'tv_series');
-        db.prepare(`UPDATE tv_series SET slug=?, canonical_url=? WHERE tmdb_id=?`)
-          .run(newSlug, `${CANONICAL_BASE}/series/${newSlug}`, series.tmdb_id);
-        stats.seriesReslugged = (stats.seriesReslugged || 0) + 1;
-      }
-    }
+    /* النظام الرقمي الصريح (2026-10): فرض slug/canonical رقمي + SEO=NULL ليولّده SSR */
+    const slug = String(series.tmdb_id);
+    const canonical_url = `${CANONICAL_BASE}/series/${slug}`;
+    db.prepare(`UPDATE tv_series SET name_ar=?, overview_ar=?, is_complete=?, slug=?, canonical_url=?, seo_title_ar=NULL, seo_description_ar=NULL, updated_at=datetime('now') WHERE tmdb_id=?`)
+      .run(name_ar || null, overview_ar || null, isComplete, slug, canonical_url, series.tmdb_id);
 
     isComplete ? stats.seriesFixed++ : stats.seriesStillFailed++;
   } catch (err) {
